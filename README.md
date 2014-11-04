@@ -19,12 +19,10 @@ This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windo
 
 
 ```
-Note: This library does NOT uses SWT for system-tray support, only for the purpose
+Note: This library does NOT use SWT for system-tray support, only for the purpose
       of lessening the jar dependencies. Changing it to be SWT-based is not be 
-      difficult, just remember SWT on linux *already* starts up the GTK main 
+      difficult, just remember that SWT on linux *already* starts up the GTK main 
       event loop.
-
-      This library needs additional testing in SWT environments.
 ```
 ```
 Note: If you use the attached JNA libraries, you **MUST** load the respective
