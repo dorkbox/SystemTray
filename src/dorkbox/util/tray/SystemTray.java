@@ -35,18 +35,6 @@ public abstract class SystemTray  {
 
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
-    public final static String LABEL_DISCONNECTED = "Not connected";
-    public final static String LABEL_CONNECTING = "Connecting...";
-    public final static String LABEL_CONNECTED = "Connected";
-    public final static String LABEL_DISCONNECTING = "Disconnecting...";
-
-    // could be changed to red/yellow/green
-    public final static String ICON_DISCONNECTED  = "cubes_grey.png";
-    public final static String ICON_CONNECTING    = "cubes_green.png";
-    public final static String ICON_CONNECTED     = "cubes_blue.png";
-    public final static String ICON_DISCONNECTING = "cubes_red.png";
-
-
     /** Size of the icon **/
     public static int ICON_SIZE = 22;
 
