@@ -14,14 +14,15 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
   - app-indicators use native popups.  
 
 
-This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
+This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+  
 This library uses JNA, which means there are fun bits that are native.
 
 
 ```
 Note: This library does NOT uses SWT for system-tray support, only for the purpose
-      of lessening the jar dependencies. Changing it to be SWT-based is not be difficult,
-      just remember SWT on linux *already* starts up the GTK main event loop.
+      of lessening the jar dependencies. Changing it to be SWT-based is not be 
+      difficult, just remember SWT on linux *already* starts up the GTK main 
+      event loop.
 
       This library needs some additional testing in SWT environments.
 ```
