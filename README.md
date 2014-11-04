@@ -14,8 +14,8 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
   - app-indicators use native popups.  
 
 
-This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+  
-This library uses JNA, which means there are fun bits that are native.
+- This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+  
+- This library uses JNA, which means there are fun bits that are native.
 
 
 ```
