@@ -5,8 +5,7 @@ Cross-platform SystemTray and AppIndicator support for java applications.
 
 This libraries only purpose is to show *reasonably* decent system-tray icons and app-indicators with a simple popup-menu.
 
-There are a number of problems on Linux with the Swing (and SWT) system-tray icons, namely that
-
+There are a number of problems on Linux with the Swing (and SWT) system-tray icons, namely that  
 1. Swing system-tray icons on linux **do not** support transparent backgrounds (they have a white background)  
 2. Swing/SWT **do not** support app-indicators, which are necessary on more recent versions of linux (ie: ubuntu)  
 3. Swing popup menus look like crap  
