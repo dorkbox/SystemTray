@@ -12,7 +12,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
@@ -77,7 +77,7 @@ public abstract class SystemTray  {
         }
     }
 
-    protected Executor callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
+    protected ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
 
     public volatile FailureCallback failureCallback;
     protected volatile boolean active = false;
@@ -110,7 +110,10 @@ public abstract class SystemTray  {
     }
 
     public abstract void createTray(String iconName);
-    public abstract void removeTray();
+
+    public void removeTray() {
+        SystemTray.this.callbackExecutor.shutdown();
+    }
 
     public abstract void setStatus(String infoString, String iconName);
 

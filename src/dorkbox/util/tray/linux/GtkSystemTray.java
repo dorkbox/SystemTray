@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
@@ -32,6 +33,7 @@ public class GtkSystemTray extends SystemTray {
     private static Gobject libgobject = Gobject.INSTANCE;
     private static Gtk libgtk = Gtk.INSTANCE;
 
+    private final CountDownLatch blockUntilStarted = new CountDownLatch(1);
     private final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
 
     private volatile SystemTrayMenuPopup jmenu;
@@ -103,6 +105,9 @@ public class GtkSystemTray extends SystemTray {
             this.gtkUpdateThread = new Thread() {
                 @Override
                 public void run() {
+                    // notify our main thread to continue
+                    GtkSystemTray.this.blockUntilStarted.countDown();
+
                     try {
                         libgtk.gtk_main();
                     } catch (Throwable t) {
@@ -128,7 +133,12 @@ public class GtkSystemTray extends SystemTray {
             logger.error("Error creating tray menu", e);
         }
 
-        this.active = true;
+        // we CANNOT continue until the GTK thread has started! (ignored if SWT is used)
+        try {
+            this.blockUntilStarted.await();
+            this.active = true;
+        } catch (InterruptedException e) {
+        }
     }
 
     @Override
@@ -157,6 +167,8 @@ public class GtkSystemTray extends SystemTray {
 
         this.jmenu = null;
         this.connectionStatusItem = null;
+
+        super.removeTray();
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import com.sun.jna.Pointer;
 
@@ -31,7 +32,7 @@ public class AppIndicatorTray extends SystemTray {
     private static Gobject libgobject = Gobject.INSTANCE;
     private static Gtk libgtk = Gtk.INSTANCE;
 
-
+    private final CountDownLatch blockUntilStarted = new CountDownLatch(1);
     private final Map<String, MenuEntry> menuEntries = new HashMap<String, MenuEntry>(2);
 
     private volatile AppIndicator.AppIndicatorInstanceStruct appIndicator;
@@ -89,6 +90,9 @@ public class AppIndicatorTray extends SystemTray {
             this.gtkUpdateThread = new Thread() {
                 @Override
                 public void run() {
+                    // notify our main thread to continue
+                    AppIndicatorTray.this.blockUntilStarted.countDown();
+
                     try {
                         libgtk.gtk_main();
                     } catch (Throwable t) {
@@ -101,7 +105,12 @@ public class AppIndicatorTray extends SystemTray {
             this.gtkUpdateThread.start();
         }
 
-        this.active = true;
+        // we CANNOT continue until the GTK thread has started! (ignored if SWT is used)
+        try {
+            this.blockUntilStarted.await();
+            this.active = true;
+        } catch (InterruptedException e) {
+        }
     }
 
     @Override
@@ -132,6 +141,8 @@ public class AppIndicatorTray extends SystemTray {
         }
 
         this.connectionStatusItem = null;
+
+        super.removeTray();
     }
 
     @Override

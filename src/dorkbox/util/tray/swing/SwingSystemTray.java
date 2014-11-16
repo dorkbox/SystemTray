@@ -69,6 +69,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                 logger.error("Error updating tray menu", e);
             }
         }
+
+        super.removeTray();
     }
 
     @Override
