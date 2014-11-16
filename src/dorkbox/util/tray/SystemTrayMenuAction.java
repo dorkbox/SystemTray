@@ -2,5 +2,6 @@ package dorkbox.util.tray;
 
 
 public interface SystemTrayMenuAction {
-    void onClick(SystemTray systemTray);
+
+  void onClick(SystemTray systemTray);
 }
