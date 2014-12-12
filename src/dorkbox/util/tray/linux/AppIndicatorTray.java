@@ -40,6 +40,8 @@ import dorkbox.util.tray.SystemTrayMenuAction;
  * Lantern: https://github.com/getlantern/lantern/ Apache 2.0 License Copyright 2010 Brave New Software Project, Inc.
  */
 public class AppIndicatorTray extends SystemTray {
+    private static final boolean useSWT = GtkSupport.usesSwtMainLoop;
+
     private static final AppIndicator libappindicator = AppIndicator.INSTANCE;
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
@@ -56,10 +58,12 @@ public class AppIndicatorTray extends SystemTray {
     private final List<Pointer> widgets = new ArrayList<Pointer>(4);
 
 
-    public AppIndicatorTray() {}
+    public AppIndicatorTray() {
+    }
 
-  @Override
+    @Override
     public void createTray(String iconName) {
+        libgtk.gdk_threads_enter();
         this.appIndicator =
                         libappindicator.app_indicator_new(this.appName, "indicator-messages-new", AppIndicator.CATEGORY_APPLICATION_STATUS);
 
@@ -95,22 +99,18 @@ public class AppIndicatorTray extends SystemTray {
         libappindicator.app_indicator_set_icon_full(this.appIndicator, iconPath(iconName), this.appName);
         libappindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
 
-        if (!GtkSupport.usesSwtMainLoop) {
+        libgtk.gdk_threads_leave();
+
+        if (!useSWT) {
             Thread gtkUpdateThread = new Thread() {
                 @Override
                 public void run() {
                     // notify our main thread to continue
                     AppIndicatorTray.this.blockUntilStarted.countDown();
-
-                    try {
-                        libgtk.gtk_main();
-                    } catch (Throwable t) {
-                        logger.warn("Unable to run main loop", t);
-                    }
+                    libgtk.gtk_main();
                 }
             };
             gtkUpdateThread.setName("GTK event loop");
-            gtkUpdateThread.setDaemon(true);
             gtkUpdateThread.start();
         }
 
@@ -124,6 +124,7 @@ public class AppIndicatorTray extends SystemTray {
 
     @Override
     public void removeTray() {
+        libgtk.gdk_threads_enter();
         for (Pointer widget : this.widgets) {
             libgtk.gtk_widget_destroy(widget);
         }
@@ -149,12 +150,15 @@ public class AppIndicatorTray extends SystemTray {
         }
 
         this.connectionStatusItem = null;
+        libgtk.gtk_main_quit();
 
+        libgtk.gdk_threads_leave();
         super.removeTray();
     }
 
     @Override
     public void setStatus(String infoString, String iconName) {
+        libgtk.gdk_threads_enter();
         if (this.connectionStatusItem == null) {
             this.connectionStatusItem = libgtk.gtk_menu_item_new_with_label(infoString);
             this.widgets.add(this.connectionStatusItem);
@@ -167,6 +171,7 @@ public class AppIndicatorTray extends SystemTray {
         libgtk.gtk_widget_show_all(this.connectionStatusItem);
 
         libappindicator.app_indicator_set_icon_full(this.appIndicator, iconPath(iconName), this.appName);
+        libgtk.gdk_threads_leave();
     }
 
     /**
@@ -178,7 +183,11 @@ public class AppIndicatorTray extends SystemTray {
             MenuEntry menuEntry = this.menuEntries.get(menuText);
 
             if (menuEntry == null) {
+                libgtk.gdk_threads_enter();
+
                 Pointer dashboardItem = libgtk.gtk_menu_item_new_with_label(menuText);
+
+                // have to watch out! These can get garbage collected!
                 Gobject.GCallback gtkCallback = new Gobject.GCallback() {
                     @Override
                     public void callback(Pointer instance, Pointer data) {
@@ -195,8 +204,11 @@ public class AppIndicatorTray extends SystemTray {
                 libgtk.gtk_menu_shell_append(this.menu, dashboardItem);
                 libgtk.gtk_widget_show_all(dashboardItem);
 
+                libgtk.gdk_threads_leave();
+
                 menuEntry = new MenuEntry();
                 menuEntry.dashboardItem = dashboardItem;
+                menuEntry.gtkCallback = gtkCallback;
 
                 this.menuEntries.put(menuText, menuEntry);
             } else {
@@ -214,9 +226,11 @@ public class AppIndicatorTray extends SystemTray {
             MenuEntry menuEntry = this.menuEntries.get(origMenuText);
 
             if (menuEntry != null) {
+                libgtk.gdk_threads_enter();
                 libgtk.gtk_menu_item_set_label(menuEntry.dashboardItem, newMenuText);
 
-                Gobject.GCallback gtkCallback = new Gobject.GCallback() {
+                // have to watch out! These can get garbage collected!
+                menuEntry.gtkCallback = new Gobject.GCallback() {
                     @Override
                     public void callback(Pointer instance, Pointer data) {
                         AppIndicatorTray.this.callbackExecutor.execute(new Runnable() {
@@ -228,9 +242,10 @@ public class AppIndicatorTray extends SystemTray {
                     }
                 };
 
-                libgobject.g_signal_connect_data(menuEntry.dashboardItem, "activate", gtkCallback, null, null, 0);
+                libgobject.g_signal_connect_data(menuEntry.dashboardItem, "activate", menuEntry.gtkCallback, null, null, 0);
 
                 libgtk.gtk_widget_show_all(menuEntry.dashboardItem);
+                libgtk.gdk_threads_leave();
             } else {
                 addMenuEntry(origMenuText, newCallback);
             }

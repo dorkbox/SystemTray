@@ -17,6 +17,8 @@ package dorkbox.util.tray.linux;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.util.jna.linux.Gobject.GCallback;
+
 /**
  * Can only access this from within a synchronized block!
  */
@@ -24,6 +26,7 @@ class MenuEntry {
 
     private final int hashCode;
     public Pointer dashboardItem;
+    public GCallback gtkCallback;
 
     public MenuEntry() {
         long time = System.nanoTime();

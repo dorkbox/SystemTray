@@ -18,7 +18,6 @@ package dorkbox.util.tray.linux;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,10 +25,10 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.Gtk.GdkEventButton;
@@ -38,14 +37,13 @@ import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 import dorkbox.util.tray.SystemTrayMenuPopup;
 
-
 /**
  * Class for handling all system tray interactions via GTK.
  *
  * This is the "old" way to do it, and does not work with some desktop environments.
  */
 public class GtkSystemTray extends SystemTray {
-
+    private static final boolean useSWT = GtkSupport.usesSwtMainLoop;
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
 
@@ -65,6 +63,7 @@ public class GtkSystemTray extends SystemTray {
 
     @Override
     public void createTray(String iconName) {
+        libgtk.gdk_threads_enter();
         this.trayIcon = libgtk.gtk_status_icon_new();
         libgtk.gtk_status_icon_set_from_file(this.trayIcon, iconPath(iconName));
         libgtk.gtk_status_icon_set_tooltip(this.trayIcon, this.appName);
@@ -75,7 +74,7 @@ public class GtkSystemTray extends SystemTray {
             public void callback(Pointer instance, final GdkEventButton event) {
                 // BUTTON_PRESS only
                 if (event.type == 4) {
-                    SwingUtilities.invokeLater(new Runnable() {
+                    SwingUtil.invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             if (GtkSystemTray.this.jmenu.isVisible()) {
@@ -115,37 +114,25 @@ public class GtkSystemTray extends SystemTray {
         };
         // all the clicks. This is because native menu popups are a pain to figure out, so we cheat and use some java bits to do the popup
         libgobject.g_signal_connect_data(this.trayIcon, "button_press_event", gtkCallback, null, null, 0);
+        libgtk.gdk_threads_leave();
+        SwingUtil.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                GtkSystemTray.this.jmenu = new SystemTrayMenuPopup();
+            }
+        });
 
-        if (!GtkSupport.usesSwtMainLoop) {
+        if (!useSWT) {
             Thread gtkUpdateThread = new Thread() {
                 @Override
                 public void run() {
                     // notify our main thread to continue
                     GtkSystemTray.this.blockUntilStarted.countDown();
-
-                    try {
-                        libgtk.gtk_main();
-                    } catch (Throwable t) {
-                        logger.warn("Unable to run main loop", t);
-                    }
+                    libgtk.gtk_main();
                 }
             };
             gtkUpdateThread.setName("GTK event loop");
-            gtkUpdateThread.setDaemon(true);
             gtkUpdateThread.start();
-        }
-
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    GtkSystemTray.this.jmenu = new SystemTrayMenuPopup();
-                }
-            });
-        } catch (InvocationTargetException e) {
-            logger.error("Error creating tray menu", e);
-        } catch (InterruptedException e) {
-            logger.error("Error creating tray menu", e);
         }
 
         // we CANNOT continue until the GTK thread has started! (ignored if SWT is used)
@@ -158,6 +145,7 @@ public class GtkSystemTray extends SystemTray {
 
     @Override
     public void removeTray() {
+        libgtk.gdk_threads_enter();
         for (Pointer widget : this.widgets) {
             libgtk.gtk_widget_destroy(widget);
         }
@@ -182,12 +170,15 @@ public class GtkSystemTray extends SystemTray {
         this.jmenu = null;
         this.connectionStatusItem = null;
 
+        libgtk.gtk_main_quit();
+        libgtk.gdk_threads_leave();
+
         super.removeTray();
     }
 
     @Override
     public void setStatus(final String infoString, String iconName) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 if (GtkSystemTray.this.connectionStatusItem == null) {
@@ -198,21 +189,11 @@ public class GtkSystemTray extends SystemTray {
                     GtkSystemTray.this.connectionStatusItem.setText(infoString);
                 }
             }
-        };
+        });
 
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
-
+        libgtk.gdk_threads_enter();
         libgtk.gtk_status_icon_set_from_file(GtkSystemTray.this.trayIcon, iconPath(iconName));
+        libgtk.gdk_threads_leave();
     }
 
     /**
@@ -220,7 +201,7 @@ public class GtkSystemTray extends SystemTray {
      */
     @Override
     public void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
@@ -251,19 +232,7 @@ public class GtkSystemTray extends SystemTray {
                     }
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
     }
 
     /**
@@ -271,7 +240,7 @@ public class GtkSystemTray extends SystemTray {
      */
     @Override
     public void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
@@ -303,18 +272,6 @@ public class GtkSystemTray extends SystemTray {
                     }
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
     }
 }

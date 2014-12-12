@@ -7,9 +7,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
 
 import dorkbox.util.DelayTimer;
+import dorkbox.util.SwingUtil;
 
 public class SystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
@@ -22,8 +22,7 @@ public class SystemTrayMenuPopup extends JPopupMenu {
         this.timer = new DelayTimer("PopupMenuHider", true, new DelayTimer.Callback() {
             @Override
             public void execute() {
-                SwingUtilities.invokeLater(new Runnable() {
-
+                SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         Point location = MouseInfo.getPointerInfo().getLocation();

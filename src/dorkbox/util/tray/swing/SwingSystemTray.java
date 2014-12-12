@@ -17,9 +17,6 @@ package dorkbox.util.tray.swing;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -29,15 +26,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
 
+import dorkbox.util.SwingUtil;
 import dorkbox.util.tray.SystemTrayMenuAction;
 import dorkbox.util.tray.SystemTrayMenuPopup;
 
@@ -62,32 +57,20 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
     @Override
     public void removeTray() {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 SwingSystemTray.this.tray.remove(SwingSystemTray.this.trayIcon);
                 SwingSystemTray.this.menuEntries.clear();
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
 
         super.removeTray();
     }
 
     @Override
     public void createTray(final String iconName) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 SwingSystemTray.this.tray = SystemTray.getSystemTray();
@@ -106,7 +89,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                             Dimension size = SwingSystemTray.this.jmenu.getPreferredSize();
 
                             Point point = e.getPoint();
-                            Rectangle bounds = getScreenBoundsAt(point);
+                            Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
 
                             int x = point.x;
                             int y = point.y;
@@ -150,19 +133,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                     }
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error creating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error creating tray menu", e);
-            }
-        }
+        });
     }
 
     Image newImage(String name) {
@@ -171,68 +142,9 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
         return new ImageIcon(iconPath).getImage().getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
     }
 
-//    public static Rectangle getSafeScreenBounds(Point pos) {
-//        Rectangle bounds = getScreenBoundsAt(pos);
-//        Insets insets = getScreenInsetsAt(pos);
-//
-//        bounds.x += insets.left;
-//        bounds.y += insets.top;
-//        bounds.width -= insets.left + insets.right;
-//        bounds.height -= insets.top + insets.bottom;
-//
-//        return bounds;
-//    }
-
-//    public static Insets getScreenInsetsAt(Point pos) {
-//        GraphicsDevice gd = getGraphicsDeviceAt(pos);
-//        Insets insets = null;
-//        if (gd != null) {
-//            insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
-//        }
-//
-//        return insets;
-//    }
-
-    private static Rectangle getScreenBoundsAt(Point pos) {
-        GraphicsDevice gd = getGraphicsDeviceAt(pos);
-        Rectangle bounds = null;
-        if (gd != null) {
-            bounds = gd.getDefaultConfiguration().getBounds();
-        }
-
-        return bounds;
-    }
-
-    private static GraphicsDevice getGraphicsDeviceAt(Point pos) {
-        GraphicsDevice device;
-
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice lstGDs[] = ge.getScreenDevices();
-
-        ArrayList<GraphicsDevice> lstDevices = new ArrayList<GraphicsDevice>(lstGDs.length);
-
-        for (GraphicsDevice gd : lstGDs) {
-
-            GraphicsConfiguration gc = gd.getDefaultConfiguration();
-            Rectangle screenBounds = gc.getBounds();
-
-            if (screenBounds.contains(pos)) {
-                lstDevices.add(gd);
-            }
-        }
-
-        if (lstDevices.size() > 0) {
-            device = lstDevices.get(0);
-        } else {
-            device = ge.getDefaultScreenDevice();
-        }
-
-        return device;
-    }
-
     @Override
     public void setStatus(final String infoString, final String iconName) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 if (SwingSystemTray.this.connectionStatusItem == null) {
@@ -243,19 +155,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                     SwingSystemTray.this.connectionStatusItem.setText(infoString);
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
 
         Image trayImage = newImage(iconName);
         SwingSystemTray.this.trayIcon.setImage(trayImage);
@@ -266,7 +166,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
      */
     @Override
     public void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
@@ -297,19 +197,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                     }
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
     }
 
     /**
@@ -317,7 +205,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
      */
     @Override
     public void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
-        Runnable doRun = new Runnable() {
+        SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
@@ -349,18 +237,6 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                     }
                 }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRun.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(doRun);
-            } catch (InvocationTargetException e) {
-                logger.error("Error updating tray menu", e);
-            } catch (InterruptedException e) {
-                logger.error("Error updating tray menu", e);
-            }
-        }
+        });
     }
 }
