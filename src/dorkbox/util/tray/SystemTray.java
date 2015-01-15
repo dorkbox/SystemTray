@@ -159,11 +159,16 @@ public abstract class SystemTray {
             }
 
             // maybe it's in somewhere else.
-            URL systemResource = ClassLoader.getSystemResource(fileName);
+            URL systemResource = Thread.currentThread().getContextClassLoader().getResource(fileName);
+            if (systemResource == null) {
+                // maybe it's in the system classloader?
+                systemResource = ClassLoader.getSystemResource(fileName);
+            }
+
             if (systemResource != null) {
                 // copy out to a temp file, as a hash of the file
-                String file = systemResource.getFile();
-                byte[] bytes = file.getBytes(UTF_8);
+                String resourceFileName = systemResource.getPath();
+                byte[] bytes = resourceFileName.getBytes(UTF_8);
                 File newFile;
                 String tempDir = System.getProperty("java.io.tmpdir");
 
