@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JMenuItem;
 
@@ -32,7 +31,6 @@ import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.Gtk.GdkEventButton;
-import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 import dorkbox.util.tray.SystemTrayMenuPopup;
@@ -43,11 +41,9 @@ import dorkbox.util.tray.SystemTrayMenuPopup;
  * This is the "old" way to do it, and does not work with some desktop environments.
  */
 public class GtkSystemTray extends SystemTray {
-    private static final boolean useSWT = GtkSupport.usesSwtMainLoop;
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
 
-    private final CountDownLatch blockUntilStarted = new CountDownLatch(1);
     private final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
 
     private volatile SystemTrayMenuPopup jmenu;
@@ -122,25 +118,7 @@ public class GtkSystemTray extends SystemTray {
             }
         });
 
-        if (!useSWT) {
-            Thread gtkUpdateThread = new Thread() {
-                @Override
-                public void run() {
-                    // notify our main thread to continue
-                    GtkSystemTray.this.blockUntilStarted.countDown();
-                    libgtk.gtk_main();
-                }
-            };
-            gtkUpdateThread.setName("GTK event loop");
-            gtkUpdateThread.start();
-        }
-
-        // we CANNOT continue until the GTK thread has started! (ignored if SWT is used)
-        try {
-            this.blockUntilStarted.await();
-            this.active = true;
-        } catch (InterruptedException ignored) {
-        }
+        this.active = true;
     }
 
     @Override
