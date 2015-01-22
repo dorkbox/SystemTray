@@ -91,37 +91,46 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                             Point point = e.getPoint();
                             Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
 
+                            // linux gtk was ICON_SIZE+4
+                            int PADDING = ICON_SIZE/2;
+
                             int x = point.x;
                             int y = point.y;
 
                             if (y < bounds.y) {
                                 y = bounds.y;
-                            } else if (y > bounds.y + bounds.height) {
-                                y = bounds.y + bounds.height + ICON_SIZE + 4; // 4 for padding
-                            }
-                            if (x < bounds.x) {
-                                x = bounds.x;
-                            } else if (x > bounds.x + bounds.width) {
-                                x = bounds.x + bounds.width;
+                            } else if (y + size.height > bounds.y + bounds.height) {
+                                // our menu cannot have the top-edge snap to the mouse
+                                // so we make the bottom-edge snap to the mouse
+                                y -= size.height; // snap to edge of mouse
                             }
 
-                            if (x + size.width > bounds.x + bounds.width) {
-                                // always put the menu in the middle
-                                x = bounds.x + bounds.width - size.width;
+                            if (x < bounds.x) {
+                                x = bounds.x;
+                            } else if (x + size.width > bounds.x + bounds.width) {
+                                // our menu cannot have the left-edge snap to the mouse
+                                // so we make the right-edge snap to the mouse
+                                x -= size.width; // snap to edge of mouse
                             }
-                            if (y + size.height > bounds.y + bounds.height) {
-                                y = bounds.y + bounds.height - size.height - ICON_SIZE - 4; // 4 for padding
-                            }
+
+//                            if (x + size.width > bounds.x + bounds.width) {
+//                                // always put the menu in the middle
+//                                x = bounds.x + bounds.width - size.width;
+//                            }
+//                            if (y + size.height > bounds.y + bounds.height) {
+//                                y = bounds.y + bounds.height - size.height - PADDING;
+//                            }
 
                             // do we open at top-right or top-left?
                             // we ASSUME monitor size is greater than 640x480 AND that our tray icon is IN THE CORNER SOMEWHERE
 
-                            // always put the menu in the middle
-                            x -= size.width / 4;
+                            // always put the menu in the horiz. middle
+//                            x -= size.width / 4;
 
                             SwingSystemTray.this.jmenu.setInvoker(SwingSystemTray.this.jmenu);
                             SwingSystemTray.this.jmenu.setLocation(x, y);
                             SwingSystemTray.this.jmenu.setVisible(true);
+                            SwingSystemTray.this.jmenu.requestFocus();
                         }
                     });
 
