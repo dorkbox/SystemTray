@@ -17,7 +17,16 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
 
 
+```
+To customize the delay (for hiding the popup) when the cursor is "moused out" of the 
+   popup menu, change the value of 'SystemTrayMenuPopup.hidePopupDelay'
 
+Not all system tray icons are the same size (default is 22px), so to properly scale the icon 
+   to fit, change the value of 'SystemTray.TRAY_SIZE'
+   
+You might want to specify the root location of the icons used (to make it easier when
+   specifying icons), change the value of 'SystemTray.ICON_PATH'
+```
 ```
 Note: This library does NOT use SWT for system-tray support, only for the purpose
       of lessening the jar dependencies. Changing it to be SWT-based is not be 

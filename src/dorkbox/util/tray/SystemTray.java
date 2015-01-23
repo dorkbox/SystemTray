@@ -15,8 +15,10 @@
  */
 package dorkbox.util.tray;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,9 +54,9 @@ public abstract class SystemTray {
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     /**
-     * Size of the icon
+     * Size of the icon WHEN IT'S IN THE TRAY
      */
-    public static int ICON_SIZE = 22;
+    public static int TRAY_SIZE = 22;
 
     /**
      * Location of the icon
@@ -67,13 +69,62 @@ public abstract class SystemTray {
     static {
         if (OS.isLinux()) {
             GtkSupport.init();
-            String getenv = System.getenv("XDG_CURRENT_DESKTOP");
-            if (getenv != null && (getenv.equals("Unity") || getenv.equals("KDE"))) {
-                if (GtkSupport.isSupported) {
-                    trayType = AppIndicatorTray.class;
+            if (GtkSupport.isSupported) {
+                // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
+                String getenv = System.getenv("XDG_CURRENT_DESKTOP");
+                if (getenv != null && getenv.equals("Unity")) {
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Exception ignored) {
+                    }
                 }
-            } else {
-                if (GtkSupport.isSupported) {
+
+                if (trayType == null) {
+                    BufferedReader bin = null;
+                    try {
+                        // the ONLY guaranteed way to determine if indicator-application-service is running (and thus, using app-indicator),
+                        // is to look through all /proc/<pid>/status, and first line should be Name:\tindicator-appli
+                        File proc = new File("/proc");
+                        File[] listFiles = proc.listFiles();
+                        if (listFiles != null) {
+                            for (File procs : listFiles) {
+                                String name = procs.getName();
+                                if (!Character.isDigit(name.charAt(0))) {
+                                    continue;
+                                }
+
+                                File status = new File(procs, "status");
+                                if (!status.canRead()) {
+                                    continue;
+                                }
+
+                                try {
+                                    bin = new BufferedReader(new FileReader(status));
+                                    String readLine = bin.readLine();
+                                    if (readLine != null && readLine.contains("indicator-app")) {
+                                        trayType = AppIndicatorTray.class;
+                                        break;
+                                    }
+                                } finally {
+                                    if (bin != null) {
+                                        bin.close();
+                                        bin = null;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    } finally {
+                        if (bin != null) {
+                            try {
+                                bin.close();
+                            } catch (IOException ignored) {
+                            }
+                        }
+                    }
+                }
+
+                if (trayType == null) {
                     trayType = GtkSystemTray.class;
                 }
             }

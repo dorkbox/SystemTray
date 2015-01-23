@@ -75,7 +75,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             public void run() {
                 SwingSystemTray.this.tray = SystemTray.getSystemTray();
                 if (SwingSystemTray.this.tray == null) {
-                    logger.warn("The system tray is not available");
+                    logger.error("The system tray is not available");
                 } else {
                     SwingSystemTray.this.jmenu = new SystemTrayMenuPopup();
 
@@ -90,9 +90,6 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
                             Point point = e.getPoint();
                             Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
-
-                            // linux gtk was ICON_SIZE+4
-                            int PADDING = ICON_SIZE/2;
 
                             int x = point.x;
                             int y = point.y;
@@ -112,20 +109,6 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                                 // so we make the right-edge snap to the mouse
                                 x -= size.width; // snap to edge of mouse
                             }
-
-//                            if (x + size.width > bounds.x + bounds.width) {
-//                                // always put the menu in the middle
-//                                x = bounds.x + bounds.width - size.width;
-//                            }
-//                            if (y + size.height > bounds.y + bounds.height) {
-//                                y = bounds.y + bounds.height - size.height - PADDING;
-//                            }
-
-                            // do we open at top-right or top-left?
-                            // we ASSUME monitor size is greater than 640x480 AND that our tray icon is IN THE CORNER SOMEWHERE
-
-                            // always put the menu in the horiz. middle
-//                            x -= size.width / 4;
 
                             SwingSystemTray.this.jmenu.setInvoker(SwingSystemTray.this.jmenu);
                             SwingSystemTray.this.jmenu.setLocation(x, y);
@@ -148,7 +131,7 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     Image newImage(String name) {
         String iconPath = iconPath(name);
 
-        return new ImageIcon(iconPath).getImage().getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
+        return new ImageIcon(iconPath).getImage().getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
     }
 
     @Override

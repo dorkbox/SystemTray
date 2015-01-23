@@ -25,6 +25,7 @@ import com.sun.jna.Pointer;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
+import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 
@@ -127,7 +128,7 @@ public class AppIndicatorTray extends SystemTray {
         }
 
         this.connectionStatusItem = null;
-        libgtk.gtk_main_quit();
+        GtkSupport.shutdownGTK();
 
         libgtk.gdk_threads_leave();
         super.removeTray();
