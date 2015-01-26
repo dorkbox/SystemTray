@@ -54,7 +54,7 @@ public abstract class SystemTray {
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     /**
-     * Size of the icon WHEN IT'S IN THE TRAY
+     * Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
      */
     public static int TRAY_SIZE = 22;
 
@@ -67,6 +67,11 @@ public abstract class SystemTray {
     private static Class<? extends SystemTray> trayType;
 
     static {
+        if (OS.isWindows()) {
+            // the tray icon size in windows is DIFFERENT than on Linux (TODO: test on mac).
+            TRAY_SIZE -= 4;
+        }
+
         if (OS.isLinux()) {
             GtkSupport.init();
             if (GtkSupport.isSupported) {
