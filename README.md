@@ -26,6 +26,21 @@ Not all system tray icons are the same size (default is 22px), so to properly sc
    
 You might want to specify the root location of the icons used (to make it easier when
    specifying icons), change the value of 'SystemTray.ICON_PATH'
+   
+   
+A *simple* example is as follows:
+   this.systemTray = SystemTray.create("Dorkbox");
+
+   this.systemTray.createTray("grey_icon.png");
+   this.systemTray.setStatus("Not Running", "grey_icon.png");
+   
+   this.systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
+      @Override
+      public void onClick(SystemTray systemTray) {
+        systemTray.removeTray();
+        // exit or something.
+      }
+   });
 ```
 ```
 Note: This library does NOT use SWT for system-tray support, only for the purpose
