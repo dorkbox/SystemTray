@@ -44,7 +44,7 @@ A *simple* example is as follows:
 ```
 ```
 Note: This library does NOT use SWT for system-tray support, only for the purpose
-      of lessening the jar dependencies. Changing it to be SWT-based is not be 
+      of lessening the jar dependencies. Changing it to be SWT-based is not 
       difficult, just remember that SWT on linux *already* starts up the GTK main 
       event loop.
 ```
