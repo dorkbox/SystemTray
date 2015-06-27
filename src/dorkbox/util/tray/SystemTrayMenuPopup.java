@@ -1,46 +1,50 @@
 package dorkbox.util.tray;
 
-import java.awt.Dimension;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
-import javax.swing.JPopupMenu;
-
 import dorkbox.util.DelayTimer;
 import dorkbox.util.SwingUtil;
 
-public class SystemTrayMenuPopup extends JPopupMenu {
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+public
+class SystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
-    /** Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu */
+    /**
+     * Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
+     */
     public static long hidePopupDelay = 1000L;
 
     private DelayTimer timer;
 
-    protected boolean mouseStillOnMenu;
+//    protected boolean mouseStillOnMenu;
 //    private JDialog hiddenDialog;
 
-    public SystemTrayMenuPopup() {
+    public
+    SystemTrayMenuPopup() {
         super();
         setFocusable(true);
 
         this.timer = new DelayTimer("PopupMenuHider", true, new DelayTimer.Callback() {
             @Override
-            public void execute() {
+            public
+            void execute() {
                 SwingUtil.invokeLater(new Runnable() {
                     @Override
-                    public void run() {
+                    public
+                    void run() {
                         Point location = MouseInfo.getPointerInfo().getLocation();
                         Point locationOnScreen = getLocationOnScreen();
                         Dimension size = getSize();
 
-                        if (location.x >= locationOnScreen.x && location.x < locationOnScreen.x + size.width
-                            && location.y >= locationOnScreen.y && location.y < locationOnScreen.y + size.height) {
+                        if (location.x >= locationOnScreen.x && location.x < locationOnScreen.x + size.width &&
+                            location.y >= locationOnScreen.y && location.y < locationOnScreen.y + size.height) {
 
                             SystemTrayMenuPopup.this.timer.delay(SystemTrayMenuPopup.this.timer.getDelay());
-                        } else {
+                        }
+                        else {
                             setVisible(false);
                         }
                     }
@@ -50,7 +54,8 @@ public class SystemTrayMenuPopup extends JPopupMenu {
 
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseExited(MouseEvent event) {
+            public
+            void mouseExited(MouseEvent event) {
                 // wait before checking if mouse is still on the menu
                 SystemTrayMenuPopup.this.timer.delay(SystemTrayMenuPopup.this.timer.getDelay());
             }
@@ -75,7 +80,8 @@ public class SystemTrayMenuPopup extends JPopupMenu {
     }
 
     @Override
-    public void setVisible(boolean makeVisible) {
+    public
+    void setVisible(boolean makeVisible) {
         this.timer.cancel();
 
         if (makeVisible) {

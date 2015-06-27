@@ -15,13 +15,7 @@
  */
 package dorkbox.util.tray.linux;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.sun.jna.Pointer;
-
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
@@ -29,16 +23,22 @@ import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Class for handling all system tray interactions.
- *
+ * <p/>
  * specialization for using app indicators in ubuntu unity
- *
+ * <p/>
  * Heavily modified from
- *
+ * <p/>
  * Lantern: https://github.com/getlantern/lantern/ Apache 2.0 License Copyright 2010 Brave New Software Project, Inc.
  */
-public class AppIndicatorTray extends SystemTray {
+public
+class AppIndicatorTray extends SystemTray {
     private static final AppIndicator libappindicator = AppIndicator.INSTANCE;
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
@@ -54,29 +54,33 @@ public class AppIndicatorTray extends SystemTray {
     private final List<Pointer> widgets = new ArrayList<Pointer>(4);
 
 
-    public AppIndicatorTray() {
+    public
+    AppIndicatorTray() {
     }
 
     @Override
-    public void createTray(String iconName) {
+    public
+    void createTray(String iconName) {
         libgtk.gdk_threads_enter();
-        this.appIndicator =
-                        libappindicator.app_indicator_new(this.appName, "indicator-messages-new", AppIndicator.CATEGORY_APPLICATION_STATUS);
+        this.appIndicator = libappindicator.app_indicator_new(this.appName, "indicator-messages-new",
+                                                              AppIndicator.CATEGORY_APPLICATION_STATUS);
 
         /*
          * basically a hack -- we should subclass the AppIndicator type and override the fallback entry in the 'vtable', instead we just
          * hack the app indicator class itself. Not an issue unless we need other appindicators.
          */
-        AppIndicator.AppIndicatorClassStruct aiclass =
-                        new AppIndicator.AppIndicatorClassStruct(this.appIndicator.parent.g_type_instance.g_class);
+        AppIndicator.AppIndicatorClassStruct aiclass = new AppIndicator.AppIndicatorClassStruct(
+                        this.appIndicator.parent.g_type_instance.g_class);
 
 
         aiclass.fallback = new AppIndicator.Fallback() {
             @Override
-            public Pointer callback(final AppIndicator.AppIndicatorInstanceStruct self) {
+            public
+            Pointer callback(final AppIndicator.AppIndicatorInstanceStruct self) {
                 AppIndicatorTray.this.callbackExecutor.execute(new Runnable() {
                     @Override
-                    public void run() {
+                    public
+                    void run() {
                         logger.warn("Failed to create appindicator system tray.");
 
                         if (AppIndicatorTray.this.failureCallback != null) {
@@ -101,7 +105,8 @@ public class AppIndicatorTray extends SystemTray {
     }
 
     @Override
-    public void removeTray() {
+    public
+    void removeTray() {
         libgtk.gdk_threads_enter();
         for (Pointer widget : this.widgets) {
             libgtk.gtk_widget_destroy(widget);
@@ -135,14 +140,16 @@ public class AppIndicatorTray extends SystemTray {
     }
 
     @Override
-    public void setStatus(String infoString, String iconName) {
+    public
+    void setStatus(String infoString, String iconName) {
         libgtk.gdk_threads_enter();
         if (this.connectionStatusItem == null) {
             this.connectionStatusItem = libgtk.gtk_menu_item_new_with_label(infoString);
             this.widgets.add(this.connectionStatusItem);
             libgtk.gtk_widget_set_sensitive(this.connectionStatusItem, Gtk.FALSE);
             libgtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
-        } else {
+        }
+        else {
             libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
         }
 
@@ -156,7 +163,8 @@ public class AppIndicatorTray extends SystemTray {
      * Will add a new menu entry, or update one if it already exists
      */
     @Override
-    public void addMenuEntry(String menuText, final SystemTrayMenuAction callback) {
+    public
+    void addMenuEntry(String menuText, final SystemTrayMenuAction callback) {
         synchronized (this.menuEntries) {
             MenuEntry menuEntry = this.menuEntries.get(menuText);
 
@@ -168,10 +176,12 @@ public class AppIndicatorTray extends SystemTray {
                 // have to watch out! These can get garbage collected!
                 Gobject.GCallback gtkCallback = new Gobject.GCallback() {
                     @Override
-                    public void callback(Pointer instance, Pointer data) {
+                    public
+                    void callback(Pointer instance, Pointer data) {
                         AppIndicatorTray.this.callbackExecutor.execute(new Runnable() {
                             @Override
-                            public void run() {
+                            public
+                            void run() {
                                 callback.onClick(AppIndicatorTray.this);
                             }
                         });
@@ -189,7 +199,8 @@ public class AppIndicatorTray extends SystemTray {
                 menuEntry.gtkCallback = gtkCallback;
 
                 this.menuEntries.put(menuText, menuEntry);
-            } else {
+            }
+            else {
                 updateMenuEntry(menuText, menuText, callback);
             }
         }
@@ -199,7 +210,8 @@ public class AppIndicatorTray extends SystemTray {
      * Will update an already existing menu entry (or add a new one, if it doesn't exist)
      */
     @Override
-    public void updateMenuEntry(String origMenuText, String newMenuText, final SystemTrayMenuAction newCallback) {
+    public
+    void updateMenuEntry(String origMenuText, String newMenuText, final SystemTrayMenuAction newCallback) {
         synchronized (this.menuEntries) {
             MenuEntry menuEntry = this.menuEntries.get(origMenuText);
 
@@ -210,10 +222,12 @@ public class AppIndicatorTray extends SystemTray {
                 // have to watch out! These can get garbage collected!
                 menuEntry.gtkCallback = new Gobject.GCallback() {
                     @Override
-                    public void callback(Pointer instance, Pointer data) {
+                    public
+                    void callback(Pointer instance, Pointer data) {
                         AppIndicatorTray.this.callbackExecutor.execute(new Runnable() {
                             @Override
-                            public void run() {
+                            public
+                            void run() {
                                 newCallback.onClick(AppIndicatorTray.this);
                             }
                         });
@@ -224,7 +238,8 @@ public class AppIndicatorTray extends SystemTray {
 
                 libgtk.gtk_widget_show_all(menuEntry.dashboardItem);
                 libgtk.gdk_threads_leave();
-            } else {
+            }
+            else {
                 addMenuEntry(origMenuText, newCallback);
             }
         }

@@ -15,6 +15,7 @@
  */
 package dorkbox.util.tray;
 
-public interface SystemTrayMenuAction {
+public
+interface SystemTrayMenuAction {
     void onClick(SystemTray systemTray);
 }

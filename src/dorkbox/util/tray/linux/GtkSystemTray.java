@@ -15,20 +15,7 @@
  */
 package dorkbox.util.tray.linux;
 
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.swing.JMenuItem;
-
 import com.sun.jna.Pointer;
-
 import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
@@ -38,12 +25,22 @@ import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 import dorkbox.util.tray.SystemTrayMenuPopup;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Class for handling all system tray interactions via GTK.
- *
+ * <p/>
  * This is the "old" way to do it, and does not work with some desktop environments.
  */
-public class GtkSystemTray extends SystemTray {
+public
+class GtkSystemTray extends SystemTray {
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
 
@@ -58,14 +55,17 @@ public class GtkSystemTray extends SystemTray {
     private final List<Pointer> widgets = new ArrayList<Pointer>(4);
     private Gobject.GEventCallback gtkCallback;
 
-    public GtkSystemTray() {
+    public
+    GtkSystemTray() {
     }
 
     @Override
-    public void createTray(String iconName) {
+    public
+    void createTray(String iconName) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 GtkSystemTray.this.jmenu = new SystemTrayMenuPopup();
             }
         });
@@ -80,28 +80,32 @@ public class GtkSystemTray extends SystemTray {
         // have to make this a field, to prevent GC on this object
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
-            public void callback(Pointer system_tray, final GdkEventButton event) {
+            public
+            void callback(Pointer system_tray, final GdkEventButton event) {
                 // BUTTON_PRESS only (any mouse click)
                 if (event.type == 4) {
                     SwingUtil.invokeLater(new Runnable() {
                         @Override
-                        public void run() {
+                        public
+                        void run() {
                             // test this using cinnamon (which still uses status icon)
 
                             if (GtkSystemTray.this.jmenu.isVisible()) {
                                 GtkSystemTray.this.jmenu.setVisible(false);
-                            } else {
+                            }
+                            else {
                                 Dimension size = GtkSystemTray.this.jmenu.getPreferredSize();
 
                                 int x = (int) event.x_root;
-                                int y =  (int) event.y_root;
+                                int y = (int) event.y_root;
 
                                 Point point = new Point(x, y);
                                 Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
 
                                 if (y < bounds.y) {
                                     y = bounds.y;
-                                } else if (y + size.height > bounds.y + bounds.height) {
+                                }
+                                else if (y + size.height > bounds.y + bounds.height) {
                                     // our menu cannot have the top-edge snap to the mouse
                                     // so we make the bottom-edge snap to the mouse
                                     y -= size.height; // snap to edge of mouse
@@ -109,7 +113,8 @@ public class GtkSystemTray extends SystemTray {
 
                                 if (x < bounds.x) {
                                     x = bounds.x;
-                                } else if (x + size.width > bounds.x + bounds.width) {
+                                }
+                                else if (x + size.width > bounds.x + bounds.width) {
                                     // our menu cannot have the left-edge snap to the mouse
                                     // so we make the right-edge snap to the mouse
                                     x -= size.width; // snap to edge of mouse
@@ -122,7 +127,8 @@ public class GtkSystemTray extends SystemTray {
                                 // we are at the top of the screen
                                 if (y < 100) {
                                     y += distanceToEdgeOfTray + 4;
-                                } else {
+                                }
+                                else {
                                     y -= distanceToEdgeOfTray + 4;
                                 }
 
@@ -144,7 +150,8 @@ public class GtkSystemTray extends SystemTray {
     }
 
     @Override
-    public void removeTray() {
+    public
+    void removeTray() {
         libgtk.gdk_threads_enter();
         for (Pointer widget : this.widgets) {
             libgtk.gtk_widget_destroy(widget);
@@ -177,15 +184,18 @@ public class GtkSystemTray extends SystemTray {
     }
 
     @Override
-    public void setStatus(final String infoString, String iconName) {
+    public
+    void setStatus(final String infoString, String iconName) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 if (GtkSystemTray.this.connectionStatusItem == null) {
                     GtkSystemTray.this.connectionStatusItem = new JMenuItem(infoString);
                     GtkSystemTray.this.connectionStatusItem.setEnabled(false);
                     GtkSystemTray.this.jmenu.add(GtkSystemTray.this.connectionStatusItem);
-                } else {
+                }
+                else {
                     GtkSystemTray.this.connectionStatusItem.setText(infoString);
                 }
             }
@@ -200,10 +210,12 @@ public class GtkSystemTray extends SystemTray {
      * Will add a new menu entry, or update one if it already exists
      */
     @Override
-    public void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
+    public
+    void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
@@ -215,12 +227,14 @@ public class GtkSystemTray extends SystemTray {
                         menuEntry = new JMenuItem(menuText);
                         menuEntry.addActionListener(new ActionListener() {
                             @Override
-                            public void actionPerformed(ActionEvent e) {
+                            public
+                            void actionPerformed(ActionEvent e) {
 //                                SystemTrayMenuPopup source = (SystemTrayMenuPopup) ((JMenuItem)e.getSource()).getParent();
 
                                 GtkSystemTray.this.callbackExecutor.execute(new Runnable() {
                                     @Override
-                                    public void run() {
+                                    public
+                                    void run() {
                                         callback.onClick(GtkSystemTray.this);
                                     }
                                 });
@@ -229,7 +243,8 @@ public class GtkSystemTray extends SystemTray {
                         menu.add(menuEntry);
 
                         menuEntries2.put(menuText, menuEntry);
-                    } else {
+                    }
+                    else {
                         updateMenuEntry(menuText, menuText, callback);
                     }
                 }
@@ -241,10 +256,12 @@ public class GtkSystemTray extends SystemTray {
      * Will update an already existing menu entry (or add a new one, if it doesn't exist)
      */
     @Override
-    public void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
+    public
+    void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
@@ -258,10 +275,12 @@ public class GtkSystemTray extends SystemTray {
 
                         menuEntry.addActionListener(new ActionListener() {
                             @Override
-                            public void actionPerformed(ActionEvent e) {
+                            public
+                            void actionPerformed(ActionEvent e) {
                                 GtkSystemTray.this.callbackExecutor.execute(new Runnable() {
                                     @Override
-                                    public void run() {
+                                    public
+                                    void run() {
                                         newCallback.onClick(GtkSystemTray.this);
                                     }
                                 });
@@ -269,7 +288,8 @@ public class GtkSystemTray extends SystemTray {
                         });
                         menuEntry.setText(newMenuText);
                         menuEntry.revalidate();
-                    } else {
+                    }
+                    else {
                         addMenuEntry(origMenuText, newCallback);
                     }
                 }

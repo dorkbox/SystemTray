@@ -15,13 +15,17 @@
  */
 package dorkbox.util.tray;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import dorkbox.util.NamedThreadFactory;
+import dorkbox.util.OS;
+import dorkbox.util.jna.linux.AppIndicator;
+import dorkbox.util.jna.linux.GtkSupport;
+import dorkbox.util.tray.linux.AppIndicatorTray;
+import dorkbox.util.tray.linux.GtkSystemTray;
+import dorkbox.util.tray.swing.SwingSystemTray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -32,21 +36,12 @@ import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dorkbox.util.NamedThreadFactory;
-import dorkbox.util.OS;
-import dorkbox.util.jna.linux.GtkSupport;
-import dorkbox.util.tray.linux.AppIndicatorTray;
-import dorkbox.util.tray.linux.GtkSystemTray;
-import dorkbox.util.tray.swing.SwingSystemTray;
-
 
 /**
  * Interface for system tray implementations.
  */
-public abstract class SystemTray {
+public abstract
+class SystemTray {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static MessageDigest digest;
@@ -80,7 +75,7 @@ public abstract class SystemTray {
                 if (getenv != null && getenv.equals("Unity")) {
                     try {
                         trayType = AppIndicatorTray.class;
-                    } catch (Exception ignored) {
+                    } catch (Throwable ignored) {
                     }
                 }
 
@@ -107,7 +102,13 @@ public abstract class SystemTray {
                                     bin = new BufferedReader(new FileReader(status));
                                     String readLine = bin.readLine();
                                     if (readLine != null && readLine.contains("indicator-app")) {
-                                        trayType = AppIndicatorTray.class;
+                                        // make sure we can also load the library (it might be the wrong version)
+                                        try {
+                                            final AppIndicator instance = AppIndicator.INSTANCE;
+                                            trayType = AppIndicatorTray.class;
+                                        } catch (Throwable ignored) {
+                                            logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
+                                        }
                                         break;
                                     }
                                 } finally {
@@ -118,7 +119,7 @@ public abstract class SystemTray {
                                 }
                             }
                         }
-                    } catch (Exception ignored) {
+                    } catch (Throwable ignored) {
                     } finally {
                         if (bin != null) {
                             try {
@@ -128,6 +129,7 @@ public abstract class SystemTray {
                         }
                     }
                 }
+
 
                 if (trayType == null) {
                     trayType = GtkSystemTray.class;
@@ -143,7 +145,8 @@ public abstract class SystemTray {
         if (trayType == null) {
             // unsupported tray
             logger.error("Unsupported tray type!");
-        } else {
+        }
+        else {
             try {
                 digest = MessageDigest.getInstance("MD5");
             } catch (NoSuchAlgorithmException e) {
@@ -159,7 +162,8 @@ public abstract class SystemTray {
     protected volatile boolean active = false;
     protected String appName;
 
-    public static SystemTray create(String appName) {
+    public static
+    SystemTray create(String appName) {
         if (trayType != null) {
             try {
                 SystemTray newInstance = trayType.newInstance();
@@ -167,7 +171,7 @@ public abstract class SystemTray {
                     newInstance.setAppName(appName);
                 }
                 return newInstance;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -176,34 +180,43 @@ public abstract class SystemTray {
         return null;
     }
 
-    private void setAppName(String appName) {
+    private
+    void setAppName(String appName) {
         this.appName = appName;
     }
 
-    public abstract void createTray(String iconName);
+    public abstract
+    void createTray(String iconName);
 
-    public void removeTray() {
+    public
+    void removeTray() {
         SystemTray.this.callbackExecutor.shutdown();
     }
 
-    public abstract void setStatus(String infoString, String iconName);
+    public abstract
+    void setStatus(String infoString, String iconName);
 
-    public abstract void addMenuEntry(String menuText, SystemTrayMenuAction callback);
+    public abstract
+    void addMenuEntry(String menuText, SystemTrayMenuAction callback);
 
-    public abstract void updateMenuEntry(String origMenuText, String newMenuText, SystemTrayMenuAction newCallback);
+    public abstract
+    void updateMenuEntry(String origMenuText, String newMenuText, SystemTrayMenuAction newCallback);
 
 
-    protected String iconPath(String fileName) {
+    protected
+    String iconPath(String fileName) {
         // is file sitting on drive
         File iconTest;
         if (ICON_PATH.isEmpty()) {
             iconTest = new File(fileName);
-        } else {
+        }
+        else {
             iconTest = new File(ICON_PATH, fileName);
         }
         if (iconTest.isFile() && iconTest.canRead()) {
             return iconTest.getAbsolutePath();
-        } else {
+        }
+        else {
             if (!ICON_PATH.isEmpty()) {
                 fileName = ICON_PATH + "/" + fileName;
             }
@@ -291,11 +304,13 @@ public abstract class SystemTray {
         throw new RuntimeException(message);
     }
 
-    public final void setFailureCallback(FailureCallback failureCallback) {
+    public final
+    void setFailureCallback(FailureCallback failureCallback) {
         this.failureCallback = failureCallback;
     }
 
-    public final boolean isActive() {
+    public final
+    boolean isActive() {
         return this.active;
     }
 }

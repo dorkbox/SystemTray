@@ -15,13 +15,12 @@
  */
 package dorkbox.util.tray.swing;
 
-import java.awt.AWTException;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.SystemTray;
-import java.awt.TrayIcon;
+import dorkbox.util.SwingUtil;
+import dorkbox.util.tray.SystemTrayMenuAction;
+import dorkbox.util.tray.SystemTrayMenuPopup;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -29,17 +28,11 @@ import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
-
-import dorkbox.util.SwingUtil;
-import dorkbox.util.tray.SystemTrayMenuAction;
-import dorkbox.util.tray.SystemTrayMenuPopup;
-
 /**
  * Class for handling all system tray interaction, via SWING
  */
-public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
+public
+class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
     private final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
 
@@ -52,14 +45,18 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     /**
      * Creates a new system tray handler class.
      */
-    public SwingSystemTray() {}
+    public
+    SwingSystemTray() {
+    }
 
 
     @Override
-    public void removeTray() {
+    public
+    void removeTray() {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 SwingSystemTray.this.tray.remove(SwingSystemTray.this.trayIcon);
                 SwingSystemTray.this.menuEntries.clear();
             }
@@ -69,14 +66,17 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     }
 
     @Override
-    public void createTray(final String iconName) {
+    public
+    void createTray(final String iconName) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 SwingSystemTray.this.tray = SystemTray.getSystemTray();
                 if (SwingSystemTray.this.tray == null) {
                     logger.error("The system tray is not available");
-                } else {
+                }
+                else {
                     SwingSystemTray.this.jmenu = new SystemTrayMenuPopup();
 
                     Image trayImage = newImage(iconName);
@@ -85,7 +85,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
                     SwingSystemTray.this.trayIcon.addMouseListener(new MouseAdapter() {
                         @Override
-                        public void mousePressed(MouseEvent e) {
+                        public
+                        void mousePressed(MouseEvent e) {
                             Dimension size = SwingSystemTray.this.jmenu.getPreferredSize();
 
                             Point point = e.getPoint();
@@ -96,7 +97,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
                             if (y < bounds.y) {
                                 y = bounds.y;
-                            } else if (y + size.height > bounds.y + bounds.height) {
+                            }
+                            else if (y + size.height > bounds.y + bounds.height) {
                                 // our menu cannot have the top-edge snap to the mouse
                                 // so we make the bottom-edge snap to the mouse
                                 y -= size.height; // snap to edge of mouse
@@ -104,7 +106,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
                             if (x < bounds.x) {
                                 x = bounds.x;
-                            } else if (x + size.width > bounds.x + bounds.width) {
+                            }
+                            else if (x + size.width > bounds.x + bounds.width) {
                                 // our menu cannot have the left-edge snap to the mouse
                                 // so we make the right-edge snap to the mouse
                                 x -= size.width; // snap to edge of mouse
@@ -135,15 +138,18 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     }
 
     @Override
-    public void setStatus(final String infoString, final String iconName) {
+    public
+    void setStatus(final String infoString, final String iconName) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 if (SwingSystemTray.this.connectionStatusItem == null) {
                     SwingSystemTray.this.connectionStatusItem = new JMenuItem(infoString);
                     SwingSystemTray.this.connectionStatusItem.setEnabled(false);
                     SwingSystemTray.this.jmenu.add(SwingSystemTray.this.connectionStatusItem);
-                } else {
+                }
+                else {
                     SwingSystemTray.this.connectionStatusItem.setText(infoString);
                 }
             }
@@ -157,10 +163,12 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
      * Will add a new menu entry, or update one if it already exists
      */
     @Override
-    public void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
+    public
+    void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
@@ -172,10 +180,12 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                         menuEntry = new JMenuItem(menuText);
                         menuEntry.addActionListener(new ActionListener() {
                             @Override
-                            public void actionPerformed(ActionEvent e) {
+                            public
+                            void actionPerformed(ActionEvent e) {
                                 SwingSystemTray.this.callbackExecutor.execute(new Runnable() {
                                     @Override
-                                    public void run() {
+                                    public
+                                    void run() {
                                         callback.onClick(SwingSystemTray.this);
                                     }
                                 });
@@ -184,7 +194,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                         menu.add(menuEntry);
 
                         menuEntries2.put(menuText, menuEntry);
-                    } else {
+                    }
+                    else {
                         updateMenuEntry(menuText, menuText, callback);
                     }
                 }
@@ -196,10 +207,12 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
      * Will update an already existing menu entry (or add a new one, if it doesn't exist)
      */
     @Override
-    public void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
+    public
+    void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
@@ -213,10 +226,12 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
                         menuEntry.addActionListener(new ActionListener() {
                             @Override
-                            public void actionPerformed(ActionEvent e) {
+                            public
+                            void actionPerformed(ActionEvent e) {
                                 SwingSystemTray.this.callbackExecutor.execute(new Runnable() {
                                     @Override
-                                    public void run() {
+                                    public
+                                    void run() {
                                         newCallback.onClick(SwingSystemTray.this);
                                     }
                                 });
@@ -224,7 +239,8 @@ public class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                         });
                         menuEntry.setText(newMenuText);
                         menuEntry.revalidate();
-                    } else {
+                    }
+                    else {
                         addMenuEntry(origMenuText, newCallback);
                     }
                 }
