@@ -29,6 +29,10 @@ You might want to specify the root location of the icons used (to make it easier
    
    
 A *simple* example is as follows:
+   // if using provided JNA jars. Not necessary if using JNA from https://github.com/twall/jna
+    System.load("Path to OS specific JNA jar");
+
+
    this.systemTray = SystemTray.create("Dorkbox");
 
    this.systemTray.createTray("grey_icon.png");
