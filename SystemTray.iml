@@ -4,47 +4,23 @@
     <libelement value="jar://$MODULE_DIR$/libs/jna/jna-4.1.0.jar!/" />
     <libelement value="jar://$MODULE_DIR$/libs/dorkboxUtil.jar!/" />
     <libelement value="jar://$MODULE_DIR$/libs/logging/slf4j-api-1.7.5.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/libs/slf4j-api-1.7.5.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/libs/dorkboxUtil_v1.0.jar!/" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
     </src_description>
   </component>
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/classes" />
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="jdk" jdkName="JavaSE-1.7" jdkType="JavaSDK" />
-    <orderEntry type="module-library">
-      <library name="jna-4.1.0.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/jna/jna-4.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/libs/jna/jna-4.1.0-sources.zip!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="dorkboxUtil.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/dorkboxUtil.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="slf4j-api-1.7.5.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/logging/slf4j-api-1.7.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
+    <orderEntry type="module" module-name="Dorkbox-Util" />
+    <orderEntry type="module" module-name="JavaLauncher-Util" />
+    <orderEntry type="library" name="jna (4.1.0)" level="application" />
+    <orderEntry type="library" name="logging slf4j-api (1.7.5)" level="application" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">
