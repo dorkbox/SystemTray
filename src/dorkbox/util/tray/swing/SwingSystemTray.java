@@ -15,6 +15,7 @@
  */
 package dorkbox.util.tray.swing;
 
+import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.tray.SystemTrayMenuAction;
 import dorkbox.util.tray.SystemTrayMenuPopup;
@@ -34,13 +35,13 @@ import java.util.Map;
 public
 class SwingSystemTray extends dorkbox.util.tray.SystemTray {
 
-    private final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
+    final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
 
-    private volatile SystemTrayMenuPopup jmenu;
-    private volatile JMenuItem connectionStatusItem;
+    volatile SystemTrayMenuPopup jmenu;
+    volatile JMenuItem connectionStatusItem;
 
-    private volatile SystemTray tray;
-    private volatile TrayIcon trayIcon;
+    volatile SystemTray tray;
+    volatile TrayIcon trayIcon;
 
     /**
      * Creates a new system tray handler class.
@@ -65,6 +66,7 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
         super.removeTray();
     }
 
+    @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
     void createTray(final String iconName) {
@@ -79,18 +81,20 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                 else {
                     SwingSystemTray.this.jmenu = new SystemTrayMenuPopup();
 
-                    Image trayImage = newImage(iconName);
-                    SwingSystemTray.this.trayIcon = new TrayIcon(trayImage);
-                    SwingSystemTray.this.trayIcon.setToolTip(SwingSystemTray.this.appName);
+                    final Image trayImage = newImage(iconName);
+                    final TrayIcon trayIcon = new TrayIcon(trayImage);
+                    SwingSystemTray.this.trayIcon = trayIcon;
+                    trayIcon.setToolTip(SwingSystemTray.this.appName);
 
-                    SwingSystemTray.this.trayIcon.addMouseListener(new MouseAdapter() {
+                    trayIcon.addMouseListener(new MouseAdapter() {
                         @Override
                         public
                         void mousePressed(MouseEvent e) {
-                            Dimension size = SwingSystemTray.this.jmenu.getPreferredSize();
+                            final SystemTrayMenuPopup jmenu = SwingSystemTray.this.jmenu;
+                            Dimension size = jmenu.getPreferredSize();
 
                             Point point = e.getPoint();
-                            Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
+                            Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
                             int x = point.x;
                             int y = point.y;
@@ -113,15 +117,15 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                                 x -= size.width; // snap to edge of mouse
                             }
 
-                            SwingSystemTray.this.jmenu.setInvoker(SwingSystemTray.this.jmenu);
-                            SwingSystemTray.this.jmenu.setLocation(x, y);
-                            SwingSystemTray.this.jmenu.setVisible(true);
-                            SwingSystemTray.this.jmenu.requestFocus();
+                            jmenu.setInvoker(jmenu);
+                            jmenu.setLocation(x, y);
+                            jmenu.setVisible(true);
+                            jmenu.requestFocus();
                         }
                     });
 
                     try {
-                        SwingSystemTray.this.tray.add(SwingSystemTray.this.trayIcon);
+                        SwingSystemTray.this.tray.add(trayIcon);
                         SwingSystemTray.this.active = true;
                     } catch (AWTException e) {
                         logger.error("TrayIcon could not be added.", e);
@@ -137,6 +141,7 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
         return new ImageIcon(iconPath).getImage().getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
     }
 
+    @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
     void setStatus(final String infoString, final String iconName) {
@@ -145,9 +150,11 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             public
             void run() {
                 if (SwingSystemTray.this.connectionStatusItem == null) {
-                    SwingSystemTray.this.connectionStatusItem = new JMenuItem(infoString);
-                    SwingSystemTray.this.connectionStatusItem.setEnabled(false);
-                    SwingSystemTray.this.jmenu.add(SwingSystemTray.this.connectionStatusItem);
+                    final JMenuItem connectionStatusItem = new JMenuItem(infoString);
+                    connectionStatusItem.setEnabled(false);
+                    SwingSystemTray.this.jmenu.add(connectionStatusItem);
+
+                    SwingSystemTray.this.connectionStatusItem = connectionStatusItem;
                 }
                 else {
                     SwingSystemTray.this.connectionStatusItem.setText(infoString);
@@ -166,10 +173,11 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     public
     void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
         SwingUtil.invokeAndWait(new Runnable() {
+            @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
             @Override
             public
             void run() {
-                Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
+                final Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
                     JMenuItem menuEntry = menuEntries2.get(menuText);
@@ -210,10 +218,11 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     public
     void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
         SwingUtil.invokeAndWait(new Runnable() {
+            @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
             @Override
             public
             void run() {
-                Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
+                final Map<String, JMenuItem> menuEntries2 = SwingSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
                     JMenuItem menuEntry = menuEntries2.get(origMenuText);

@@ -16,6 +16,7 @@
 package dorkbox.util.tray.linux;
 
 import com.sun.jna.Pointer;
+import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
@@ -44,15 +45,18 @@ class GtkSystemTray extends SystemTray {
     private static final Gobject libgobject = Gobject.INSTANCE;
     private static final Gtk libgtk = Gtk.INSTANCE;
 
-    private final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
+    final Map<String, JMenuItem> menuEntries = new HashMap<String, JMenuItem>(2);
 
-    private volatile SystemTrayMenuPopup jmenu;
-    private volatile JMenuItem connectionStatusItem;
+    volatile SystemTrayMenuPopup jmenu;
+    volatile JMenuItem connectionStatusItem;
 
     private volatile Pointer trayIcon;
 
     // need to hang on to these to prevent gc
     private final List<Pointer> widgets = new ArrayList<Pointer>(4);
+
+    // have to make this a field, to prevent GC on this object
+    @SuppressWarnings("FieldCanBeLocal")
     private Gobject.GEventCallback gtkCallback;
 
     public
@@ -72,10 +76,11 @@ class GtkSystemTray extends SystemTray {
 
         libgtk.gdk_threads_enter();
 
-        this.trayIcon = libgtk.gtk_status_icon_new();
-        libgtk.gtk_status_icon_set_from_file(this.trayIcon, iconPath(iconName));
-        libgtk.gtk_status_icon_set_tooltip(this.trayIcon, this.appName);
-        libgtk.gtk_status_icon_set_visible(this.trayIcon, true);
+        final Pointer trayIcon = libgtk.gtk_status_icon_new();
+        this.trayIcon = trayIcon;
+        libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
+        libgtk.gtk_status_icon_set_tooltip(trayIcon, this.appName);
+        libgtk.gtk_status_icon_set_visible(trayIcon, true);
 
         // have to make this a field, to prevent GC on this object
         this.gtkCallback = new Gobject.GEventCallback() {
@@ -90,17 +95,18 @@ class GtkSystemTray extends SystemTray {
                         void run() {
                             // test this using cinnamon (which still uses status icon)
 
-                            if (GtkSystemTray.this.jmenu.isVisible()) {
-                                GtkSystemTray.this.jmenu.setVisible(false);
+                            final SystemTrayMenuPopup jmenu = GtkSystemTray.this.jmenu;
+                            if (jmenu.isVisible()) {
+                                jmenu.setVisible(false);
                             }
                             else {
-                                Dimension size = GtkSystemTray.this.jmenu.getPreferredSize();
+                                Dimension size = jmenu.getPreferredSize();
 
                                 int x = (int) event.x_root;
                                 int y = (int) event.y_root;
 
                                 Point point = new Point(x, y);
-                                Rectangle bounds = SwingUtil.getScreenBoundsAt(point);
+                                Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
                                 if (y < bounds.y) {
                                     y = bounds.y;
@@ -132,10 +138,10 @@ class GtkSystemTray extends SystemTray {
                                     y -= distanceToEdgeOfTray + 4;
                                 }
 
-                                GtkSystemTray.this.jmenu.setInvoker(GtkSystemTray.this.jmenu);
-                                GtkSystemTray.this.jmenu.setLocation(x, y);
-                                GtkSystemTray.this.jmenu.setVisible(true);
-                                GtkSystemTray.this.jmenu.requestFocus();
+                                jmenu.setInvoker(jmenu);
+                                jmenu.setLocation(x, y);
+                                jmenu.setVisible(true);
+                                jmenu.requestFocus();
                             }
                         }
                     });
@@ -143,12 +149,13 @@ class GtkSystemTray extends SystemTray {
             }
         };
         // all the clicks. This is because native menu popups are a pain to figure out, so we cheat and use some java bits to do the popup
-        libgobject.g_signal_connect_data(this.trayIcon, "button_press_event", this.gtkCallback, null, null, 0);
+        libgobject.g_signal_connect_data(trayIcon, "button_press_event", this.gtkCallback, null, null, 0);
         libgtk.gdk_threads_leave();
 
         this.active = true;
     }
 
+    @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
     void removeTray() {
@@ -183,6 +190,7 @@ class GtkSystemTray extends SystemTray {
         super.removeTray();
     }
 
+    @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
     void setStatus(final String infoString, String iconName) {
@@ -191,9 +199,10 @@ class GtkSystemTray extends SystemTray {
             public
             void run() {
                 if (GtkSystemTray.this.connectionStatusItem == null) {
-                    GtkSystemTray.this.connectionStatusItem = new JMenuItem(infoString);
-                    GtkSystemTray.this.connectionStatusItem.setEnabled(false);
-                    GtkSystemTray.this.jmenu.add(GtkSystemTray.this.connectionStatusItem);
+                    final JMenuItem connectionStatusItem = new JMenuItem(infoString);
+                    GtkSystemTray.this.connectionStatusItem = connectionStatusItem;
+                    connectionStatusItem.setEnabled(false);
+                    GtkSystemTray.this.jmenu.add(connectionStatusItem);
                 }
                 else {
                     GtkSystemTray.this.connectionStatusItem.setText(infoString);
@@ -213,10 +222,11 @@ class GtkSystemTray extends SystemTray {
     public
     void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
         SwingUtil.invokeAndWait(new Runnable() {
+            @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
             @Override
             public
             void run() {
-                Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
+                final Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
                     JMenuItem menuEntry = menuEntries2.get(menuText);
@@ -259,10 +269,11 @@ class GtkSystemTray extends SystemTray {
     public
     void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
         SwingUtil.invokeAndWait(new Runnable() {
+            @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
             @Override
             public
             void run() {
-                Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
+                final Map<String, JMenuItem> menuEntries2 = GtkSystemTray.this.menuEntries;
 
                 synchronized (menuEntries2) {
                     JMenuItem menuEntry = menuEntries2.get(origMenuText);
