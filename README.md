@@ -10,8 +10,8 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
 1. Swing system-tray icons on linux **do not** support transparent backgrounds (they have a white background)
 2. Swing/SWT **do not** support app-indicators, which are necessary on more recent versions of linux
 3. Swing popup menus look like crap  
-    - system-tray icons use a JMenuPopup, which looks nicer than the java 'regular' one.
-    - app-indicators use native popups.
+    - swing-based system-tray uses a JMenuPopup, which looks nicer than the java 'regular' one.
+    - app-indicators use native popups (a system limitation).
 
 
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
