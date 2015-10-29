@@ -15,12 +15,12 @@
  * limitations under the License.
  *
  *
- * This is heavily modified from an online email from Vladimir Khrustalev.
+ * This is heavily modified from an online email/pastebin by Vladimir Khrustalev.
  *
- * The source material is NOT GPLx/MIT/BSD/Apache/etc, because those licenses
- * were  not  specified in accordance with those license requirements (there
- * was no license specified or implied). As such, this is to be considered as
- * released by the original sources as public domain.
+ * The source material was not licensed explicitly or implicitly, as such,
+ * this is considered as released by the original sources as public domain.
+ *
+ * Vladimir's email address is unknown.
  */
 
 const Clutter = imports.gi.Clutter;
@@ -35,6 +35,7 @@ const Meta = imports.gi.Meta;
 const Mainloop = imports.mainloop;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
+let APP_NAME = "SystemTray@Dorkbox";
 let trayAddedId = 0;
 let orig_onTrayIconAdded;
 
@@ -138,8 +139,7 @@ function installHook() {
 
             let icon = source.trayIcon;
 
-            // we could set the title in java, HOWEVER because of race conditions, it's not consistent. So we check for 'java'
-            if (icon.title !== "java") {
+            if (icon.title !== APP_NAME) {
                 continue;
             }
 
@@ -155,8 +155,7 @@ function installHook() {
             let button = notificationDaemon._iconBox.get_child_at_index(i);
             let icon = button.child;
 
-            // we could set the title in java, HOWEVER because of race conditions, it's not consistent. So we check for 'java'
-            if (icon.title !== "java") {
+            if (icon.title !== APP_NAME) {
                 continue;
             }
 
@@ -173,14 +172,13 @@ function installHook() {
 }
 
 function getSourceHook (title, pid, ndata, sender, trayIcon) {
-    // we could set the title in java, HOWEVER because of race conditions, it's not consistent. So we check for 'java'
-    if (trayIcon && title === "java") {
+    if (trayIcon && title === APP_NAME) {
         //global.log("create source");
         onTrayIconAdded(this, trayIcon);
         return null;
     }
 
-    return getSource(title, pid, ndata, sender, trayIcon);
+    return orig_getSource(title, pid, ndata, sender, trayIcon);
 }
 
 // this is the hook that lets us only add ourselves.
@@ -192,8 +190,7 @@ function onTrayIconAdded(o, icon) {
         return;
     }
 
-    // we could set the title in java, HOWEVER because of race conditions, it's not consistent. So we check for 'java'
-    if (icon.title !== "java") {
+    if (icon.title !== APP_NAME) {
         orig_onTrayIconAdded(o, icon);
         return;
     }
@@ -253,8 +250,7 @@ function onTrayIconAdded(o, icon) {
 function onTrayIconRemoved(o, icon) {
     //global.log("removing tray icon " + icon.title);
 
-    // we could set the title in java, HOWEVER because of race conditions, it's not consistent. So we check for 'java'
-    if (icon.title !== "java") {
+    if (icon.title !== APP_NAME) {
         orig_onTrayIconRemoved(o, icon);
         return;
     }

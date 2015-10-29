@@ -60,11 +60,14 @@ class GtkSystemTray extends SystemTray {
     void createTray(String iconName) {
         libgtk.gdk_threads_enter();
 
-        this.menu = libgtk.gtk_menu_new();
-
         final Pointer trayIcon = libgtk.gtk_status_icon_new();
+        libgtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
+        libgtk.gtk_status_icon_set_tooltip(trayIcon, "SystemTray@Dorkbox");
+        this.trayIcon = trayIcon;
+
         libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
 
+        this.menu = libgtk.gtk_menu_new();
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
             public
@@ -75,19 +78,14 @@ class GtkSystemTray extends SystemTray {
                 }
             }
         };
-
         libgobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, menu, null, 0);
 
-//       This is unreliable to use in our gnome-shell notification hook, because of race conditions, it will only sometimes be correct
-//        libgtk.gtk_status_icon_set_title(trayIcon, "something");
-
-        libgtk.gtk_status_icon_set_tooltip(trayIcon, this.appName);
         libgtk.gtk_status_icon_set_visible(trayIcon, true);
-
-        this.trayIcon = trayIcon;
 
         libgtk.gdk_threads_leave();
 
+        System.err.println("POW2");
+        GtkSupport.startGui();
         this.active = true;
     }
 
@@ -111,7 +109,7 @@ class GtkSystemTray extends SystemTray {
         this.widgets.clear();
 
         // unrefs the children too
-        libgobject.g_object_unref(this.menu);
+        // libgobject.g_object_unref(this.menu); shouldn't do this because of how we use it
         this.menu = null;
 
         synchronized (this.menuEntries) {
@@ -120,7 +118,7 @@ class GtkSystemTray extends SystemTray {
 
         this.connectionStatusItem = null;
 
-        GtkSupport.shutdownGTK();
+        GtkSupport.shutdownGui();
 
         libgtk.gdk_threads_leave();
         super.removeTray();

@@ -78,7 +78,6 @@ class SystemTray {
         }
 
         if (OS.isLinux()) {
-            GtkSupport.init();
             if (GtkSupport.isSupported) {
                 // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
                 String getenv = System.getenv("XDG_CURRENT_DESKTOP");

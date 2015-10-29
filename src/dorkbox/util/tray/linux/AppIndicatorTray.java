@@ -101,6 +101,7 @@ class AppIndicatorTray extends SystemTray {
 
         libgtk.gdk_threads_leave();
 
+        GtkSupport.startGui();
         this.active = true;
     }
 
@@ -133,12 +134,13 @@ class AppIndicatorTray extends SystemTray {
         }
 
         this.connectionStatusItem = null;
-        GtkSupport.shutdownGTK();
+        GtkSupport.shutdownGui();
 
         libgtk.gdk_threads_leave();
         super.removeTray();
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public
     void setStatus(String infoString, String iconName) {
@@ -162,6 +164,7 @@ class AppIndicatorTray extends SystemTray {
     /**
      * Will add a new menu entry, or update one if it already exists
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public
     void addMenuEntry(String menuText, final SystemTrayMenuAction callback) {
@@ -213,6 +216,7 @@ class AppIndicatorTray extends SystemTray {
     public
     void updateMenuEntry(String origMenuText, String newMenuText, final SystemTrayMenuAction newCallback) {
         synchronized (this.menuEntries) {
+            @SuppressWarnings("Duplicates")
             MenuEntry menuEntry = this.menuEntries.get(origMenuText);
 
             if (menuEntry != null) {
