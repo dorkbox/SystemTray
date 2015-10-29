@@ -24,6 +24,7 @@ Customization parameters:
 SystemTrayMenuPopup.hidePopupDelay  (type long, default value '1000L')
  - Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
 
+
 GnomeShellExtension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
  - Permit the gnome-shell to be restarted when the extension is installed.
 
@@ -79,16 +80,16 @@ Note: If you use the attached JNA libraries, you **MUST** load the respective
       been removed from the jar)
 ```
 ```
-Note: This project was heavily influence by the excellent Lantern project,
+Note: This project was heavily influenced by the excellent Lantern project,
       *Many* thanks to them for figuring out AppIndicators via JNA.
       https://github.com/getlantern/lantern
 ```
 ```
 Note: Gnome-shell users will experience an extension install to also support this
       functionality. Additionally, a shell restart is necessary for the extension
-      to be noticed by the shell. You can disable the restart behavior if you like,
-      and the 'system tray' functinality will be picked up on log out/in, or a
-      manual restart.
+      to be registered by the shell. You can disable the restart behavior if you like,
+      and the 'system tray' functionality will be picked up on log out/in, or a
+      system restart.
    
       Also, screw you gnome-project leads, for making it such a pain-in-the-ass
       to do something so incredibly simple and basic.
