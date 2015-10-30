@@ -22,7 +22,7 @@
     <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
     <orderEntry type="module" module-name="Dorkbox-Util" />
     <orderEntry type="module" module-name="JavaLauncher-Util" />
-    <orderEntry type="library" name="jna (4.1.0)" level="application" />
+    <orderEntry type="library" name="jna (4.2.1)" level="application" />
     <orderEntry type="library" name="logging slf4j-api (1.7.5)" level="application" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
