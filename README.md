@@ -45,11 +45,13 @@ SystemTray.TRAY_SIZE   (type int, default value '24')
 SystemTray.ICON_PATH    (type String, default value '')
  - Location of the icon (to make it easier when specifying icons)
  - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
-
+of the library.
+```
    
    
    
-The test application is under text, and a *simple* example is as follows:
+The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
+```
    // if using provided JNA jars. Not necessary if
    //using JNA from https://github.com/twall/jna
    System.load("Path to OS specific JNA jar");
