@@ -9,7 +9,7 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
 
 1. Swing system-tray icons on linux **do not** support transparent backgrounds (they have a white background)
 2. Swing/SWT **do not** support app-indicators, which are necessary on more recent versions of gnu/linux distros.
-3. Swing popup menus look like crap  
+3. Swing popup menus look like crap
     - swing-based system-tray uses a JMenuPopup, which looks nicer than the java 'regular' one.
     - app-indicators use native popups.
     - gtk-indicators use native popups.
@@ -38,7 +38,7 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
 
 
 SystemTray.TRAY_SIZE   (type int, default value '24')
- - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
+ - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact). This only applies for Swing tray icons.
  - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
  
 

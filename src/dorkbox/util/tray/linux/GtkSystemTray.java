@@ -19,13 +19,6 @@ import com.sun.jna.Pointer;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkSupport;
-import dorkbox.util.tray.SystemTray;
-import dorkbox.util.tray.SystemTrayMenuAction;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -33,36 +26,22 @@ import java.util.Map;
  * This is the "old" way to do it, and does not work with some desktop environments.
  */
 public
-class GtkSystemTray extends SystemTray {
-    private static final Gobject libgobject = Gobject.INSTANCE;
-    private static final Gtk libgtk = Gtk.INSTANCE;
-
-    private final Map<String, MenuEntry> menuEntries = new HashMap<String, MenuEntry>(2);
-
-    private volatile Pointer menu;
-    private volatile Pointer connectionStatusItem;;
-
+class GtkSystemTray extends GtkTypeSystemTray {
     private volatile Pointer trayIcon;
-
-    // need to hang on to these to prevent gc
-    private final List<Pointer> widgets = new ArrayList<Pointer>(4);
 
     // have to make this a field, to prevent GC on this object
     @SuppressWarnings("FieldCanBeLocal")
     private Gobject.GEventCallback gtkCallback;
 
     public
-    GtkSystemTray() {
-    }
+    GtkSystemTray(String iconName) {
+        super();
 
-    @Override
-    public
-    void createTray(String iconName) {
         libgtk.gdk_threads_enter();
 
         final Pointer trayIcon = libgtk.gtk_status_icon_new();
         libgtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
-        libgtk.gtk_status_icon_set_tooltip(trayIcon, "SystemTray@Dorkbox");
+
         this.trayIcon = trayIcon;
 
         libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
@@ -79,157 +58,35 @@ class GtkSystemTray extends SystemTray {
             }
         };
         libgobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, menu, null, 0);
-
         libgtk.gtk_status_icon_set_visible(trayIcon, true);
 
         libgtk.gdk_threads_leave();
 
-        System.err.println("POW2");
         GtkSupport.startGui();
-        this.active = true;
     }
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
-    void removeTray() {
+    void shutdown() {
         libgtk.gdk_threads_enter();
-        for (Pointer widget : this.widgets) {
-            libgtk.gtk_widget_destroy(widget);
-        }
 
         // this hides the indicator
         libgtk.gtk_status_icon_set_visible(this.trayIcon, false);
         libgobject.g_object_unref(this.trayIcon);
 
-        this.active = false;
-
         // GC it
         this.trayIcon = null;
-        this.widgets.clear();
 
-        // unrefs the children too
-        // libgobject.g_object_unref(this.menu); shouldn't do this because of how we use it
-        this.menu = null;
-
-        synchronized (this.menuEntries) {
-            this.menuEntries.clear();
-        }
-
-        this.connectionStatusItem = null;
-
-        GtkSupport.shutdownGui();
-
-        libgtk.gdk_threads_leave();
-        super.removeTray();
+//        libgtk.gdk_threads_leave(); called by parent class
+        super.shutdown();
     }
 
-    @SuppressWarnings({"FieldRepeatedlyAccessedInMethod", "Duplicates"})
     @Override
     public
-    void setStatus(final String infoString, String iconName) {
+    void setIcon(final String iconName) {
         libgtk.gdk_threads_enter();
-        if (this.connectionStatusItem == null) {
-            this.connectionStatusItem = libgtk.gtk_menu_item_new_with_label(infoString);
-            this.widgets.add(this.connectionStatusItem);
-            libgtk.gtk_widget_set_sensitive(this.connectionStatusItem, Gtk.FALSE);
-            libgtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
-        }
-        else {
-            libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
-        }
-
-        libgtk.gtk_widget_show_all(this.connectionStatusItem);
-
-        libgtk.gtk_status_icon_set_from_file(GtkSystemTray.this.trayIcon, iconPath(iconName));
+        libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
         libgtk.gdk_threads_leave();
-    }
-
-    /**
-     * Will add a new menu entry, or update one if it already exists
-     */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public
-    void addMenuEntry(final String menuText, final SystemTrayMenuAction callback) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = this.menuEntries.get(menuText);
-
-            if (menuEntry == null) {
-                libgtk.gdk_threads_enter();
-
-                Pointer dashboardItem = libgtk.gtk_menu_item_new_with_label(menuText);
-
-                // have to watch out! These can get garbage collected!
-                Gobject.GCallback gtkCallback = new Gobject.GCallback() {
-                    @Override
-                    public
-                    void callback(Pointer instance, Pointer data) {
-                        GtkSystemTray.this.callbackExecutor.execute(new Runnable() {
-                            @Override
-                            public
-                            void run() {
-                                callback.onClick(GtkSystemTray.this);
-                            }
-                        });
-                    }
-                };
-
-                libgobject.g_signal_connect_data(dashboardItem, "activate", gtkCallback, null, null, 0);
-                libgtk.gtk_menu_shell_append(this.menu, dashboardItem);
-                libgtk.gtk_widget_show_all(dashboardItem);
-
-                libgtk.gdk_threads_leave();
-
-                menuEntry = new MenuEntry();
-                menuEntry.dashboardItem = dashboardItem;
-                menuEntry.gtkCallback = gtkCallback;
-
-                this.menuEntries.put(menuText, menuEntry);
-            }
-            else {
-                updateMenuEntry(menuText, menuText, callback);
-            }
-        }
-    }
-
-    /**
-     * Will update an already existing menu entry (or add a new one, if it doesn't exist)
-     */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public
-    void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = this.menuEntries.get(origMenuText);
-
-            if (menuEntry != null) {
-                libgtk.gdk_threads_enter();
-                libgtk.gtk_menu_item_set_label(menuEntry.dashboardItem, newMenuText);
-
-                // have to watch out! These can get garbage collected!
-                menuEntry.gtkCallback = new Gobject.GCallback() {
-                    @Override
-                    public
-                    void callback(Pointer instance, Pointer data) {
-                        GtkSystemTray.this.callbackExecutor.execute(new Runnable() {
-                            @Override
-                            public
-                            void run() {
-                                newCallback.onClick(GtkSystemTray.this);
-                            }
-                        });
-                    }
-                };
-
-                libgobject.g_signal_connect_data(menuEntry.dashboardItem, "activate", menuEntry.gtkCallback, null, null, 0);
-
-                libgtk.gtk_widget_show_all(menuEntry.dashboardItem);
-                libgtk.gdk_threads_leave();
-            }
-            else {
-                addMenuEntry(origMenuText, newCallback);
-            }
-        }
     }
 }
