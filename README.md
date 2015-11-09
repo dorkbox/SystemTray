@@ -55,10 +55,9 @@ The test application is under text, and a *simple* example is as follows:
    System.load("Path to OS specific JNA jar");
 
 
-   this.systemTray = SystemTray.create("Dorkbox");
+   this.systemTray = SystemTray.create("grey_icon.png");
 
-   this.systemTray.createTray("grey_icon.png");
-   this.systemTray.setStatus("Not Running", "grey_icon.png");
+   this.systemTray.setStatus("Not Running");
    
    this.systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
         @Override
