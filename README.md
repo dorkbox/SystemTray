@@ -49,7 +49,7 @@ SystemTray.ICON_PATH    (type String, default value '')
    
    
    
-A *simple* example is as follows:
+The test application is under text, and a *simple* example is as follows:
    // if using provided JNA jars. Not necessary if
    //using JNA from https://github.com/twall/jna
    System.load("Path to OS specific JNA jar");
@@ -61,12 +61,12 @@ A *simple* example is as follows:
    this.systemTray.setStatus("Not Running", "grey_icon.png");
    
    this.systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
-      @Override
-      public void onClick(SystemTray systemTray) {
-        systemTray.removeTray();
-        // exit or something.
-      }
-   });
+        @Override
+        public
+        void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            System.exit(0);
+        }
+    });
 ```
 ```
 Note: This library does NOT use SWT for system-tray support, only for the purpose
@@ -85,7 +85,7 @@ Note: This project was heavily influenced by the excellent Lantern project,
       https://github.com/getlantern/lantern
 ```
 ```
-Note: Gnome-shell users will experience an extension install to also support this
+Note: Gnome-shell users will experience an extension install to support this
       functionality. Additionally, a shell restart is necessary for the extension
       to be registered by the shell. You can disable the restart behavior if you like,
       and the 'system tray' functionality will be picked up on log out/in, or a
@@ -93,5 +93,10 @@ Note: Gnome-shell users will experience an extension install to also support thi
    
       Also, screw you gnome-project leads, for making it such a pain-in-the-ass
       to do something so incredibly simple and basic.
+      
+Note: Some desktop environments might use a dated version of libappindicator, when 
+      icon support in menus was removed, then put back. This happened in version 3.
+      This library will try to load a GTK indicator instead when it can, or will try
+      to load libappindicator1 first. Thank you RedHat for putting it back.
 ```
 
