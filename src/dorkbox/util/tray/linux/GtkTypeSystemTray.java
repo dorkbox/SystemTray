@@ -57,7 +57,8 @@ class GtkTypeSystemTray extends SystemTray {
         this.widgets.clear();
 
         // unrefs the children too
-        libgobject.g_object_unref(this.menu);
+        // GTK menu needs a "ref_sink"
+        libgobject.g_object_ref_sink(this.menu);
         this.menu = null;
 
         synchronized (this.menuEntries) {
