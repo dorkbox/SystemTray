@@ -30,19 +30,19 @@ import dorkbox.util.jna.linux.GtkSupport;
  */
 public
 class AppIndicatorTray extends GtkTypeSystemTray {
-    private static final AppIndicator libappindicator = AppIndicator.INSTANCE;
+    private static final AppIndicator appindicator = AppIndicator.INSTANCE;
 
     private AppIndicator.AppIndicatorInstanceStruct appIndicator;
 
     public
     AppIndicatorTray(String iconName) {
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
         String icon_name = iconPath(iconName);
-        this.appIndicator = libappindicator.app_indicator_new(System.nanoTime() + "DBST", icon_name,
-                                                              AppIndicator.CATEGORY_APPLICATION_STATUS);
-        libappindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
+        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", icon_name,
+                                                           AppIndicator.CATEGORY_APPLICATION_STATUS);
+        appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
 
         GtkSupport.startGui();
     }
@@ -50,26 +50,26 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     @Override
     public synchronized
     void shutdown() {
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
         // this hides the indicator
-        libappindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_PASSIVE);
+        appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_PASSIVE);
         Pointer p = this.appIndicator.getPointer();
-        libgobject.g_object_unref(p);
+        gobject.g_object_unref(p);
 
         // GC it
         this.appIndicator = null;
 
-//        libgtk.gdk_threads_leave(); called by parent class
+//        libgtk.gdk_threads_leave(); called by super class
         super.shutdown();
     }
 
     @Override
     public synchronized
     void setIcon(final String iconName) {
-        libgtk.gdk_threads_enter();
-        libappindicator.app_indicator_set_icon(this.appIndicator, iconPath(iconName));
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_enter();
+        appindicator.app_indicator_set_icon(this.appIndicator, iconPath(iconName));
+        gtk.gdk_threads_leave();
     }
 
 
@@ -78,6 +78,6 @@ class AppIndicatorTray extends GtkTypeSystemTray {
      */
     protected
     void onMenuAdded(final Pointer menu) {
-        libappindicator.app_indicator_set_menu(this.appIndicator, menu);
+        appindicator.app_indicator_set_menu(this.appIndicator, menu);
     }
 }

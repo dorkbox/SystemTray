@@ -29,8 +29,9 @@ import java.util.concurrent.Executors;
 
 public abstract
 class GtkTypeSystemTray extends SystemTray {
-    protected static final Gobject libgobject = Gobject.INSTANCE;
-    protected static final Gtk libgtk = Gtk.INSTANCE;
+    protected static final Gobject gobject = Gobject.INSTANCE;
+    protected static final Gtk gtk = Gtk.INSTANCE;
+//    protected static final GLib glib = GLib.INSTANCE;
 
     final static ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
 
@@ -44,38 +45,38 @@ class GtkTypeSystemTray extends SystemTray {
         obliterateMenu();
         GtkSupport.shutdownGui();
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
 
         callbackExecutor.shutdown();
     }
 
     @Override
     public synchronized
-    void setStatus(String infoString) {
-        libgtk.gdk_threads_enter();
+    void setStatus(final String infoString) {
+        gtk.gdk_threads_enter();
 
         if (this.connectionStatusItem == null && infoString != null && !infoString.isEmpty()) {
             deleteMenu();
 
-            this.connectionStatusItem = libgtk.gtk_menu_item_new_with_label("");
-            libgobject.g_object_ref(connectionStatusItem); // so it matches with 'createMenu'
+            this.connectionStatusItem = gtk.gtk_menu_item_new_with_label("");
+            gobject.g_object_ref(connectionStatusItem); // so it matches with 'createMenu'
 
             // evil hacks abound...
-            Pointer label = libgtk.gtk_bin_get_child(connectionStatusItem);
-            libgtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-            Pointer markup = libgobject.g_markup_printf_escaped("<b>%s</b>", infoString);
-            libgtk.gtk_label_set_markup(label, markup);
-            libgobject.g_free(markup);
+            Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
+            gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+            Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+            gtk.gtk_label_set_markup(label, markup);
+            gobject.g_free(markup);
 
 
-            libgtk.gtk_widget_set_sensitive(this.connectionStatusItem, Gtk.FALSE);
+            gtk.gtk_widget_set_sensitive(this.connectionStatusItem, Gtk.FALSE);
 
             createMenu();
         }
         else {
             if (infoString == null || infoString.isEmpty()) {
                 deleteMenu();
-                libgtk.gtk_widget_destroy(connectionStatusItem);
+                gtk.gtk_widget_destroy(connectionStatusItem);
                 connectionStatusItem = null;
 
                 createMenu();
@@ -85,17 +86,17 @@ class GtkTypeSystemTray extends SystemTray {
                 // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
 
                 // evil hacks abound...
-                Pointer label = libgtk.gtk_bin_get_child(connectionStatusItem);
-                libgtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                Pointer markup = libgobject.g_markup_printf_escaped("<b>%s</b>", infoString);
-                libgtk.gtk_label_set_markup(label, markup);
-                libgobject.g_free(markup);
+                Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
+                gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+                Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+                gtk.gtk_label_set_markup(label, markup);
+                gobject.g_free(markup);
 
-                libgtk.gtk_widget_show_all(menu);
+                gtk.gtk_widget_show_all(menu);
             }
         }
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
     }
 
     /**
@@ -115,7 +116,7 @@ class GtkTypeSystemTray extends SystemTray {
         if (menu != null) {
             // have to remove status from menu
             if (connectionStatusItem != null) {
-                libgtk.gtk_widget_destroy(connectionStatusItem);
+                gtk.gtk_widget_destroy(connectionStatusItem);
                 connectionStatusItem = null;
             }
 
@@ -128,7 +129,7 @@ class GtkTypeSystemTray extends SystemTray {
             menuEntries.clear();
 
             // GTK menu needs a "ref_sink"
-            libgobject.g_object_ref_sink(menu);
+            gobject.g_object_ref_sink(menu);
         }
     }
 
@@ -139,37 +140,32 @@ class GtkTypeSystemTray extends SystemTray {
         if (menu != null) {
             // have to remove status from menu
             if (connectionStatusItem != null) {
-                libgobject.g_object_ref(connectionStatusItem);
+                gobject.g_object_ref(connectionStatusItem);
 
-                libgtk.gtk_container_remove(menu, connectionStatusItem);
+                gtk.gtk_container_remove(menu, connectionStatusItem);
             }
 
             // have to remove all other menu entries
             for (int i = 0; i < menuEntries.size(); i++) {
                 GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
 
-                libgobject.g_object_ref(menuEntry__.menuItem);
-                libgtk.gtk_container_remove(menu, menuEntry__.menuItem);
+                gobject.g_object_ref(menuEntry__.menuItem);
+                gtk.gtk_container_remove(menu, menuEntry__.menuItem);
             }
 
             // GTK menu needs a "ref_sink"
-            libgobject.g_object_ref_sink(menu);
-
-            // have to 'blip' the thread, so that the state can catch up. Stupid, i know, and I am open to suggestions to fixing bizzare
-            // race conditions with GTK...
-            libgtk.gdk_threads_leave();
-            libgtk.gdk_threads_enter();
+            gobject.g_object_ref_sink(menu);
         }
 
-        menu = libgtk.gtk_menu_new();
+        menu = gtk.gtk_menu_new();
     }
 
     // UNSAFE. must be protected inside synchronized, and inside threads_enter/exit
     void createMenu() {
         // now add status
         if (connectionStatusItem != null) {
-            libgtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
-            libgobject.g_object_unref(connectionStatusItem);
+            gtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
+            gobject.g_object_unref(connectionStatusItem);
         }
 
         // now add back other menu entries
@@ -177,12 +173,12 @@ class GtkTypeSystemTray extends SystemTray {
             GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
 
             // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-            libgtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
-            libgobject.g_object_unref(menuEntry__.menuItem);
+            gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
+            gobject.g_object_unref(menuEntry__.menuItem);
         }
 
         onMenuAdded(menu);
-        libgtk.gtk_widget_show_all(menu);
+        gtk.gtk_widget_show_all(menu);
     }
 
     @Override
@@ -201,7 +197,7 @@ class GtkTypeSystemTray extends SystemTray {
             throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
         }
         else {
-            libgtk.gdk_threads_enter();
+            gtk.gdk_threads_enter();
 
             // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
             // To work around this issue, we destroy then recreate the menu every time one is added.
@@ -209,12 +205,12 @@ class GtkTypeSystemTray extends SystemTray {
 
             menuEntry = new GtkMenuEntry(menu, menuText, imagePath, callback, this);
 
-            libgobject.g_object_ref(menuEntry.menuItem); // so it matches with 'createMenu'
+            gobject.g_object_ref(menuEntry.menuItem); // so it matches with 'createMenu'
             this.menuEntries.add(menuEntry);
 
             createMenu();
 
-            libgtk.gdk_threads_leave();
+            gtk.gdk_threads_leave();
         }
     }
 }

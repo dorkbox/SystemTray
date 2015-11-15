@@ -24,8 +24,8 @@ import dorkbox.util.tray.MenuEntry;
 import dorkbox.util.tray.SystemTrayMenuAction;
 
 class GtkMenuEntry implements MenuEntry {
-    private static final Gtk libgtk = Gtk.INSTANCE;
-    private static final Gobject libgobject = Gobject.INSTANCE;
+    private static final Gtk gtk = Gtk.INSTANCE;
+    private static final Gobject gobject = Gobject.INSTANCE;
 
     private final GCallback gtkCallback;
     final Pointer menuItem;
@@ -55,20 +55,20 @@ class GtkMenuEntry implements MenuEntry {
             }
         };
 
-        menuItem = libgtk.gtk_image_menu_item_new_with_label(label);
+        menuItem = gtk.gtk_image_menu_item_new_with_label(label);
 
         if (imagePath != null && !imagePath.isEmpty()) {
             // NOTE: XFCE uses appindicator3, which DOES NOT support images in the menu. This change was reverted.
             // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
             // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
-            image = libgtk.gtk_image_new_from_file(imagePath);
+            image = gtk.gtk_image_new_from_file(imagePath);
 
-            libgtk.gtk_image_menu_item_set_image(menuItem, image);
+            gtk.gtk_image_menu_item_set_image(menuItem, image);
             //  must always re-set always-show after setting the image
-            libgtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+            gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
 
-        nativeLong = libgobject.g_signal_connect_data(menuItem, "activate", gtkCallback, null, null, 0);
+        nativeLong = gobject.g_signal_connect_data(menuItem, "activate", gtkCallback, null, null, 0);
     }
 
     private
@@ -95,38 +95,36 @@ class GtkMenuEntry implements MenuEntry {
     public
     void setText(final String newText) {
         this.text = newText;
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
-        libgtk.gtk_menu_item_set_label(menuItem, newText);
+        gtk.gtk_menu_item_set_label(menuItem, newText);
 
-        libgtk.gtk_widget_show_all(parentMenu);
+        gtk.gtk_widget_show_all(parentMenu);
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
     }
 
     @Override
     public
     void setImage(final String imagePath) {
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
         if (imagePath != null && !imagePath.isEmpty()) {
             if (image != null) {
-                libgtk.gtk_widget_destroy(image);
+                gtk.gtk_widget_destroy(image);
             }
-            libgtk.gtk_widget_show_all(parentMenu);
-            libgtk.gdk_threads_leave();
+            gtk.gtk_widget_show_all(parentMenu);
 
-            libgtk.gdk_threads_enter();
-            image = libgtk.gtk_image_new_from_file(imagePath);
+            image = gtk.gtk_image_new_from_file(imagePath);
 
-            libgtk.gtk_image_menu_item_set_image(menuItem, image);
+            gtk.gtk_image_menu_item_set_image(menuItem, image);
 
             //  must always re-set always-show after setting the image
-            libgtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+            gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
-        libgtk.gtk_widget_show_all(parentMenu);
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
+        gtk.gtk_widget_show_all(parentMenu);
     }
 
     @Override
@@ -140,7 +138,7 @@ class GtkMenuEntry implements MenuEntry {
      */
     public
     void remove() {
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
         removePrivate();
 
@@ -148,17 +146,17 @@ class GtkMenuEntry implements MenuEntry {
         systemTray.deleteMenu();
         systemTray.createMenu();
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
     }
 
     void removePrivate() {
-        libgobject.g_signal_handler_disconnect(menuItem, nativeLong);
-        libgtk.gtk_menu_shell_deactivate(parentMenu, menuItem);
+        gobject.g_signal_handler_disconnect(menuItem, nativeLong);
+        gtk.gtk_menu_shell_deactivate(parentMenu, menuItem);
 
         if (image != null) {
-            libgtk.gtk_widget_destroy(image);
+            gtk.gtk_widget_destroy(image);
         }
-        libgtk.gtk_widget_destroy(menuItem);
+        gtk.gtk_widget_destroy(menuItem);
     }
 
     @Override

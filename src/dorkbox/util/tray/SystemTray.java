@@ -17,6 +17,7 @@ package dorkbox.util.tray;
 
 import dorkbox.util.OS;
 import dorkbox.util.jna.linux.AppIndicator;
+import dorkbox.util.jna.linux.AppIndicatorQuery;
 import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.process.ShellProcessBuilder;
 import dorkbox.util.tray.linux.AppIndicatorTray;
@@ -96,8 +97,13 @@ class SystemTray {
                 }
                 else if ("XFCE".equalsIgnoreCase(XDG)) {
                     // XFCE uses a BAD version of libappindicator by default, which DOES NOT support images in the menu.
+                    // if we have libappindicator1, we are OK. if we don't, fallback to GTKSystemTray
                     try {
-                        trayType = GtkSystemTray.class;
+                        if (AppIndicatorQuery.get_v1() != null) {
+                            trayType = AppIndicatorTray.class;
+                        } else {
+                            trayType = GtkSystemTray.class;
+                        }
                     } catch (Throwable ignored) {
                     }
                 }

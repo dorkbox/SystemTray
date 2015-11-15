@@ -40,15 +40,15 @@ class GtkSystemTray extends GtkTypeSystemTray {
     GtkSystemTray(String iconName) {
         super();
 
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
-        final Pointer trayIcon = libgtk.gtk_status_icon_new();
-        libgtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
-        libgtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
+        final Pointer trayIcon = gtk.gtk_status_icon_new();
+        gtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
+        gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
 
         this.trayIcon = trayIcon;
 
-        libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
+        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
 
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
@@ -56,15 +56,15 @@ class GtkSystemTray extends GtkTypeSystemTray {
             void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
                 // BUTTON_PRESS only (any mouse click)
                 if (event.type == 4) {
-                    libgtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                    gtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                 }
             }
         };
-        button_press_event = libgobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
+        button_press_event = gobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
 
-        libgtk.gtk_status_icon_set_visible(trayIcon, true);
+        gtk.gtk_status_icon_set_visible(trayIcon, true);
 
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_leave();
 
         GtkSupport.startGui();
     }
@@ -81,11 +81,11 @@ class GtkSystemTray extends GtkTypeSystemTray {
     @Override
     public synchronized
     void shutdown() {
-        libgtk.gdk_threads_enter();
+        gtk.gdk_threads_enter();
 
         // this hides the indicator
-        libgtk.gtk_status_icon_set_visible(this.trayIcon, false);
-        libgobject.g_object_unref(this.trayIcon);
+        gtk.gtk_status_icon_set_visible(this.trayIcon, false);
+        gobject.g_object_unref(this.trayIcon);
 
         // GC it
         this.trayIcon = null;
@@ -97,8 +97,8 @@ class GtkSystemTray extends GtkTypeSystemTray {
     @Override
     public synchronized
     void setIcon(final String iconName) {
-        libgtk.gdk_threads_enter();
-        libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
-        libgtk.gdk_threads_leave();
+        gtk.gdk_threads_enter();
+        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
+        gtk.gdk_threads_leave();
     }
 }
