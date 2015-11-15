@@ -18,6 +18,10 @@ There are a number of problems on Linux with the Swing (and SWT) system-tray ico
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
 
 
+We also cater to the *lowest-common-denominator* when it comes to system-tray/indicator functionality, and there are some features that we don't support. 
+Specifically, **tooltips**. Rather a stupid decision, IMHO, but for more information why ask Mark Shuttleworth. 
+See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
+
 ```
 Customization parameters:
 
@@ -88,16 +92,34 @@ Note: This project was heavily influenced by the excellent Lantern project,
 ```
 Note: Gnome-shell users will experience an extension install to support this
       functionality. Additionally, a shell restart is necessary for the extension
-      to be registered by the shell. You can disable the restart behavior if you like,
-      and the 'system tray' functionality will be picked up on log out/in, or a
-      system restart.
+      to be registered by the shell. You can disable the restart behavior if you 
+      like, and the 'system tray' functionality will be picked up on log out/in,
+      or a system restart.
    
       Also, screw you gnome-project leads, for making it such a pain-in-the-ass
       to do something so incredibly simple and basic.
       
 Note: Some desktop environments might use a dated version of libappindicator, when 
       icon support in menus was removed, then put back. This happened in version 3.
-      This library will try to load a GTK indicator instead when it can, or will try
-      to load libappindicator1 first. Thank you RedHat for putting it back.
+      This library will try to load a GTK indicator instead when it can, or will 
+      try to load libappindicator1 first. Thank you RedHat for putting it back.
+      
+      
+ISSUES:
+      'Trying to remove a child that doesn't believe we're it's parent.'
+      
+      This is a known appindicator bug, and is rather old. Some distributions use 
+      an OLD version of libappindicator, and will see this error. 
+         See: https://github.com/ValveSoftware/steam-for-linux/issues/1077
+         
+         
+      'gsignal.c: signal 'child-added' is invalid for instance 'xyz' of type 'GtkMenu''
+      This is a known appindicator bug, and is rather old. Some distributions use an 
+      OLD version of libappindicator, and will see this error. 
+      
+      The fallout from this issue (ie: menu entries not displaying) has been 
+      *worked around*, so the menus should still show correctly.
+         See: https://askubuntu.com/questions/364594/has-the-appindicator-or-gtkmenu-api-changed-in-saucy
+  
 ```
 

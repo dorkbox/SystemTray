@@ -95,7 +95,7 @@ class SystemTray {
                     }
                 }
                 else if ("XFCE".equalsIgnoreCase(XDG)) {
-                    // XFCE uses a OLD version of appindicators, which DO NOT support images in the menu.
+                    // XFCE uses a BAD version of libappindicator by default, which DOES NOT support images in the menu.
                     try {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable ignored) {
@@ -104,6 +104,12 @@ class SystemTray {
                 else if ("LXDE".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = GtkSystemTray.class;
+                    } catch (Throwable ignored) {
+                    }
+                }
+                else if ("KDE".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = AppIndicatorTray.class;
                     } catch (Throwable ignored) {
                     }
                 }
@@ -331,17 +337,15 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param newMenuText the new menu text (this will replace the original menu text)
      */
-    public final
+    public final synchronized
     void updateMenuEntry_Text(String origMenuText, String newMenuText) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-            }
-            else {
-                menuEntry.setText(newMenuText);
-            }
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setText(newMenuText);
         }
     }
 
@@ -352,17 +356,15 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param imagePath the new path for the image to use. Null to remove an image.
      */
-    public final
+    public final synchronized
     void updateMenuEntry_Image(String origMenuText, String imagePath) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-            }
-            else {
-                menuEntry.setImage(imagePath);
-            }
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setImage(imagePath);
         }
     }
 
@@ -373,17 +375,15 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param newCallback the new callback (this will replace the original callback)
      */
-    public final
+    public final synchronized
     void updateMenuEntry_Callback(String origMenuText, SystemTrayMenuAction newCallback) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-            if (menuEntry != null) {
-                menuEntry.setCallback(newCallback);
-            }
-            else {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-            }
+        if (menuEntry != null) {
+            menuEntry.setCallback(newCallback);
+        }
+        else {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -395,18 +395,16 @@ class SystemTray {
      * @param newMenuText the new menu text (this will replace the original menu text)
      * @param newCallback the new callback (this will replace the original callback)
      */
-    public final
+    public final synchronized
     void updateMenuEntry(String origMenuText, String newMenuText, SystemTrayMenuAction newCallback) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-            }
-            else {
-                menuEntry.setText(newMenuText);
-                menuEntry.setCallback(newCallback);
-            }
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setText(newMenuText);
+            menuEntry.setCallback(newCallback);
         }
     }
 
@@ -416,27 +414,26 @@ class SystemTray {
      *
      * @param menuEntry This is the menu entry to remove
      */
-    public final
+    public final synchronized
     void removeMenuEntry(final MenuEntry menuEntry) {
         if (menuEntry == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
         }
 
-        synchronized (this.menuEntries) {
-            final String label = menuEntry.getText();
+        final String label = menuEntry.getText();
 
-            for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                final MenuEntry entry = iterator.next();
-                if (entry.getText()
-                         .equals(label)) {
-                    iterator.remove();
+        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+            final MenuEntry entry = iterator.next();
+            if (entry.getText()
+                     .equals(label)) {
+                iterator.remove();
 
-                    menuEntry.remove();
-                    return;
-                }
+                // this will also reset the menu
+                menuEntry.remove();
+                return;
             }
-            throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
         }
+        throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
     }
 
 
@@ -445,22 +442,22 @@ class SystemTray {
      *
      * @param menuText This is the label for the menu entry to remove
      */
-    public final
+    public final synchronized
     void removeMenuEntry(final String menuText) {
-        synchronized (this.menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(menuText);
+        MenuEntry menuEntry = getMenuEntry(menuText);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
-            }
-            else {
-                removeMenuEntry(menuEntry);
-            }
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
+        }
+        else {
+            removeMenuEntry(menuEntry);
         }
     }
 
 
     /**
+     * UNSAFE. must be called inside sync
+     *
      *  appIndicator/gtk require strings (which is the path)
      *  swing version loads as an image (which can be stream or path, we use path)
      */

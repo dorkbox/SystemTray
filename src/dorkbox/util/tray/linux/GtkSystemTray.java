@@ -15,6 +15,7 @@
  */
 package dorkbox.util.tray.linux;
 
+import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
@@ -27,11 +28,13 @@ import dorkbox.util.jna.linux.GtkSupport;
  */
 public
 class GtkSystemTray extends GtkTypeSystemTray {
-    private volatile Pointer trayIcon;
+    private Pointer trayIcon;
 
     // have to make this a field, to prevent GC on this object
     @SuppressWarnings("FieldCanBeLocal")
-    private Gobject.GEventCallback gtkCallback;
+    private final Gobject.GEventCallback gtkCallback;
+    private NativeLong button_press_event;
+    private volatile Pointer menu;
 
     public
     GtkSystemTray(String iconName) {
@@ -41,23 +44,24 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
         final Pointer trayIcon = libgtk.gtk_status_icon_new();
         libgtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
+        libgtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
 
         this.trayIcon = trayIcon;
 
         libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
 
-        this.menu = libgtk.gtk_menu_new();
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
             public
-            void callback(Pointer system_tray, final Gtk.GdkEventButton event) {
+            void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
                 // BUTTON_PRESS only (any mouse click)
                 if (event.type == 4) {
-                    libgtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, system_tray, 0, event.time);
+                    libgtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                 }
             }
         };
-        libgobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, menu, null, 0);
+        button_press_event = libgobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
+
         libgtk.gtk_status_icon_set_visible(trayIcon, true);
 
         libgtk.gdk_threads_leave();
@@ -65,9 +69,17 @@ class GtkSystemTray extends GtkTypeSystemTray {
         GtkSupport.startGui();
     }
 
+    /**
+     * Called inside the gdk_threads block
+     */
+    protected
+    void onMenuAdded(final Pointer menu) {
+        this.menu = menu;
+    }
+
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
-    public
+    public synchronized
     void shutdown() {
         libgtk.gdk_threads_enter();
 
@@ -83,7 +95,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
     }
 
     @Override
-    public
+    public synchronized
     void setIcon(final String iconName) {
         libgtk.gdk_threads_enter();
         libgtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));

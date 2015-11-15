@@ -21,7 +21,6 @@ import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gobject.GCallback;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.tray.MenuEntry;
-import dorkbox.util.tray.SystemTray;
 import dorkbox.util.tray.SystemTrayMenuAction;
 
 class GtkMenuEntry implements MenuEntry {
@@ -29,17 +28,18 @@ class GtkMenuEntry implements MenuEntry {
     private static final Gobject libgobject = Gobject.INSTANCE;
 
     private final GCallback gtkCallback;
-    private final Pointer menuItem;
+    final Pointer menuItem;
     private final Pointer parentMenu;
-    private final SystemTray systemTray;
+    final GtkTypeSystemTray systemTray;
     private final NativeLong nativeLong;
 
+    // these have to be volatile, because they can be changed from any thread
     private volatile String text;
     private volatile SystemTrayMenuAction callback;
     private volatile Pointer image;
 
     GtkMenuEntry(final Pointer parentMenu, final String label, final String imagePath, final SystemTrayMenuAction callback,
-                 final SystemTray systemTray) {
+                 final GtkTypeSystemTray systemTray) {
         this.parentMenu = parentMenu;
         this.text = label;
         this.callback = callback;
@@ -55,7 +55,6 @@ class GtkMenuEntry implements MenuEntry {
             }
         };
 
-
         menuItem = libgtk.gtk_image_menu_item_new_with_label(label);
 
         if (imagePath != null && !imagePath.isEmpty()) {
@@ -70,9 +69,6 @@ class GtkMenuEntry implements MenuEntry {
         }
 
         nativeLong = libgobject.g_signal_connect_data(menuItem, "activate", gtkCallback, null, null, 0);
-        libgtk.gtk_menu_shell_append(parentMenu, menuItem);
-
-        libgtk.gtk_widget_show_all(menuItem);
     }
 
     private
@@ -117,7 +113,10 @@ class GtkMenuEntry implements MenuEntry {
             if (image != null) {
                 libgtk.gtk_widget_destroy(image);
             }
+            libgtk.gtk_widget_show_all(parentMenu);
+            libgtk.gdk_threads_leave();
 
+            libgtk.gdk_threads_enter();
             image = libgtk.gtk_image_new_from_file(imagePath);
 
             libgtk.gtk_image_menu_item_set_image(menuItem, image);
@@ -125,7 +124,6 @@ class GtkMenuEntry implements MenuEntry {
             //  must always re-set always-show after setting the image
             libgtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
-
         libgtk.gtk_widget_show_all(parentMenu);
 
         libgtk.gdk_threads_leave();
@@ -137,10 +135,23 @@ class GtkMenuEntry implements MenuEntry {
         this.callback = callback;
     }
 
+    /**
+     * This is ONLY called via systray.menuEntry.remove() !!
+     */
     public
     void remove() {
         libgtk.gdk_threads_enter();
 
+        removePrivate();
+
+        // have to rebuild the menu now...
+        systemTray.deleteMenu();
+        systemTray.createMenu();
+
+        libgtk.gdk_threads_leave();
+    }
+
+    void removePrivate() {
         libgobject.g_signal_handler_disconnect(menuItem, nativeLong);
         libgtk.gtk_menu_shell_deactivate(parentMenu, menuItem);
 
@@ -148,8 +159,6 @@ class GtkMenuEntry implements MenuEntry {
             libgtk.gtk_widget_destroy(image);
         }
         libgtk.gtk_widget_destroy(menuItem);
-
-        libgtk.gdk_threads_leave();
     }
 
     @Override

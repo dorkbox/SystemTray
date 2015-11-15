@@ -129,16 +129,17 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             @Override
             public
             void run() {
-            SwingSystemTray.this.tray.remove(SwingSystemTray.this.trayIcon);
+                SwingSystemTray tray = SwingSystemTray.this;
+                synchronized (tray) {
+                    tray.tray.remove(tray.trayIcon);
 
-            synchronized (SwingSystemTray.this.menuEntries) {
-                for (MenuEntry menuEntry : SwingSystemTray.this.menuEntries) {
-                    menuEntry.remove();
+                    for (MenuEntry menuEntry : tray.menuEntries) {
+                        menuEntry.remove();
+                    }
+                    tray.menuEntries.clear();
+
+                    tray.connectionStatusItem = null;
                 }
-                SwingSystemTray.this.menuEntries.clear();
-            }
-
-            SwingSystemTray.this.connectionStatusItem = null;
             }
         });
     }
@@ -150,19 +151,22 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             @Override
             public
             void run() {
-                if (SwingSystemTray.this.connectionStatusItem == null) {
-                    final JMenuItem connectionStatusItem = new JMenuItem(infoString);
-                    Font font = connectionStatusItem.getFont();
-                    Font font1 = font.deriveFont(Font.BOLD);
-                    connectionStatusItem.setFont(font1);
+                SwingSystemTray tray = SwingSystemTray.this;
+                synchronized (tray) {
+                    if (tray.connectionStatusItem == null) {
+                        final JMenuItem connectionStatusItem = new JMenuItem(infoString);
+                        Font font = connectionStatusItem.getFont();
+                        Font font1 = font.deriveFont(Font.BOLD);
+                        connectionStatusItem.setFont(font1);
 
-                    connectionStatusItem.setEnabled(false);
-                    SwingSystemTray.this.menu.add(connectionStatusItem);
+                        connectionStatusItem.setEnabled(false);
+                        tray.menu.add(connectionStatusItem);
 
-                    SwingSystemTray.this.connectionStatusItem = connectionStatusItem;
-                }
-                else {
-                    SwingSystemTray.this.connectionStatusItem.setText(infoString);
+                        tray.connectionStatusItem = connectionStatusItem;
+                    }
+                    else {
+                        tray.connectionStatusItem.setText(infoString);
+                    }
                 }
             }
         });
@@ -175,11 +179,14 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             @Override
             public
             void run() {
-                String iconPath = iconPath(iconName);
-                Image trayImage = new ImageIcon(iconPath).getImage()
-                                                         .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
-                trayImage.flush();
-                SwingSystemTray.this.trayIcon.setImage(trayImage);
+                SwingSystemTray tray = SwingSystemTray.this;
+                synchronized (tray) {
+                    String iconPath = iconPath(iconName);
+                    Image trayImage = new ImageIcon(iconPath).getImage()
+                                                             .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
+                    trayImage.flush();
+                    tray.trayIcon.setImage(trayImage);
+                }
             }
         });
     }
@@ -198,14 +205,15 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
             @Override
             public
             void run() {
-                synchronized (menuEntries) {
+                SwingSystemTray tray = SwingSystemTray.this;
+                synchronized (tray) {
                     MenuEntry menuEntry = getMenuEntry(menuText);
 
                     if (menuEntry != null) {
                         throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
                     }
                     else {
-                        menuEntry = new SwingMenuEntry(menu, menuText, imagePath, callback, SwingSystemTray.this);
+                        menuEntry = new SwingMenuEntry(menu, menuText, imagePath, callback, tray);
                         menuEntries.add(menuEntry);
                     }
                 }

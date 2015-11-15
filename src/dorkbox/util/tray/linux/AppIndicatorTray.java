@@ -32,18 +32,14 @@ public
 class AppIndicatorTray extends GtkTypeSystemTray {
     private static final AppIndicator libappindicator = AppIndicator.INSTANCE;
 
-    private volatile AppIndicator.AppIndicatorInstanceStruct appIndicator;
+    private AppIndicator.AppIndicatorInstanceStruct appIndicator;
 
     public
     AppIndicatorTray(String iconName) {
         libgtk.gdk_threads_enter();
-        this.appIndicator = libappindicator.app_indicator_new(System.nanoTime() + "DBST", "indicator-messages-new",
+        String icon_name = iconPath(iconName);
+        this.appIndicator = libappindicator.app_indicator_new(System.nanoTime() + "DBST", icon_name,
                                                               AppIndicator.CATEGORY_APPLICATION_STATUS);
-
-        this.menu = libgtk.gtk_menu_new();
-        libappindicator.app_indicator_set_menu(this.appIndicator, this.menu);
-
-        libappindicator.app_indicator_set_icon(this.appIndicator, iconPath(iconName));
         libappindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
 
         libgtk.gdk_threads_leave();
@@ -52,13 +48,12 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     }
 
     @Override
-    public
+    public synchronized
     void shutdown() {
         libgtk.gdk_threads_enter();
 
         // this hides the indicator
         libappindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_PASSIVE);
-        this.appIndicator.write();
         Pointer p = this.appIndicator.getPointer();
         libgobject.g_object_unref(p);
 
@@ -70,10 +65,19 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     }
 
     @Override
-    public
+    public synchronized
     void setIcon(final String iconName) {
         libgtk.gdk_threads_enter();
         libappindicator.app_indicator_set_icon(this.appIndicator, iconPath(iconName));
         libgtk.gdk_threads_leave();
+    }
+
+
+    /**
+     * Called inside the gdk_threads block. MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
+     */
+    protected
+    void onMenuAdded(final Pointer menu) {
+        libappindicator.app_indicator_set_menu(this.appIndicator, menu);
     }
 }
