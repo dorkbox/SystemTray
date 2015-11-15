@@ -69,6 +69,8 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
+                systemTray.setIcon(BLACK_MAIL);
+
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
                 systemTray.removeMenuEntry(menuEntry);
