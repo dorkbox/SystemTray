@@ -17,9 +17,12 @@ package dorkbox.util.tray;
 
 import dorkbox.util.DelayTimer;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.Property;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JPopupMenu;
+import java.awt.Dimension;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -27,10 +30,9 @@ public
 class SystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
-     */
-    public static long hidePopupDelay = 1000L;
+    @Property
+    /** Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu */
+    public static long POPUP_HIDE_DELAY = 1000L;
 
     private DelayTimer timer;
 
@@ -101,7 +103,7 @@ class SystemTrayMenuPopup extends JPopupMenu {
 
         if (makeVisible) {
             // if the mouse isn't inside the popup in x seconds, close the popup
-            this.timer.delay(hidePopupDelay);
+            this.timer.delay(POPUP_HIDE_DELAY);
         }
 
 //        this.hiddenDialog.setVisible(makeVisible);

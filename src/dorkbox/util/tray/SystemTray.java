@@ -16,6 +16,7 @@
 package dorkbox.util.tray;
 
 import dorkbox.util.OS;
+import dorkbox.util.Property;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.AppIndicatorQuery;
 import dorkbox.util.jna.linux.GtkSupport;
@@ -60,14 +61,12 @@ class SystemTray {
 
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
-    /**
-     * Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
-     */
+    @Property
+    /** Size of the tray, so that the icon can properly scale based on OS. (if it's not exact) */
     public static int TRAY_SIZE = 22;
 
-    /**
-     * Location of the icon (to make it easier when specifying icons)
-     */
+    @Property
+    /** Location of the icon (to make it easier when specifying icons) */
     public static String ICON_PATH = "";
 
     private static final long runtimeRandom = new SecureRandom().nextLong();

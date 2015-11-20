@@ -25,7 +25,7 @@ See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 ```
 Customization parameters:
 
-SystemTrayMenuPopup.hidePopupDelay  (type long, default value '1000L')
+SystemTrayMenuPopup.POPUP_HIDE_DELAY   (type long, default value '1000L')
  - Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
 
 

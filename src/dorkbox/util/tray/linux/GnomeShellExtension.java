@@ -15,6 +15,7 @@
  */
 package dorkbox.util.tray.linux;
 
+import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
 import org.slf4j.Logger;
 
@@ -31,19 +32,16 @@ public
 class GnomeShellExtension {
     private static final String UID = "SystemTray@dorkbox";
 
-    /**
-     * Permit the gnome-shell to be restarted when the extension is installed.
-     */
+    @Property
+    /** Permit the gnome-shell to be restarted when the extension is installed. */
     public static boolean ENABLE_SHELL_RESTART = true;
 
-    /**
-     * Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate.
-     */
+    @Property
+    /** Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate. */
     public static long SHELL_RESTART_TIMEOUT_MILLIS = 5000L;
 
-    /**
-     * Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
-     */
+    @Property
+    /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
     public static String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
 
     public static void install(final Logger logger, final String shellVersionString) throws IOException {
