@@ -44,10 +44,10 @@ class SystemTrayMenuPopup extends JPopupMenu {
         super();
         setFocusable(true);
 
-        this.timer = new DelayTimer("PopupMenuHider", true, new DelayTimer.Callback() {
+        this.timer = new DelayTimer("PopupMenuHider", true, new Runnable() {
             @Override
             public
-            void execute() {
+            void run() {
                 SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public
@@ -78,8 +78,8 @@ class SystemTrayMenuPopup extends JPopupMenu {
             }
         });
 
-        // Does not work correctly on linux. a window in the taskbar shows up.
-        /* Initialize the hidden dialog as a headless, titleless dialog window */
+        // Does not work correctly on linux. a window in the taskbar still shows up
+        // Initialize the hidden dialog as a headless, titleless dialog window
 //        this.hiddenDialog = new JDialog((Frame)null);
 //        this.hiddenDialog.setEnabled(false);
 //        this.hiddenDialog.setUndecorated(true);

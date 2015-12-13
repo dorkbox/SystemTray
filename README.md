@@ -73,6 +73,8 @@ The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/m
         }
     });
 ```
+
+
 ```
 Note: This library does NOT use SWT for system-tray support, only for the purpose
       of lessening the jar dependencies. Changing it to be SWT-based is not 
@@ -84,7 +86,7 @@ Note: If you use the attached JNA libraries, you **MUST** load the respective
       native libraries yourself, especially with JNA (as the loading logic has
       been removed from the jar)
 ```
-```
+``` 
 Note: This project was heavily influenced by the excellent Lantern project,
       *Many* thanks to them for figuring out AppIndicators via JNA.
       https://github.com/getlantern/lantern
@@ -122,4 +124,69 @@ ISSUES:
          See: https://askubuntu.com/questions/364594/has-the-appindicator-or-gtkmenu-api-changed-in-saucy
   
 ```
+
+
+<h4>We now release to maven!</h4> 
+
+There are two dependencies here because we did not want to bake-in a hard dependency into the POM file for the utilities library, which 
+are an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function.
+
+This project is **kept in sync** with the utilities library, so "jar hell" is not an issue. Please note that the util library (in it's entirety) is not added since there are **many** dependencies that are not *necessary* for this project. No reason to require a massive amount of dependencies for one or two classes/methods. 
+```
+<dependency>
+  <groupId>com.dorkbox</groupId>
+  <artifactId>SystemTray</artifactId>
+  <version>1.11</version>
+</dependency>
+```
+
+Or if you don't want to use Maven, you can access the files directly here:
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray-Dorkbox-Util/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
