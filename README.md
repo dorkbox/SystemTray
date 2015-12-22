@@ -139,12 +139,15 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 </dependency>
 ```
 
-Or if you don't want to use Maven, you can access the files directly here:
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray-Dorkbox-Util/
+Or if you don't want to use Maven, you can access the files directly here:  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray-Dorkbox-Util/  
 
-https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna/
-https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna-platform/
+
+https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna/  
+https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna-platform/  
+
+
 https://repo1.maven.org/maven2/org/slf4j/slf4j-api/
 
 
