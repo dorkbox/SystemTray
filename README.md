@@ -148,51 +148,9 @@ https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna/
 https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna-platform/  
 
 
-https://repo1.maven.org/maven2/org/slf4j/slf4j-api/
+https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
 
 
+<h2>License</h2>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+This project is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
