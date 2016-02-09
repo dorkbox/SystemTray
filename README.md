@@ -135,7 +135,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>1.11</version>
+  <version>1.12</version>
 </dependency>
 ```
 
@@ -149,6 +149,7 @@ https://maven.java.net/content/repositories/releases/net/java/dev/jna/jna-platfo
 
 
 https://repo1.maven.org/maven2/org/slf4j/slf4j-api/
+
 
 
 
