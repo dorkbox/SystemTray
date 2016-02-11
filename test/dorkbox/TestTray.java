@@ -35,8 +35,11 @@ class TestTray {
 
     public static
     void main(String[] args) {
-        // ONLY if using provided JNA jars. Not necessary if using JNA from https://github.com/twall/jna
-        System.load(new File("libs/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
+        // ONLY if manually loading JNA jars (which is how i do it).
+        //
+        // Not necessary if using the official JNA downloaded from https://github.com/twall/jna AND THAT JAR is on the classpath
+        //
+        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
         new TestTray();
     }
