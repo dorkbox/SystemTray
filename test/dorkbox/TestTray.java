@@ -16,11 +16,12 @@
 
 package dorkbox;
 
-import dorkbox.util.tray.MenuEntry;
-import dorkbox.util.tray.SystemTray;
-import dorkbox.util.tray.SystemTrayMenuAction;
+import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.SystemTrayMenuAction;
 
-import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -29,9 +30,9 @@ public
 class TestTray {
 
     // horribly hacky. ONLY FOR TESTING!
-    public static final String BLACK_MAIL = TestTray.class.getResource("mail.000000.24.png").toExternalForm().substring(5);
-    public static final String GREEN_MAIL = TestTray.class.getResource("mail.39AC39.24.png").toExternalForm().substring(5);
-    public static final String LT_GRAY_MAIL = TestTray.class.getResource("mail.999999.24.png").toExternalForm().substring(5);
+    public static final URL BLACK_MAIL = TestTray.class.getResource("mail.000000.24.png");
+    public static final URL GREEN_MAIL = TestTray.class.getResource("mail.39AC39.24.png");
+    public static final URL LT_GRAY_MAIL = TestTray.class.getResource("mail.999999.24.png");
 
     public static
     void main(String[] args) {
@@ -39,7 +40,7 @@ class TestTray {
         //
         // Not necessary if using the official JNA downloaded from https://github.com/twall/jna AND THAT JAR is on the classpath
         //
-        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
+        // System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
         new TestTray();
     }
@@ -51,6 +52,10 @@ class TestTray {
     public
     TestTray() {
         this.systemTray = SystemTray.create(LT_GRAY_MAIL);
+        if (systemTray == null) {
+            throw new RuntimeException("Unable to load SystemTray!");
+        }
+
         systemTray.setStatus("No Mail");
 
         callbackGreen = new SystemTrayMenuAction() {
@@ -58,10 +63,21 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
-                systemTray.setIcon(GREEN_MAIL);
+
+                try {
+                    systemTray.setIcon(GREEN_MAIL);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
                 menuEntry.setCallback(callbackGray);
-                menuEntry.setImage(BLACK_MAIL);
+
+                try {
+                    menuEntry.setImage(BLACK_MAIL);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 menuEntry.setText("Delete Mail");
 //                systemTray.removeMenuEntry(menuEntry);
             }
@@ -72,7 +88,11 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
-                systemTray.setIcon(BLACK_MAIL);
+                try {
+                    systemTray.setIcon(BLACK_MAIL);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
@@ -81,7 +101,11 @@ class TestTray {
             }
         };
 
-        this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        try {
+            this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override

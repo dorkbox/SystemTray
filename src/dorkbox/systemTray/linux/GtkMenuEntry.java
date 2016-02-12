@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.tray.linux;
+package dorkbox.systemTray.linux;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import dorkbox.systemTray.ImageUtil;
+import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gobject.GCallback;
 import dorkbox.util.jna.linux.Gtk;
-import dorkbox.util.tray.MenuEntry;
-import dorkbox.util.tray.SystemTrayMenuAction;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 class GtkMenuEntry implements MenuEntry {
     private static final Gtk gtk = Gtk.INSTANCE;
@@ -104,9 +109,8 @@ class GtkMenuEntry implements MenuEntry {
         gtk.gdk_threads_leave();
     }
 
-    @Override
-    public
-    void setImage(final String imagePath) {
+    private
+    void setImage_(final String imagePath) {
         gtk.gdk_threads_enter();
 
         if (imagePath != null && !imagePath.isEmpty()) {
@@ -125,6 +129,51 @@ class GtkMenuEntry implements MenuEntry {
 
         gtk.gdk_threads_leave();
         gtk.gtk_widget_show_all(parentMenu);
+    }
+
+    @Override
+    public
+    void setImage(final String imagePath) throws IOException {
+        if (imagePath == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtil.iconPath(imagePath));
+        }
+    }
+
+    @Override
+    public
+    void setImage(final URL imageUrl) throws IOException {
+        if (imageUrl == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtil.iconPath(imageUrl));
+        }
+    }
+
+    @Override
+    public
+    void setImage(final String cacheName, final InputStream imageStream) throws IOException {
+        if (imageStream == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtil.iconPath(cacheName, imageStream));
+        }
+    }
+
+    @Override
+    @Deprecated
+    public
+    void setImage(final InputStream imageStream) throws IOException {
+        if (imageStream == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtil.iconPathNoCache(imageStream));
+        }
     }
 
     @Override

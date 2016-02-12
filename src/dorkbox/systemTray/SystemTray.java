@@ -13,38 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.tray;
+package dorkbox.systemTray;
 
+import dorkbox.systemTray.linux.AppIndicatorTray;
+import dorkbox.systemTray.linux.GnomeShellExtension;
+import dorkbox.systemTray.swing.SwingSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.AppIndicatorQuery;
 import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.process.ShellProcessBuilder;
-import dorkbox.util.tray.linux.AppIndicatorTray;
-import dorkbox.util.tray.linux.GnomeShellExtension;
-import dorkbox.util.tray.linux.GtkSystemTray;
-import dorkbox.util.tray.swing.SwingSystemTray;
+import dorkbox.systemTray.linux.GtkSystemTray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Constructor;
-import java.math.BigInteger;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -55,22 +47,15 @@ import java.util.Iterator;
 @SuppressWarnings("unused")
 public abstract
 class SystemTray {
-
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private static MessageDigest digest;
-
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     @Property
     /** Size of the tray, so that the icon can properly scale based on OS. (if it's not exact) */
     public static int TRAY_SIZE = 22;
 
-    @Property
-    /** Location of the icon (to make it easier when specifying icons) */
-    public static String ICON_PATH = "";
-
-    private static final long runtimeRandom = new SecureRandom().nextLong();
     private static Class<? extends SystemTray> trayType;
+
+    static boolean isKDE = false;
 
     static {
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
@@ -113,6 +98,7 @@ class SystemTray {
                     }
                 }
                 else if ("KDE".equalsIgnoreCase(XDG)) {
+                    isKDE = true;
                     try {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable ignored) {
@@ -249,7 +235,7 @@ class SystemTray {
         }
         else {
             try {
-                digest = MessageDigest.getInstance("MD5");
+                ImageUtil.init();
             } catch (NoSuchAlgorithmException e) {
                 logger.error("Unsupported hashing algorithm!");
                 trayType = null;
@@ -257,12 +243,28 @@ class SystemTray {
         }
     }
 
+    /**
+     * Gets the version number.
+     */
     public static
-    SystemTray create(final String iconPath) {
+    String getVersion() {
+        return "1.15";
+    }
+
+    /**
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will directly use the
+     * contents of the specified file.
+     *
+     * @param iconPath the full path for an icon to use
+     *
+     * @return a new SystemTray instance with the specified path for the icon
+     */
+    public static
+    SystemTray create(String iconPath) {
         if (trayType != null) {
             try {
-                Constructor<?> constructor = trayType.getConstructors()[0];
-                Object o = constructor.newInstance(iconPath);
+                iconPath = ImageUtil.iconPath(iconPath);
+                Object o = trayType.getConstructors()[0].newInstance(iconPath);
                 return (SystemTray) o;
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -272,6 +274,86 @@ class SystemTray {
         // unsupported
         return null;
     }
+
+    /**
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the URL to a temporary location on disk, based on the path specified by the URL.
+     *
+     * @param iconUrl the URL for the icon to use
+     *
+     * @return a new SystemTray instance with the specified URL for the icon
+     */
+    public static
+    SystemTray create(final URL iconUrl) {
+        if (trayType != null) {
+            try {
+                String iconPath = ImageUtil.iconPath(iconUrl);
+                Object o = trayType.getConstructors()[0].newInstance(iconPath);
+                return (SystemTray) o;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        // unsupported
+        return null;
+    }
+
+    /**
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the iconStream to a temporary location on disk, based on the `cacheName` specified.
+     *
+     * @param cacheName the name to use for the cache lookup for the iconStream. This can be anything you want, but should be
+     *                  consistently unique
+     * @param iconStream the InputStream to load the icon from
+     *
+     * @return a new SystemTray instance with the specified InputStream for the icon
+     */
+    public static
+    SystemTray create(final String cacheName, final InputStream iconStream) {
+        if (trayType != null) {
+            try {
+                String iconPath = ImageUtil.iconPath(cacheName, iconStream);
+                Object o = trayType.getConstructors()[0].newInstance(iconPath);
+                return (SystemTray) o;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        // unsupported
+        return null;
+    }
+
+    /**
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the iconStream to a temporary location on disk.
+     *
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
+     *
+     * @param iconStream the InputStream to load the icon from
+     *
+     * @return a new SystemTray instance with the specified InputStream for the icon
+     */
+    @Deprecated
+    public static
+    SystemTray create(final InputStream iconStream) {
+        if (trayType != null) {
+            try {
+                String iconPath = ImageUtil.iconPathNoCache(iconStream);
+                Object o = trayType.getConstructors()[0].newInstance(iconPath);
+                return (SystemTray) o;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        // unsupported
+        return null;
+    }
+
+
 
     protected final java.util.List<MenuEntry> menuEntries = new ArrayList<MenuEntry>();
 
@@ -303,14 +385,57 @@ class SystemTray {
     public abstract
     void setStatus(String infoString);
 
+    protected abstract
+    void setIcon_(String iconPath);
 
     /**
-     * Changes the tray icon used
+     * Changes the tray icon used.
      *
-     * @param iconName the path of the icon to use
+     * @param imagePath the path of the icon to use
      */
-    public abstract
-    void setIcon(String iconName);
+    public
+    void setIcon(String imagePath) throws IOException {
+        final String fullPath = ImageUtil.iconPath(imagePath);
+        setIcon_(fullPath);
+    }
+
+    /**
+     * Changes the tray icon used.
+     *
+     * @param imageUrl the URL of the icon to use
+     */
+    public
+    void setIcon(URL imageUrl) throws IOException {
+        final String fullPath = ImageUtil.iconPath(imageUrl);
+        setIcon_(fullPath);
+    }
+
+    /**
+     * Changes the tray icon used.
+     *
+     * @param cacheName the name to use for lookup in the cache for the iconStream
+     * @param imageStream the InputStream of the icon to use
+     */
+    public
+    void setIcon(String cacheName, InputStream imageStream) throws IOException {
+        final String fullPath = ImageUtil.iconPath(cacheName, imageStream);
+        setIcon_(fullPath);
+    }
+
+    /**
+     * Changes the tray icon used.
+     *
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
+     *
+     * @param imageStream the InputStream of the icon to use
+     */
+    @Deprecated
+    public
+    void setIcon(InputStream imageStream) throws IOException {
+        final String fullPath = ImageUtil.iconPathNoCache(imageStream);
+        setIcon_(fullPath);
+    }
 
 
     /**
@@ -321,7 +446,12 @@ class SystemTray {
      */
     public final
     void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
-        addMenuEntry(menuText, null, callback);
+        try {
+            addMenuEntry(menuText, (String) null, callback);
+        } catch (IOException e) {
+            // should never happen
+            e.printStackTrace();
+        }
     }
 
 
@@ -333,7 +463,42 @@ class SystemTray {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public abstract
-    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback);
+    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) throws IOException;
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageUrl the URL of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public abstract
+    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) throws IOException;
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public abstract
+    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) throws IOException;
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    @Deprecated
+    public abstract
+    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) throws IOException;
 
 
     /**
@@ -354,15 +519,14 @@ class SystemTray {
         }
     }
 
-
     /**
      * Updates (or changes) the menu entry's text.
      *
      * @param origMenuText the original menu text
-     * @param imagePath the new path for the image to use. Null to remove an image.
+     * @param imagePath the new path for the image to use or null to delete the image
      */
     public final synchronized
-    void updateMenuEntry_Image(String origMenuText, String imagePath) {
+    void updateMenuEntry_Image(String origMenuText, String imagePath) throws IOException {
         MenuEntry menuEntry = getMenuEntry(origMenuText);
 
         if (menuEntry == null) {
@@ -373,6 +537,63 @@ class SystemTray {
         }
     }
 
+    /**
+     * Updates (or changes) the menu entry's text.
+     *
+     * @param origMenuText the original menu text
+     * @param imageUrl the new URL for the image to use or null to delete the image
+     */
+    public final synchronized
+    void updateMenuEntry_Image(String origMenuText, URL imageUrl) throws IOException {
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setImage(imageUrl);
+        }
+    }
+
+    /**
+     * Updates (or changes) the menu entry's text.
+     *
+     * @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use or null to delete the image
+     */
+    public final synchronized
+    void updateMenuEntry_Image(String origMenuText, String cacheName, InputStream imageStream) throws IOException {
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setImage(cacheName, imageStream);
+        }
+    }
+
+    /**
+     * Updates (or changes) the menu entry's text.
+     *
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
+     *
+     * @param origMenuText the original menu text
+     * @param imageStream the new path for the image to use or null to delete the image
+     */
+    @Deprecated
+    public final synchronized
+    void updateMenuEntry_Image(String origMenuText, InputStream imageStream) throws IOException {
+        MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+        if (menuEntry == null) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        }
+        else {
+            menuEntry.setImage(imageStream);
+        }
+    }
 
     /**
      * Updates (or changes) the menu entry's callback.
@@ -458,129 +679,5 @@ class SystemTray {
             removeMenuEntry(menuEntry);
         }
     }
-
-
-    /**
-     * UNSAFE. must be called inside sync
-     *
-     *  appIndicator/gtk require strings (which is the path)
-     *  swing version loads as an image (which can be stream or path, we use path)
-     */
-    protected final
-    String iconPath(String fileName) {
-        // is file sitting on drive
-        File iconTest;
-        if (ICON_PATH.isEmpty()) {
-            iconTest = new File(fileName);
-        }
-        else {
-            iconTest = new File(ICON_PATH, fileName);
-        }
-        if (iconTest.isFile() && iconTest.canRead()) {
-            return iconTest.getAbsolutePath();
-        }
-        else {
-            if (!ICON_PATH.isEmpty()) {
-                fileName = ICON_PATH + "/" + fileName;
-            }
-
-            String extension = "";
-            int dot = fileName.lastIndexOf('.');
-            if (dot > -1) {
-                extension = fileName.substring(dot + 1);
-            }
-
-            // maybe it's in somewhere else.
-            URL systemResource = Thread.currentThread().getContextClassLoader().getResource(fileName);
-            if (systemResource == null) {
-                // maybe it's in the system classloader?
-                systemResource = ClassLoader.getSystemResource(fileName);
-            }
-
-            if (systemResource != null) {
-                // copy out to a temp file, as a hash of the file
-                String resourceFileName = systemResource.getPath();
-                byte[] bytes = resourceFileName.getBytes(UTF_8);
-                File newFile;
-                File tempDir = new File(System.getProperty("java.io.tmpdir"));
-
-                // can be wimpy, only one at a time
-                synchronized (SystemTray.this) {
-                    // delete all icons in the temp dir (they can accumulate)
-                    String ICON_PREFIX = "SYSTRAY";
-
-                    File[] files = tempDir.listFiles();
-                    if (files != null) {
-                        for (int i = 0; i < files.length; i++) {
-                            File file = files[i];
-                            if (file.getName()
-                                    .startsWith(ICON_PREFIX)) {
-
-                                //noinspection ResultOfMethodCallIgnored
-                                file.delete();
-                            }
-                        }
-                    }
-
-                    digest.reset();
-                    digest.update(bytes);
-
-
-                    // For KDE4, it must also be unique across runs
-                    String getenv = System.getenv("XDG_CURRENT_DESKTOP");
-                    if (getenv != null && getenv.contains("kde")) {
-                        byte[] longBytes = new byte[8];
-                        ByteBuffer wrap = ByteBuffer.wrap(longBytes);
-                        wrap.putLong(runtimeRandom);
-                        digest.update(longBytes);
-                    }
-
-                    byte[] hashBytes = digest.digest();
-                    String hash = new BigInteger(1, hashBytes).toString(32);
-
-                    newFile = new File(tempDir, ICON_PREFIX + hash + '.' + extension).getAbsoluteFile();
-                    newFile.deleteOnExit();
-                }
-
-                InputStream inStream = null;
-                OutputStream outStream = null;
-
-                try {
-                    inStream = systemResource.openStream();
-                    outStream = new FileOutputStream(newFile);
-
-                    byte[] buffer = new byte[2048];
-                    int read;
-                    while ((read = inStream.read(buffer)) > 0) {
-                        outStream.write(buffer, 0, read);
-                    }
-
-                    return newFile.getAbsolutePath();
-                } catch (IOException e) {
-                    // Send up exception
-                    String message = "Unable to copy icon '" + fileName + "' to location: '" + newFile.getAbsolutePath() + "'";
-                    logger.error(message, e);
-                    throw new RuntimeException(message);
-                } finally {
-                    try {
-                        if (inStream != null) {
-                            inStream.close();
-                        }
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        if (outStream != null) {
-                            outStream.close();
-                        }
-                    } catch (Exception ignored) {
-                    }
-                }
-            }
-        }
-
-        // Send up exception
-        String message = "Unable to find icon '" + fileName + "'";
-        logger.error(message);
-        throw new RuntimeException(message);
-    }
 }
+

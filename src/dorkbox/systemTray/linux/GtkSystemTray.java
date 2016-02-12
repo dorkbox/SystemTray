@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.tray.linux;
+package dorkbox.systemTray.linux;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -33,11 +33,14 @@ class GtkSystemTray extends GtkTypeSystemTray {
     // have to make this a field, to prevent GC on this object
     @SuppressWarnings("FieldCanBeLocal")
     private final Gobject.GEventCallback gtkCallback;
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private NativeLong button_press_event;
+
+
     private volatile Pointer menu;
 
     public
-    GtkSystemTray(String iconName) {
+    GtkSystemTray(String iconPath) {
         super();
 
         gtk.gdk_threads_enter();
@@ -48,7 +51,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
         this.trayIcon = trayIcon;
 
-        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
+        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
 
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
@@ -95,10 +98,10 @@ class GtkSystemTray extends GtkTypeSystemTray {
     }
 
     @Override
-    public synchronized
-    void setIcon(final String iconName) {
+    protected synchronized
+    void setIcon_(final String iconPath) {
         gtk.gdk_threads_enter();
-        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath(iconName));
+        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
         gtk.gdk_threads_leave();
     }
 }

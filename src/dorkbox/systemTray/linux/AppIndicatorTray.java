@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.tray.linux;
+package dorkbox.systemTray.linux;
 
 import com.sun.jna.Pointer;
 import dorkbox.util.jna.linux.AppIndicator;
@@ -35,10 +35,10 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     private AppIndicator.AppIndicatorInstanceStruct appIndicator;
 
     public
-    AppIndicatorTray(String iconName) {
+    AppIndicatorTray(String iconPath) {
         gtk.gdk_threads_enter();
-        String icon_name = iconPath(iconName);
-        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", icon_name,
+
+        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", iconPath,
                                                            AppIndicator.CATEGORY_APPLICATION_STATUS);
         appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
 
@@ -65,10 +65,10 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     }
 
     @Override
-    public synchronized
-    void setIcon(final String iconName) {
+    protected synchronized
+    void setIcon_(final String iconPath) {
         gtk.gdk_threads_enter();
-        appindicator.app_indicator_set_icon(this.appIndicator, iconPath(iconName));
+        appindicator.app_indicator_set_icon(this.appIndicator, iconPath);
         gtk.gdk_threads_leave();
     }
 

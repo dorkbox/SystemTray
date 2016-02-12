@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.tray.swing;
+package dorkbox.systemTray.swing;
 
+import dorkbox.systemTray.ImageUtil;
 import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.tray.MenuEntry;
-import dorkbox.util.tray.SystemTrayMenuAction;
-import dorkbox.util.tray.SystemTrayMenuPopup;
+import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.SystemTrayMenuPopup;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
@@ -33,12 +34,15 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * Class for handling all system tray interaction, via SWING
  */
 public
-class SwingSystemTray extends dorkbox.util.tray.SystemTray {
+class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     volatile SystemTrayMenuPopup menu;
     volatile JMenuItem connectionStatusItem;
 
@@ -49,7 +53,7 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
      * Creates a new system tray handler class.
      */
     public
-    SwingSystemTray(final String iconName) {
+    SwingSystemTray(final String iconPath) {
         super();
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
@@ -62,7 +66,6 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                 else {
                     SwingSystemTray.this.menu = new SystemTrayMenuPopup();
 
-                    String iconPath = iconPath(iconName);
                     Image trayImage = new ImageIcon(iconPath).getImage()
                                                              .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
                     trayImage.flush();
@@ -173,15 +176,14 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     }
 
     @Override
-    public
-    void setIcon(final String iconName) {
+    protected
+    void setIcon_(final String iconPath) {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
-                    String iconPath = iconPath(iconName);
                     Image trayImage = new ImageIcon(iconPath).getImage()
                                                              .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
                     trayImage.flush();
@@ -194,9 +196,8 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
     /**
      * Will add a new menu entry, or update one if it already exists
      */
-    @Override
-    public
-    void addMenuEntry(final String menuText, final String imagePath, final SystemTrayMenuAction callback) {
+    private
+    void addMenuEntry_(final String menuText, final String imagePath, final SystemTrayMenuAction callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
         }
@@ -219,5 +220,51 @@ class SwingSystemTray extends dorkbox.util.tray.SystemTray {
                 }
             }
         });
+    }
+
+    @Override
+    public
+    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) throws IOException {
+        if (imagePath == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(imagePath), callback);
+        }
+    }
+
+    @Override
+    public
+    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) throws IOException {
+        if (imageUrl == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(imageUrl), callback);
+        }
+    }
+
+    @Override
+    public
+    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback)
+                    throws IOException {
+        if (imageStream == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(cacheName, imageStream), callback);
+        }
+    }
+
+    @Override
+    @Deprecated
+    public
+    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) throws IOException {
+        if (imageStream == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPathNoCache(imageStream), callback);
+        }
     }
 }

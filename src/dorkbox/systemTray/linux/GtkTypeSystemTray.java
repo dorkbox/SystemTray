@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package dorkbox.util.tray.linux;
+package dorkbox.systemTray.linux;
 
 import com.sun.jna.Pointer;
+import dorkbox.systemTray.ImageUtil;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.NamedThreadFactory;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkSupport;
-import dorkbox.util.tray.SystemTray;
-import dorkbox.util.tray.SystemTrayMenuAction;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -181,9 +185,8 @@ class GtkTypeSystemTray extends SystemTray {
         gtk.gtk_widget_show_all(menu);
     }
 
-    @Override
-    public synchronized
-    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
+    private synchronized
+    void addMenuEntry_(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
         // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
         // see: https://bugs.launchpad.net/glipper/+bug/1203888
 
@@ -211,6 +214,52 @@ class GtkTypeSystemTray extends SystemTray {
             createMenu();
 
             gtk.gdk_threads_leave();
+        }
+    }
+
+    @Override
+    public
+    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) throws IOException {
+        if (imagePath == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(imagePath), callback);
+        }
+    }
+
+    @Override
+    public
+    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) throws IOException {
+        if (imageUrl == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(imageUrl), callback);
+        }
+    }
+
+    @Override
+    public
+    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback)
+                    throws IOException {
+        if (imageStream == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPath(cacheName, imageStream), callback);
+        }
+    }
+
+    @Override
+    @Deprecated
+    public
+    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) throws IOException {
+        if (imageStream == null) {
+            addMenuEntry_(menuText, null, callback);
+        }
+        else {
+            addMenuEntry_(menuText, ImageUtil.iconPathNoCache(imageStream), callback);
         }
     }
 }

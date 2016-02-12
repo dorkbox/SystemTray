@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package dorkbox.util.tray;
+package dorkbox.systemTray;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -34,11 +38,37 @@ interface MenuEntry {
     void setText(String newText);
 
     /**
-     * Specifies the new image to set for a menu entry
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * @param imagePath the full path of the image to use
+     * @param imagePath the full path of the image to use or null
      */
-    void setImage(String imagePath);
+    void setImage(String imagePath) throws IOException;
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *
+     * @param imageUrl the URL of the image to use or null
+     */
+    void setImage(URL imageUrl) throws IOException;
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *
+     * @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use
+     */
+    void setImage(String cacheName, InputStream imageStream) throws IOException;
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
+     *
+     * @param imageStream the InputStream of the image to use
+     */
+    @Deprecated
+    void setImage(InputStream imageStream) throws IOException;
 
     /**
      * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry

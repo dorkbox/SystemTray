@@ -135,7 +135,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>1.12</version>
+  <version>1.15</version>
 </dependency>
 ```
 
@@ -154,3 +154,4 @@ https://repo1.maven.org/maven2/org/slf4j/slf4j-api/
 <h2>License</h2>
 
 This project is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
+
