@@ -16,11 +16,11 @@
 package dorkbox.systemTray.swing;
 
 import dorkbox.systemTray.ImageUtil;
-import dorkbox.util.ScreenUtil;
-import dorkbox.util.SwingUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.SystemTrayMenuPopup;
+import dorkbox.util.ScreenUtil;
+import dorkbox.util.SwingUtil;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
@@ -49,11 +49,13 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
+    volatile boolean isActive = false;
+
     /**
      * Creates a new system tray handler class.
      */
     public
-    SwingSystemTray(final String iconPath) {
+    SwingSystemTray() {
         super();
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
@@ -62,63 +64,6 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                 SwingSystemTray.this.tray = SystemTray.getSystemTray();
                 if (SwingSystemTray.this.tray == null) {
                     logger.error("The system tray is not available");
-                }
-                else {
-                    SwingSystemTray.this.menu = new SystemTrayMenuPopup();
-
-                    Image trayImage = new ImageIcon(iconPath).getImage()
-                                                             .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
-                    trayImage.flush();
-                    final TrayIcon trayIcon = new TrayIcon(trayImage);
-                    SwingSystemTray.this.trayIcon = trayIcon;
-
-                    // appindicators don't support this, so we cater to the lowest common denominator
-//                    trayIcon.setToolTip(SwingSystemTray.this.appName);
-
-                    trayIcon.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public
-                        void mousePressed(MouseEvent e) {
-                            final SystemTrayMenuPopup menu = SwingSystemTray.this.menu;
-                            Dimension size = menu.getPreferredSize();
-
-                            Point point = e.getPoint();
-                            Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
-
-                            int x = point.x;
-                            int y = point.y;
-
-                            if (y < bounds.y) {
-                                y = bounds.y;
-                            }
-                            else if (y + size.height > bounds.y + bounds.height) {
-                                // our menu cannot have the top-edge snap to the mouse
-                                // so we make the bottom-edge snap to the mouse
-                                y -= size.height; // snap to edge of mouse
-                            }
-
-                            if (x < bounds.x) {
-                                x = bounds.x;
-                            }
-                            else if (x + size.width > bounds.x + bounds.width) {
-                                // our menu cannot have the left-edge snap to the mouse
-                                // so we make the right-edge snap to the mouse
-                                x -= size.width; // snap to edge of mouse
-                            }
-
-                            // weird voodoo to get this to popup with the correct parent
-                            menu.setInvoker(menu);
-                            menu.setLocation(x, y);
-                            menu.setVisible(true);
-                            menu.requestFocus();
-                        }
-                    });
-
-                    try {
-                        SwingSystemTray.this.tray.add(trayIcon);
-                    } catch (AWTException e) {
-                        logger.error("TrayIcon could not be added.", e);
-                    }
                 }
             }
         });
@@ -184,10 +129,70 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             void run() {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
-                    Image trayImage = new ImageIcon(iconPath).getImage()
-                                                             .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
-                    trayImage.flush();
-                    tray.trayIcon.setImage(trayImage);
+                    if (!isActive) {
+                        isActive = true;
+
+                        SwingSystemTray.this.menu = new SystemTrayMenuPopup();
+
+                        Image trayImage = new ImageIcon(iconPath).getImage()
+                                                                 .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
+                        trayImage.flush();
+                        final TrayIcon trayIcon = new TrayIcon(trayImage);
+                        SwingSystemTray.this.trayIcon = trayIcon;
+
+                        // appindicators don't support this, so we cater to the lowest common denominator
+                        // trayIcon.setToolTip(SwingSystemTray.this.appName);
+
+                        trayIcon.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public
+                            void mousePressed(MouseEvent e) {
+                                final SystemTrayMenuPopup menu = SwingSystemTray.this.menu;
+                                Dimension size = menu.getPreferredSize();
+
+                                Point point = e.getPoint();
+                                Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
+
+                                int x = point.x;
+                                int y = point.y;
+
+                                if (y < bounds.y) {
+                                    y = bounds.y;
+                                }
+                                else if (y + size.height > bounds.y + bounds.height) {
+                                    // our menu cannot have the top-edge snap to the mouse
+                                    // so we make the bottom-edge snap to the mouse
+                                    y -= size.height; // snap to edge of mouse
+                                }
+
+                                if (x < bounds.x) {
+                                    x = bounds.x;
+                                }
+                                else if (x + size.width > bounds.x + bounds.width) {
+                                    // our menu cannot have the left-edge snap to the mouse
+                                    // so we make the right-edge snap to the mouse
+                                    x -= size.width; // snap to edge of mouse
+                                }
+
+                                // weird voodoo to get this to popup with the correct parent
+                                menu.setInvoker(menu);
+                                menu.setLocation(x, y);
+                                menu.setVisible(true);
+                                menu.requestFocus();
+                            }
+                        });
+
+                        try {
+                            SwingSystemTray.this.tray.add(trayIcon);
+                        } catch (AWTException e) {
+                            logger.error("TrayIcon could not be added.", e);
+                        }
+                    } else {
+                        Image trayImage = new ImageIcon(iconPath).getImage()
+                                                                 .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
+                        trayImage.flush();
+                        tray.trayIcon.setImage(trayImage);
+                    }
                 }
             }
         });

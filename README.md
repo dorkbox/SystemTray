@@ -44,24 +44,22 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
 SystemTray.TRAY_SIZE   (type int, default value '24')
  - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact). This only applies for Swing tray icons.
  - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
- 
-
-SystemTray.ICON_PATH    (type String, default value '')
- - Location of the icon (to make it easier when specifying icons)
- - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
-of the library.
 ```
    
    
    
 The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
 ```
-   // if using provided JNA jars. Not necessary if
-   //using JNA from https://github.com/twall/jna
-   System.load("Path to OS specific JNA jar");
+   this.systemTray = SystemTray.getSystemTray();
+   if (systemTray == null) {
+       throw new RuntimeException("Unable to load SystemTray!");
+   }
 
-
-   this.systemTray = SystemTray.create("grey_icon.png");
+   try {
+       this.systemTray.setIcon("grey_icon.png");
+   } catch (IOException e) {
+       e.printStackTrace();
+   }
 
    this.systemTray.setStatus("Not Running");
    
@@ -135,7 +133,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>1.15</version>
+  <version>2.0</version>
 </dependency>
 ```
 

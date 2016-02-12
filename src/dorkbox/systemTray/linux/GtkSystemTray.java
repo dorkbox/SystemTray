@@ -36,11 +36,11 @@ class GtkSystemTray extends GtkTypeSystemTray {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private NativeLong button_press_event;
 
-
+    private volatile boolean isActive = false;
     private volatile Pointer menu;
 
     public
-    GtkSystemTray(String iconPath) {
+    GtkSystemTray() {
         super();
 
         gtk.gdk_threads_enter();
@@ -50,8 +50,6 @@ class GtkSystemTray extends GtkTypeSystemTray {
         gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
 
         this.trayIcon = trayIcon;
-
-        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
 
         this.gtkCallback = new Gobject.GEventCallback() {
             @Override
@@ -64,8 +62,6 @@ class GtkSystemTray extends GtkTypeSystemTray {
             }
         };
         button_press_event = gobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
-
-        gtk.gtk_status_icon_set_visible(trayIcon, true);
 
         gtk.gdk_threads_leave();
 
@@ -101,7 +97,13 @@ class GtkSystemTray extends GtkTypeSystemTray {
     protected synchronized
     void setIcon_(final String iconPath) {
         gtk.gdk_threads_enter();
+
         gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
+
+        if (!isActive) {
+            isActive = true;
+            gtk.gtk_status_icon_set_visible(trayIcon, true);
+        }
         gtk.gdk_threads_leave();
     }
 }

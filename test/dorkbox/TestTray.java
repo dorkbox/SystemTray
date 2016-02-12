@@ -20,6 +20,7 @@ import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
@@ -36,11 +37,11 @@ class TestTray {
 
     public static
     void main(String[] args) {
-        // ONLY if manually loading JNA jars (which is how i do it).
+        // ONLY if manually loading JNA jars.
         //
         // Not necessary if using the official JNA downloaded from https://github.com/twall/jna AND THAT JAR is on the classpath
         //
-        // System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
+        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
         new TestTray();
     }
@@ -51,9 +52,15 @@ class TestTray {
 
     public
     TestTray() {
-        this.systemTray = SystemTray.create(LT_GRAY_MAIL);
+        this.systemTray = SystemTray.getSystemTray();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
+        }
+
+        try {
+            this.systemTray.setIcon(LT_GRAY_MAIL);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         systemTray.setStatus("No Mail");

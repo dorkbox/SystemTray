@@ -17,6 +17,7 @@ package dorkbox.systemTray;
 
 import dorkbox.systemTray.linux.AppIndicatorTray;
 import dorkbox.systemTray.linux.GnomeShellExtension;
+import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.swing.SwingSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
@@ -24,7 +25,6 @@ import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.AppIndicatorQuery;
 import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.process.ShellProcessBuilder;
-import dorkbox.systemTray.linux.GtkSystemTray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,7 @@ import java.util.Iterator;
 
 
 /**
- * Interface for system tray implementations.
+ * Factory and base-class for system tray implementations.
  */
 @SuppressWarnings("unused")
 public abstract
@@ -53,11 +53,13 @@ class SystemTray {
     /** Size of the tray, so that the icon can properly scale based on OS. (if it's not exact) */
     public static int TRAY_SIZE = 22;
 
-    private static Class<? extends SystemTray> trayType;
+    private static final SystemTray systemTray;
 
     static boolean isKDE = false;
 
     static {
+        Class<? extends SystemTray> trayType = null;
+
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
         // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
         // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
@@ -215,9 +217,6 @@ class SystemTray {
                 // fallback...
                 if (trayType == null) {
                     trayType = GtkSystemTray.class;
-                }
-
-                if (trayType == null) {
                     logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
                                  "configuration");
                 }
@@ -226,20 +225,30 @@ class SystemTray {
 
         // this is windows OR mac
         if (trayType == null && java.awt.SystemTray.isSupported()) {
-            trayType = SwingSystemTray.class;
+            try {
+                java.awt.SystemTray.getSystemTray();
+                trayType = SwingSystemTray.class;
+            } catch (Throwable ignored) {
+                logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.");
+            }
         }
 
         if (trayType == null) {
             // unsupported tray
             logger.error("Unsupported tray type!");
+            systemTray = null;
         }
         else {
+            SystemTray systemTray_ = null;
             try {
                 ImageUtil.init();
+                systemTray_ = (SystemTray) trayType.getConstructors()[0].newInstance();
             } catch (NoSuchAlgorithmException e) {
                 logger.error("Unsupported hashing algorithm!");
-                trayType = null;
+            } catch (Exception e) {
+                logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'");
             }
+            systemTray = systemTray_;
         }
     }
 
@@ -248,112 +257,20 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "1.15";
+        return "2.1";
     }
 
     /**
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will directly use the
-     * contents of the specified file.
+     * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
+     * supported, in which case this will return NULL.
      *
-     * @param iconPath the full path for an icon to use
-     *
-     * @return a new SystemTray instance with the specified path for the icon
+     * <p>If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
+     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
      */
     public static
-    SystemTray create(String iconPath) {
-        if (trayType != null) {
-            try {
-                iconPath = ImageUtil.iconPath(iconPath);
-                Object o = trayType.getConstructors()[0].newInstance(iconPath);
-                return (SystemTray) o;
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        // unsupported
-        return null;
+    SystemTray getSystemTray() {
+        return systemTray;
     }
-
-    /**
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the URL to a temporary location on disk, based on the path specified by the URL.
-     *
-     * @param iconUrl the URL for the icon to use
-     *
-     * @return a new SystemTray instance with the specified URL for the icon
-     */
-    public static
-    SystemTray create(final URL iconUrl) {
-        if (trayType != null) {
-            try {
-                String iconPath = ImageUtil.iconPath(iconUrl);
-                Object o = trayType.getConstructors()[0].newInstance(iconPath);
-                return (SystemTray) o;
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        // unsupported
-        return null;
-    }
-
-    /**
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the iconStream to a temporary location on disk, based on the `cacheName` specified.
-     *
-     * @param cacheName the name to use for the cache lookup for the iconStream. This can be anything you want, but should be
-     *                  consistently unique
-     * @param iconStream the InputStream to load the icon from
-     *
-     * @return a new SystemTray instance with the specified InputStream for the icon
-     */
-    public static
-    SystemTray create(final String cacheName, final InputStream iconStream) {
-        if (trayType != null) {
-            try {
-                String iconPath = ImageUtil.iconPath(cacheName, iconStream);
-                Object o = trayType.getConstructors()[0].newInstance(iconPath);
-                return (SystemTray) o;
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        // unsupported
-        return null;
-    }
-
-    /**
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the iconStream to a temporary location on disk.
-     *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
-     *
-     * @param iconStream the InputStream to load the icon from
-     *
-     * @return a new SystemTray instance with the specified InputStream for the icon
-     */
-    @Deprecated
-    public static
-    SystemTray create(final InputStream iconStream) {
-        if (trayType != null) {
-            try {
-                String iconPath = ImageUtil.iconPathNoCache(iconStream);
-                Object o = trayType.getConstructors()[0].newInstance(iconPath);
-                return (SystemTray) o;
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        // unsupported
-        return null;
-    }
-
-
 
     protected final java.util.List<MenuEntry> menuEntries = new ArrayList<MenuEntry>();
 
@@ -391,6 +308,9 @@ class SystemTray {
     /**
      * Changes the tray icon used.
      *
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray,
+     * this will directly use the contents of the specified file.
+     *
      * @param imagePath the path of the icon to use
      */
     public
@@ -401,6 +321,9 @@ class SystemTray {
 
     /**
      * Changes the tray icon used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the URL to a temporary location on disk, based on the path specified by the URL.
      *
      * @param imageUrl the URL of the icon to use
      */
@@ -413,6 +336,9 @@ class SystemTray {
     /**
      * Changes the tray icon used.
      *
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the imageStream to a temporary location on disk, based on the `cacheName` specified.
+     *
      * @param cacheName the name to use for lookup in the cache for the iconStream
      * @param imageStream the InputStream of the icon to use
      */
@@ -424,6 +350,9 @@ class SystemTray {
 
     /**
      * Changes the tray icon used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
+     * the imageStream to a temporary location on disk.
      *
      * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
      * also NOT RECOMMENDED, but is provided for simplicity.

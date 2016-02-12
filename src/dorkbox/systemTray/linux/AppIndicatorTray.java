@@ -33,15 +33,14 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     private static final AppIndicator appindicator = AppIndicator.INSTANCE;
 
     private AppIndicator.AppIndicatorInstanceStruct appIndicator;
+    private volatile boolean isActive = false;
 
     public
-    AppIndicatorTray(String iconPath) {
+    AppIndicatorTray() {
         gtk.gdk_threads_enter();
 
-        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", iconPath,
+        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", "",
                                                            AppIndicator.CATEGORY_APPLICATION_STATUS);
-        appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
-
         gtk.gdk_threads_leave();
 
         GtkSupport.startGui();
@@ -69,6 +68,13 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     void setIcon_(final String iconPath) {
         gtk.gdk_threads_enter();
         appindicator.app_indicator_set_icon(this.appIndicator, iconPath);
+
+        if (!isActive) {
+            isActive = true;
+
+            appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
+        }
+
         gtk.gdk_threads_leave();
     }
 
