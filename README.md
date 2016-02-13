@@ -22,6 +22,12 @@ We also cater to the *lowest-common-denominator* when it comes to system-tray/in
 Specifically: **tooltips**. Rather a stupid decision, IMHO, but for more information why, ask Mark Shuttleworth. 
 See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
+
+
+Please be aware: JavaFX uses **GTK2**, and so `GtkSupport.FORCE_GTK2` should be enabled if you plan on using this + javaFX.
+
+
+
 ```
 Customization parameters:
 
@@ -48,7 +54,7 @@ SystemTray.TRAY_SIZE   (type int, default value '24')
  
  
 GtkSupport.FORCE_GTK2    (type boolean, default value 'false')
- -  Forces the system to always choose GTK2 (even when GTK3 might be available). SWT & JavaFX both use GTK2!
+ -  Forces the system to always choose GTK2 (even when GTK3 might be available). JavaFX uses GTK2!
 ```
    
    
@@ -127,7 +133,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.2</version>
+  <version>2.3</version>
 </dependency>
 ```
 
