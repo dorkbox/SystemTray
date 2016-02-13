@@ -119,7 +119,7 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.shutdown();
-                System.exit(0);
+                //System.exit(0);  not necessary if all non-daemon threads have correctly stopped.
             }
         });
     }
