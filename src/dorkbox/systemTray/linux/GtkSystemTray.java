@@ -32,7 +32,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
     // have to make this a field, to prevent GC on this object
     @SuppressWarnings("FieldCanBeLocal")
-    private final Gobject.GEventCallback gtkCallback;
+    private Gobject.GEventCallback gtkCallback;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private NativeLong button_press_event;
 
@@ -42,30 +42,31 @@ class GtkSystemTray extends GtkTypeSystemTray {
     public
     GtkSystemTray() {
         super();
+        GtkSupport.startGui();
 
-        gtk.gdk_threads_enter();
-
-        final Pointer trayIcon = gtk.gtk_status_icon_new();
-        gtk.gtk_status_icon_set_title(trayIcon, "SystemTray@Dorkbox");
-        gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
-
-        this.trayIcon = trayIcon;
-
-        this.gtkCallback = new Gobject.GEventCallback() {
+        GtkSupport.dispatch(new Runnable() {
             @Override
             public
-            void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
-                // BUTTON_PRESS only (any mouse click)
-                if (event.type == 4) {
-                    gtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
-                }
+            void run() {
+                final Pointer trayIcon_ = gtk.gtk_status_icon_new();
+                gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray@Dorkbox");
+                gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
+
+                trayIcon = trayIcon_;
+
+                gtkCallback = new Gobject.GEventCallback() {
+                    @Override
+                    public
+                    void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
+                        // BUTTON_PRESS only (any mouse click)
+                        if (event.type == 4) {
+                            gtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                        }
+                    }
+                };
+                button_press_event = gobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
             }
-        };
-        button_press_event = gobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
-
-        gtk.gdk_threads_leave();
-
-        GtkSupport.startGui();
+        });
     }
 
     /**
@@ -78,32 +79,38 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
-    public synchronized
+    public
     void shutdown() {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // this hides the indicator
+                gtk.gtk_status_icon_set_visible(trayIcon, false);
+                gobject.g_object_unref(trayIcon);
 
-        // this hides the indicator
-        gtk.gtk_status_icon_set_visible(this.trayIcon, false);
-        gobject.g_object_unref(this.trayIcon);
+                // GC it
+                trayIcon = null;
+            }
+        });
 
-        // GC it
-        this.trayIcon = null;
-
-//        libgtk.gdk_threads_leave(); called by parent class
         super.shutdown();
     }
 
     @Override
-    protected synchronized
+    protected
     void setIcon_(final String iconPath) {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
 
-        gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
-
-        if (!isActive) {
-            isActive = true;
-            gtk.gtk_status_icon_set_visible(trayIcon, true);
-        }
-        gtk.gdk_threads_leave();
+                if (!isActive) {
+                    isActive = true;
+                    gtk.gtk_status_icon_set_visible(trayIcon, true);
+                }
+            }
+        });
     }
 }

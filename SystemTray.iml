@@ -22,6 +22,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
     <orderEntry type="library" name="logging slf4j-api (1.7.5)" level="application" />
+    <orderEntry type="library" name="logging logback (1.0.13)" level="application" />
     <orderEntry type="module" module-name="Dorkbox-Util" />
     <orderEntry type="module" module-name="JavaLauncher-Util" />
     <orderEntry type="library" name="jna (4.2.1)" level="application" />

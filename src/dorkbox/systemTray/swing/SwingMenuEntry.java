@@ -20,7 +20,6 @@ import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.SystemTrayMenuPopup;
 import dorkbox.util.SwingUtil;
 
 import javax.swing.ImageIcon;
@@ -32,7 +31,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 class SwingMenuEntry implements MenuEntry {
-    private final SystemTrayMenuPopup parent;
+    private final SwingSystemTrayMenuPopup parent;
     private final SystemTray systemTray;
     private final JMenuItem menuItem;
     private final ActionListener swingCallback;
@@ -40,7 +39,7 @@ class SwingMenuEntry implements MenuEntry {
     private volatile String text;
     private volatile SystemTrayMenuAction callback;
 
-    SwingMenuEntry(final SystemTrayMenuPopup parentMenu, final String label, final String imagePath, final SystemTrayMenuAction callback,
+    SwingMenuEntry(final SwingSystemTrayMenuPopup parentMenu, final String label, final String imagePath, final SystemTrayMenuAction callback,
                    final SystemTray systemTray) {
         this.parent = parentMenu;
         this.text = label;

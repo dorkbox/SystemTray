@@ -209,7 +209,7 @@ class ImageUtil {
         return new BigInteger(1, digest.digest()).toString(32).toUpperCase(Locale.US);
     }
 
-    public static
+    public static synchronized
     void init() throws NoSuchAlgorithmException {
         ImageUtil.digest = MessageDigest.getInstance("MD5");
     }

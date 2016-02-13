@@ -18,7 +18,6 @@ package dorkbox.systemTray.swing;
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.SystemTrayMenuPopup;
 import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
 
@@ -43,7 +42,7 @@ import java.net.URL;
  */
 public
 class SwingSystemTray extends dorkbox.systemTray.SystemTray {
-    volatile SystemTrayMenuPopup menu;
+    volatile SwingSystemTrayMenuPopup menu;
     volatile JMenuItem connectionStatusItem;
 
     volatile SystemTray tray;
@@ -132,7 +131,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                     if (!isActive) {
                         isActive = true;
 
-                        SwingSystemTray.this.menu = new SystemTrayMenuPopup();
+                        SwingSystemTray.this.menu = new SwingSystemTrayMenuPopup();
 
                         Image trayImage = new ImageIcon(iconPath).getImage()
                                                                  .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
@@ -147,7 +146,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                             @Override
                             public
                             void mousePressed(MouseEvent e) {
-                                final SystemTrayMenuPopup menu = SwingSystemTray.this.menu;
+                                final SwingSystemTrayMenuPopup menu = SwingSystemTray.this.menu;
                                 Dimension size = menu.getPreferredSize();
 
                                 Point point = e.getPoint();
@@ -213,14 +212,16 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             void run() {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
-                    MenuEntry menuEntry = getMenuEntry(menuText);
+                    synchronized (menuEntries) {
+                        MenuEntry menuEntry = getMenuEntry(menuText);
 
-                    if (menuEntry != null) {
-                        throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
-                    }
-                    else {
-                        menuEntry = new SwingMenuEntry(menu, menuText, imagePath, callback, tray);
-                        menuEntries.add(menuEntry);
+                        if (menuEntry != null) {
+                            throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
+                        }
+                        else {
+                            menuEntry = new SwingMenuEntry(menu, menuText, imagePath, callback, tray);
+                            menuEntries.add(menuEntry);
+                        }
                     }
                 }
             }

@@ -31,76 +31,84 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Derived from
+ * Lantern: https://github.com/getlantern/lantern/ Apache 2.0 License Copyright 2010 Brave New Software Project, Inc.
+ */
 public abstract
 class GtkTypeSystemTray extends SystemTray {
     protected static final Gobject gobject = Gobject.INSTANCE;
     protected static final Gtk gtk = Gtk.INSTANCE;
-//    protected static final GLib glib = GLib.INSTANCE;
 
     final static ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
 
     private Pointer menu;
     private Pointer connectionStatusItem;
 
-    @Override synchronized
+    @Override
     public
     void shutdown() {
-//        libgtk.gdk_threads_enter();  called by implementation
-        obliterateMenu();
-        GtkSupport.shutdownGui();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                obliterateMenu();
+                GtkSupport.shutdownGui();
 
-        gtk.gdk_threads_leave();
-
-        callbackExecutor.shutdown();
+                callbackExecutor.shutdown();
+            }
+        });
     }
 
     @Override
-    public synchronized
+    public
     void setStatus(final String infoString) {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (connectionStatusItem == null && infoString != null && !infoString.isEmpty()) {
+                    deleteMenu();
 
-        if (this.connectionStatusItem == null && infoString != null && !infoString.isEmpty()) {
-            deleteMenu();
+                    connectionStatusItem = gtk.gtk_menu_item_new_with_label("");
+                    gobject.g_object_ref(connectionStatusItem); // so it matches with 'createMenu'
 
-            this.connectionStatusItem = gtk.gtk_menu_item_new_with_label("");
-            gobject.g_object_ref(connectionStatusItem); // so it matches with 'createMenu'
-
-            // evil hacks abound...
-            Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
-            gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-            Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
-            gtk.gtk_label_set_markup(label, markup);
-            gobject.g_free(markup);
+                    // evil hacks abound...
+                    Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
+                    gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+                    Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+                    gtk.gtk_label_set_markup(label, markup);
+                    gobject.g_free(markup);
 
 
-            gtk.gtk_widget_set_sensitive(this.connectionStatusItem, Gtk.FALSE);
+                    gtk.gtk_widget_set_sensitive(connectionStatusItem, Gtk.FALSE);
 
-            createMenu();
-        }
-        else {
-            if (infoString == null || infoString.isEmpty()) {
-                deleteMenu();
-                gtk.gtk_widget_destroy(connectionStatusItem);
-                connectionStatusItem = null;
+                    createMenu();
+                }
+                else {
+                    if (infoString == null || infoString.isEmpty()) {
+                        deleteMenu();
+                        gtk.gtk_widget_destroy(connectionStatusItem);
+                        connectionStatusItem = null;
 
-                createMenu();
+                        createMenu();
+                    }
+                    else {
+                        // set bold instead
+                        // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
+
+                        // evil hacks abound...
+                        Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
+                        gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+                        Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+                        gtk.gtk_label_set_markup(label, markup);
+                        gobject.g_free(markup);
+
+                        gtk.gtk_widget_show_all(menu);
+                    }
+                }
             }
-            else {
-                // set bold instead
-                // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
-
-                // evil hacks abound...
-                Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
-                gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
-                gtk.gtk_label_set_markup(label, markup);
-                gobject.g_free(markup);
-
-                gtk.gtk_widget_show_all(menu);
-            }
-        }
-
-        gtk.gdk_threads_leave();
+        });
     }
 
     /**
@@ -109,8 +117,6 @@ class GtkTypeSystemTray extends SystemTray {
     protected abstract
     void onMenuAdded(final Pointer menu);
 
-
-    // UNSAFE. must be protected inside synchronized, and inside threads_enter/exit
 
     /**
      * Completely obliterates the menu, no possible way to reconstruct it.
@@ -164,7 +170,7 @@ class GtkTypeSystemTray extends SystemTray {
         menu = gtk.gtk_menu_new();
     }
 
-    // UNSAFE. must be protected inside synchronized, and inside threads_enter/exit
+    // UNSAFE. must be protected inside dispatch
     void createMenu() {
         // now add status
         if (connectionStatusItem != null) {
@@ -185,8 +191,8 @@ class GtkTypeSystemTray extends SystemTray {
         gtk.gtk_widget_show_all(menu);
     }
 
-    private synchronized
-    void addMenuEntry_(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
+    private
+    void addMenuEntry_(final String menuText, final String imagePath, final SystemTrayMenuAction callback) {
         // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
         // see: https://bugs.launchpad.net/glipper/+bug/1203888
 
@@ -194,27 +200,28 @@ class GtkTypeSystemTray extends SystemTray {
             throw new NullPointerException("Menu text cannot be null");
         }
 
-        GtkMenuEntry menuEntry = (GtkMenuEntry) getMenuEntry(menuText);
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    GtkMenuEntry menuEntry = (GtkMenuEntry) getMenuEntry(menuText);
 
-        if (menuEntry != null) {
-            throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
-        }
-        else {
-            gtk.gdk_threads_enter();
+                    if (menuEntry == null) {
+                        // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                        // To work around this issue, we destroy then recreate the menu every time one is added.
+                        deleteMenu();
 
-            // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-            // To work around this issue, we destroy then recreate the menu every time one is added.
-            deleteMenu();
+                        menuEntry = new GtkMenuEntry(menu, menuText, imagePath, callback, GtkTypeSystemTray.this);
 
-            menuEntry = new GtkMenuEntry(menu, menuText, imagePath, callback, this);
+                        gobject.g_object_ref(menuEntry.menuItem); // so it matches with 'createMenu'
+                        menuEntries.add(menuEntry);
 
-            gobject.g_object_ref(menuEntry.menuItem); // so it matches with 'createMenu'
-            this.menuEntries.add(menuEntry);
-
-            createMenu();
-
-            gtk.gdk_threads_leave();
-        }
+                        createMenu();
+                    }
+                }
+            }
+        });
     }
 
     @Override

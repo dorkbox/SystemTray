@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray;
+package dorkbox.systemTray.swing;
 
 import dorkbox.util.DelayTimer;
 import dorkbox.util.SwingUtil;
@@ -26,8 +26,7 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public
-class SystemTrayMenuPopup extends JPopupMenu {
+class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
     @Property
@@ -39,8 +38,7 @@ class SystemTrayMenuPopup extends JPopupMenu {
 //    protected boolean mouseStillOnMenu;
 //    private JDialog hiddenDialog;
 
-    public
-    SystemTrayMenuPopup() {
+    SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
 
@@ -59,7 +57,7 @@ class SystemTrayMenuPopup extends JPopupMenu {
                         if (location.x >= locationOnScreen.x && location.x < locationOnScreen.x + size.width &&
                             location.y >= locationOnScreen.y && location.y < locationOnScreen.y + size.height) {
 
-                            SystemTrayMenuPopup.this.timer.delay(SystemTrayMenuPopup.this.timer.getDelay());
+                            SwingSystemTrayMenuPopup.this.timer.delay(SwingSystemTrayMenuPopup.this.timer.getDelay());
                         }
                         else {
                             setVisible(false);
@@ -74,7 +72,7 @@ class SystemTrayMenuPopup extends JPopupMenu {
             public
             void mouseExited(MouseEvent event) {
                 // wait before checking if mouse is still on the menu
-                SystemTrayMenuPopup.this.timer.delay(SystemTrayMenuPopup.this.timer.getDelay());
+                SwingSystemTrayMenuPopup.this.timer.delay(SwingSystemTrayMenuPopup.this.timer.getDelay());
             }
         });
 

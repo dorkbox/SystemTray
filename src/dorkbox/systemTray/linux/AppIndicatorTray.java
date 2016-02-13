@@ -24,8 +24,7 @@ import dorkbox.util.jna.linux.GtkSupport;
  * <p/>
  * specialization for using app indicators in ubuntu unity
  * <p/>
- * Heavily modified from
- * <p/>
+ * Derived from
  * Lantern: https://github.com/getlantern/lantern/ Apache 2.0 License Copyright 2010 Brave New Software Project, Inc.
  */
 public
@@ -33,57 +32,71 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     private static final AppIndicator appindicator = AppIndicator.INSTANCE;
 
     private AppIndicator.AppIndicatorInstanceStruct appIndicator;
-    private volatile boolean isActive = false;
+    private boolean isActive = false;
 
     public
     AppIndicatorTray() {
-        gtk.gdk_threads_enter();
-
-        this.appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", "",
-                                                           AppIndicator.CATEGORY_APPLICATION_STATUS);
-        gtk.gdk_threads_leave();
-
         GtkSupport.startGui();
+
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", "",
+                                                              AppIndicator.CATEGORY_APPLICATION_STATUS);
+            }
+        });
     }
 
     @Override
-    public synchronized
+    public
     void shutdown() {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // this hides the indicator
+                appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                Pointer p = appIndicator.getPointer();
+                gobject.g_object_unref(p);
 
-        // this hides the indicator
-        appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_PASSIVE);
-        Pointer p = this.appIndicator.getPointer();
-        gobject.g_object_unref(p);
+                // GC it
+                appIndicator = null;
+            }
+        });
 
-        // GC it
-        this.appIndicator = null;
-
-//        libgtk.gdk_threads_leave(); called by super class
         super.shutdown();
     }
 
     @Override
-    protected synchronized
+    protected
     void setIcon_(final String iconPath) {
-        gtk.gdk_threads_enter();
-        appindicator.app_indicator_set_icon(this.appIndicator, iconPath);
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                appindicator.app_indicator_set_icon(appIndicator, iconPath);
 
-        if (!isActive) {
-            isActive = true;
+                if (!isActive) {
+                    isActive = true;
 
-            appindicator.app_indicator_set_status(this.appIndicator, AppIndicator.STATUS_ACTIVE);
-        }
-
-        gtk.gdk_threads_leave();
+                    appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                }
+            }
+        });
     }
 
-
     /**
-     * Called inside the gdk_threads block. MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
+     * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
      */
     protected
     void onMenuAdded(final Pointer menu) {
-        appindicator.app_indicator_set_menu(this.appIndicator, menu);
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                appindicator.app_indicator_set_menu(appIndicator, menu);
+            }
+        });
     }
 }

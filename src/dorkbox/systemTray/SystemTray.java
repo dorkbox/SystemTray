@@ -22,7 +22,6 @@ import dorkbox.systemTray.swing.SwingSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.jna.linux.AppIndicator;
-import dorkbox.util.jna.linux.AppIndicatorQuery;
 import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.process.ShellProcessBuilder;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ import java.util.Iterator;
 /**
  * Factory and base-class for system tray implementations.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "Duplicates"})
 public abstract
 class SystemTray {
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
@@ -70,156 +69,158 @@ class SystemTray {
         }
 
         if (OS.isLinux()) {
-            if (GtkSupport.isSupported) {
-                // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
+            // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
-                // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-                String XDG = System.getenv("XDG_CURRENT_DESKTOP");
-                if ("Unity".equalsIgnoreCase(XDG)) {
+            // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
+            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+            if ("Unity".equalsIgnoreCase(XDG)) {
+                try {
+                    trayType = AppIndicatorTray.class;
+                } catch (Throwable ignored) {
+                }
+            }
+            else if ("XFCE".equalsIgnoreCase(XDG)) {
+                try {
+                    trayType = AppIndicatorTray.class;
+                } catch (Throwable ignored) {
+                    // we can fail on AppIndicator, so this is the fallback
+                    //noinspection EmptyCatchBlock
                     try {
-                        trayType = AppIndicatorTray.class;
-                    } catch (Throwable ignored) {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable i) {
                     }
                 }
-                else if ("XFCE".equalsIgnoreCase(XDG)) {
-                    // XFCE uses a BAD version of libappindicator by default, which DOES NOT support images in the menu.
-                    // if we have libappindicator1, we are OK. if we don't, fallback to GTKSystemTray
-                    try {
-                        if (AppIndicatorQuery.get_v1() != null) {
-                            trayType = AppIndicatorTray.class;
-                        } else {
-                            trayType = GtkSystemTray.class;
-                        }
-                    } catch (Throwable ignored) {
-                    }
+            }
+            else if ("LXDE".equalsIgnoreCase(XDG)) {
+                try {
+                    trayType = GtkSystemTray.class;
+                } catch (Throwable ignored) {
                 }
-                else if ("LXDE".equalsIgnoreCase(XDG)) {
+            }
+            else if ("KDE".equalsIgnoreCase(XDG)) {
+                isKDE = true;
+                try {
+                    trayType = AppIndicatorTray.class;
+                } catch (Throwable ignored) {
+                }
+            }
+            else if ("GNOME".equalsIgnoreCase(XDG)) {
+                // check other DE
+                String GDM = System.getenv("GDMSESSION");
+
+                if ("cinnamon".equalsIgnoreCase(GDM)) {
                     try {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable ignored) {
                     }
                 }
-                else if ("KDE".equalsIgnoreCase(XDG)) {
-                    isKDE = true;
+                else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                     try {
-                        trayType = AppIndicatorTray.class;
+                        trayType = GtkSystemTray.class;
                     } catch (Throwable ignored) {
                     }
                 }
-                else if ("GNOME".equalsIgnoreCase(XDG)) {
-                    // check other DE
-                    String GDM = System.getenv("GDMSESSION");
-
-                    if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable ignored) {
-                        }
-                    }
-
-
-                    // unknown exactly, install extension and go from there
-                    if (trayType == null) {
-                        // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
-                        // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
-
-                        try {
-                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                            PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                            // gnome-shell --version
-                            final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                            shellVersion.setExecutable("gnome-shell");
-                            shellVersion.addArgument("--version");
-                            shellVersion.start();
-
-                            String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                            if (!output.isEmpty()) {
-                                GnomeShellExtension.install(logger, output);
-                                trayType = GtkSystemTray.class;
-                            }
-                        } catch (Throwable ignored) {
-                            trayType = null;
-                        }
+                else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
+                    try {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable ignored) {
                     }
                 }
 
-                // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
+
+                // unknown exactly, install extension and go from there
                 if (trayType == null) {
-                    BufferedReader bin = null;
+                    // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
+                    // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
+
                     try {
-                        // the ONLY guaranteed way to determine if indicator-application-service is running (and thus, using app-indicator),
-                        // is to look through all /proc/<pid>/status, and first line should be Name:\tindicator-appli
-                        File proc = new File("/proc");
-                        File[] listFiles = proc.listFiles();
-                        if (listFiles != null) {
-                            for (File procs : listFiles) {
-                                String name = procs.getName();
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
-                                if (!Character.isDigit(name.charAt(0))) {
-                                    continue;
-                                }
+                        // gnome-shell --version
+                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                        shellVersion.setExecutable("gnome-shell");
+                        shellVersion.addArgument("--version");
+                        shellVersion.start();
 
-                                File status = new File(procs, "status");
-                                if (!status.canRead()) {
-                                    continue;
-                                }
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
 
-                                try {
-                                    bin = new BufferedReader(new FileReader(status));
-                                    String readLine = bin.readLine();
-
-                                    if (readLine != null && readLine.contains("indicator-app")) {
-                                        // make sure we can also load the library (it might be the wrong version)
-                                        try {
-                                            //noinspection unused
-                                            final AppIndicator instance = AppIndicator.INSTANCE;
-                                            trayType = AppIndicatorTray.class;
-                                        } catch (Throwable e) {
-                                            logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
-                                            e.printStackTrace();
-                                        }
-                                        break;
-                                    }
-                                } finally {
-                                    if (bin != null) {
-                                        bin.close();
-                                        bin = null;
-                                    }
-                                }
-                            }
+                        if (!output.isEmpty()) {
+                            GnomeShellExtension.install(logger, output);
+                            trayType = GtkSystemTray.class;
                         }
                     } catch (Throwable ignored) {
-                    } finally {
-                        if (bin != null) {
+                        trayType = null;
+                    }
+                }
+            }
+
+            // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
+            if (trayType == null) {
+                BufferedReader bin = null;
+                try {
+                    // the ONLY guaranteed way to determine if indicator-application-service is running (and thus, using app-indicator),
+                    // is to look through all /proc/<pid>/status, and first line should be Name:\tindicator-appli
+                    File proc = new File("/proc");
+                    File[] listFiles = proc.listFiles();
+                    if (listFiles != null) {
+                        for (File procs : listFiles) {
+                            String name = procs.getName();
+
+                            if (!Character.isDigit(name.charAt(0))) {
+                                continue;
+                            }
+
+                            File status = new File(procs, "status");
+                            if (!status.canRead()) {
+                                continue;
+                            }
+
                             try {
-                                bin.close();
-                            } catch (IOException ignored) {
+                                bin = new BufferedReader(new FileReader(status));
+                                String readLine = bin.readLine();
+
+                                if (readLine != null && readLine.contains("indicator-app")) {
+                                    // make sure we can also load the library (it might be the wrong version)
+                                    try {
+                                        //noinspection unused
+                                        final AppIndicator instance = AppIndicator.INSTANCE;
+                                        trayType = AppIndicatorTray.class;
+
+                                        if (AppIndicator.IS_VERSION_3) {
+
+                                        }
+                                    } catch (Throwable e) {
+                                        logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                                }
+                            } finally {
+                                if (bin != null) {
+                                    bin.close();
+                                    bin = null;
+                                }
                             }
                         }
                     }
+                } catch (Throwable ignored) {
+                } finally {
+                    if (bin != null) {
+                        try {
+                            bin.close();
+                        } catch (IOException ignored) {
+                        }
+                    }
                 }
+            }
 
 
-                // fallback...
-                if (trayType == null) {
-                    trayType = GtkSystemTray.class;
-                    logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
-                                 "configuration");
-                }
+            // fallback...
+            if (trayType == null) {
+                trayType = GtkSystemTray.class;
+                logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
+                             "configuration");
             }
         }
 
@@ -242,11 +243,30 @@ class SystemTray {
             SystemTray systemTray_ = null;
             try {
                 ImageUtil.init();
+
+                if (AppIndicator.IS_VERSION_3 && GtkSupport.isGtk2) {
+                    // NOTE:
+                    //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
+                    // appindicator3 doesn't support menu icons via GTK2. AT THIS POINT, we DO NOT have GTK3
+                    try {
+                        trayType = GtkSystemTray.class;
+                        logger.warn("AppIndicator3 detected with GTK2 only, falling back to GTK2 system tray type.  " +
+                                    "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
+                    } catch (Throwable ignored) {
+                        logger.error("AppIndicator3 detected with GTK2 only and unable to fallback to using GTK2 system tray type." +
+                                     "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- the menu icons WILL " +
+                                     "NOT be visible." +
+                                     " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
+                    }
+                }
+
                 systemTray_ = (SystemTray) trayType.getConstructors()[0].newInstance();
+
+                logger.info("Successfully Loaded: {}", trayType.getSimpleName());
             } catch (NoSuchAlgorithmException e) {
                 logger.error("Unsupported hashing algorithm!");
             } catch (Exception e) {
-                logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'");
+                logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
             systemTray = systemTray_;
         }
@@ -278,6 +298,10 @@ class SystemTray {
     SystemTray() {
     }
 
+
+    /**
+     * Must be wrapped in a synchronized block for object visibility
+     */
     protected
     MenuEntry getMenuEntry(String menuText) {
         for (MenuEntry entry : menuEntries) {
@@ -436,15 +460,17 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param newMenuText the new menu text (this will replace the original menu text)
      */
-    public final synchronized
+    public final
     void updateMenuEntry_Text(String origMenuText, String newMenuText) {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setText(newMenuText);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setText(newMenuText);
+            }
         }
     }
 
@@ -454,15 +480,17 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param imagePath the new path for the image to use or null to delete the image
      */
-    public final synchronized
+    public final
     void updateMenuEntry_Image(String origMenuText, String imagePath) throws IOException {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setImage(imagePath);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setImage(imagePath);
+            }
         }
     }
 
@@ -472,15 +500,17 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param imageUrl the new URL for the image to use or null to delete the image
      */
-    public final synchronized
+    public final
     void updateMenuEntry_Image(String origMenuText, URL imageUrl) throws IOException {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setImage(imageUrl);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setImage(imageUrl);
+            }
         }
     }
 
@@ -490,15 +520,17 @@ class SystemTray {
      * @param cacheName the name to use for lookup in the cache for the imageStream
      * @param imageStream the InputStream of the image to use or null to delete the image
      */
-    public final synchronized
+    public final
     void updateMenuEntry_Image(String origMenuText, String cacheName, InputStream imageStream) throws IOException {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setImage(cacheName, imageStream);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setImage(cacheName, imageStream);
+            }
         }
     }
 
@@ -512,15 +544,17 @@ class SystemTray {
      * @param imageStream the new path for the image to use or null to delete the image
      */
     @Deprecated
-    public final synchronized
+    public final
     void updateMenuEntry_Image(String origMenuText, InputStream imageStream) throws IOException {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setImage(imageStream);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setImage(imageStream);
+            }
         }
     }
 
@@ -530,15 +564,17 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param newCallback the new callback (this will replace the original callback)
      */
-    public final synchronized
+    public final
     void updateMenuEntry_Callback(String origMenuText, SystemTrayMenuAction newCallback) {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry != null) {
-            menuEntry.setCallback(newCallback);
-        }
-        else {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            if (menuEntry != null) {
+                menuEntry.setCallback(newCallback);
+            }
+            else {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
         }
     }
 
@@ -550,16 +586,18 @@ class SystemTray {
      * @param newMenuText the new menu text (this will replace the original menu text)
      * @param newCallback the new callback (this will replace the original callback)
      */
-    public final synchronized
+    public final
     void updateMenuEntry(String origMenuText, String newMenuText, SystemTrayMenuAction newCallback) {
-        MenuEntry menuEntry = getMenuEntry(origMenuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(origMenuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-        }
-        else {
-            menuEntry.setText(newMenuText);
-            menuEntry.setCallback(newCallback);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+            }
+            else {
+                menuEntry.setText(newMenuText);
+                menuEntry.setCallback(newCallback);
+            }
         }
     }
 
@@ -569,7 +607,7 @@ class SystemTray {
      *
      * @param menuEntry This is the menu entry to remove
      */
-    public final synchronized
+    public final
     void removeMenuEntry(final MenuEntry menuEntry) {
         if (menuEntry == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
@@ -577,15 +615,17 @@ class SystemTray {
 
         final String label = menuEntry.getText();
 
-        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-            final MenuEntry entry = iterator.next();
-            if (entry.getText()
-                     .equals(label)) {
-                iterator.remove();
+        synchronized (menuEntries) {
+            for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                final MenuEntry entry = iterator.next();
+                if (entry.getText()
+                         .equals(label)) {
+                    iterator.remove();
 
-                // this will also reset the menu
-                menuEntry.remove();
-                return;
+                    // this will also reset the menu
+                    menuEntry.remove();
+                    return;
+                }
             }
         }
         throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
@@ -597,15 +637,17 @@ class SystemTray {
      *
      * @param menuText This is the label for the menu entry to remove
      */
-    public final synchronized
+    public final
     void removeMenuEntry(final String menuText) {
-        MenuEntry menuEntry = getMenuEntry(menuText);
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = getMenuEntry(menuText);
 
-        if (menuEntry == null) {
-            throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
-        }
-        else {
-            removeMenuEntry(menuEntry);
+            if (menuEntry == null) {
+                throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
+            }
+            else {
+                removeMenuEntry(menuEntry);
+            }
         }
     }
 }

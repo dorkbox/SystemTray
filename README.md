@@ -19,7 +19,7 @@ This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windo
 
 
 We also cater to the *lowest-common-denominator* when it comes to system-tray/indicator functionality, and there are some features that we don't support. 
-Specifically, **tooltips**. Rather a stupid decision, IMHO, but for more information why ask Mark Shuttleworth. 
+Specifically: **tooltips**. Rather a stupid decision, IMHO, but for more information why, ask Mark Shuttleworth. 
 See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
 ```
@@ -44,6 +44,11 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
 SystemTray.TRAY_SIZE   (type int, default value '24')
  - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact). This only applies for Swing tray icons.
  - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
+ 
+ 
+ 
+GtkSupport.CREATE_EVENT_LOOP    (type boolean, default value 'true')
+ - Enables/Disables the creation of a native GTK event loop. Useful if you are already creating one via SWT/etc.
 ```
    
    
@@ -73,17 +78,6 @@ The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/m
 ```
 
 
-```
-Note: This library does NOT use SWT for system-tray support, only for the purpose
-      of lessening the jar dependencies. Changing it to be SWT-based is not 
-      difficult, just remember that SWT on linux *already* starts up the GTK main 
-      event loop.
-```
-```
-Note: If you use the attached JNA libraries, you **MUST** load the respective
-      native libraries yourself, especially with JNA (as the loading logic has
-      been removed from the jar)
-```
 ``` 
 Note: This project was heavily influenced by the excellent Lantern project,
       *Many* thanks to them for figuring out AppIndicators via JNA.
@@ -99,8 +93,8 @@ Note: Gnome-shell users will experience an extension install to support this
       Also, screw you gnome-project leads, for making it such a pain-in-the-ass
       to do something so incredibly simple and basic.
       
-Note: Some desktop environments might use a dated version of libappindicator, when 
-      icon support in menus was removed, then put back. This happened in version 3.
+Note: Some desktop environments might use a dated version of libappindicator3, when 
+      icon support in menus was removed, then put back.
       This library will try to load a GTK indicator instead when it can, or will 
       try to load libappindicator1 first. Thank you RedHat for putting it back.
       
@@ -133,7 +127,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.0</version>
+  <version>2.1</version>
 </dependency>
 ```
 

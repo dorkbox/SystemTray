@@ -23,6 +23,7 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gobject.GCallback;
 import dorkbox.util.jna.linux.Gtk;
+import dorkbox.util.jna.linux.GtkSupport;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +44,7 @@ class GtkMenuEntry implements MenuEntry {
     private volatile SystemTrayMenuAction callback;
     private volatile Pointer image;
 
+    // called from inside dispatch thread
     GtkMenuEntry(final Pointer parentMenu, final String label, final String imagePath, final SystemTrayMenuAction callback,
                  final GtkTypeSystemTray systemTray) {
         this.parentMenu = parentMenu;
@@ -99,36 +101,41 @@ class GtkMenuEntry implements MenuEntry {
     @Override
     public
     void setText(final String newText) {
-        this.text = newText;
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                text = newText;
+                gtk.gtk_menu_item_set_label(menuItem, newText);
 
-        gtk.gtk_menu_item_set_label(menuItem, newText);
-
-        gtk.gtk_widget_show_all(parentMenu);
-
-        gtk.gdk_threads_leave();
+                gtk.gtk_widget_show_all(parentMenu);
+            }
+        });
     }
 
     private
     void setImage_(final String imagePath) {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (imagePath != null && !imagePath.isEmpty()) {
+                    if (image != null) {
+                        gtk.gtk_widget_destroy(image);
+                    }
+                    gtk.gtk_widget_show_all(parentMenu);
 
-        if (imagePath != null && !imagePath.isEmpty()) {
-            if (image != null) {
-                gtk.gtk_widget_destroy(image);
+                    image = gtk.gtk_image_new_from_file(imagePath);
+
+                    gtk.gtk_image_menu_item_set_image(menuItem, image);
+
+                    //  must always re-set always-show after setting the image
+                    gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+                }
+
+                gtk.gtk_widget_show_all(parentMenu);
             }
-            gtk.gtk_widget_show_all(parentMenu);
-
-            image = gtk.gtk_image_new_from_file(imagePath);
-
-            gtk.gtk_image_menu_item_set_image(menuItem, image);
-
-            //  must always re-set always-show after setting the image
-            gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
-        }
-
-        gtk.gdk_threads_leave();
-        gtk.gtk_widget_show_all(parentMenu);
+        });
     }
 
     @Override
@@ -187,15 +194,17 @@ class GtkMenuEntry implements MenuEntry {
      */
     public
     void remove() {
-        gtk.gdk_threads_enter();
+        GtkSupport.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                removePrivate();
 
-        removePrivate();
-
-        // have to rebuild the menu now...
-        systemTray.deleteMenu();
-        systemTray.createMenu();
-
-        gtk.gdk_threads_leave();
+                // have to rebuild the menu now...
+                systemTray.deleteMenu();
+                systemTray.createMenu();
+            }
+        });
     }
 
     void removePrivate() {
