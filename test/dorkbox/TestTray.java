@@ -118,6 +118,7 @@ class TestTray {
             @Override
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+                systemTray.shutdown();
                 System.exit(0);
             }
         });
