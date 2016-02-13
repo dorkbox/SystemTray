@@ -47,8 +47,8 @@ SystemTray.TRAY_SIZE   (type int, default value '24')
  
  
  
-GtkSupport.CREATE_EVENT_LOOP    (type boolean, default value 'true')
- - Enables/Disables the creation of a native GTK event loop. Useful if you are already creating one via SWT/etc.
+GtkSupport.FORCE_GTK2    (type boolean, default value 'false')
+ -  Forces the system to always choose GTK2 (even when GTK3 might be available). SWT & JavaFX both use GTK2!
 ```
    
    
@@ -127,7 +127,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.1</version>
+  <version>2.2</version>
 </dependency>
 ```
 
