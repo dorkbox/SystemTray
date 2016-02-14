@@ -245,7 +245,14 @@ class SystemTray {
             try {
                 ImageUtil.init();
 
-                if (OS.isLinux() && GtkSupport.isGtk2 && AppIndicator.IS_VERSION_3) {
+                // the order of checking here is critical -- AppIndicator.IS_VERSION_3 initializes `appindicator` and `gtk`
+                if (OS.isLinux() &&
+                    trayType == AppIndicatorTray.class &&
+                    AppIndicator.IS_VERSION_3  && // this initializes the appindicator (since we specified that via the trayType)
+                    GtkSupport.isGtk2) {
+
+                    final boolean isVersion3 = AppIndicator.IS_VERSION_3;
+
                     // NOTE:
                     //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
                     // appindicator3 doesn't support menu icons via GTK2. AT THIS POINT, we DO NOT have GTK3
