@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import java.io.File;
 import java.net.URL;
 
 /**
@@ -42,12 +41,6 @@ class TestTraySwt {
 
     public static
     void main(String[] args) {
-        // ONLY if manually loading JNA jars.
-        //
-        // Not necessary if using the official JNA downloaded from https://github.com/twall/jna AND THAT JAR is on the classpath
-        //
-        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
-
         new TestTraySwt();
     }
 
@@ -58,14 +51,12 @@ class TestTraySwt {
     public
     TestTraySwt() {
         Display display = new Display ();
-        Shell shell = new Shell(display);
+        final Shell shell = new Shell(display);
 
         Text helloWorldTest = new Text(shell, SWT.NONE);
-        helloWorldTest.setText("Hello World SWT");
+        helloWorldTest.setText("Hello World SWT  .................  ");
         helloWorldTest.pack();
 
-        shell.pack();
-        shell.open ();
 
         this.systemTray = SystemTray.getSystemTray();
         if (systemTray == null) {
@@ -111,13 +102,22 @@ class TestTraySwt {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.shutdown();
+                shell.close(); // close down SWT shell
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         });
 
-        while (!shell.isDisposed ()) {
-            if (!display.readAndDispatch ()) display.sleep ();
+
+
+        shell.pack();
+        shell.open();
+
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
         }
-        display.dispose ();
+
+        display.dispose();
     }
 }

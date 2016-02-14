@@ -21,6 +21,7 @@ import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.GtkSupport;
 import dorkbox.systemTray.swing.SwingSystemTray;
+import dorkbox.systemTray.swt.SwtSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -76,7 +77,10 @@ class SystemTray {
         // maybe we should load the SWT version? (SWT's use of GTK is incompatible with how we use GTK)
 
         if (isSwtLoaded) {
-
+            try {
+                trayType = SwtSystemTray.class;
+            } catch (Throwable ignored) {
+            }
         }
         else {
             // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
