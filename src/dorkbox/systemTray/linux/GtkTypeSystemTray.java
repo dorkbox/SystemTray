@@ -21,9 +21,9 @@ import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.NamedThreadFactory;
-import dorkbox.util.jna.linux.Gobject;
-import dorkbox.util.jna.linux.Gtk;
-import dorkbox.util.jna.linux.GtkSupport;
+import dorkbox.systemTray.linux.jna.Gobject;
+import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.io.InputStream;
 import java.net.URL;

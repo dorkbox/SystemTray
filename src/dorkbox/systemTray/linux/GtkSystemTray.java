@@ -17,9 +17,9 @@ package dorkbox.systemTray.linux;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import dorkbox.util.jna.linux.Gobject;
-import dorkbox.util.jna.linux.Gtk;
-import dorkbox.util.jna.linux.GtkSupport;
+import dorkbox.systemTray.linux.jna.Gobject;
+import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.linux.jna.GtkSupport;
 
 /**
  * Class for handling all system tray interactions via GTK.

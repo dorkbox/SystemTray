@@ -18,11 +18,11 @@ package dorkbox.systemTray;
 import dorkbox.systemTray.linux.AppIndicatorTray;
 import dorkbox.systemTray.linux.GnomeShellExtension;
 import dorkbox.systemTray.linux.GtkSystemTray;
+import dorkbox.systemTray.linux.jna.AppIndicator;
+import dorkbox.systemTray.linux.jna.GtkSupport;
 import dorkbox.systemTray.swing.SwingSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
-import dorkbox.util.jna.linux.AppIndicator;
-import dorkbox.util.jna.linux.GtkSupport;
 import dorkbox.util.process.ShellProcessBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,168 +60,193 @@ class SystemTray {
     static {
         Class<? extends SystemTray> trayType = null;
 
-        // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
-        // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
-        // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
-
-        if (OS.isWindows()) {
-            // the tray icon size in windows is DIFFERENT than on Mac (TODO: test on mac with retina stuff).
-            TRAY_SIZE -= 4;
+        boolean isJavaFxLoaded = false;
+        boolean isSwtLoaded = false;
+        try {
+            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if JAVAFX_COMPATIBILITY_MODE is enabled.
+            // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
+            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            m.setAccessible(true);
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            isJavaFxLoaded = null != m.invoke(cl, "com.sun.javafx.tk.Toolkit");
+            isSwtLoaded = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
+        } catch (Throwable ignored) {
         }
 
-        if (OS.isLinux()) {
-            // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
+        // maybe we should load the SWT version? (SWT's use of GTK is incompatible with how we use GTK)
 
-            // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
-            if ("Unity".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
-                }
-            }
-            else if ("XFCE".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
-                    // we can fail on AppIndicator, so this is the fallback
-                    //noinspection EmptyCatchBlock
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable i) {
-                    }
-                }
-            }
-            else if ("LXDE".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = GtkSystemTray.class;
-                } catch (Throwable ignored) {
-                }
-            }
-            else if ("KDE".equalsIgnoreCase(XDG)) {
-                isKDE = true;
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
-                }
-            }
-            else if ("GNOME".equalsIgnoreCase(XDG)) {
-                // check other DE
-                String GDM = System.getenv("GDMSESSION");
+        if (isSwtLoaded) {
 
-                if ("cinnamon".equalsIgnoreCase(GDM)) {
+        }
+        else {
+            // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
+            // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
+            // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
+
+            if (OS.isWindows()) {
+                // the tray icon size in windows is DIFFERENT than on Mac (TODO: test on mac with retina stuff).
+                TRAY_SIZE -= 4;
+            }
+
+            if (OS.isLinux()) {
+                // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
+
+                if (isJavaFxLoaded) {
+                    // we MUST use GTK2 with javaFX!
+                    GtkSupport.FORCE_GTK2 = isJavaFxLoaded;
+                }
+
+                // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
+                String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+                if ("Unity".equalsIgnoreCase(XDG)) {
                     try {
-                        trayType = GtkSystemTray.class;
+                        trayType = AppIndicatorTray.class;
                     } catch (Throwable ignored) {
                     }
                 }
-                else if ("gnome-classic".equalsIgnoreCase(GDM)) {
+                else if ("XFCE".equalsIgnoreCase(XDG)) {
                     try {
-                        trayType = GtkSystemTray.class;
+                        trayType = AppIndicatorTray.class;
                     } catch (Throwable ignored) {
-                    }
-                }
-                else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable ignored) {
-                    }
-                }
-
-
-                // unknown exactly, install extension and go from there
-                if (trayType == null) {
-                    // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
-                    // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
-
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // gnome-shell --version
-                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                        shellVersion.setExecutable("gnome-shell");
-                        shellVersion.addArgument("--version");
-                        shellVersion.start();
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                        if (!output.isEmpty()) {
-                            GnomeShellExtension.install(logger, output);
-                            trayType = GtkSystemTray.class;
-                        }
-                    } catch (Throwable ignored) {
-                        trayType = null;
-                    }
-                }
-            }
-
-            // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
-            if (trayType == null) {
-                BufferedReader bin = null;
-                try {
-                    // the ONLY guaranteed way to determine if indicator-application-service is running (and thus, using app-indicator),
-                    // is to look through all /proc/<pid>/status, and first line should be Name:\tindicator-appli
-                    File proc = new File("/proc");
-                    File[] listFiles = proc.listFiles();
-                    if (listFiles != null) {
-                        for (File procs : listFiles) {
-                            String name = procs.getName();
-
-                            if (!Character.isDigit(name.charAt(0))) {
-                                continue;
-                            }
-
-                            File status = new File(procs, "status");
-                            if (!status.canRead()) {
-                                continue;
-                            }
-
-                            try {
-                                bin = new BufferedReader(new FileReader(status));
-                                String readLine = bin.readLine();
-
-                                if (readLine != null && readLine.contains("indicator-app")) {
-                                    // make sure we can also load the library (it might be the wrong version)
-                                    try {
-                                        //noinspection unused
-                                        final AppIndicator instance = AppIndicator.INSTANCE;
-                                        trayType = AppIndicatorTray.class;
-
-                                        if (AppIndicator.IS_VERSION_3) {
-
-                                        }
-                                    } catch (Throwable e) {
-                                        logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
-                                        e.printStackTrace();
-                                    }
-                                    break;
-                                }
-                            } finally {
-                                if (bin != null) {
-                                    bin.close();
-                                    bin = null;
-                                }
-                            }
-                        }
-                    }
-                } catch (Throwable ignored) {
-                } finally {
-                    if (bin != null) {
+                        // we can fail on AppIndicator, so this is the fallback
+                        //noinspection EmptyCatchBlock
                         try {
-                            bin.close();
-                        } catch (IOException ignored) {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable i) {
                         }
                     }
                 }
-            }
+                else if ("LXDE".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable ignored) {
+                    }
+                }
+                else if ("KDE".equalsIgnoreCase(XDG)) {
+                    isKDE = true;
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable ignored) {
+                    }
+                }
+                else if ("GNOME".equalsIgnoreCase(XDG)) {
+                    // check other DE
+                    String GDM = System.getenv("GDMSESSION");
+
+                    if ("cinnamon".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable ignored) {
+                        }
+                    }
 
 
-            // fallback...
-            if (trayType == null) {
-                trayType = GtkSystemTray.class;
-                logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
-                             "configuration");
+                    // unknown exactly, install extension and go from there
+                    if (trayType == null) {
+                        // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
+                        // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
+
+                        try {
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                            PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                            // gnome-shell --version
+                            final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                            shellVersion.setExecutable("gnome-shell");
+                            shellVersion.addArgument("--version");
+                            shellVersion.start();
+
+                            String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                            if (!output.isEmpty()) {
+                                GnomeShellExtension.install(logger, output);
+                                trayType = GtkSystemTray.class;
+                            }
+                        } catch (Throwable ignored) {
+                            trayType = null;
+                        }
+                    }
+                }
+
+                // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
+                if (trayType == null) {
+                    BufferedReader bin = null;
+                    try {
+                        // the ONLY guaranteed way to determine if indicator-application-service is running (and thus, using app-indicator),
+                        // is to look through all /proc/<pid>/status, and first line should be Name:\tindicator-appli
+                        File proc = new File("/proc");
+                        File[] listFiles = proc.listFiles();
+                        if (listFiles != null) {
+                            for (File procs : listFiles) {
+                                String name = procs.getName();
+
+                                if (!Character.isDigit(name.charAt(0))) {
+                                    continue;
+                                }
+
+                                File status = new File(procs, "status");
+                                if (!status.canRead()) {
+                                    continue;
+                                }
+
+                                try {
+                                    bin = new BufferedReader(new FileReader(status));
+                                    String readLine = bin.readLine();
+
+                                    if (readLine != null && readLine.contains("indicator-app")) {
+                                        // make sure we can also load the library (it might be the wrong version)
+                                        try {
+                                            //noinspection unused
+                                            final AppIndicator instance = AppIndicator.INSTANCE;
+                                            trayType = AppIndicatorTray.class;
+
+                                            if (AppIndicator.IS_VERSION_3) {
+
+                                            }
+                                        } catch (Throwable e) {
+                                            logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
+                                            e.printStackTrace();
+                                        }
+                                        break;
+                                    }
+                                } finally {
+                                    if (bin != null) {
+                                        bin.close();
+                                        bin = null;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        if (bin != null) {
+                            try {
+                                bin.close();
+                            } catch (IOException ignored) {
+                            }
+                        }
+                    }
+                }
+
+
+                // fallback...
+                if (trayType == null) {
+                    trayType = GtkSystemTray.class;
+                    logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
+                                 "configuration");
+                }
             }
         }
 
@@ -237,11 +262,12 @@ class SystemTray {
 
         if (trayType == null) {
             // unsupported tray
-            logger.error("Unsupported tray type!");
+            logger.error("Unable to discover what tray implementation to use!");
             systemTray = null;
         }
         else {
             SystemTray systemTray_ = null;
+
             try {
                 ImageUtil.init();
 
@@ -250,8 +276,6 @@ class SystemTray {
                     trayType == AppIndicatorTray.class &&
                     AppIndicator.IS_VERSION_3  && // this initializes the appindicator (since we specified that via the trayType)
                     GtkSupport.isGtk2) {
-
-                    final boolean isVersion3 = AppIndicator.IS_VERSION_3;
 
                     // NOTE:
                     //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
@@ -280,22 +304,9 @@ class SystemTray {
             systemTray = systemTray_;
 
 
-
             // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
             // we ONLY need this on linux for compatibility with JavaFX... (windows/mac don't use gtk)
             if (OS.isLinux()) {
-                boolean isJavaFxLoaded = false;
-
-                try {
-                    // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if JAVAFX_COMPATIBILITY_MODE is enabled.
-                    // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
-                    java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-                    m.setAccessible(true);
-                    ClassLoader cl = ClassLoader.getSystemClassLoader();
-                    isJavaFxLoaded = null != m.invoke(cl, "com.sun.javafx.tk.Toolkit");
-                } catch (Throwable ignored) {
-                }
-
                 if (isJavaFxLoaded || GtkSupport.JAVAFX_COMPATIBILITY_MODE) {
                     // com.sun.javafx.tk.Toolkit.getToolkit()
                     //                          .addShutdownHook(new Runnable() {

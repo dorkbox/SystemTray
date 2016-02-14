@@ -20,10 +20,10 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.util.jna.linux.Gobject;
-import dorkbox.util.jna.linux.Gobject.GCallback;
-import dorkbox.util.jna.linux.Gtk;
-import dorkbox.util.jna.linux.GtkSupport;
+import dorkbox.systemTray.linux.jna.Gobject;
+import dorkbox.systemTray.linux.jna.Gobject.GCallback;
+import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.io.InputStream;
 import java.net.URL;
