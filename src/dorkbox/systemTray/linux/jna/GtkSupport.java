@@ -17,54 +17,37 @@ package dorkbox.systemTray.linux.jna;
 
 import com.sun.jna.Function;
 import com.sun.jna.Native;
-import dorkbox.util.Property;
+import dorkbox.systemTray.SystemTray;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
 public
 class GtkSupport {
-    // RE: SWT
-    // https://developer.gnome.org/glib/stable/glib-Deprecated-Thread-APIs.html#g-thread-init
-    // Since version >= 2.24, threads can only init once. Multiple calls do nothing, and we can nest gtk_main()
-    // in a nested loop.
-
     private static volatile boolean started = false;
     private static final ArrayBlockingQueue<Runnable> dispatchEvents = new ArrayBlockingQueue<Runnable>(256);
     private static volatile Thread gtkDispatchThread;
-
-    @Property
-    /** Forces the system to always choose GTK2 (even when GTK3 might be available). JavaFX uses GTK2! */
-    public static boolean FORCE_GTK2 = false;
-
-    @Property
-    /**
-     * Forces the system to enter into JavaFX compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
-     * This is only necessary if autodetection fails
-     */
-    public static boolean JAVAFX_COMPATIBILITY_MODE = false;
 
     /**
      * must call get() before accessing this! Only "Gtk" interface should access this!
      */
     static volatile Function gtk_status_icon_position_menu = null;
-
     public static volatile boolean isGtk2 = false;
-
     private static volatile boolean alreadyRunningGTK = false;
 
     /**
      * Helper for GTK, because we could have v3 or v2.
      *
      * Observations: JavaFX uses GTK2, and we can't load GTK3 if GTK2 symbols are loaded
+     * SWT uses GTK2 or GTK3. We do not work with the GTK3 version of SWT.
      */
     @SuppressWarnings("Duplicates")
     public static
     Gtk get() {
         Gtk library;
 
-        boolean shouldUseGtk2 = GtkSupport.FORCE_GTK2 || JAVAFX_COMPATIBILITY_MODE;
-        alreadyRunningGTK = JAVAFX_COMPATIBILITY_MODE;
+        boolean shouldUseGtk2 = SystemTray.FORCE_GTK2 || SystemTray.COMPATIBILITY_MODE;
+        alreadyRunningGTK = SystemTray.COMPATIBILITY_MODE;
 
 
         // for more info on JavaFX: https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm

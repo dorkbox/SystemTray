@@ -17,6 +17,7 @@
 package dorkbox.systemTray.linux.jna;
 
 import com.sun.jna.Native;
+import dorkbox.systemTray.SystemTray;
 
 /**
  * Helper for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that standard
@@ -44,7 +45,7 @@ class AppIndicatorQuery {
 
         // NOTE: GtkSupport uses this info to figure out WHAT VERSION OF GTK to use: appindiactor1 -> GTk2, appindicator3 -> GTK3.
 
-        if (GtkSupport.FORCE_GTK2) {
+        if (SystemTray.FORCE_GTK2 || SystemTray.COMPATIBILITY_MODE) {
             // try loading appindicator1 first, maybe it's there?
 
             try {
@@ -117,7 +118,7 @@ class AppIndicatorQuery {
         } catch (Throwable ignored) {
         }
 
-        throw new RuntimeException("We apologize for this, but we are unable to determine the appIndicator library is in use, if " +
+        throw new RuntimeException("We apologize for this, but we are unable to determine which the appIndicator library is in use, if " +
                                    "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
     }
 }
