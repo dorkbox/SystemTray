@@ -16,7 +16,6 @@
 
 package dorkbox.systemTray;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -42,14 +41,14 @@ interface MenuEntry {
      *
      * @param imagePath the full path of the image to use or null
      */
-    void setImage(String imagePath) throws IOException;
+    void setImage(String imagePath);
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
      *
      * @param imageUrl the URL of the image to use or null
      */
-    void setImage(URL imageUrl) throws IOException;
+    void setImage(URL imageUrl);
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
@@ -57,7 +56,7 @@ interface MenuEntry {
      * @param cacheName the name to use for lookup in the cache for the imageStream
      * @param imageStream the InputStream of the image to use
      */
-    void setImage(String cacheName, InputStream imageStream) throws IOException;
+    void setImage(String cacheName, InputStream imageStream);
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
@@ -68,7 +67,7 @@ interface MenuEntry {
      * @param imageStream the InputStream of the image to use
      */
     @Deprecated
-    void setImage(InputStream imageStream) throws IOException;
+    void setImage(InputStream imageStream);
 
     /**
      * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry

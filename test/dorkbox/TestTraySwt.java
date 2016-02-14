@@ -19,14 +19,10 @@ package dorkbox;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 import java.io.File;
 import java.net.URL;
@@ -34,15 +30,15 @@ import java.net.URL;
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
  *
- * Needs JavaFX to run
+ * Needs SWT to run
  */
 public
-class TestTrayJavaFX extends Application {
+class TestTraySwt {
 
     // horribly hacky. ONLY FOR TESTING!
-    public static final URL BLACK_MAIL = TestTrayJavaFX.class.getResource("mail.000000.24.png");
-    public static final URL GREEN_MAIL = TestTrayJavaFX.class.getResource("mail.39AC39.24.png");
-    public static final URL LT_GRAY_MAIL = TestTrayJavaFX.class.getResource("mail.999999.24.png");
+    public static final URL BLACK_MAIL = TestTraySwt.class.getResource("mail.000000.24.png");
+    public static final URL GREEN_MAIL = TestTraySwt.class.getResource("mail.39AC39.24.png");
+    public static final URL LT_GRAY_MAIL = TestTraySwt.class.getResource("mail.999999.24.png");
 
     public static
     void main(String[] args) {
@@ -52,7 +48,7 @@ class TestTrayJavaFX extends Application {
         //
         System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
-        launch(TestTrayJavaFX.class);
+        new TestTraySwt();
     }
 
     private SystemTray systemTray;
@@ -60,29 +56,16 @@ class TestTrayJavaFX extends Application {
     private SystemTrayMenuAction callbackGray;
 
     public
-    TestTrayJavaFX() {
+    TestTraySwt() {
+        Display display = new Display ();
+        Shell shell = new Shell(display);
 
-    }
+        Text helloWorldTest = new Text(shell, SWT.NONE);
+        helloWorldTest.setText("Hello World SWT");
+        helloWorldTest.pack();
 
-    @Override
-    public
-    void start(final Stage primaryStage) throws Exception {
-        primaryStage.setTitle("Hello World!");
-        Button btn = new Button();
-        btn.setText("Say 'Hello World'");
-        btn.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                System.out.println("Hello World!");
-            }
-        });
-
-        StackPane root = new StackPane();
-        root.getChildren().add(btn);
-        primaryStage.setScene(new Scene(root, 300, 250));
-        primaryStage.show();
-
+        shell.pack();
+        shell.open ();
 
         this.systemTray = SystemTray.getSystemTray();
         if (systemTray == null) {
@@ -98,6 +81,7 @@ class TestTrayJavaFX extends Application {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
+
                 systemTray.setIcon(GREEN_MAIL);
                 menuEntry.setCallback(callbackGray);
                 menuEntry.setImage(BLACK_MAIL);
@@ -112,6 +96,7 @@ class TestTrayJavaFX extends Application {
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
+
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
                 systemTray.removeMenuEntry(menuEntry);
@@ -126,9 +111,13 @@ class TestTrayJavaFX extends Application {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.shutdown();
-                Platform.exit();  // necessary to close javaFx
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         });
+
+        while (!shell.isDisposed ()) {
+            if (!display.readAndDispatch ()) display.sleep ();
+        }
+        display.dispose ();
     }
 }

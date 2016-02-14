@@ -1,6 +1,7 @@
 package dorkbox.systemTray;
 
 import dorkbox.util.LocationResolver;
+import dorkbox.util.OS;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,7 +11,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -26,8 +26,7 @@ class ImageUtil {
 
     private static final File TEMP_DIR = new File(System.getProperty("java.io.tmpdir"));
 
-    protected static final Charset UTF_8 = Charset.forName("UTF-8");
-    static MessageDigest digest;
+    private static MessageDigest digest;
 
     private static final Map<String, String> resourceToFilePath = new HashMap<String, String>();
     private static final long runtimeRandom = new SecureRandom().nextLong();
@@ -37,7 +36,7 @@ class ImageUtil {
      *  swing version loads as an image (which can be stream or path, we use path)
      */
     public static synchronized
-    String iconPath(String fileName) throws IOException {
+    String iconPath(String fileName) {
         // if we already have this fileName, reuse it
         final String cachedFile = resourceToFilePath.get(fileName);
         if (cachedFile != null) {
@@ -66,7 +65,7 @@ class ImageUtil {
      *  swing version loads as an image (which can be stream or path, we use path)
      */
     public static synchronized
-    String iconPath(final URL fileResource) throws IOException {
+    String iconPath(final URL fileResource) {
         // if we already have this fileName, reuse it
         final String cachedFile = resourceToFilePath.get(fileResource.getPath());
         if (cachedFile != null) {
@@ -84,7 +83,7 @@ class ImageUtil {
      *  swing version loads as an image (which can be stream or path, we use path)
      */
     public static synchronized
-    String iconPath(final String cacheName, final InputStream fileStream) throws IOException {
+    String iconPath(final String cacheName, final InputStream fileStream) {
         // if we already have this fileName, reuse it
         final String cachedFile = resourceToFilePath.get(cacheName);
         if (cachedFile != null) {
@@ -104,7 +103,7 @@ class ImageUtil {
      */
     @Deprecated
     public static synchronized
-    String iconPathNoCache(final InputStream fileStream) throws IOException {
+    String iconPathNoCache(final InputStream fileStream) {
         return makeFileViaStream(Long.toString(System.currentTimeMillis()), fileStream);
     }
 
@@ -114,12 +113,19 @@ class ImageUtil {
      * @return the full path of the resource copied to disk, or null if invalid
      */
     private static
-    String makeFileViaUrl(final URL resourceUrl) throws IOException {
+    String makeFileViaUrl(final URL resourceUrl) {
         if (resourceUrl == null) {
-            throw new IOException("resourceUrl is null");
+            throw new RuntimeException("resourceUrl is null");
         }
 
-        InputStream inStream = resourceUrl.openStream();
+        InputStream inStream;
+        try {
+            inStream = resourceUrl.openStream();
+        } catch (IOException e) {
+            String message = "Unable to open icon at '" + resourceUrl + "'";
+            SystemTray.logger.error(message, e);
+            throw new RuntimeException(message, e);
+        }
 
         // suck it out of a URL/Resource (with debugging if necessary)
         String cacheName = resourceUrl.getPath();
@@ -133,16 +139,16 @@ class ImageUtil {
      * @return the full path of the resource copied to disk, or null if invalid
      */
     private static
-    String makeFileViaStream(final String cacheName, final InputStream resourceStream) throws IOException {
+    String makeFileViaStream(final String cacheName, final InputStream resourceStream) {
         if (cacheName == null) {
-            throw new IOException("cacheName is null");
+            throw new RuntimeException("cacheName is null");
         }
         if (resourceStream == null) {
-            throw new IOException("resourceStream is null");
+            throw new RuntimeException("resourceStream is null");
         }
 
         // figure out the fileName
-        byte[] bytes = cacheName.getBytes(UTF_8);
+        byte[] bytes = cacheName.getBytes(OS.UTF_8);
         File newFile;
 
         // can be wimpy, only one at a time
@@ -175,7 +181,7 @@ class ImageUtil {
             // Send up exception
             String message = "Unable to copy icon '" + cacheName + "' to temporary location: '" + newFile.getAbsolutePath() + "'";
             SystemTray.logger.error(message, e);
-            throw new IOException(message);
+            throw new RuntimeException(message, e);
         } finally {
             try {
                 resourceStream.close();

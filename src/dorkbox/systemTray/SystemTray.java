@@ -245,16 +245,16 @@ class SystemTray {
             try {
                 ImageUtil.init();
 
-                if (AppIndicator.IS_VERSION_3 && GtkSupport.isGtk2) {
+                if (OS.isLinux() && GtkSupport.isGtk2 && AppIndicator.IS_VERSION_3) {
                     // NOTE:
                     //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
                     // appindicator3 doesn't support menu icons via GTK2. AT THIS POINT, we DO NOT have GTK3
                     try {
                         trayType = GtkSystemTray.class;
-                        logger.warn("AppIndicator3 detected with GTK2 only, falling back to GTK2 system tray type.  " +
+                        logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
                                     "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                     } catch (Throwable ignored) {
-                        logger.error("AppIndicator3 detected with GTK2 only and unable to fallback to using GTK2 system tray type." +
+                        logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
                                      "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- the menu icons WILL " +
                                      "NOT be visible." +
                                      " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
@@ -272,30 +272,51 @@ class SystemTray {
 
             systemTray = systemTray_;
 
+
+
             // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
-            // If javaFX is present, but not used, this does nothing.
-//        com.sun.javafx.tk.Toolkit.getToolkit()
-//                                 .addShutdownHook(new Runnable() {
-//                                     @Override
-//                                     public
-//                                     void run() {
-//                                         systemTray.shutdown();
-//                                     }
-//                                 });
-            try {
-                Class<?> clazz = Class.forName("com.sun.javafx.tk.Toolkit");
-                Method method = clazz.getMethod("getToolkit");
-                Object o = method.invoke(null);
-                Method runnable = o.getClass()
-                                   .getMethod("addShutdownHook", Runnable.class);
-                runnable.invoke(o, new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        systemTray.shutdown();
+            // we ONLY need this on linux for compatibility with JavaFX... (windows/mac don't use gtk)
+            if (OS.isLinux()) {
+                boolean isJavaFxLoaded = false;
+
+                try {
+                    // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if JAVAFX_COMPATIBILITY_MODE is enabled.
+                    // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
+                    java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+                    m.setAccessible(true);
+                    ClassLoader cl = ClassLoader.getSystemClassLoader();
+                    isJavaFxLoaded = null != m.invoke(cl, "com.sun.javafx.tk.Toolkit");
+                } catch (Throwable ignored) {
+                }
+
+                if (isJavaFxLoaded || GtkSupport.JAVAFX_COMPATIBILITY_MODE) {
+                    // com.sun.javafx.tk.Toolkit.getToolkit()
+                    //                          .addShutdownHook(new Runnable() {
+                    //                              @Override
+                    //                              public
+                    //                              void run() {
+                    //                                  systemTray.shutdown();
+                    //                              }
+                    //                          });
+
+                    try {
+                        Class<?> clazz = Class.forName("com.sun.javafx.tk.Toolkit");
+                        Method method = clazz.getMethod("getToolkit");
+                        Object o = method.invoke(null);
+                        Method runnable = o.getClass()
+                                           .getMethod("addShutdownHook", Runnable.class);
+                        runnable.invoke(o, new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                systemTray.shutdown();
+                            }
+                        });
+                    } catch (Throwable ignored) {
+                        logger.error("Unable to insert shutdown hook into JavaFX. Please create an issue with your OS and Java " +
+                                     "configuration so we may further investigate this issue.");
                     }
-                });
-            } catch (Throwable ignored) {
+                }
             }
         }
     }
@@ -366,7 +387,7 @@ class SystemTray {
      * @param imagePath the path of the icon to use
      */
     public
-    void setIcon(String imagePath) throws IOException {
+    void setIcon(String imagePath) {
         final String fullPath = ImageUtil.iconPath(imagePath);
         setIcon_(fullPath);
     }
@@ -380,7 +401,7 @@ class SystemTray {
      * @param imageUrl the URL of the icon to use
      */
     public
-    void setIcon(URL imageUrl) throws IOException {
+    void setIcon(URL imageUrl) {
         final String fullPath = ImageUtil.iconPath(imageUrl);
         setIcon_(fullPath);
     }
@@ -395,7 +416,7 @@ class SystemTray {
      * @param imageStream the InputStream of the icon to use
      */
     public
-    void setIcon(String cacheName, InputStream imageStream) throws IOException {
+    void setIcon(String cacheName, InputStream imageStream) {
         final String fullPath = ImageUtil.iconPath(cacheName, imageStream);
         setIcon_(fullPath);
     }
@@ -413,7 +434,7 @@ class SystemTray {
      */
     @Deprecated
     public
-    void setIcon(InputStream imageStream) throws IOException {
+    void setIcon(InputStream imageStream) {
         final String fullPath = ImageUtil.iconPathNoCache(imageStream);
         setIcon_(fullPath);
     }
@@ -427,12 +448,7 @@ class SystemTray {
      */
     public final
     void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
-        try {
-            addMenuEntry(menuText, (String) null, callback);
-        } catch (IOException e) {
-            // should never happen
-            e.printStackTrace();
-        }
+        addMenuEntry(menuText, (String) null, callback);
     }
 
 
@@ -444,7 +460,7 @@ class SystemTray {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public abstract
-    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) throws IOException;
+    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback);
 
     /**
      * Adds a menu entry to the tray icon with text + image
@@ -454,7 +470,7 @@ class SystemTray {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public abstract
-    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) throws IOException;
+    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback);
 
     /**
      * Adds a menu entry to the tray icon with text + image
@@ -465,7 +481,7 @@ class SystemTray {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public abstract
-    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) throws IOException;
+    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback);
 
     /**
      * Adds a menu entry to the tray icon with text + image
@@ -479,7 +495,7 @@ class SystemTray {
      */
     @Deprecated
     public abstract
-    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) throws IOException;
+    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback);
 
 
     /**
@@ -509,7 +525,7 @@ class SystemTray {
      * @param imagePath the new path for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, String imagePath) throws IOException {
+    void updateMenuEntry_Image(String origMenuText, String imagePath) {
         synchronized (menuEntries) {
             MenuEntry menuEntry = getMenuEntry(origMenuText);
 
@@ -529,7 +545,7 @@ class SystemTray {
      * @param imageUrl the new URL for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, URL imageUrl) throws IOException {
+    void updateMenuEntry_Image(String origMenuText, URL imageUrl) {
         synchronized (menuEntries) {
             MenuEntry menuEntry = getMenuEntry(origMenuText);
 
@@ -549,7 +565,7 @@ class SystemTray {
      * @param imageStream the InputStream of the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, String cacheName, InputStream imageStream) throws IOException {
+    void updateMenuEntry_Image(String origMenuText, String cacheName, InputStream imageStream) {
         synchronized (menuEntries) {
             MenuEntry menuEntry = getMenuEntry(origMenuText);
 
@@ -573,7 +589,7 @@ class SystemTray {
      */
     @Deprecated
     public final
-    void updateMenuEntry_Image(String origMenuText, InputStream imageStream) throws IOException {
+    void updateMenuEntry_Image(String origMenuText, InputStream imageStream) {
         synchronized (menuEntries) {
             MenuEntry menuEntry = getMenuEntry(origMenuText);
 

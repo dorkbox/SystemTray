@@ -25,7 +25,6 @@ import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkSupport;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
@@ -226,7 +225,7 @@ class GtkTypeSystemTray extends SystemTray {
 
     @Override
     public
-    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
         if (imagePath == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -237,7 +236,7 @@ class GtkTypeSystemTray extends SystemTray {
 
     @Override
     public
-    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) {
         if (imageUrl == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -248,8 +247,7 @@ class GtkTypeSystemTray extends SystemTray {
 
     @Override
     public
-    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback)
-                    throws IOException {
+    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -261,7 +259,7 @@ class GtkTypeSystemTray extends SystemTray {
     @Override
     @Deprecated
     public
-    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
         }

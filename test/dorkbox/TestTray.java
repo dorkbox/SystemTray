@@ -21,7 +21,6 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -57,12 +56,7 @@ class TestTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        try {
-            this.systemTray.setIcon(LT_GRAY_MAIL);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        this.systemTray.setIcon(LT_GRAY_MAIL);
         systemTray.setStatus("No Mail");
 
         callbackGreen = new SystemTrayMenuAction() {
@@ -70,21 +64,9 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
-
-                try {
-                    systemTray.setIcon(GREEN_MAIL);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+                systemTray.setIcon(GREEN_MAIL);
                 menuEntry.setCallback(callbackGray);
-
-                try {
-                    menuEntry.setImage(BLACK_MAIL);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+                menuEntry.setImage(BLACK_MAIL);
                 menuEntry.setText("Delete Mail");
 //                systemTray.removeMenuEntry(menuEntry);
             }
@@ -95,12 +77,7 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
-                try {
-                    systemTray.setIcon(BLACK_MAIL);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+                systemTray.setIcon(BLACK_MAIL);
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
                 systemTray.removeMenuEntry(menuEntry);
@@ -108,11 +85,7 @@ class TestTray {
             }
         };
 
-        try {
-            this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
 
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override

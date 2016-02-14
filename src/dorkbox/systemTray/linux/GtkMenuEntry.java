@@ -25,7 +25,6 @@ import dorkbox.util.jna.linux.Gobject.GCallback;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkSupport;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -33,7 +32,9 @@ class GtkMenuEntry implements MenuEntry {
     private static final Gtk gtk = Gtk.INSTANCE;
     private static final Gobject gobject = Gobject.INSTANCE;
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final GCallback gtkCallback;
+
     final Pointer menuItem;
     private final Pointer parentMenu;
     final GtkTypeSystemTray systemTray;
@@ -52,7 +53,7 @@ class GtkMenuEntry implements MenuEntry {
         this.callback = callback;
         this.systemTray = systemTray;
 
-        // have to watch out! These can get garbage collected!
+        // have to watch out! This can get garbage collected (so it MUST be a field)!
         gtkCallback = new Gobject.GCallback() {
             @Override
             public
@@ -140,7 +141,7 @@ class GtkMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final String imagePath) throws IOException {
+    void setImage(final String imagePath) {
         if (imagePath == null) {
             setImage_(null);
         }
@@ -151,7 +152,7 @@ class GtkMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final URL imageUrl) throws IOException {
+    void setImage(final URL imageUrl) {
         if (imageUrl == null) {
             setImage_(null);
         }
@@ -162,7 +163,7 @@ class GtkMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final String cacheName, final InputStream imageStream) throws IOException {
+    void setImage(final String cacheName, final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
         }
@@ -174,7 +175,7 @@ class GtkMenuEntry implements MenuEntry {
     @Override
     @Deprecated
     public
-    void setImage(final InputStream imageStream) throws IOException {
+    void setImage(final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
         }

@@ -33,7 +33,6 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -230,7 +229,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
 
     @Override
     public
-    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
         if (imagePath == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -241,7 +240,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
 
     @Override
     public
-    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) {
         if (imageUrl == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -252,8 +251,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
 
     @Override
     public
-    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback)
-                    throws IOException {
+    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
         }
@@ -265,7 +263,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     @Override
     @Deprecated
     public
-    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) throws IOException {
+    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
         }

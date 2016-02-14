@@ -26,7 +26,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -111,7 +110,7 @@ class SwingMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final String imagePath) throws IOException {
+    void setImage(final String imagePath) {
         if (imagePath == null) {
             setImage_(null);
         }
@@ -122,7 +121,7 @@ class SwingMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final URL imageUrl) throws IOException {
+    void setImage(final URL imageUrl) {
         if (imageUrl == null) {
             setImage_(null);
         }
@@ -133,7 +132,7 @@ class SwingMenuEntry implements MenuEntry {
 
     @Override
     public
-    void setImage(final String cacheName, final InputStream imageStream) throws IOException {
+    void setImage(final String cacheName, final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
         }
@@ -145,7 +144,7 @@ class SwingMenuEntry implements MenuEntry {
     @Override
     @Deprecated
     public
-    void setImage(final InputStream imageStream) throws IOException {
+    void setImage(final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
         }
