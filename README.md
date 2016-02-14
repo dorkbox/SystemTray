@@ -55,6 +55,11 @@ SystemTray.TRAY_SIZE   (type int, default value '24')
  
 GtkSupport.FORCE_GTK2    (type boolean, default value 'false')
  -  Forces the system to always choose GTK2 (even when GTK3 might be available). JavaFX uses GTK2!
+ 
+ 
+GtkSupport.JAVAFX_COMPATIBILITY_MODE    (type boolean, default value 'false')
+ -  Forces the system to enter into JavaFX compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
+    This is only necessary if autodetection fails
 ```
    
    
@@ -133,7 +138,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.8</version>
+  <version>2.10</version>
 </dependency>
 ```
 
