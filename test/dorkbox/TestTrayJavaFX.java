@@ -19,6 +19,14 @@ package dorkbox;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,14 +34,16 @@ import java.net.URL;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
+ *
+ * Needs JavaFX to run
  */
 public
-class TestTray {
+class TestTrayJavaFX extends Application {
 
     // horribly hacky. ONLY FOR TESTING!
-    public static final URL BLACK_MAIL = TestTray.class.getResource("mail.000000.24.png");
-    public static final URL GREEN_MAIL = TestTray.class.getResource("mail.39AC39.24.png");
-    public static final URL LT_GRAY_MAIL = TestTray.class.getResource("mail.999999.24.png");
+    public static final URL BLACK_MAIL = TestTrayJavaFX.class.getResource("mail.000000.24.png");
+    public static final URL GREEN_MAIL = TestTrayJavaFX.class.getResource("mail.39AC39.24.png");
+    public static final URL LT_GRAY_MAIL = TestTrayJavaFX.class.getResource("mail.999999.24.png");
 
     public static
     void main(String[] args) {
@@ -43,7 +53,7 @@ class TestTray {
         //
         System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
-        new TestTray();
+        launch(TestTrayJavaFX.class);
     }
 
     private SystemTray systemTray;
@@ -51,7 +61,30 @@ class TestTray {
     private SystemTrayMenuAction callbackGray;
 
     public
-    TestTray() {
+    TestTrayJavaFX() {
+
+    }
+
+    @Override
+    public
+    void start(final Stage primaryStage) throws Exception {
+        primaryStage.setTitle("Hello World!");
+        Button btn = new Button();
+        btn.setText("Say 'Hello World'");
+        btn.setOnAction(new EventHandler<ActionEvent>() {
+
+            @Override
+            public void handle(ActionEvent event) {
+                System.out.println("Hello World!");
+            }
+        });
+
+        StackPane root = new StackPane();
+        root.getChildren().add(btn);
+        primaryStage.setScene(new Scene(root, 300, 250));
+        primaryStage.show();
+
+
         this.systemTray = SystemTray.getSystemTray();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
@@ -119,6 +152,7 @@ class TestTray {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.shutdown();
+                Platform.exit();  // necessary to close javaFx
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         });

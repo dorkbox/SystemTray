@@ -26,6 +26,7 @@
     <orderEntry type="module" module-name="Dorkbox-Util" />
     <orderEntry type="module" module-name="JavaLauncher-Util" />
     <orderEntry type="library" name="jna (4.2.1)" level="application" />
+    <orderEntry type="library" name="SWT" level="project" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">

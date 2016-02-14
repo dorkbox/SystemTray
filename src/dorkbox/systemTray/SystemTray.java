@@ -34,6 +34,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -268,7 +269,34 @@ class SystemTray {
             } catch (Exception e) {
                 logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
+
             systemTray = systemTray_;
+
+            // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
+            // If javaFX is present, but not used, this does nothing.
+//        com.sun.javafx.tk.Toolkit.getToolkit()
+//                                 .addShutdownHook(new Runnable() {
+//                                     @Override
+//                                     public
+//                                     void run() {
+//                                         systemTray.shutdown();
+//                                     }
+//                                 });
+            try {
+                Class<?> clazz = Class.forName("com.sun.javafx.tk.Toolkit");
+                Method method = clazz.getMethod("getToolkit");
+                Object o = method.invoke(null);
+                Method runnable = o.getClass()
+                                   .getMethod("addShutdownHook", Runnable.class);
+                runnable.invoke(o, new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        systemTray.shutdown();
+                    }
+                });
+            } catch (Throwable ignored) {
+            }
         }
     }
 
@@ -277,7 +305,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "2.4";
+        return "2.8";
     }
 
     /**
