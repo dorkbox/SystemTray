@@ -37,6 +37,9 @@ class AppIndicatorQuery {
 
     public static
     AppIndicator get() {
+        // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator.so.1 | grep foo
+        // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator3.so.1 | grep foo
+
         Object library;
 
         // NOTE: GtkSupport uses this info to figure out WHAT VERSION OF GTK to use: appindiactor1 -> GTk2, appindicator3 -> GTK3.
