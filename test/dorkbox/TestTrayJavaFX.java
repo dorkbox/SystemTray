@@ -39,7 +39,6 @@ import java.net.URL;
 public
 class TestTrayJavaFX extends Application {
 
-    // horribly hacky. ONLY FOR TESTING!
     public static final URL BLACK_MAIL = TestTrayJavaFX.class.getResource("mail.000000.24.png");
     public static final URL GREEN_MAIL = TestTrayJavaFX.class.getResource("mail.39AC39.24.png");
     public static final URL LT_GRAY_MAIL = TestTrayJavaFX.class.getResource("mail.999999.24.png");
@@ -97,8 +96,9 @@ class TestTrayJavaFX extends Application {
             @Override
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
-                systemTray.setStatus("Some Mail!");
                 systemTray.setIcon(GREEN_MAIL);
+                systemTray.setStatus("Some Mail!");
+
                 menuEntry.setCallback(callbackGray);
                 menuEntry.setImage(BLACK_MAIL);
                 menuEntry.setText("Delete Mail");
@@ -112,6 +112,7 @@ class TestTrayJavaFX extends Application {
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
+
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
                 systemTray.removeMenuEntry(menuEntry);

@@ -42,7 +42,9 @@ import java.net.URL;
 public
 class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     volatile SwingSystemTrayMenuPopup menu;
+
     volatile JMenuItem connectionStatusItem;
+    private volatile String statusText = null;
 
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
@@ -92,7 +94,15 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
 
     @Override
     public
-    void setStatus(final String infoString) {
+    String getStatus() {
+        return this.statusText;
+    }
+
+    @Override
+    public
+    void setStatus(final String statusText) {
+        this.statusText = statusText;
+
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
@@ -100,7 +110,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
                     if (tray.connectionStatusItem == null) {
-                        final JMenuItem connectionStatusItem = new JMenuItem(infoString);
+                        final JMenuItem connectionStatusItem = new JMenuItem(statusText);
                         Font font = connectionStatusItem.getFont();
                         Font font1 = font.deriveFont(Font.BOLD);
                         connectionStatusItem.setFont(font1);
@@ -111,7 +121,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                         tray.connectionStatusItem = connectionStatusItem;
                     }
                     else {
-                        tray.connectionStatusItem.setText(infoString);
+                        tray.connectionStatusItem.setText(statusText);
                     }
                 }
             }

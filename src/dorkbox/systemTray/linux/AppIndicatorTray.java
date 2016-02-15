@@ -19,6 +19,8 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.GtkSupport;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Class for handling all system tray interactions.
  * <p/>
@@ -33,6 +35,9 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     private AppIndicator.AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
+
+    // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
+    private AtomicBoolean shuttingDown = new AtomicBoolean();
 
     public
     AppIndicatorTray() {
@@ -51,21 +56,22 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     @Override
     public
     void shutdown() {
-        GtkSupport.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // this hides the indicator
-                appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
-                Pointer p = appIndicator.getPointer();
-                gobject.g_object_unref(p);
+        if (!shuttingDown.getAndSet(true)) {
+            GtkSupport.dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // STATUS_PASSIVE hides the indicator
+                    appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                    Pointer p = appIndicator.getPointer();
+                    gobject.g_object_unref(p);
 
-                // GC it
-                appIndicator = null;
-            }
-        });
+                    appIndicator = null;
+                }
+            });
 
-        super.shutdown();
+            super.shutdown();
+        }
     }
 
     @Override
@@ -91,12 +97,7 @@ class AppIndicatorTray extends GtkTypeSystemTray {
      */
     protected
     void onMenuAdded(final Pointer menu) {
-        GtkSupport.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                appindicator.app_indicator_set_menu(appIndicator, menu);
-            }
-        });
+        // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
+        appindicator.app_indicator_set_menu(appIndicator, menu);
     }
 }

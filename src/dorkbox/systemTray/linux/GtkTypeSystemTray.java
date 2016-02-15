@@ -20,15 +20,16 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.util.NamedThreadFactory;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.linux.jna.GtkSupport;
+import dorkbox.util.NamedThreadFactory;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Derived from
@@ -41,8 +42,11 @@ class GtkTypeSystemTray extends SystemTray {
 
     final static ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
 
-    private Pointer menu;
-    private Pointer connectionStatusItem;
+    private volatile Pointer menu;
+
+    private volatile Pointer connectionStatusItem;
+    private volatile String statusText = null;
+
 
     @Override
     public
@@ -52,54 +56,77 @@ class GtkTypeSystemTray extends SystemTray {
             public
             void run() {
                 obliterateMenu();
-                GtkSupport.shutdownGui();
 
-                callbackExecutor.shutdown();
+                boolean terminated = false;
+                try {
+                    terminated = callbackExecutor.awaitTermination(1, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                }
+
+                if (!terminated) {
+                    callbackExecutor.shutdownNow();
+                }
+
+                GtkSupport.shutdownGui();
             }
         });
     }
 
     @Override
     public
-    void setStatus(final String infoString) {
+    String getStatus() {
+        return statusText;
+    }
+
+    @Override
+    public
+    void setStatus(final String statusText) {
+        this.statusText = statusText;
+
         GtkSupport.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                if (connectionStatusItem == null && infoString != null && !infoString.isEmpty()) {
+                // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                // To work around this issue, we destroy then recreate the menu every time something is changed.
+                if (connectionStatusItem == null && statusText != null && !statusText.isEmpty()) {
                     deleteMenu();
 
                     connectionStatusItem = gtk.gtk_menu_item_new_with_label("");
-                    gobject.g_object_ref(connectionStatusItem); // so it matches with 'createMenu'
 
                     // evil hacks abound...
                     Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
                     gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                    Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+                    Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
                     gtk.gtk_label_set_markup(label, markup);
                     gobject.g_free(markup);
-
 
                     gtk.gtk_widget_set_sensitive(connectionStatusItem, Gtk.FALSE);
 
                     createMenu();
                 }
                 else {
-                    if (infoString == null || infoString.isEmpty()) {
-                        deleteMenu();
-                        gtk.gtk_widget_destroy(connectionStatusItem);
-                        connectionStatusItem = null;
+                    if (statusText == null || statusText.isEmpty()) {
+                        // this means the status text already exists, and we are removing it
 
+                        gtk.gtk_container_remove(menu, connectionStatusItem);
+                        connectionStatusItem = null; // because we manually delete it
+
+                        gtk.gtk_widget_show_all(menu);
+
+                        deleteMenu();
                         createMenu();
                     }
                     else {
+                        // here we set the text only. it already exists
+
                         // set bold instead
-                        // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, infoString);
+                        // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, statusText);
 
                         // evil hacks abound...
                         Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
                         gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                        Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", infoString);
+                        Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
                         gtk.gtk_label_set_markup(label, markup);
                         gobject.g_free(markup);
 
@@ -110,12 +137,59 @@ class GtkTypeSystemTray extends SystemTray {
         });
     }
 
+    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+    // To work around this issue, we destroy then recreate the menu every time something is changed.
     /**
-     * Called inside the gdk_threads block
+     * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
      */
-    protected abstract
-    void onMenuAdded(final Pointer menu);
+    void deleteMenu() {
+        if (menu != null) {
+            // have to remove status from menu (but not destroy the object)
+            if (connectionStatusItem != null) {
+                gobject.g_object_force_floating(connectionStatusItem);
+                gtk.gtk_container_remove(menu, connectionStatusItem);
+            }
 
+            // have to remove all other menu entries
+            synchronized (menuEntries) {
+                for (int i = 0; i < menuEntries.size(); i++) {
+                    GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
+
+                    gobject.g_object_force_floating(menuEntry__.menuItem);
+                    gtk.gtk_container_remove(menu, menuEntry__.menuItem);
+                }
+
+                gtk.gtk_widget_destroy(menu);
+            }
+        }
+
+        // makes a new one
+        menu = gtk.gtk_menu_new();
+    }
+
+    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+    // To work around this issue, we destroy then recreate the menu every time something is changed.
+    void createMenu() {
+        // now add status
+        if (connectionStatusItem != null) {
+            gtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
+            gobject.g_object_ref_sink(connectionStatusItem);
+        }
+
+        // now add back other menu entries
+        synchronized (menuEntries) {
+            for (int i = 0; i < menuEntries.size(); i++) {
+                GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
+
+                // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
+                gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
+                gobject.g_object_ref_sink(menuEntry__.menuItem);
+            }
+
+            onMenuAdded(menu);
+            gtk.gtk_widget_show_all(menu);
+        }
+    }
 
     /**
      * Completely obliterates the menu, no possible way to reconstruct it.
@@ -130,64 +204,28 @@ class GtkTypeSystemTray extends SystemTray {
             }
 
             // have to remove all other menu entries
-            for (int i = 0; i < menuEntries.size(); i++) {
-                GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
+            synchronized (menuEntries) {
+                for (int i = 0; i < menuEntries.size(); i++) {
+                    GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
 
-                menuEntry__.removePrivate();
+                    menuEntry__.removePrivate();
+                }
+                menuEntries.clear();
+
+                gtk.gtk_widget_destroy(menu);
             }
-            menuEntries.clear();
-
-            // GTK menu needs a "ref_sink"
-            gobject.g_object_ref_sink(menu);
         }
     }
 
     /**
-     * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
+     * Called inside the gdk_threads block
      */
-    void deleteMenu() {
-        if (menu != null) {
-            // have to remove status from menu
-            if (connectionStatusItem != null) {
-                gobject.g_object_ref(connectionStatusItem);
+    protected
+    void onMenuAdded(final Pointer menu) {};
 
-                gtk.gtk_container_remove(menu, connectionStatusItem);
-            }
-
-            // have to remove all other menu entries
-            for (int i = 0; i < menuEntries.size(); i++) {
-                GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
-
-                gobject.g_object_ref(menuEntry__.menuItem);
-                gtk.gtk_container_remove(menu, menuEntry__.menuItem);
-            }
-
-            // GTK menu needs a "ref_sink"
-            gobject.g_object_ref_sink(menu);
-        }
-
-        menu = gtk.gtk_menu_new();
-    }
-
-    // UNSAFE. must be protected inside dispatch
-    void createMenu() {
-        // now add status
-        if (connectionStatusItem != null) {
-            gtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
-            gobject.g_object_unref(connectionStatusItem);
-        }
-
-        // now add back other menu entries
-        for (int i = 0; i < menuEntries.size(); i++) {
-            GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
-
-            // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-            gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
-            gobject.g_object_unref(menuEntry__.menuItem);
-        }
-
-        onMenuAdded(menu);
-        gtk.gtk_widget_show_all(menu);
+    protected
+    Pointer getMenu() {
+        return menu;
     }
 
     private
@@ -208,12 +246,10 @@ class GtkTypeSystemTray extends SystemTray {
 
                     if (menuEntry == null) {
                         // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                        // To work around this issue, we destroy then recreate the menu every time one is added.
+                        // To work around this issue, we destroy then recreate the menu every time something is changed.
                         deleteMenu();
 
-                        menuEntry = new GtkMenuEntry(menu, menuText, imagePath, callback, GtkTypeSystemTray.this);
-
-                        gobject.g_object_ref(menuEntry.menuItem); // so it matches with 'createMenu'
+                        menuEntry = new GtkMenuEntry(menuText, imagePath, callback, GtkTypeSystemTray.this);
                         menuEntries.add(menuEntry);
 
                         createMenu();

@@ -31,6 +31,11 @@ class ImageUtil {
     private static final Map<String, String> resourceToFilePath = new HashMap<String, String>();
     private static final long runtimeRandom = new SecureRandom().nextLong();
 
+    public static synchronized
+    void init() throws NoSuchAlgorithmException {
+        ImageUtil.digest = MessageDigest.getInstance("MD5");
+    }
+
     /**
      *  appIndicator/gtk require strings (which is the path)
      *  swing version loads as an image (which can be stream or path, we use path)
@@ -198,6 +203,7 @@ class ImageUtil {
         return newFile.getAbsolutePath();
     }
 
+    // must be called from synchronized block
     private static
     String hashName(byte[] nameChars) {
         digest.reset();
@@ -213,10 +219,5 @@ class ImageUtil {
 
         // convert to alpha-numeric. see https://stackoverflow.com/questions/29183818/why-use-tostring32-and-not-tostring36
         return new BigInteger(1, digest.digest()).toString(32).toUpperCase(Locale.US);
-    }
-
-    public static synchronized
-    void init() throws NoSuchAlgorithmException {
-        ImageUtil.digest = MessageDigest.getInstance("MD5");
     }
 }

@@ -95,10 +95,10 @@ class SystemTray {
         }
 
         // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
-        COMPATIBILITY_MODE = isJavaFxLoaded || isSwtLoaded;
+        COMPATIBILITY_MODE = OS.isLinux() && (isJavaFxLoaded || isSwtLoaded);
 
         // kablooie if SWT is not configured in a way that works with us.
-        if (isSwtLoaded) {
+        if (OS.isLinux() && isSwtLoaded) {
             // Necessary for us to work with SWT
             // System.setProperty("SWT_GTK3", "0"); // Necessary for us to work with SWT
 
@@ -442,14 +442,19 @@ class SystemTray {
     public abstract
     void shutdown();
 
+    /**
+     * Gets the 'status' string assigned to the system tray
+     */
+    public abstract
+    String getStatus();
 
     /**
      * Sets a 'status' string at the first position in the popup menu. This 'status' string appears as a disabled menu entry.
      *
-     * @param infoString the text you want displayed, null if you want to remove the 'status' string
+     * @param statusText the text you want displayed, null if you want to remove the 'status' string
      */
     public abstract
-    void setStatus(String infoString);
+    void setStatus(String statusText);
 
     protected abstract
     void setIcon_(String iconPath);

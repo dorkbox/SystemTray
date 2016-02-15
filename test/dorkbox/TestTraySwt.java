@@ -35,7 +35,6 @@ import java.net.URL;
 public
 class TestTraySwt {
 
-    // horribly hacky. ONLY FOR TESTING!
     public static final URL BLACK_MAIL = TestTraySwt.class.getResource("mail.000000.24.png");
     public static final URL GREEN_MAIL = TestTraySwt.class.getResource("mail.39AC39.24.png");
     public static final URL LT_GRAY_MAIL = TestTraySwt.class.getResource("mail.999999.24.png");
@@ -55,7 +54,7 @@ class TestTraySwt {
 
     public
     TestTraySwt() {
-        Display display = new Display ();
+        final Display display = new Display ();
         final Shell shell = new Shell(display);
 
         Text helloWorldTest = new Text(shell, SWT.NONE);
@@ -77,8 +76,8 @@ class TestTraySwt {
             public
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
-
                 systemTray.setIcon(GREEN_MAIL);
+
                 menuEntry.setCallback(callbackGray);
                 menuEntry.setImage(BLACK_MAIL);
                 menuEntry.setText("Delete Mail");
@@ -108,9 +107,9 @@ class TestTraySwt {
             void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
                 systemTray.shutdown();
 
-                Display.getDefault().asyncExec(new Runnable() {
+                display.asyncExec(new Runnable() {
                     public void run() {
-                        shell.close(); // close down SWT shell
+                        shell.dispose();
                     }
                 });
 

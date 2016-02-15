@@ -21,6 +21,8 @@ import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.linux.jna.GtkSupport;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Class for handling all system tray interactions via GTK.
  * <p/>
@@ -36,8 +38,10 @@ class GtkSystemTray extends GtkTypeSystemTray {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private NativeLong button_press_event;
 
+    // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
+    private AtomicBoolean shuttingDown = new AtomicBoolean();
+
     private volatile boolean isActive = false;
-    private volatile Pointer menu;
 
     public
     GtkSystemTray() {
@@ -60,41 +64,36 @@ class GtkSystemTray extends GtkTypeSystemTray {
                     void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
-                            gtk.gtk_menu_popup(menu, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                            gtk.gtk_menu_popup(getMenu(), null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                         }
                     }
                 };
-                button_press_event = gobject.g_signal_connect_data(trayIcon, "button_press_event", gtkCallback, null, null, 0);
+                button_press_event = gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
             }
         });
-    }
-
-    /**
-     * Called inside the gdk_threads block
-     */
-    protected
-    void onMenuAdded(final Pointer menu) {
-        this.menu = menu;
     }
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
     public
     void shutdown() {
-        GtkSupport.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // this hides the indicator
-                gtk.gtk_status_icon_set_visible(trayIcon, false);
-                gobject.g_object_unref(trayIcon);
+        if (!shuttingDown.getAndSet(true)) {
+            GtkSupport.dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // this hides the indicator
+                    gtk.gtk_status_icon_set_visible(trayIcon, false);
+                    gobject.g_object_unref(trayIcon);
 
-                // GC it
-                trayIcon = null;
-            }
-        });
+                    // GC it
+                    trayIcon = null;
+                    gtkCallback = null;
+                }
+            });
 
-        super.shutdown();
+            super.shutdown();
+        }
     }
 
     @Override

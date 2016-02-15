@@ -27,17 +27,19 @@ import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
 
-class GtkMenuEntry implements MenuEntry {
+class GtkMenuEntry implements MenuEntry, GCallback {
+    private static final AtomicInteger ID_COUNTER = new AtomicInteger();
+    private final int id = ID_COUNTER.getAndIncrement();
+
     private static final Gtk gtk = Gtk.INSTANCE;
     private static final Gobject gobject = Gobject.INSTANCE;
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private final GCallback gtkCallback;
-
     final Pointer menuItem;
-    private final Pointer parentMenu;
-    final GtkTypeSystemTray systemTray;
+    final GtkTypeSystemTray parent;
+
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
 
     // these have to be volatile, because they can be changed from any thread
@@ -45,23 +47,14 @@ class GtkMenuEntry implements MenuEntry {
     private volatile SystemTrayMenuAction callback;
     private volatile Pointer image;
 
-    // called from inside dispatch thread
-    GtkMenuEntry(final Pointer parentMenu, final String label, final String imagePath, final SystemTrayMenuAction callback,
-                 final GtkTypeSystemTray systemTray) {
-        this.parentMenu = parentMenu;
+    /**
+     * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
+     * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
+     */
+    GtkMenuEntry(final String label, final String imagePath, final SystemTrayMenuAction callback, final GtkTypeSystemTray parent) {
+        this.parent = parent;
         this.text = label;
         this.callback = callback;
-        this.systemTray = systemTray;
-
-        // have to watch out! This can get garbage collected (so it MUST be a field)!
-        gtkCallback = new Gobject.GCallback() {
-            @Override
-            public
-            int callback(Pointer instance, Pointer data) {
-                handle();
-                return Gtk.TRUE;
-            }
-        };
 
         menuItem = gtk.gtk_image_menu_item_new_with_label(label);
 
@@ -76,21 +69,26 @@ class GtkMenuEntry implements MenuEntry {
             gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
 
-        nativeLong = gobject.g_signal_connect_data(menuItem, "activate", gtkCallback, null, null, 0);
+        nativeLong = gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
     }
 
-    private
-    void handle() {
+
+    // called by native code
+    @Override
+    public
+    int callback(final Pointer instance, final Pointer data) {
         final SystemTrayMenuAction cb = this.callback;
         if (cb != null) {
             GtkTypeSystemTray.callbackExecutor.execute(new Runnable() {
                 @Override
                 public
                 void run() {
-                    cb.onClick(systemTray, GtkMenuEntry.this);
+                    cb.onClick(parent, GtkMenuEntry.this);
                 }
             });
         }
+
+        return Gtk.TRUE;
     }
 
     @Override
@@ -109,7 +107,7 @@ class GtkMenuEntry implements MenuEntry {
                 text = newText;
                 gtk.gtk_menu_item_set_label(menuItem, newText);
 
-                gtk.gtk_widget_show_all(parentMenu);
+                gtk.gtk_widget_show_all(menuItem);
             }
         });
     }
@@ -120,21 +118,23 @@ class GtkMenuEntry implements MenuEntry {
             @Override
             public
             void run() {
+                if (image != null) {
+                    gtk.gtk_widget_destroy(image);
+                    image = null;
+                }
+
+                gtk.gtk_widget_show_all(menuItem);
+
                 if (imagePath != null && !imagePath.isEmpty()) {
-                    if (image != null) {
-                        gtk.gtk_widget_destroy(image);
-                    }
-                    gtk.gtk_widget_show_all(parentMenu);
-
                     image = gtk.gtk_image_new_from_file(imagePath);
-
                     gtk.gtk_image_menu_item_set_image(menuItem, image);
+                    gobject.g_object_ref_sink(image);
 
                     //  must always re-set always-show after setting the image
                     gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
                 }
 
-                gtk.gtk_widget_show_all(parentMenu);
+                gtk.gtk_widget_show_all(menuItem);
             }
         });
     }
@@ -202,26 +202,27 @@ class GtkMenuEntry implements MenuEntry {
                 removePrivate();
 
                 // have to rebuild the menu now...
-                systemTray.deleteMenu();
-                systemTray.createMenu();
+                parent.deleteMenu();
+                parent.createMenu();
             }
         });
     }
 
     void removePrivate() {
-        gobject.g_signal_handler_disconnect(menuItem, nativeLong);
-        gtk.gtk_menu_shell_deactivate(parentMenu, menuItem);
+        callback = null;
+        gtk.gtk_menu_shell_deactivate(parent.getMenu(), menuItem);
 
         if (image != null) {
             gtk.gtk_widget_destroy(image);
         }
+
         gtk.gtk_widget_destroy(menuItem);
     }
 
     @Override
     public
     int hashCode() {
-        return 0;
+        return id;
     }
 
 
@@ -237,7 +238,8 @@ class GtkMenuEntry implements MenuEntry {
         if (getClass() != obj.getClass()) {
             return false;
         }
+
         GtkMenuEntry other = (GtkMenuEntry) obj;
-        return this.text.equals(other.text);
+        return this.id == other.id;
     }
 }

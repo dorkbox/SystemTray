@@ -47,8 +47,6 @@ class GtkSupport {
         Gtk library;
 
         boolean shouldUseGtk2 = SystemTray.FORCE_GTK2 || SystemTray.COMPATIBILITY_MODE;
-        alreadyRunningGTK = SystemTray.COMPATIBILITY_MODE;
-
 
         // for more info on JavaFX: https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
         // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
@@ -63,7 +61,7 @@ class GtkSupport {
 
                     // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                     // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
-                    alreadyRunningGTK |= library.gtk_main_level() != 0;
+                    alreadyRunningGTK = library.gtk_main_level() != 0;
                     return library;
                 }
             } catch (Throwable ignored) {
@@ -79,7 +77,7 @@ class GtkSupport {
                     if (library != null) {
                         // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                         // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
-                        alreadyRunningGTK |= library.gtk_main_level() != 0;
+                        alreadyRunningGTK = library.gtk_main_level() != 0;
                         return library;
                     }
                 } catch (Throwable ignored) {
@@ -94,7 +92,7 @@ class GtkSupport {
 
                         // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                         // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
-                        alreadyRunningGTK |= library.gtk_main_level() != 0;
+                        alreadyRunningGTK = library.gtk_main_level() != 0;
                         return library;
                     }
                 } catch (Throwable ignored) {
@@ -111,7 +109,7 @@ class GtkSupport {
             if (library != null) {
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
-                alreadyRunningGTK |= library.gtk_main_level() != 0;
+                alreadyRunningGTK = library.gtk_main_level() != 0;
                 return library;
             }
         } catch (Throwable ignored) {
@@ -126,7 +124,7 @@ class GtkSupport {
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
-                alreadyRunningGTK |= library.gtk_main_level() != 0;
+                alreadyRunningGTK = library.gtk_main_level() != 0;
                 return library;
             }
         } catch (Throwable ignored) {
@@ -153,7 +151,13 @@ class GtkSupport {
                             final Runnable take = dispatchEvents.take();
 
                             gtk.gdk_threads_enter();
-                            take.run();
+
+                            try {
+                                take.run();
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
+
                             gtk.gdk_threads_leave();
 
                         } catch (InterruptedException e) {
@@ -183,13 +187,17 @@ class GtkSupport {
                         gtk.gdk_threads_enter();
 
                         GThread.INSTANCE.g_thread_init(null);
-                        gtk.gtk_init_check(0, null);
 
+                        if (!SystemTray.COMPATIBILITY_MODE) {
+                            gtk.gtk_init_check(0, null);
+                        }
                         // notify our main thread to continue
                         blockUntilStarted.countDown();
 
-                        // blocks unit quit
-                        gtk.gtk_main();
+                        if (!SystemTray.COMPATIBILITY_MODE) {
+                            // blocks unit quit
+                            gtk.gtk_main();
+                        }
 
                         gtk.gdk_threads_leave();
                     }
@@ -222,7 +230,7 @@ class GtkSupport {
     public static
     void shutdownGui() {
         // If JavaFX/SWT is used, this is UNNECESSARY (an will break SWT/JavaFX shutdown)
-        if (!alreadyRunningGTK) {
+        if (!(alreadyRunningGTK || SystemTray.COMPATIBILITY_MODE)) {
             Gtk.INSTANCE.gtk_main_quit();
         }
 
