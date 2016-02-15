@@ -24,8 +24,10 @@ See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
 
 
-Please be aware: JavaFX uses **GTK2**, and so `GtkSupport.FORCE_GTK2` should be enabled if you plan on using this + javaFX.
-
+Please be aware if you run into problems: 
+ - **JavaFX** uses **GTK2**. We try to autodetect this, but there might be *some* situations where it doesn't work. Please set `SystemTray.COMPATIBILITY_MODE=true;` to solve this.
+ - **SWT** can use GTK2 or GTK3, and if it happens to use GTK3, there will be all sorts of problems (it is incompatible). You must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized. Also, if there are problems with the autodetection, you can also set `SystemTray.COMPATIBILITY_MODE=true;`.
+ 
 
 
 ```
@@ -49,17 +51,20 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
 
 SystemTray.TRAY_SIZE   (type int, default value '24')
  - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact). This only applies for Swing tray icons.
- - NOTE: Must be set after any other customization options, as a static call to SystemTray will cause initialization of the library.
  
  
+SystemTray.FORCE_GTK2    (type boolean, default value 'false')
+ -  Forces the system tray to always choose GTK2 (even when GTK3 might be available).
  
-GtkSupport.FORCE_GTK2    (type boolean, default value 'false')
- -  Forces the system to always choose GTK2 (even when GTK3 might be available). JavaFX uses GTK2!
  
+SystemTray.COMPATIBILITY_MODE    (type boolean, default value 'false')
+ -  Forces the system to enter into JavaFX/SWT compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
+    This is only necessary if autodetection fails.
+    
  
-GtkSupport.JAVAFX_COMPATIBILITY_MODE    (type boolean, default value 'false')
- -  Forces the system to enter into JavaFX compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
-    This is only necessary if autodetection fails
+SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
+ -  When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
+    This property is available to disable this functionality in situations where you don't want this to happen.
 ```
    
    

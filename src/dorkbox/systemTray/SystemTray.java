@@ -54,25 +54,24 @@ class SystemTray {
     public static int TRAY_SIZE = 22;
 
     @Property
-    /** Forces the system to always choose GTK2 (even when GTK3 might be available). JavaFX uses GTK2! */
+    /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static boolean FORCE_GTK2 = false;
 
     @Property
     /**
-     * Forces the system to enter into JavaFX/Swt compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
+     * Forces the system to enter into JavaFX/SWT compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
      * This is only necessary if autodetection fails.
      */
     public static boolean COMPATIBILITY_MODE = false;
 
     @Property
     /**
-     * When in compatibility mode, when JavaFX/SWT primary windows are close, we want to make sure that the SystemTray is also closed.
-     * This property is available to disable this functionality in the situations where you don' want this to happen.
+     * When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
+     * This property is available to disable this functionality in situations where you don't want this to happen.
      */
     public static boolean ENABLE_SHUTDOWN_HOOK = true;
 
     private static volatile SystemTray systemTray = null;
-
     static boolean isKDE = false;
 
     private static void init() {
