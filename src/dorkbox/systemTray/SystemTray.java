@@ -27,6 +27,8 @@ import dorkbox.util.process.ShellProcessBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -77,6 +79,11 @@ class SystemTray {
     private static void init() {
         if (systemTray != null) {
             return;
+        }
+
+        // no tray in a headless environment
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new HeadlessException();
         }
 
         Class<? extends SystemTray> trayType = null;
