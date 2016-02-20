@@ -34,7 +34,11 @@ Please be aware if you run into problems:
 Customization parameters:
 
 SystemTrayMenuPopup.POPUP_HIDE_DELAY   (type long, default value '1000L')
- - Allows you to customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
+ - Customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
+
+
+SystemTrayMenuPopup.MOVEMENT_DELTA   (type int, default value '20')
+ - Customize the minimum amount of movement needed to cause the popup-delay to hide the popup
 
 
 GnomeShellExtension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
@@ -49,8 +53,8 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
  - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
 
 
-SystemTray.TRAY_SIZE   (type int, default value '24')
- - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact). This only applies for Swing tray icons.
+SystemTray.TRAY_SIZE   (type int, default value '22')
+ - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
  
  
 SystemTray.FORCE_GTK2    (type boolean, default value 'false')
