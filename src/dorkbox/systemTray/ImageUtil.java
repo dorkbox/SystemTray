@@ -1,5 +1,21 @@
+/*
+ * Copyright 2016 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package dorkbox.systemTray;
 
+import dorkbox.util.FileUtil;
 import dorkbox.util.LocationResolver;
 import dorkbox.util.OS;
 
@@ -18,13 +34,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- *
- */
 public
 class ImageUtil {
 
-    private static final File TEMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+    public static final File TEMP_DIR = new File(System.getProperty("java.io.tmpdir"));
 
     private static MessageDigest digest;
 
@@ -159,11 +172,11 @@ class ImageUtil {
         // can be wimpy, only one at a time
         String hash = hashName(bytes);
 
-        String extension = "";
-        int dot = cacheName.lastIndexOf('.');
-        if (dot > -1) {
-            extension = cacheName.substring(dot + 1);
+        String extension = FileUtil.getExtension(cacheName);
+        if (extension == null) {
+            extension = "";
         }
+
 
         newFile = new File(TEMP_DIR, "SYSTRAY_" + hash + '.' + extension).getAbsoluteFile();
         if (SystemTray.isKDE) {
