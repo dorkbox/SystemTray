@@ -138,15 +138,14 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
                     if (!isActive) {
+                        // here we init. everything
                         isActive = true;
 
-                        SwingSystemTray.this.menu = new SwingSystemTrayMenuPopup();
-
+                        menu = new SwingSystemTrayMenuPopup();
                         Image trayImage = new ImageIcon(iconPath).getImage()
                                                                  .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
                         trayImage.flush();
-                        final TrayIcon trayIcon = new TrayIcon(trayImage);
-                        SwingSystemTray.this.trayIcon = trayIcon;
+                        trayIcon = new TrayIcon(trayImage);;
 
                         // appindicators don't support this, so we cater to the lowest common denominator
                         // trayIcon.setToolTip(SwingSystemTray.this.appName);
@@ -155,7 +154,6 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                             @Override
                             public
                             void mousePressed(MouseEvent e) {
-                                final SwingSystemTrayMenuPopup menu = SwingSystemTray.this.menu;
                                 Dimension size = menu.getPreferredSize();
 
                                 Point point = e.getPoint();
@@ -182,11 +180,13 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                                     x -= size.width; // snap to edge of mouse
                                 }
 
-                                // weird voodoo to get this to popup with the correct parent
+                                // voodoo to get this to popup to have the correct parent
+                                // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
                                 menu.setInvoker(menu);
                                 menu.setLocation(x, y);
                                 menu.setVisible(true);
-                                menu.requestFocus();
+                                menu.setFocusable(true);
+                                menu.requestFocusInWindow();
                             }
                         });
 
