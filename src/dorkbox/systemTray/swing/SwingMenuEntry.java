@@ -20,7 +20,6 @@ import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.util.FileUtil;
 import dorkbox.util.SwingUtil;
 
 import javax.imageio.ImageIO;
@@ -157,9 +156,9 @@ class SwingMenuEntry implements MenuEntry {
 
                     if (delete) {
                         // now write out the new one
-                        String extension = FileUtil.getExtension(imagePath);
-                        if (extension == null) {
-                            extension = ".png"; // this is just made up
+                        String extension = ImageUtil.getExtension(imagePath);
+                        if (extension.equals("")) {
+                            extension = "png"; // made up
                         }
                         BufferedImage bufferedImage = getBufferedImage(image);
                         try {

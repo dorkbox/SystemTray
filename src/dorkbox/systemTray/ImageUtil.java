@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray;
 
-import dorkbox.util.FileUtil;
 import dorkbox.util.LocationResolver;
 import dorkbox.util.OS;
 
@@ -172,12 +171,7 @@ class ImageUtil {
         // can be wimpy, only one at a time
         String hash = hashName(bytes);
 
-        String extension = FileUtil.getExtension(cacheName);
-        if (extension == null) {
-            extension = "";
-        }
-
-
+        String extension = getExtension(cacheName);
         newFile = new File(TEMP_DIR, "SYSTRAY_" + hash + '.' + extension).getAbsoluteFile();
         if (SystemTray.isKDE) {
             // KDE is unique per run, so this prevents buildup
@@ -214,6 +208,17 @@ class ImageUtil {
         }
 
         return newFile.getAbsolutePath();
+    }
+
+    public static
+    String getExtension(final String fileName) {
+
+        String extension = "";
+        int dot = fileName.lastIndexOf('.');
+        if (dot > -1) {
+            extension = fileName.substring(dot + 1);
+        }
+        return extension;
     }
 
     // must be called from synchronized block
