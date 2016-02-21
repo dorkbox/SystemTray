@@ -34,11 +34,11 @@ Please be aware if you run into problems:
 Customization parameters:
 
 SystemTrayMenuPopup.POPUP_HIDE_DELAY   (type long, default value '1000L')
- - Customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu
+ - Customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu (Windows/fallback mode only)
 
 
 SystemTrayMenuPopup.MOVEMENT_DELTA   (type int, default value '20')
- - Customize the minimum amount of movement needed to cause the popup-delay to hide the popup
+ - Customize the minimum amount of movement needed to cause the popup-delay to hide the popup (Windows/fallback mode only)
 
 
 GnomeShellExtension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
