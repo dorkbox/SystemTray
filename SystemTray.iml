@@ -21,11 +21,11 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
-    <orderEntry type="library" name="logging slf4j-api (1.7.5)" level="application" />
-    <orderEntry type="library" name="logging logback (1.1.6)" level="application" />
+    <orderEntry type="library" name="logging slf4j-api" level="application" />
+    <orderEntry type="library" name="logging logback" level="application" />
     <orderEntry type="module" module-name="Dorkbox-Util" />
     <orderEntry type="module" module-name="JavaLauncher-Util" />
-    <orderEntry type="library" name="jna (4.2.1)" level="application" />
+    <orderEntry type="library" name="jna" level="application" />
     <orderEntry type="library" name="SWT" level="project" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
