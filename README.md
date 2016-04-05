@@ -169,5 +169,5 @@ https://repo1.maven.org/maven2/org/slf4j/slf4j-api/
 
 <h2>License</h2>
 
-This project is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
+This project is © 2014 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
 
