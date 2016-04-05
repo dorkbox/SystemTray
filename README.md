@@ -53,6 +53,10 @@ GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-s
  - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
 
 
+SystemTray.TIMEOUT   (type int, default value '2')
+ - How long to wait when updating menu entries before the request times-out
+ 
+ 
 SystemTray.TRAY_SIZE   (type int, default value '22')
  - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
  
@@ -147,7 +151,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.14</version>
+  <version>2.15</version>
 </dependency>
 ```
 

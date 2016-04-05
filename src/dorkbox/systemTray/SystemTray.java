@@ -55,6 +55,10 @@ class SystemTray {
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     @Property
+    /** How long to wait when updating menu entries before the request times-out */
+    public static final int TIMEOUT = 2;
+
+    @Property
     /** Size of the tray, so that the icon can properly scale based on OS. (if it's not exact) */
     public static int TRAY_SIZE = 22;
 
@@ -255,10 +259,6 @@ class SystemTray {
                                         //noinspection unused
                                         final AppIndicator instance = AppIndicator.INSTANCE;
                                         trayType = AppIndicatorTray.class;
-
-                                        if (AppIndicator.IS_VERSION_3) {
-
-                                        }
                                     } catch (Throwable e) {
                                         logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
                                         e.printStackTrace();
@@ -267,7 +267,10 @@ class SystemTray {
                                 }
                             } finally {
                                 if (bin != null) {
-                                    bin.close();
+                                    try {
+                                        bin.close();
+                                    } catch (Exception ignored) {
+                                    }
                                     bin = null;
                                 }
                             }
@@ -411,7 +414,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "2.14";
+        return "2.15";
     }
 
     /**
@@ -531,6 +534,7 @@ class SystemTray {
     @Deprecated
     public
     void setIcon(InputStream imageStream) {
+        @SuppressWarnings("deprecation")
         final String fullPath = ImageUtil.iconPathNoCache(imageStream);
         setIcon_(fullPath);
     }
@@ -625,7 +629,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -666,7 +674,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -708,7 +720,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -749,7 +765,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -794,7 +814,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -835,7 +859,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -879,7 +907,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -931,7 +963,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -978,7 +1014,11 @@ class SystemTray {
         });
 
         try {
-            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
