@@ -28,7 +28,6 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-import java.io.File;
 import java.net.URL;
 
 /**
@@ -45,12 +44,7 @@ class TestTrayJavaFX extends Application {
 
     public static
     void main(String[] args) {
-        // ONLY if manually loading JNA jars.
-        //
-        // Not necessary if using the official JNA downloaded from https://github.com/twall/jna AND THAT JAR is on the classpath
-        //
-        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
-
+        // make sure JNA jar is on the classpath!
         launch(TestTrayJavaFX.class);
     }
 

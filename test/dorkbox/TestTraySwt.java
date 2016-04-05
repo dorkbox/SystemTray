@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import java.io.File;
 import java.net.URL;
 
 /**
@@ -41,9 +40,8 @@ class TestTraySwt {
 
     public static
     void main(String[] args) {
+        // make sure JNA jar is on the classpath!
         System.setProperty("SWT_GTK3", "0"); // Necessary for us to work with SWT
-
-        System.load(new File("../../resources/Dependencies/jna/linux_64/libjna.so").getAbsolutePath()); //64bit linux library
 
         new TestTraySwt();
     }
