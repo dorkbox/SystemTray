@@ -41,6 +41,9 @@ import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -430,6 +433,11 @@ class SystemTray {
     SystemTray() {
     }
 
+    /**
+     * Necessary to guarantee all updates occur on the dispatch thread
+     */
+    protected abstract
+    void dispatch(Runnable runnable);
 
     /**
      * Must be wrapped in a synchronized block for object visibility
@@ -593,16 +601,37 @@ class SystemTray {
      * @param newMenuText the new menu text (this will replace the original menu text)
      */
     public final
-    void updateMenuEntry_Text(String origMenuText, String newMenuText) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Text(final String origMenuText, final String newMenuText) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setText(newMenuText);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setText(newMenuText);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -613,16 +642,37 @@ class SystemTray {
      * @param imagePath the new path for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, String imagePath) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Image(final String origMenuText, final String imagePath) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setImage(imagePath);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setImage(imagePath);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -633,16 +683,38 @@ class SystemTray {
      * @param imageUrl the new URL for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, URL imageUrl) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Image(final String origMenuText, final URL imageUrl) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+
+                    }
+                    else {
+                        menuEntry.setImage(imageUrl);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setImage(imageUrl);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -653,16 +725,37 @@ class SystemTray {
      * @param imageStream the InputStream of the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(String origMenuText, String cacheName, InputStream imageStream) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Image(final String origMenuText, final String cacheName, final InputStream imageStream) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setImage(cacheName, imageStream);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setImage(cacheName, imageStream);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -675,18 +768,39 @@ class SystemTray {
      * @param origMenuText the original menu text
      * @param imageStream the new path for the image to use or null to delete the image
      */
-    @Deprecated
     public final
-    void updateMenuEntry_Image(String origMenuText, InputStream imageStream) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Image(final String origMenuText, final InputStream imageStream) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @SuppressWarnings("deprecation")
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setImage(imageStream);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setImage(imageStream);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -697,16 +811,37 @@ class SystemTray {
      * @param newCallback the new callback (this will replace the original callback)
      */
     public final
-    void updateMenuEntry_Callback(String origMenuText, SystemTrayMenuAction newCallback) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry_Callback(final String origMenuText, final SystemTrayMenuAction newCallback) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry != null) {
-                menuEntry.setCallback(newCallback);
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setCallback(newCallback);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -719,17 +854,38 @@ class SystemTray {
      * @param newCallback the new callback (this will replace the original callback)
      */
     public final
-    void updateMenuEntry(String origMenuText, String newMenuText, SystemTrayMenuAction newCallback) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(origMenuText);
+    void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(origMenuText);
+
+                    if (menuEntry == null) {
+                        hasValue.set(false);
+                    }
+                    else {
+                        menuEntry.setText(newMenuText);
+                        menuEntry.setCallback(newCallback);
+                    }
+                }
+                countDownLatch.countDown();
             }
-            else {
-                menuEntry.setText(newMenuText);
-                menuEntry.setCallback(newCallback);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + origMenuText + "'");
         }
     }
 
@@ -747,20 +903,42 @@ class SystemTray {
 
         final String label = menuEntry.getText();
 
-        synchronized (menuEntries) {
-            for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                final MenuEntry entry = iterator.next();
-                if (entry.getText()
-                         .equals(label)) {
-                    iterator.remove();
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(false);
 
-                    // this will also reset the menu
-                    menuEntry.remove();
-                    return;
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                        final MenuEntry entry = iterator.next();
+                        if (entry.getText()
+                                 .equals(label)) {
+                            iterator.remove();
+
+                            // this will also reset the menu
+                            menuEntry.remove();
+                            hasValue.set(true);
+                            countDownLatch.countDown();
+                            return;
+                        }
+                    }
                 }
+                countDownLatch.countDown();
             }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
+        }
     }
 
 
@@ -771,15 +949,42 @@ class SystemTray {
      */
     public final
     void removeMenuEntry(final String menuText) {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = getMenuEntry(menuText);
+        // have to wait for the value
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicBoolean hasValue =  new AtomicBoolean(true);
 
-            if (menuEntry == null) {
-                throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        synchronized (menuEntries) {
+                            MenuEntry menuEntry = getMenuEntry(menuText);
+
+                            if (menuEntry == null) {
+                                hasValue.set(false);
+                            }
+                            else {
+                                removeMenuEntry(menuEntry);
+                            }
+                        }
+                        countDownLatch.countDown();
+                    }
+                });
             }
-            else {
-                removeMenuEntry(menuEntry);
-            }
+        });
+
+        try {
+            final boolean await =  countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (!hasValue.get()) {
+            throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
         }
     }
 }

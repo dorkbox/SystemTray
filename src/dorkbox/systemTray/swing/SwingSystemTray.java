@@ -98,12 +98,17 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
         return this.statusText;
     }
 
+    protected
+    void dispatch(Runnable runnable) {
+        SwingUtil.invokeLater(runnable);
+    }
+
     @Override
     public
     void setStatus(final String statusText) {
         this.statusText = statusText;
 
-        SwingUtil.invokeLater(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -131,7 +136,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     @Override
     protected
     void setIcon_(final String iconPath) {
-        SwingUtil.invokeLater(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -145,7 +150,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                         Image trayImage = new ImageIcon(iconPath).getImage()
                                                                  .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
                         trayImage.flush();
-                        trayIcon = new TrayIcon(trayImage);;
+                        trayIcon = new TrayIcon(trayImage);
 
                         // appindicators don't support this, so we cater to the lowest common denominator
                         // trayIcon.setToolTip(SwingSystemTray.this.appName);
@@ -215,7 +220,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             throw new NullPointerException("Menu text cannot be null");
         }
 
-        SwingUtil.invokeLater(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {

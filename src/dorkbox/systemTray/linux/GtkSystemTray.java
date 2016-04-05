@@ -48,7 +48,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
         super();
         GtkSupport.startGui();
 
-        GtkSupport.dispatch(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -78,7 +78,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
     public
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
-            GtkSupport.dispatch(new Runnable() {
+            dispatch(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -99,7 +99,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
     @Override
     protected
     void setIcon_(final String iconPath) {
-        GtkSupport.dispatch(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {

@@ -47,6 +47,11 @@ class GtkTypeSystemTray extends SystemTray {
     private volatile Pointer connectionStatusItem;
     private volatile String statusText = null;
 
+    @Override
+    protected
+    void dispatch(final Runnable runnable) {
+        GtkSupport.dispatch(runnable);
+    }
 
     @Override
     public
@@ -221,7 +226,7 @@ class GtkTypeSystemTray extends SystemTray {
      * Called inside the gdk_threads block
      */
     protected
-    void onMenuAdded(final Pointer menu) {};
+    void onMenuAdded(final Pointer menu) {}
 
     protected
     Pointer getMenu() {
