@@ -21,6 +21,8 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 
 /**
+ * SWT system tray types are just GTK trays.
+ * <p>
  * This isn't possible with reflection - so we compile it AHEAD of time and save the bytecode (which is then included with the release)
  */
 public
