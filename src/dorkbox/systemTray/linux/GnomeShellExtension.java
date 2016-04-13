@@ -113,7 +113,7 @@ class GnomeShellExtension {
             final int indexOf = versionOutput.indexOf('.');
             final int lastIndexOf = versionOutput.lastIndexOf('.');
             if (indexOf < lastIndexOf) {
-                versionOutput = versionOutput.substring(0, lastIndexOf);
+                versionOutput = versionOutput.substring(0, indexOf);
             }
 
             String metadata = "{\n" +
@@ -123,7 +123,7 @@ class GnomeShellExtension {
                               "    \"" + versionOutput + "\"\n" +
                               "  ],\n" +
                               "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" +
-                              "  \"uuid\": \"SystemTray@dorkbox\",\n" +
+                              "  \"uuid\": \"" + UID + "\",\n" +
                               "  \"version\": 1\n" +
                               "}";
 
@@ -145,15 +145,26 @@ class GnomeShellExtension {
             }
 
             // now we have to enable us
+            // gsettings get org.gnome.shell enabled-extensions   (['background-logo@fedorahosted.org']  on fedora 23) different on openSuse
             final StringBuilder stringBuilder = new StringBuilder(output);
-            stringBuilder.delete(0, 4);
+
+            // strip off up to the leading  ['
+            final int extensionIndex = output.indexOf("['");
+            if (extensionIndex > 0) {
+                stringBuilder.delete(0, extensionIndex);
+            }
+
+            // remove the last ]
             stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
+
+            // add our extension to the list
             if (stringBuilder.length() > 2) {
                 stringBuilder.append(", ");
             }
             stringBuilder.append("'")
                          .append(UID)
                          .append("'");
+
 
             stringBuilder.append("]");
 
