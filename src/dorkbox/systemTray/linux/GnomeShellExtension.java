@@ -19,14 +19,7 @@ import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 
 public
 class GnomeShellExtension {
@@ -61,90 +54,134 @@ class GnomeShellExtension {
         boolean hasTopIcons = output.contains("topIcons@adel.gadllah@gmail.com");
         boolean hasSystemTray = output.contains(UID);
 
-        // topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
-        if (!hasTopIcons && !hasSystemTray) {
-            // have to copy the extension over and enable it.
-            String userHome = System.getProperty("user.home");
+        if (hasTopIcons) {
+            // topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
+            return;
+        }
 
-            final File file = new File(userHome + "/.local/share/gnome-shell/extensions/" + UID);
-            if (!file.isDirectory()) {
-                final boolean mkdirs = file.mkdirs();
-                if (!mkdirs) {
-                    final String msg = "Unable to create extension location: " + file;
-                    logger.error(msg);
-                    throw new RuntimeException(msg);
-                }
-            }
 
-            InputStream reader = null;
-            FileOutputStream fileOutputStream = null;
+        // have to copy the extension over and enable it.
+        String userHome = System.getProperty("user.home");
+
+        // where the extension is saved
+        final File file = new File(userHome + "/.local/share/gnome-shell/extensions/" + UID);
+        final File metaDatafile = new File(file, "metadata.json");
+        final File extensionFile = new File(file, "extension.js");
+
+
+        // have to create the metadata.json file (and make it so that it's **always** current).
+        // we do this via getting the shell version
+
+        // GNOME Shell 3.14.1
+        String versionOutput = shellVersionString.replaceAll("[^\\d.]", ""); // should just be 3.14.1 or 3.20 or similar
+
+        // We want "3.14" or "3.20" or whatever the latest version is (excluding the patch version info).
+        final int indexOf = versionOutput.indexOf('.');
+        final int nextIndexOf = versionOutput.indexOf('.', indexOf + 1);
+        if (indexOf < nextIndexOf) {
+            versionOutput = versionOutput.substring(0, nextIndexOf);
+        }
+
+        String metadata = "{\n" +
+                          "  \"description\": \"Shows a java tray icon on the top notification tray\",\n" +
+                          "  \"name\": \"Dorkbox SystemTray\",\n" +
+                          "  \"shell-version\": [\n" +
+                          "    \"" + versionOutput + "\"\n" +
+                          "  ],\n" +
+                          "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" +
+                          "  \"uuid\": \"" + UID + "\",\n" +
+                          "  \"version\": 1\n" +
+                          "}\n";
+
+
+        if (hasSystemTray) {
+            // have to check to see if the version is correct as well (otherwise we have to reinstall it)
+
+            StringBuilder builder = new StringBuilder(256);
+            BufferedReader bin = null;
             try {
-                fileOutputStream = new FileOutputStream(new File(file, "extension.js"));
-                reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
-
-                byte[] buffer = new byte[4096];
-                int read;
-                while ((read = reader.read(buffer)) > 0) {
-                    fileOutputStream.write(buffer, 0, read);
+                bin = new BufferedReader(new FileReader(metaDatafile));
+                String line;
+                while ((line = bin.readLine()) != null) {
+                    builder.append(line)
+                           .append("\n");
                 }
             } finally {
-                if (reader != null) {
+                if (bin != null) {
                     try {
-                        reader.close();
-                    } catch (Exception ignored) {
-                    }
-                }
-                if (fileOutputStream != null) {
-                    try {
-                        fileOutputStream.close();
-                    } catch (Exception ignored) {
+                        bin.close();
+                    } catch (IOException ioe) {
+                        System.err.println("Error closing the metadata file:" + bin);
+                        ioe.printStackTrace();
                     }
                 }
             }
 
-            // have to create the metadata.json file (and make it so that it's **always** current).
-            // we do this via getting the shell version
 
-
-            // GNOME Shell 3.14.1
-            String versionOutput = shellVersionString.replaceAll("[^\\d.]", ""); // should just be 3.14.1
-
-            // now change to major version only (only if applicable)
-            final int indexOf = versionOutput.indexOf('.');
-            final int lastIndexOf = versionOutput.lastIndexOf('.');
-            if (indexOf < lastIndexOf) {
-                versionOutput = versionOutput.substring(0, indexOf);
+            // the metadata string we CHECK should equal the metadata string we PROVIDE
+            if (metadata.equals(builder.toString())) {
+                // this means that our version info, etc. is the same - there is no need to update anything
+                return;
             }
-
-            String metadata = "{\n" +
-                              "  \"description\": \"Shows a java tray icon on the top notification tray\",\n" +
-                              "  \"name\": \"Dorkbox SystemTray\",\n" +
-                              "  \"shell-version\": [\n" +
-                              "    \"" + versionOutput + "\"\n" +
-                              "  ],\n" +
-                              "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" +
-                              "  \"uuid\": \"" + UID + "\",\n" +
-                              "  \"version\": 1\n" +
-                              "}";
+        }
 
 
-            BufferedWriter outputWriter = null;
-            try {
-                outputWriter = new BufferedWriter(new FileWriter(new File(file, "metadata.json"), false));
-                // FileWriter always assumes default encoding is OK
-                outputWriter.write(metadata);
-                outputWriter.flush();
-                outputWriter.close();
-            } catch (Exception e) {
-                if (outputWriter != null) {
-                    try {
-                        outputWriter.close();
-                    } catch (Exception ignored) {
-                    }
+        BufferedWriter outputWriter = null;
+        try {
+            outputWriter = new BufferedWriter(new FileWriter(metaDatafile, false));
+            // FileWriter always assumes default encoding is OK
+            outputWriter.write(metadata);
+            outputWriter.flush();
+            outputWriter.close();
+        } finally {
+            if (outputWriter != null) {
+                try {
+                    outputWriter.close();
+                } catch (Exception ignored) {
                 }
             }
+        }
 
-            // now we have to enable us
+        if (!file.isDirectory()) {
+            final boolean mkdirs = file.mkdirs();
+            if (!mkdirs) {
+                final String msg = "Unable to create extension location: " + file;
+                logger.error(msg);
+                throw new RuntimeException(msg);
+            }
+        }
+
+        // copies our provided extension.js file to the correct location on disk
+        InputStream reader = null;
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(extensionFile);
+            reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
+
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = reader.read(buffer)) > 0) {
+                fileOutputStream.write(buffer, 0, read);
+            }
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception ignored) {
+                }
+            }
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+
+        if (!hasSystemTray) {
+            // now we have to enable us if we aren't already enabled
+
             // gsettings get org.gnome.shell enabled-extensions   (['background-logo@fedorahosted.org']  on fedora 23) different on openSuse
             final StringBuilder stringBuilder = new StringBuilder(output);
 
@@ -177,26 +214,25 @@ class GnomeShellExtension {
             setGsettings.addArgument("enabled-extensions");
             setGsettings.addArgument(stringBuilder.toString());
             setGsettings.start();
+        }
 
+        if (ENABLE_SHELL_RESTART) {
+            logger.info("Restarting gnome-shell so tray notification changes can be applied.");
 
-            if (ENABLE_SHELL_RESTART) {
-                logger.info("Restarting gnome-shell, so tray notification changes can be applied.");
+            // now we have to restart the gnome shell via bash
+            final ShellProcessBuilder restartShell = new ShellProcessBuilder();
+            // restart shell in background process
+            restartShell.addArgument(SHELL_RESTART_COMMAND);
+            restartShell.start();
 
-                // now we have to restart the gnome shell via bash
-                final ShellProcessBuilder restartShell = new ShellProcessBuilder();
-                // restart shell in background process
-                restartShell.addArgument(SHELL_RESTART_COMMAND);
-                restartShell.start();
-
-                // have to give the shell time to restart
-                try {
-                    Thread.sleep(SHELL_RESTART_TIMEOUT_MILLIS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                logger.info("Shell restarted.");
+            // have to give the shell time to restart
+            try {
+                Thread.sleep(SHELL_RESTART_TIMEOUT_MILLIS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+
+            logger.info("Shell restarted.");
         }
     }
 }
