@@ -23,7 +23,7 @@ import java.io.*;
 
 public
 class GnomeShellExtension {
-    private static final String UID = "SystemTray@dorkbox";
+    static final String UID = "SystemTray@Dorkbox";
 
     @Property
     /** Permit the gnome-shell to be restarted when the extension is installed. */
@@ -125,6 +125,15 @@ class GnomeShellExtension {
             }
         }
 
+        // need to make the extension location
+        if (!file.isDirectory()) {
+            final boolean mkdirs = file.mkdirs();
+            if (!mkdirs) {
+                final String msg = "Unable to create extension location: " + file;
+                logger.error(msg);
+                throw new RuntimeException(msg);
+            }
+        }
 
         BufferedWriter outputWriter = null;
         try {
@@ -139,15 +148,6 @@ class GnomeShellExtension {
                     outputWriter.close();
                 } catch (Exception ignored) {
                 }
-            }
-        }
-
-        if (!file.isDirectory()) {
-            final boolean mkdirs = file.mkdirs();
-            if (!mkdirs) {
-                final String msg = "Unable to create extension location: " + file;
-                logger.error(msg);
-                throw new RuntimeException(msg);
             }
         }
 
