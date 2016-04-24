@@ -73,6 +73,10 @@ SystemTray.COMPATIBILITY_MODE    (type boolean, default value 'false')
 SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
  -  When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
     This property is available to disable this functionality in situations where you don't want this to happen.
+ 
+ 
+SystemTray.DEBUG    (type boolean, default value 'false')
+     -  This property is provided for debugging any errors in the logic used to determine the system-tray type.
 ```
    
    
