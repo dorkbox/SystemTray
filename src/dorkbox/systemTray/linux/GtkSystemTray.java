@@ -21,6 +21,8 @@ import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.linux.jna.GtkSupport;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -32,11 +34,8 @@ public
 class GtkSystemTray extends GtkTypeSystemTray {
     private Pointer trayIcon;
 
-    // have to make this a field, to prevent GC on this object
-    @SuppressWarnings("FieldCanBeLocal")
-    private Gobject.GEventCallback gtkCallback;
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private NativeLong button_press_event;
+    // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
+    private final List<Object> gtkCallbacks = new ArrayList<Object>();
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
     private AtomicBoolean shuttingDown = new AtomicBoolean();
@@ -53,12 +52,12 @@ class GtkSystemTray extends GtkTypeSystemTray {
             public
             void run() {
                 final Pointer trayIcon_ = gtk.gtk_status_icon_new();
-                gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray@Dorkbox");
+                gtk.gtk_status_icon_set_title(trayIcon_, GnomeShellExtension.UID);
                 gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
 
                 trayIcon = trayIcon_;
 
-                gtkCallback = new Gobject.GEventCallback() {
+                final Gobject.GEventCallback gtkCallback = new Gobject.GEventCallback() {
                     @Override
                     public
                     void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
@@ -68,7 +67,11 @@ class GtkSystemTray extends GtkTypeSystemTray {
                         }
                     }
                 };
-                button_press_event = gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
+                final NativeLong button_press_event = gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
+
+                // have to do this to prevent GC on these objects
+                gtkCallbacks.add(gtkCallback);
+                gtkCallbacks.add(button_press_event);
             }
         });
     }
@@ -86,9 +89,9 @@ class GtkSystemTray extends GtkTypeSystemTray {
                     gtk.gtk_status_icon_set_visible(trayIcon, false);
                     gobject.g_object_unref(trayIcon);
 
-                    // GC it
+                    // mark for GC
                     trayIcon = null;
-                    gtkCallback = null;
+                    gtkCallbacks.clear();
                 }
             });
 

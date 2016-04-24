@@ -15,9 +15,13 @@
  */
 package dorkbox.systemTray.linux.jna;
 
-import com.sun.jna.*;
+import com.sun.jna.Callback;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.NativeLong;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
 import dorkbox.util.Keep;
-import dorkbox.systemTray.linux.jna.Gtk.GdkEventButton;
 
 import java.util.Arrays;
 import java.util.List;
@@ -127,6 +131,14 @@ interface Gobject extends Library {
 
 
     @Keep
+    interface FuncCallback extends Callback {
+        /**
+         * @return Gtk.FALSE if it will be automatically removed from the stack once it's handled
+         */
+        int callback(Pointer data);
+    }
+
+    @Keep
     interface GCallback extends Callback {
         /**
          * @return Gtk.TRUE if we handled this event
@@ -137,7 +149,7 @@ interface Gobject extends Library {
 
     @Keep
     interface GEventCallback extends Callback {
-        void callback(Pointer instance, GdkEventButton event);
+        void callback(Pointer instance, Gtk.GdkEventButton event);
     }
 
 

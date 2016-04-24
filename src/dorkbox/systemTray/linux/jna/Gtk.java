@@ -66,8 +66,15 @@ interface Gtk extends Library {
      */
     void gtk_main();
 
+    /**
+     * using g_idle_add() instead would require thread protection in the callback
+     * @param callback
+     * @param data
+     * @return TRUE to run this callback again, FALSE to remove from the list of event sources (and not call it again)
+     */
+    int gdk_threads_add_idle (Gobject.FuncCallback callback, Pointer data);
 
-    /** sks for the current nesting level of the main loop. Useful to determine (at startup) if GTK is already runnign */
+    /** aks for the current nesting level of the main loop. Useful to determine (at startup) if GTK is already running */
     int gtk_main_level();
 
     /**

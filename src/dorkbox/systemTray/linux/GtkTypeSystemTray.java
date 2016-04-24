@@ -23,13 +23,9 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.linux.jna.GtkSupport;
-import dorkbox.util.NamedThreadFactory;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Derived from
@@ -39,8 +35,6 @@ public abstract
 class GtkTypeSystemTray extends SystemTray {
     protected static final Gobject gobject = Gobject.INSTANCE;
     protected static final Gtk gtk = Gtk.INSTANCE;
-
-    final static ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SysTrayExecutor", false));
 
     private volatile Pointer menu;
 
@@ -61,16 +55,6 @@ class GtkTypeSystemTray extends SystemTray {
             public
             void run() {
                 obliterateMenu();
-
-                boolean terminated = false;
-                try {
-                    terminated = callbackExecutor.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (InterruptedException ignored) {
-                }
-
-                if (!terminated) {
-                    callbackExecutor.shutdownNow();
-                }
 
                 GtkSupport.shutdownGui();
             }

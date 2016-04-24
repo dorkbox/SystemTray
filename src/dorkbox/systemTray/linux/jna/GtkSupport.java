@@ -17,23 +17,31 @@ package dorkbox.systemTray.linux.jna;
 
 import com.sun.jna.Function;
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import dorkbox.systemTray.SystemTray;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
 public
 class GtkSupport {
+    // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
+    // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
+
     private static volatile boolean started = false;
-    private static final ArrayBlockingQueue<Runnable> dispatchEvents = new ArrayBlockingQueue<Runnable>(256);
-    private static volatile Thread gtkDispatchThread;
+
+    // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
+    private static final LinkedList<Object> gtkCallbacks = new LinkedList<Object>();
 
     /**
      * must call get() before accessing this! Only "Gtk" interface should access this!
      */
     static volatile Function gtk_status_icon_position_menu = null;
+
     public static volatile boolean isGtk2 = false;
+
     private static volatile boolean alreadyRunningGTK = false;
+    private static Thread gtkUpdateThread = null;
 
     /**
      * Helper for GTK, because we could have v3 or v2.
@@ -130,7 +138,7 @@ class GtkSupport {
         } catch (Throwable ignored) {
         }
 
-        throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, if " +
+        throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
                                    "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
     }
 
@@ -140,43 +148,14 @@ class GtkSupport {
         if (!started) {
             started = true;
 
-            // GTK specifies that we ONLY run from a single thread. This guarantees that.
-            gtkDispatchThread = new Thread() {
-                @Override
-                public
-                void run() {
-                    final Gtk gtk = Gtk.INSTANCE;
-                    while (started) {
-                        try {
-                            final Runnable take = dispatchEvents.take();
-
-                            gtk.gdk_threads_enter();
-
-                            try {
-                                take.run();
-                            } catch (Throwable e) {
-                                e.printStackTrace();
-                            }
-
-                            gtk.gdk_threads_leave();
-
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            };
-            gtkDispatchThread.setName("GTK Event Loop");
-            gtkDispatchThread.start();
-
-
             // startup the GTK GUI event loop. There can be multiple/nested loops.
 
             // If JavaFX/SWT is used, this is UNNECESSARY
             if (!alreadyRunningGTK) {
                 // only necessary if we are the only GTK instance running...
                 final CountDownLatch blockUntilStarted = new CountDownLatch(1);
-                Thread gtkUpdateThread = new Thread() {
+
+                gtkUpdateThread = new Thread() {
                     @Override
                     public
                     void run() {
@@ -191,6 +170,7 @@ class GtkSupport {
                         if (!SystemTray.COMPATIBILITY_MODE) {
                             gtk.gtk_init_check(0, null);
                         }
+
                         // notify our main thread to continue
                         blockUntilStarted.countDown();
 
@@ -202,7 +182,7 @@ class GtkSupport {
                         gtk.gdk_threads_leave();
                     }
                 };
-                gtkUpdateThread.setName("GTK Event Loop (Native)");
+                gtkUpdateThread.setName("GTK Native Event Loop");
                 gtkUpdateThread.start();
 
                 try {
@@ -216,40 +196,41 @@ class GtkSupport {
     }
 
     /**
-     * Best practices for GTK, is to call EVERYTHING for it on a SINGLE THREAD. This accomplishes that.
+     * Best practices for GTK, is to call EVERYTHING for it on the GTK THREAD. This accomplishes that.
      */
     public static
-    void dispatch(Runnable runnable) {
-        try {
-            dispatchEvents.put(runnable);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    void dispatch(final Runnable runnable) {
+        if (gtkUpdateThread == Thread.currentThread()) {
+            // if we are ALREADY inside the native event
+            runnable.run();
+        } else {
+            final Gobject.FuncCallback callback = new Gobject.FuncCallback() {
+                @Override
+                public
+                int callback(final Pointer data) {
+                    synchronized (gtkCallbacks) {
+                        gtkCallbacks.removeFirst(); // now that we've 'handled' it, we can remove it from our callback list
+                    }
+                    runnable.run();
+
+                    return Gtk.FALSE; // don't want to call this again
+                }
+            };
+
+            synchronized (gtkCallbacks) {
+                gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
+            }
+            Gtk.INSTANCE.gdk_threads_add_idle(callback, null);
         }
     }
 
     public static
     void shutdownGui() {
-        // If JavaFX/SWT is used, this is UNNECESSARY (an will break SWT/JavaFX shutdown)
+        // If JavaFX/SWT is used, this is UNNECESSARY (and will break SWT/JavaFX shutdown)
         if (!(alreadyRunningGTK || SystemTray.COMPATIBILITY_MODE)) {
             Gtk.INSTANCE.gtk_main_quit();
         }
 
         started = false;
-
-        // put it in a NEW dispatch event (so that we cleanup AFTER this one is finished)
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                new Thread(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        // this should happen in a new thread
-                        gtkDispatchThread.interrupt();
-                    }
-                }).run();
-            }
-        });
     }
 }
