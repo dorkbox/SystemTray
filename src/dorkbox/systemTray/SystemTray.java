@@ -33,7 +33,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
@@ -79,6 +78,12 @@ class SystemTray {
      * This property is available to disable this functionality in situations where you don't want this to happen.
      */
     public static boolean ENABLE_SHUTDOWN_HOOK = true;
+
+    @Property
+    /**
+     * This property is provided for debugging any errors in the logic used to determine the system-tray type.
+     */
+    public static boolean DEBUG = false;
 
     private static volatile SystemTray systemTray = null;
     static boolean isKDE = false;
@@ -144,37 +149,56 @@ class SystemTray {
         if (OS.isLinux()) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
+            // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
+            // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
+
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             String XDG = System.getenv("XDG_CURRENT_DESKTOP");
             if ("Unity".equalsIgnoreCase(XDG)) {
                 try {
                     trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        e.printStackTrace();
+                    }
                 }
             }
             else if ("XFCE".equalsIgnoreCase(XDG)) {
                 try {
                     trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        e.printStackTrace();
+                    }
+
                     // we can fail on AppIndicator, so this is the fallback
                     //noinspection EmptyCatchBlock
                     try {
                         trayType = GtkSystemTray.class;
-                    } catch (Throwable i) {
+                    } catch (Throwable e1) {
+                        if (DEBUG) {
+                            e1.printStackTrace();
+                        }
                     }
                 }
             }
             else if ("LXDE".equalsIgnoreCase(XDG)) {
                 try {
                     trayType = GtkSystemTray.class;
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        e.printStackTrace();
+                    }
                 }
             }
             else if ("KDE".equalsIgnoreCase(XDG)) {
                 isKDE = true;
                 try {
                     trayType = AppIndicatorTray.class;
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        e.printStackTrace();
+                    }
                 }
             }
             else if ("GNOME".equalsIgnoreCase(XDG)) {
@@ -184,24 +208,33 @@ class SystemTray {
                 if ("cinnamon".equalsIgnoreCase(GDM)) {
                     try {
                         trayType = GtkSystemTray.class;
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                     try {
                         trayType = GtkSystemTray.class;
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
                     try {
                         trayType = GtkSystemTray.class;
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
 
-                // unknown exactly, install extension and go from there
+                // is likely 'gnome', but it can also be unknown (or something completely different), install extension and go from there
                 if (trayType == null) {
                     // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
                     // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
@@ -222,7 +255,10 @@ class SystemTray {
                             GnomeShellExtension.install(logger, output);
                             trayType = GtkSystemTray.class;
                         }
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                         trayType = null;
                     }
                 }
@@ -261,7 +297,9 @@ class SystemTray {
                                         trayType = AppIndicatorTray.class;
                                     } catch (Throwable e) {
                                         logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
-                                        e.printStackTrace();
+                                        if (DEBUG) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                     break;
                                 }
@@ -276,12 +314,18 @@ class SystemTray {
                             }
                         }
                     }
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        e.printStackTrace();
+                    }
                 } finally {
                     if (bin != null) {
                         try {
                             bin.close();
-                        } catch (IOException ignored) {
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -301,8 +345,11 @@ class SystemTray {
             try {
                 java.awt.SystemTray.getSystemTray();
                 trayType = SwingSystemTray.class;
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
                 logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.");
+                if (DEBUG) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -330,7 +377,10 @@ class SystemTray {
                         trayType = GtkSystemTray.class;
                         logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
                                     "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                         logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
                                      "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- the menu icons WILL " +
                                      "NOT be visible." +
@@ -378,7 +428,10 @@ class SystemTray {
                                 systemTray.shutdown();
                             }
                         });
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                         logger.error("Unable to insert shutdown hook into JavaFX. Please create an issue with your OS and Java " +
                                      "version so we may further investigate this issue.");
                     }
@@ -399,7 +452,10 @@ class SystemTray {
                                 systemTray.shutdown();
                             }
                         });
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
                         logger.error("Unable to insert shutdown hook into SWT. Please create an issue with your OS and Java " +
                                      "version so we may further investigate this issue.");
                     }
