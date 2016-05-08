@@ -16,169 +16,28 @@
 package dorkbox.systemTray.linux.jna;
 
 import com.sun.jna.Callback;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import dorkbox.util.Keep;
 
-import java.util.Arrays;
-import java.util.List;
-
+/**
+ * bindings for libgobject-2.0
+ *
+ * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
+ */
 public
-interface Gobject extends Library {
-    Gobject INSTANCE = (Gobject) Native.loadLibrary("gobject-2.0", Gobject.class);
+class Gobject {
 
-    @Keep
-    class GTypeClassStruct extends Structure {
-        public
-        class ByValue extends GTypeClassStruct implements Structure.ByValue {}
-
-
-        public
-        class ByReference extends GTypeClassStruct implements Structure.ByReference {}
-
-
-        public NativeLong g_type;
-
-        @Override
-        protected
-        List<String> getFieldOrder() {
-            return Arrays.asList("g_type");
-        }
+    static {
+        JnaHelper.register("gobject-2.0", Gobject.class);
     }
 
+    public static native void g_free(Pointer object);
+    public static native void g_object_unref(Pointer object);
 
-    @Keep
-    class GTypeInstanceStruct extends Structure {
-        public
-        class ByValue extends GTypeInstanceStruct implements Structure.ByValue {}
+    public static native void g_object_force_floating(Pointer object);
+    public static native void g_object_ref_sink(Pointer object);
 
+    public static native NativeLong g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
 
-        public
-        class ByReference extends GTypeInstanceStruct implements Structure.ByReference {}
-
-
-        public Pointer g_class;
-
-        @Override
-        protected
-        List<String> getFieldOrder() {
-            return Arrays.asList("g_class");
-        }
-    }
-
-
-    @Keep
-    class GObjectStruct extends Structure {
-        public
-        class ByValue extends GObjectStruct implements Structure.ByValue {}
-
-
-        public
-        class ByReference extends GObjectStruct implements Structure.ByReference {}
-
-
-        public GTypeInstanceStruct g_type_instance;
-        public int ref_count;
-        public Pointer qdata;
-
-        @Override
-        protected
-        List<String> getFieldOrder() {
-            return Arrays.asList("g_type_instance", "ref_count", "qdata");
-        }
-    }
-
-
-    @Keep
-    class GObjectClassStruct extends Structure {
-        public
-        class ByValue extends GObjectClassStruct implements Structure.ByValue {}
-
-
-        public
-        class ByReference extends GObjectClassStruct implements Structure.ByReference {}
-
-
-        public GTypeClassStruct g_type_class;
-        public Pointer construct_properties;
-        public Pointer constructor;
-        public Pointer set_property;
-        public Pointer get_property;
-        public Pointer dispose;
-        public Pointer finalize;
-        public Pointer dispatch_properties_changed;
-        public Pointer notify;
-        public Pointer constructed;
-        public NativeLong flags;
-        public Pointer dummy1;
-        public Pointer dummy2;
-        public Pointer dummy3;
-        public Pointer dummy4;
-        public Pointer dummy5;
-        public Pointer dummy6;
-
-        @Override
-        protected
-        List<String> getFieldOrder() {
-            return Arrays.asList("g_type_class", "construct_properties", "constructor", "set_property", "get_property", "dispose",
-                                 "finalize", "dispatch_properties_changed", "notify", "constructed", "flags", "dummy1", "dummy2", "dummy3",
-                                 "dummy4", "dummy5", "dummy6");
-        }
-    }
-
-
-    @Keep
-    interface FuncCallback extends Callback {
-        /**
-         * @return Gtk.FALSE if it will be automatically removed from the stack once it's handled
-         */
-        int callback(Pointer data);
-    }
-
-    @Keep
-    interface GCallback extends Callback {
-        /**
-         * @return Gtk.TRUE if we handled this event
-         */
-        int callback(Pointer instance, Pointer data);
-    }
-
-
-    @Keep
-    interface GEventCallback extends Callback {
-        void callback(Pointer instance, Gtk.GdkEventButton event);
-    }
-
-
-    @Keep
-    class xyPointer extends Structure {
-        public int value;
-
-        @Override
-        protected
-        List<String> getFieldOrder() {
-            return Arrays.asList("value");
-        }
-    }
-
-
-    @Keep
-    interface GPositionCallback extends Callback {
-        void callback(Pointer menu, xyPointer x, xyPointer y, Pointer push_in_bool, Pointer user_data);
-    }
-
-
-
-    void g_free(Pointer object);
-    void g_object_unref(Pointer object);
-
-    void g_object_force_floating(Pointer object);
-    void g_object_ref_sink(Pointer object);
-
-    NativeLong g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
-
-    Pointer g_markup_printf_escaped(String pattern, String inputString);
+    public static native Pointer g_markup_printf_escaped(String pattern, String inputString);
 }

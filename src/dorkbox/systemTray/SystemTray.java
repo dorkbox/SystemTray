@@ -19,7 +19,7 @@ import dorkbox.systemTray.linux.AppIndicatorTray;
 import dorkbox.systemTray.linux.GnomeShellExtension;
 import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.GtkSupport;
+import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.swing.SwingSystemTray;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
@@ -53,6 +53,9 @@ public abstract
 class SystemTray {
     protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
+    public static final int LINUX_GTK = 1;
+    public static final int LINUX_APP_INDICATOR = 2;
+
     @Property
     /** How long to wait when updating menu entries before the request times-out */
     public static final int TIMEOUT = 2;
@@ -64,6 +67,10 @@ class SystemTray {
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static boolean FORCE_GTK2 = false;
+
+    @Property
+    /** If != 0, forces the system tray in linux to be GTK (1) or AppIndicator (2). This is an advanced feature. */
+    public static int FORCE_LINUX_TYPE = 0;
 
     @Property
     /**
@@ -152,87 +159,118 @@ class SystemTray {
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
             // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
-            // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
-            if ("Unity".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        e.printStackTrace();
-                    }
+            // load up our libraries
+            // NOTE:
+            //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
+            // appindicator3 doesn't support menu icons via GTK2!!
+            if (Gtk.isGtk2 || AppIndicator.isVersion3) {
+                if (DEBUG) {
+                    logger.trace("Loading libraries");
                 }
             }
-            else if ("XFCE".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        e.printStackTrace();
-                    }
 
-                    // we can fail on AppIndicator, so this is the fallback
-                    //noinspection EmptyCatchBlock
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e1) {
-                        if (DEBUG) {
-                            e1.printStackTrace();
-                        }
-                    }
-                }
-            }
-            else if ("LXDE".equalsIgnoreCase(XDG)) {
+            if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_GTK) {
                 try {
                     trayType = GtkSystemTray.class;
-                } catch (Throwable e) {
+                } catch (Throwable e1) {
                     if (DEBUG) {
-                        e.printStackTrace();
+                        e1.printStackTrace();
                     }
                 }
             }
-            else if ("KDE".equalsIgnoreCase(XDG)) {
-                isKDE = true;
+            else if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_APP_INDICATOR) {
                 try {
                     trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
+                } catch (Throwable e1) {
                     if (DEBUG) {
-                        e.printStackTrace();
+                        e1.printStackTrace();
                     }
                 }
             }
-            else if ("GNOME".equalsIgnoreCase(XDG)) {
-                // check other DE
-                String GDM = System.getenv("GDMSESSION");
 
-                if ("cinnamon".equalsIgnoreCase(GDM)) {
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
 
+            // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
+            if (trayType == null) {
+                String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+                if ("Unity".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                else if ("XFCE".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
+
+                        // we can fail on AppIndicator, so this is the fallback
+                        //noinspection EmptyCatchBlock
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e1) {
+                            if (DEBUG) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                }
+                else if ("LXDE".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                else if ("KDE".equalsIgnoreCase(XDG)) {
+                    isKDE = true;
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                else if ("GNOME".equalsIgnoreCase(XDG)) {
+                    // check other DE
+                    String GDM = System.getenv("GDMSESSION");
+
+                    if ("cinnamon".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
 
                 // is likely 'gnome', but it can also be unknown (or something completely different), install extension and go from there
                 if (trayType == null) {
@@ -292,8 +330,6 @@ class SystemTray {
                                 if (readLine != null && readLine.contains("indicator-app")) {
                                     // make sure we can also load the library (it might be the wrong version)
                                     try {
-                                        //noinspection unused
-                                        final AppIndicator instance = AppIndicator.INSTANCE;
                                         trayType = AppIndicatorTray.class;
                                     } catch (Throwable e) {
                                         logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
@@ -364,15 +400,11 @@ class SystemTray {
             try {
                 ImageUtil.init();
 
-                // the order of checking here is critical -- AppIndicator.IS_VERSION_3 initializes `appindicator` and `gtk`
                 if (OS.isLinux() &&
                     trayType == AppIndicatorTray.class &&
-                    AppIndicator.IS_VERSION_3 && // this initializes the appindicator (since we specified that via the trayType)
-                    GtkSupport.isGtk2) {
+                    Gtk.isGtk2 &&
+                    AppIndicator.isVersion3) {
 
-                    // NOTE:
-                    //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
-                    // appindicator3 doesn't support menu icons via GTK2. AT THIS POINT, we DO NOT have GTK3
                     try {
                         trayType = GtkSystemTray.class;
                         logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
@@ -382,8 +414,8 @@ class SystemTray {
                             e.printStackTrace();
                         }
                         logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
-                                     "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- the menu icons WILL " +
-                                     "NOT be visible." +
+                                     "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
+                                     "the menu icons WILL NOT be visible." +
                                      " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                     }
                 }

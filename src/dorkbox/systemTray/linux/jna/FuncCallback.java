@@ -15,18 +15,14 @@
  */
 package dorkbox.systemTray.linux.jna;
 
+import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
+import dorkbox.util.Keep;
 
-/**
- * bindings for libgthread
- *
- * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
- */
-public
-class GThread {
-    static {
-        JnaHelper.register("gthread-2.0", GThread.class);
-    }
-
-    public static native void g_thread_init(Pointer GThreadFunctions);
+@Keep
+interface FuncCallback extends Callback {
+    /**
+     * @return Gtk.FALSE if it will be automatically removed from the stack once it's handled
+     */
+    int callback(Pointer data);
 }

@@ -20,10 +20,9 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.linux.jna.GCallback;
 import dorkbox.systemTray.linux.jna.Gobject;
-import dorkbox.systemTray.linux.jna.Gobject.GCallback;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -32,9 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 class GtkMenuEntry implements MenuEntry, GCallback {
     private static final AtomicInteger ID_COUNTER = new AtomicInteger();
     private final int id = ID_COUNTER.getAndIncrement();
-
-    private static final Gtk gtk = Gtk.INSTANCE;
-    private static final Gobject gobject = Gobject.INSTANCE;
 
     final Pointer menuItem;
     final GtkTypeSystemTray parent;
@@ -56,20 +52,20 @@ class GtkMenuEntry implements MenuEntry, GCallback {
         this.text = label;
         this.callback = callback;
 
-        menuItem = gtk.gtk_image_menu_item_new_with_label(label);
+        menuItem = Gtk.gtk_image_menu_item_new_with_label(label);
 
         if (imagePath != null && !imagePath.isEmpty()) {
             // NOTE: XFCE uses appindicator3, which DOES NOT support images in the menu. This change was reverted.
             // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
             // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
-            image = gtk.gtk_image_new_from_file(imagePath);
+            image = Gtk.gtk_image_new_from_file(imagePath);
 
-            gtk.gtk_image_menu_item_set_image(menuItem, image);
+            Gtk.gtk_image_menu_item_set_image(menuItem, image);
             //  must always re-set always-show after setting the image
-            gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+            Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
 
-        nativeLong = gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
+        nativeLong = Gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
     }
 
 
@@ -98,41 +94,41 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     @Override
     public
     void setText(final String newText) {
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
                 text = newText;
-                gtk.gtk_menu_item_set_label(menuItem, newText);
+                Gtk.gtk_menu_item_set_label(menuItem, newText);
 
-                gtk.gtk_widget_show_all(menuItem);
+                Gtk.gtk_widget_show_all(menuItem);
             }
         });
     }
 
     private
     void setImage_(final String imagePath) {
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
                 if (image != null) {
-                    gtk.gtk_widget_destroy(image);
+                    Gtk.gtk_widget_destroy(image);
                     image = null;
                 }
 
-                gtk.gtk_widget_show_all(menuItem);
+                Gtk.gtk_widget_show_all(menuItem);
 
                 if (imagePath != null && !imagePath.isEmpty()) {
-                    image = gtk.gtk_image_new_from_file(imagePath);
-                    gtk.gtk_image_menu_item_set_image(menuItem, image);
-                    gobject.g_object_ref_sink(image);
+                    image = Gtk.gtk_image_new_from_file(imagePath);
+                    Gtk.gtk_image_menu_item_set_image(menuItem, image);
+                    Gobject.g_object_ref_sink(image);
 
                     //  must always re-set always-show after setting the image
-                    gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+                    Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
                 }
 
-                gtk.gtk_widget_show_all(menuItem);
+                Gtk.gtk_widget_show_all(menuItem);
             }
         });
     }
@@ -193,7 +189,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
      */
     public
     void remove() {
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -208,13 +204,13 @@ class GtkMenuEntry implements MenuEntry, GCallback {
 
     void removePrivate() {
         callback = null;
-        gtk.gtk_menu_shell_deactivate(parent.getMenu(), menuItem);
+        Gtk.gtk_menu_shell_deactivate(parent.getMenu(), menuItem);
 
         if (image != null) {
-            gtk.gtk_widget_destroy(image);
+            Gtk.gtk_widget_destroy(image);
         }
 
-        gtk.gtk_widget_destroy(menuItem);
+        Gtk.gtk_widget_destroy(menuItem);
     }
 
     @Override

@@ -62,8 +62,12 @@ SystemTray.TRAY_SIZE   (type int, default value '22')
  
  
 SystemTray.FORCE_GTK2    (type boolean, default value 'false')
- -  Forces the system tray to always choose GTK2 (even when GTK3 might be available).
+ - Forces the system tray to always choose GTK2 (even when GTK3 might be available).
  
+
+SystemTray.FORCE_LINUX_TYPE   (type int, default value '0')
+ - If != 0, forces the system tray in linux to be GTK (1) or AppIndicator (2). This is an advanced feature.
+
  
 SystemTray.COMPATIBILITY_MODE    (type boolean, default value 'false')
  -  Forces the system to enter into JavaFX/SWT compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.

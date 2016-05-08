@@ -16,17 +16,21 @@
 package dorkbox.systemTray.linux.jna;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import dorkbox.util.Keep;
 
-/**
- * bindings for libgthread
- *
- * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
- */
+import java.util.Arrays;
+import java.util.List;
+
+@Keep
 public
-class GThread {
-    static {
-        JnaHelper.register("gthread-2.0", GThread.class);
-    }
+class AppIndicatorInstanceStruct extends Structure {
+    public GObjectStruct parent;
+    public Pointer priv;
 
-    public static native void g_thread_init(Pointer GThreadFunctions);
+    @Override
+    protected
+    List<String> getFieldOrder() {
+        return Arrays.asList("parent", "priv");
+    }
 }

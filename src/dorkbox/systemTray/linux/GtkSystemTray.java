@@ -17,9 +17,10 @@ package dorkbox.systemTray.linux;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import dorkbox.systemTray.linux.jna.GEventCallback;
+import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,29 +46,28 @@ class GtkSystemTray extends GtkTypeSystemTray {
     public
     GtkSystemTray() {
         super();
-        GtkSupport.startGui();
+        Gtk.startGui();
 
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                final Pointer trayIcon_ = gtk.gtk_status_icon_new();
-                gtk.gtk_status_icon_set_title(trayIcon_, GnomeShellExtension.UID);
-                gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
+                final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
+                Gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
 
                 trayIcon = trayIcon_;
 
-                final Gobject.GEventCallback gtkCallback = new Gobject.GEventCallback() {
+                final GEventCallback gtkCallback = new GEventCallback() {
                     @Override
                     public
-                    void callback(Pointer notUsed, final Gtk.GdkEventButton event) {
+                    void callback(Pointer notUsed, final GdkEventButton event) {
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
-                            gtk.gtk_menu_popup(getMenu(), null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                            Gtk.gtk_menu_popup(getMenu(), null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                         }
                     }
                 };
-                final NativeLong button_press_event = gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
+                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
 
                 // have to do this to prevent GC on these objects
                 gtkCallbacks.add(gtkCallback);
@@ -86,8 +86,8 @@ class GtkSystemTray extends GtkTypeSystemTray {
                 public
                 void run() {
                     // this hides the indicator
-                    gtk.gtk_status_icon_set_visible(trayIcon, false);
-                    gobject.g_object_unref(trayIcon);
+                    Gtk.gtk_status_icon_set_visible(trayIcon, false);
+                    Gobject.g_object_unref(trayIcon);
 
                     // mark for GC
                     trayIcon = null;
@@ -106,11 +106,11 @@ class GtkSystemTray extends GtkTypeSystemTray {
             @Override
             public
             void run() {
-                gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
+                Gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
 
                 if (!isActive) {
                     isActive = true;
-                    gtk.gtk_status_icon_set_visible(trayIcon, true);
+                    Gtk.gtk_status_icon_set_visible(trayIcon, true);
                 }
             }
         });

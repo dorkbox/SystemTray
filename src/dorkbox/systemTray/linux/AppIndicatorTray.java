@@ -16,8 +16,11 @@
 package dorkbox.systemTray.linux;
 
 import com.sun.jna.Pointer;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.GtkSupport;
+import dorkbox.systemTray.linux.jna.AppIndicatorInstanceStruct;
+import dorkbox.systemTray.linux.jna.Gobject;
+import dorkbox.systemTray.linux.jna.Gtk;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,9 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public
 class AppIndicatorTray extends GtkTypeSystemTray {
-    private static final AppIndicator appindicator = AppIndicator.INSTANCE;
-
-    private AppIndicator.AppIndicatorInstanceStruct appIndicator;
+    private AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
@@ -41,14 +42,18 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     public
     AppIndicatorTray() {
-        GtkSupport.startGui();
+        if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_GTK) {
+            // if we force GTK type system tray, don't attempt to load AppIndicator libs
+            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_LINUX_TYPE' is set to GTK");
+        }
+
+        Gtk.startGui();
 
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                appIndicator = appindicator.app_indicator_new(System.nanoTime() + "DBST", "",
-                                                              AppIndicator.CATEGORY_APPLICATION_STATUS);
+                appIndicator = AppIndicator.app_indicator_new(System.nanoTime() + "DBST", "", AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
     }
@@ -62,9 +67,9 @@ class AppIndicatorTray extends GtkTypeSystemTray {
                 public
                 void run() {
                     // STATUS_PASSIVE hides the indicator
-                    appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
                     Pointer p = appIndicator.getPointer();
-                    gobject.g_object_unref(p);
+                    Gobject.g_object_unref(p);
 
                     appIndicator = null;
                 }
@@ -81,12 +86,12 @@ class AppIndicatorTray extends GtkTypeSystemTray {
             @Override
             public
             void run() {
-                appindicator.app_indicator_set_icon(appIndicator, iconPath);
+                AppIndicator.app_indicator_set_icon(appIndicator, iconPath);
 
                 if (!isActive) {
                     isActive = true;
 
-                    appindicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
                 }
             }
         });
@@ -98,6 +103,6 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     protected
     void onMenuAdded(final Pointer menu) {
         // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
-        appindicator.app_indicator_set_menu(appIndicator, menu);
+        AppIndicator.app_indicator_set_menu(appIndicator, menu);
     }
 }

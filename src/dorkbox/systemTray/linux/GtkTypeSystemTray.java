@@ -22,7 +22,6 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.linux.jna.GtkSupport;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -33,9 +32,6 @@ import java.net.URL;
  */
 public abstract
 class GtkTypeSystemTray extends SystemTray {
-    protected static final Gobject gobject = Gobject.INSTANCE;
-    protected static final Gtk gtk = Gtk.INSTANCE;
-
     private volatile Pointer menu;
 
     private volatile Pointer connectionStatusItem;
@@ -44,19 +40,19 @@ class GtkTypeSystemTray extends SystemTray {
     @Override
     protected
     void dispatch(final Runnable runnable) {
-        GtkSupport.dispatch(runnable);
+        Gtk.dispatch(runnable);
     }
 
     @Override
     public
     void shutdown() {
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
                 obliterateMenu();
 
-                GtkSupport.shutdownGui();
+                Gtk.shutdownGui();
             }
         });
     }
@@ -72,7 +68,7 @@ class GtkTypeSystemTray extends SystemTray {
     void setStatus(final String statusText) {
         this.statusText = statusText;
 
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -81,16 +77,16 @@ class GtkTypeSystemTray extends SystemTray {
                 if (connectionStatusItem == null && statusText != null && !statusText.isEmpty()) {
                     deleteMenu();
 
-                    connectionStatusItem = gtk.gtk_menu_item_new_with_label("");
+                    connectionStatusItem = Gtk.gtk_menu_item_new_with_label("");
 
                     // evil hacks abound...
-                    Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
-                    gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                    Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
-                    gtk.gtk_label_set_markup(label, markup);
-                    gobject.g_free(markup);
+                    Pointer label = Gtk.gtk_bin_get_child(connectionStatusItem);
+                    Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+                    Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
+                    Gtk.gtk_label_set_markup(label, markup);
+                    Gobject.g_free(markup);
 
-                    gtk.gtk_widget_set_sensitive(connectionStatusItem, Gtk.FALSE);
+                    Gtk.gtk_widget_set_sensitive(connectionStatusItem, Gtk.FALSE);
 
                     createMenu();
                 }
@@ -98,10 +94,10 @@ class GtkTypeSystemTray extends SystemTray {
                     if (statusText == null || statusText.isEmpty()) {
                         // this means the status text already exists, and we are removing it
 
-                        gtk.gtk_container_remove(menu, connectionStatusItem);
+                        Gtk.gtk_container_remove(menu, connectionStatusItem);
                         connectionStatusItem = null; // because we manually delete it
 
-                        gtk.gtk_widget_show_all(menu);
+                        Gtk.gtk_widget_show_all(menu);
 
                         deleteMenu();
                         createMenu();
@@ -113,13 +109,13 @@ class GtkTypeSystemTray extends SystemTray {
                         // libgtk.gtk_menu_item_set_label(this.connectionStatusItem, statusText);
 
                         // evil hacks abound...
-                        Pointer label = gtk.gtk_bin_get_child(connectionStatusItem);
-                        gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-                        Pointer markup = gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
-                        gtk.gtk_label_set_markup(label, markup);
-                        gobject.g_free(markup);
+                        Pointer label = Gtk.gtk_bin_get_child(connectionStatusItem);
+                        Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+                        Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", statusText);
+                        Gtk.gtk_label_set_markup(label, markup);
+                        Gobject.g_free(markup);
 
-                        gtk.gtk_widget_show_all(menu);
+                        Gtk.gtk_widget_show_all(menu);
                     }
                 }
             }
@@ -135,8 +131,8 @@ class GtkTypeSystemTray extends SystemTray {
         if (menu != null) {
             // have to remove status from menu (but not destroy the object)
             if (connectionStatusItem != null) {
-                gobject.g_object_force_floating(connectionStatusItem);
-                gtk.gtk_container_remove(menu, connectionStatusItem);
+                Gobject.g_object_force_floating(connectionStatusItem);
+                Gtk.gtk_container_remove(menu, connectionStatusItem);
             }
 
             // have to remove all other menu entries
@@ -144,16 +140,16 @@ class GtkTypeSystemTray extends SystemTray {
                 for (int i = 0; i < menuEntries.size(); i++) {
                     GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
 
-                    gobject.g_object_force_floating(menuEntry__.menuItem);
-                    gtk.gtk_container_remove(menu, menuEntry__.menuItem);
+                    Gobject.g_object_force_floating(menuEntry__.menuItem);
+                    Gtk.gtk_container_remove(menu, menuEntry__.menuItem);
                 }
 
-                gtk.gtk_widget_destroy(menu);
+                Gtk.gtk_widget_destroy(menu);
             }
         }
 
         // makes a new one
-        menu = gtk.gtk_menu_new();
+        menu = Gtk.gtk_menu_new();
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
@@ -161,8 +157,8 @@ class GtkTypeSystemTray extends SystemTray {
     void createMenu() {
         // now add status
         if (connectionStatusItem != null) {
-            gtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
-            gobject.g_object_ref_sink(connectionStatusItem);
+            Gtk.gtk_menu_shell_append(this.menu, this.connectionStatusItem);
+            Gobject.g_object_ref_sink(connectionStatusItem);
         }
 
         // now add back other menu entries
@@ -171,12 +167,12 @@ class GtkTypeSystemTray extends SystemTray {
                 GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
 
                 // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-                gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
-                gobject.g_object_ref_sink(menuEntry__.menuItem);
+                Gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
+                Gobject.g_object_ref_sink(menuEntry__.menuItem);
             }
 
             onMenuAdded(menu);
-            gtk.gtk_widget_show_all(menu);
+            Gtk.gtk_widget_show_all(menu);
         }
     }
 
@@ -188,7 +184,7 @@ class GtkTypeSystemTray extends SystemTray {
         if (menu != null) {
             // have to remove status from menu
             if (connectionStatusItem != null) {
-                gtk.gtk_widget_destroy(connectionStatusItem);
+                Gtk.gtk_widget_destroy(connectionStatusItem);
                 connectionStatusItem = null;
             }
 
@@ -201,7 +197,7 @@ class GtkTypeSystemTray extends SystemTray {
                 }
                 menuEntries.clear();
 
-                gtk.gtk_widget_destroy(menu);
+                Gtk.gtk_widget_destroy(menu);
             }
         }
     }
@@ -226,7 +222,7 @@ class GtkTypeSystemTray extends SystemTray {
             throw new NullPointerException("Menu text cannot be null");
         }
 
-        GtkSupport.dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
