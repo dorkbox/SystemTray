@@ -502,7 +502,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "2.19";
+        return "2.20";
     }
 
     /**

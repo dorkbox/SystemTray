@@ -1,6 +1,7 @@
     - Dorkbox SystemTray - Apache 2.0 License
       https://github.com/dorkbox
       Copyright 2014, dorkbox, llc
+        Cross-platform SystemTray and AppIndicator support for Java 6+
 
 
     - Dorkbox Utils - Apache 2.0 License
