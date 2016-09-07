@@ -15,18 +15,6 @@
  */
 package dorkbox.systemTray;
 
-import dorkbox.systemTray.linux.AppIndicatorTray;
-import dorkbox.systemTray.linux.GnomeShellExtension;
-import dorkbox.systemTray.linux.GtkSystemTray;
-import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.swing.SwingSystemTray;
-import dorkbox.util.OS;
-import dorkbox.util.Property;
-import dorkbox.util.process.ShellProcessBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 import java.io.BufferedReader;
@@ -43,6 +31,19 @@ import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import dorkbox.systemTray.linux.AppIndicatorTray;
+import dorkbox.systemTray.linux.GnomeShellExtension;
+import dorkbox.systemTray.linux.GtkSystemTray;
+import dorkbox.systemTray.linux.jna.AppIndicator;
+import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.swing.SwingSystemTray;
+import dorkbox.util.OS;
+import dorkbox.util.Property;
+import dorkbox.util.process.ShellProcessBuilder;
 
 
 /**
@@ -102,6 +103,7 @@ class SystemTray {
 
         // no tray in a headless environment
         if (GraphicsEnvironment.isHeadless()) {
+            logger.error("Cannot use the SystemTray in a headless environment");
             throw new HeadlessException();
         }
 
@@ -174,7 +176,7 @@ class SystemTray {
                     trayType = GtkSystemTray.class;
                 } catch (Throwable e1) {
                     if (DEBUG) {
-                        e1.printStackTrace();
+                        logger.error("Cannot initialize GtkSystemTray", e1);
                     }
                 }
             }
@@ -183,7 +185,7 @@ class SystemTray {
                     trayType = AppIndicatorTray.class;
                 } catch (Throwable e1) {
                     if (DEBUG) {
-                        e1.printStackTrace();
+                        logger.error("Cannot initialize AppIndicatorTray", e1);
                     }
                 }
             }
@@ -192,12 +194,15 @@ class SystemTray {
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             if (trayType == null) {
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+                if (DEBUG) {
+                    logger.debug("Currently using the {} desktop", XDG);
+                }
                 if ("Unity".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize AppIndicatorTray", e);
                         }
                     }
                 }
@@ -206,7 +211,7 @@ class SystemTray {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize AppIndicatorTray", e);
                         }
 
                         // we can fail on AppIndicator, so this is the fallback
@@ -215,7 +220,7 @@ class SystemTray {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e1) {
                             if (DEBUG) {
-                                e1.printStackTrace();
+                                logger.error("Cannot initialize GtkSystemTray", e1);
                             }
                         }
                     }
@@ -225,7 +230,7 @@ class SystemTray {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize GtkSystemTray", e);
                         }
                     }
                 }
@@ -235,7 +240,7 @@ class SystemTray {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize AppIndicatorTray", e);
                         }
                     }
                 }
@@ -248,7 +253,7 @@ class SystemTray {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                e.printStackTrace();
+                                logger.error("Cannot initialize GtkSystemTray", e);
                             }
                         }
                     }
@@ -257,7 +262,7 @@ class SystemTray {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                e.printStackTrace();
+                                logger.error("Cannot initialize GtkSystemTray", e);
                             }
                         }
                     }
@@ -266,7 +271,7 @@ class SystemTray {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                e.printStackTrace();
+                                logger.error("Cannot initialize GtkSystemTray", e);
                             }
                         }
                     }
@@ -295,7 +300,7 @@ class SystemTray {
                         }
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot auto-detect gnome-shell version", e);
                         }
                         trayType = null;
                     }
@@ -332,9 +337,10 @@ class SystemTray {
                                     try {
                                         trayType = AppIndicatorTray.class;
                                     } catch (Throwable e) {
-                                        logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
                                         if (DEBUG) {
-                                            e.printStackTrace();
+                                            logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK", e);
+                                        } else {
+                                            logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK");
                                         }
                                     }
                                     break;
@@ -360,7 +366,7 @@ class SystemTray {
                             bin.close();
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                e.printStackTrace();
+                                logger.error("Cannot close buffered reader", e);
                             }
                         }
                     }
@@ -382,9 +388,10 @@ class SystemTray {
                 java.awt.SystemTray.getSystemTray();
                 trayType = SwingSystemTray.class;
             } catch (Throwable e) {
-                logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.");
                 if (DEBUG) {
-                    e.printStackTrace();
+                    logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.", e);
+                } else {
+                    logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.");
                 }
             }
         }
@@ -411,7 +418,7 @@ class SystemTray {
                                     "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize GtkSystemTray", e);
                         }
                         logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
                                      "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
@@ -462,7 +469,7 @@ class SystemTray {
                         });
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            e.printStackTrace();
+                            logger.error("Cannot initialize JavaFX", e);
                         }
                         logger.error("Unable to insert shutdown hook into JavaFX. Please create an issue with your OS and Java " +
                                      "version so we may further investigate this issue.");
@@ -486,6 +493,7 @@ class SystemTray {
                         });
                     } catch (Throwable e) {
                         if (DEBUG) {
+                            logger.error("Cannot initialize SWT", e);
                             e.printStackTrace();
                         }
                         logger.error("Unable to insert shutdown hook into SWT. Please create an issue with your OS and Java " +
