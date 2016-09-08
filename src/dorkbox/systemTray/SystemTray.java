@@ -52,7 +52,7 @@ import dorkbox.util.process.ShellProcessBuilder;
 @SuppressWarnings({"unused", "Duplicates"})
 public abstract
 class SystemTray {
-    protected static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
+    public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     public static final int LINUX_GTK = 1;
     public static final int LINUX_APP_INDICATOR = 2;
@@ -112,18 +112,30 @@ class SystemTray {
         boolean isJavaFxLoaded = false;
         boolean isSwtLoaded = false;
         try {
-            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if JAVAFX_COMPATIBILITY_MODE is enabled.
+            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if COMPATIBILITY_MODE is enabled.
             // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
             java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
             m.setAccessible(true);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
-            isJavaFxLoaded = null != m.invoke(cl, "com.sun.javafx.tk.Toolkit");
+            isJavaFxLoaded = (null != m.invoke(cl, "com.sun.javafx.tk.Toolkit")) || (null != m.invoke(cl, "javafx.application.Application"));
             isSwtLoaded = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            if (DEBUG) {
+                logger.debug("Error detecting compatibility mode", e);
+            }
         }
 
         // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
+        // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
+        // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
+        // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
         COMPATIBILITY_MODE = OS.isLinux() && (isJavaFxLoaded || isSwtLoaded);
+
+
+        if (DEBUG) {
+            logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
+            logger.debug("COMPATIBILITY_MODE: {}", COMPATIBILITY_MODE);
+        }
 
         // kablooie if SWT is not configured in a way that works with us.
         if (OS.isLinux() && isSwtLoaded) {
@@ -194,10 +206,41 @@ class SystemTray {
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             if (trayType == null) {
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
-                if (DEBUG) {
-                    logger.debug("Currently using the {} desktop", XDG);
+
+                // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
+                boolean isReallyGnome = false;
+                try {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                    // ps a | grep [g]nome-shell
+                    final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                    shell.setExecutable("ps");
+                    shell.addArgument("a");
+                    shell.start();
+
+
+                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                    isReallyGnome = output.contains("gnome-shell");
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        logger.error("Cannot detect if gnome-shell is running", e);
+                    }
                 }
-                if ("Unity".equalsIgnoreCase(XDG)) {
+
+                if (isReallyGnome) {
+                    if (DEBUG) {
+                        logger.error("Auto-detected that gnome-shell is running");
+                    }
+                    XDG = "gnome";
+                }
+
+                if (DEBUG) {
+                    logger.debug("Currently using the '{}' desktop", XDG);
+                }
+
+
+                if ("unity".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
@@ -206,7 +249,7 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("XFCE".equalsIgnoreCase(XDG)) {
+                else if ("xfce".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
@@ -215,7 +258,6 @@ class SystemTray {
                         }
 
                         // we can fail on AppIndicator, so this is the fallback
-                        //noinspection EmptyCatchBlock
                         try {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e1) {
@@ -225,7 +267,7 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("LXDE".equalsIgnoreCase(XDG)) {
+                else if ("lxde".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable e) {
@@ -234,7 +276,7 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("KDE".equalsIgnoreCase(XDG)) {
+                else if ("kde".equalsIgnoreCase(XDG)) {
                     isKDE = true;
                     try {
                         trayType = AppIndicatorTray.class;
@@ -244,9 +286,13 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("GNOME".equalsIgnoreCase(XDG)) {
+                else if ("gnome".equalsIgnoreCase(XDG)) {
                     // check other DE
                     String GDM = System.getenv("GDMSESSION");
+
+                    if (DEBUG) {
+                        logger.debug("Currently using the '{}' session type", GDM);
+                    }
 
                     if ("cinnamon".equalsIgnoreCase(GDM)) {
                         try {
@@ -275,6 +321,10 @@ class SystemTray {
                             }
                         }
                     }
+                    else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                        // have to install the gnome extension
+                        trayType = null;
+                    }
                 }
 
                 // is likely 'gnome', but it can also be unknown (or something completely different), install extension and go from there
@@ -295,6 +345,10 @@ class SystemTray {
                         String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
 
                         if (!output.isEmpty()) {
+                            if (DEBUG) {
+                                logger.info("Installing gnome-shell extension");
+                            }
+                            
                             GnomeShellExtension.install(logger, output);
                             trayType = GtkSystemTray.class;
                         }
@@ -358,7 +412,7 @@ class SystemTray {
                     }
                 } catch (Throwable e) {
                     if (DEBUG) {
-                        e.printStackTrace();
+                        logger.error("Error detecting gnome version", e);
                     }
                 } finally {
                     if (bin != null) {
