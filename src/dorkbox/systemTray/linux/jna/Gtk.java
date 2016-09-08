@@ -15,12 +15,15 @@
  */
 package dorkbox.systemTray.linux.jna;
 
-import com.sun.jna.Function;
-import com.sun.jna.Pointer;
-import dorkbox.systemTray.SystemTray;
+import static dorkbox.systemTray.SystemTray.logger;
 
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
+
+import com.sun.jna.Function;
+import com.sun.jna.Pointer;
+
+import dorkbox.systemTray.SystemTray;
 
 /**
  * bindings for gtk 2 or 3
@@ -58,8 +61,17 @@ class Gtk {
     static {
         boolean shouldUseGtk2 = SystemTray.FORCE_GTK2 || SystemTray.COMPATIBILITY_MODE;
 
+        // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
+        // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+
+        if (SystemTray.COMPATIBILITY_MODE && System.getProperty("jdk.gtk.version", "2").equals("3") && !SystemTray.FORCE_GTK2) {
+            // the user specified to use GTK3, so we should honor that
+            shouldUseGtk2 = false;
+        }
+
         // for more info on JavaFX: https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
         // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
+
 
         // in some cases, we ALWAYS want to try GTK2 first
         if (shouldUseGtk2) {
@@ -72,7 +84,14 @@ class Gtk {
                 // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
-            } catch (Throwable ignored) {
+
+                if (SystemTray.DEBUG) {
+                    logger.info("GTK: gtk-x11-2.0");
+                }
+            } catch (Throwable e) {
+                if (SystemTray.DEBUG) {
+                    logger.error("Error loading library", e);
+                }
             }
         }
 
@@ -87,7 +106,14 @@ class Gtk {
                 // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
-            } catch (Throwable ignored) {
+
+                if (SystemTray.DEBUG) {
+                    logger.info("GTK: libgtk-3.so.0");
+                }
+            } catch (Throwable e) {
+                if (SystemTray.DEBUG) {
+                    logger.error("Error loading library", e);
+                }
             }
         }
 
@@ -102,9 +128,21 @@ class Gtk {
                 // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
-            } catch (Throwable ignored) {
+
+                if (SystemTray.DEBUG) {
+                    logger.info("GTK: gtk-x11-2.0");
+                }
+            } catch (Throwable e) {
+                if (SystemTray.DEBUG) {
+                    logger.error("Error loading library", e);
+                }
             }
         }
+
+        if (SystemTray.DEBUG) {
+            logger.info("Is the system already running GTK? {}", alreadyRunningGTK);
+        }
+
         if (!isLoaded) {
             throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
                                        "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
