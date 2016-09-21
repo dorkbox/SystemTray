@@ -15,16 +15,17 @@
  */
 package dorkbox.systemTray.linux;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -53,6 +54,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
             public
             void run() {
                 final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
+                Gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray");  // necessary for gnome placement
                 Gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
 
                 trayIcon = trayIcon_;
