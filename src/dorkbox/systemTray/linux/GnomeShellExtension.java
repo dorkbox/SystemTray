@@ -101,7 +101,7 @@ class GnomeShellExtension {
                           "  ],\n" +
                           "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" +
                           "  \"uuid\": \"" + UID + "\",\n" +
-                          "  \"version\": 1\n" +
+                          "  \"version\": " + SystemTray.getVersion() + "\n" +
                           "}\n";
 
 
@@ -136,6 +136,10 @@ class GnomeShellExtension {
                     // if we are DEBUG, then we ALWAYS want to copy over our extension. We will have to manually restart the shell to see it
                     return;
                 }
+            } else {
+                // this means that we need to reinstall our extension, since either GNOME or US have changed versions since
+                // we last installed the extension.
+                hasSystemTray = false;
             }
         }
 
