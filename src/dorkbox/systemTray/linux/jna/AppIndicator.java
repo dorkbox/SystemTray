@@ -15,8 +15,12 @@
  */
 package dorkbox.systemTray.linux.jna;
 
+import static dorkbox.systemTray.SystemTray.logger;
+
+import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.SystemTray;
 
 /**
@@ -30,6 +34,8 @@ class AppIndicator {
     public static boolean isVersion3 = false;
 
     private static boolean isLoaded = false;
+
+    private static boolean LIBRARY_DEBUG = false;
 
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
@@ -59,7 +65,10 @@ class AppIndicator {
                 if (library != null) {
                     isLoaded = true;
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                if (LIBRARY_DEBUG) {
+                    logger.error("Error loading library: {}", "appindicator1", e);
+                }
             }
         }
 
@@ -77,12 +86,20 @@ class AppIndicator {
             try {
                 final NativeLibrary library = JnaHelper.register(nameToCheck1, AppIndicator.class);
                 String s = library.getName();
+
+                if (LIBRARY_DEBUG) {
+                    logger.error("Loading library (first attempt): {}", s);
+                }
+
                 if (s.contains("appindicator3")) {
                     isVersion3 = true;
                 }
 
                 isLoaded = true;
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                if (LIBRARY_DEBUG) {
+                    logger.error("Error loading library: {}", nameToCheck1, e);
+                }
             }
         }
 
@@ -90,6 +107,10 @@ class AppIndicator {
         // Super hacky way to do this.
         if (!isLoaded) {
             if (Gtk.isGtk2) {
+                if (LIBRARY_DEBUG) {
+                    logger.error("Checking GTK2 first for appIndicator");
+                }
+
                 // have to check gtk2 first
                 for (int i = 0; i <= 10; i++) {
                     if (!isLoaded) {
@@ -97,14 +118,26 @@ class AppIndicator {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
 
                             String s = library.getName();
+
+                            if (LIBRARY_DEBUG) {
+                                logger.error("Loading library: {}", s);
+                            }
+
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
                                 isVersion3 = true;
+                                if (LIBRARY_DEBUG) {
+                                    logger.error("Unloading library: {}", s);
+                                }
+                                Native.unregister(AppIndicator.class);
                             }
 
                             isLoaded = true;
                             break;
-                        } catch (Throwable ignored) {
+                        } catch (Throwable e) {
+                            if (LIBRARY_DEBUG) {
+                                logger.error("Error loading library: {}", "appindicator" + i, e);
+                            }
                         }
                     }
                 }
@@ -117,6 +150,11 @@ class AppIndicator {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
 
                             String s = library.getName();
+
+                            if (LIBRARY_DEBUG) {
+                                logger.error("Loading library: {}", s);
+                            }
+
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
                                 isVersion3 = true;
@@ -124,7 +162,10 @@ class AppIndicator {
 
                             isLoaded = true;
                             break;
-                        } catch (Throwable ignored) {
+                        } catch (Throwable e) {
+                            if (LIBRARY_DEBUG) {
+                                logger.error("Error loading library: {}", "appindicator" + i, e);
+                            }
                         }
                     }
                 }
@@ -149,7 +190,10 @@ class AppIndicator {
             try {
                 JnaHelper.register(nameToCheck1, AppIndicator.class);
                 isLoaded = true;
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                if (LIBRARY_DEBUG) {
+                    logger.error("Error loading library: {}", nameToCheck1, e);
+                }
             }
         }
 
@@ -158,7 +202,10 @@ class AppIndicator {
             try {
                 JnaHelper.register(nameToCheck2, AppIndicator.class);
                 isLoaded = true;
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                if (LIBRARY_DEBUG) {
+                    logger.error("Error loading library: {}", nameToCheck2, e);
+                }
             }
         }
 
