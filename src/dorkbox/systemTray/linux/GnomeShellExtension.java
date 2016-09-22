@@ -15,19 +15,30 @@
  */
 package dorkbox.systemTray.linux;
 
-import dorkbox.util.Property;
-import dorkbox.util.process.ShellProcessBuilder;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+
 import org.slf4j.Logger;
 
-import java.io.*;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.util.Property;
+import dorkbox.util.process.ShellProcessBuilder;
 
 public
 class GnomeShellExtension {
-    static final String UID = "SystemTray@Dorkbox";
+    private static final String UID = "SystemTray@Dorkbox";
 
     @Property
     /** Permit the gnome-shell to be restarted when the extension is installed. */
-    public static boolean ENABLE_SHELL_RESTART = true;
+    public static boolean ENABLE_SHELL_RESTART = false;
 
     @Property
     /** Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate. */
@@ -79,7 +90,7 @@ class GnomeShellExtension {
         final int indexOf = versionOutput.indexOf('.');
         final int nextIndexOf = versionOutput.indexOf('.', indexOf + 1);
         if (indexOf < nextIndexOf) {
-            versionOutput = versionOutput.substring(0, nextIndexOf);
+            versionOutput = versionOutput.substring(0, nextIndexOf);  // will be 3.14 (without the trailing '.1'), for example
         }
 
         String metadata = "{\n" +
@@ -121,9 +132,14 @@ class GnomeShellExtension {
             // the metadata string we CHECK should equal the metadata string we PROVIDE
             if (metadata.equals(builder.toString())) {
                 // this means that our version info, etc. is the same - there is no need to update anything
-                return;
+                if (!SystemTray.DEBUG) {
+                    // if we are DEBUG, then we ALWAYS want to copy over our extension. We will have to manually restart the shell to see it
+                    return;
+                }
             }
         }
+
+        // we get here if we are installed and our metadata is the same
 
         // need to make the extension location
         if (!file.isDirectory()) {
@@ -182,17 +198,30 @@ class GnomeShellExtension {
         if (!hasSystemTray) {
             // now we have to enable us if we aren't already enabled
 
-            // gsettings get org.gnome.shell enabled-extensions   (['background-logo@fedorahosted.org']  on fedora 23) different on openSuse
+            // gsettings get org.gnome.shell enabled-extensions
+            // defaults are:
+            //  - fedora 23:   ['background-logo@fedorahosted.org']  on
+            //  - openSuse:
+            //  - Ubuntu Gnome 16.04:   @as []
             final StringBuilder stringBuilder = new StringBuilder(output);
 
-            // strip off up to the leading  ['
-            final int extensionIndex = output.indexOf("['");
+            // have to remove the end first, otherwise we would have to re-index the location of the ]
+
+            // remove the last ]
+            int extensionIndex = output.indexOf("]");
+            if (extensionIndex > 0) {
+                stringBuilder.delete(extensionIndex, stringBuilder.length());
+            }
+
+            // strip off UP-TO (but not) the leading  [
+            extensionIndex = output.indexOf("[");
             if (extensionIndex > 0) {
                 stringBuilder.delete(0, extensionIndex);
             }
 
-            // remove the last ]
-            stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
+            // should be   ['background-logo@fedorahosted.org', 'zyx', 'abs'
+            // or will be  [  (if there is nothing)
+            logger.info("Installed extensions (should have leading '[') are: {}", stringBuilder.toString());
 
             // add our extension to the list
             if (stringBuilder.length() > 2) {
