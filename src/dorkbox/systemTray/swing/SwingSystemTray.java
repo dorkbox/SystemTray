@@ -15,14 +15,6 @@
  */
 package dorkbox.systemTray.swing;
 
-import dorkbox.systemTray.ImageUtil;
-import dorkbox.systemTray.MenuEntry;
-import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.util.ScreenUtil;
-import dorkbox.util.SwingUtil;
-
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
 import java.awt.AWTException;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -36,8 +28,22 @@ import java.awt.event.MouseEvent;
 import java.io.InputStream;
 import java.net.URL;
 
+import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
+
+import dorkbox.systemTray.ImageUtil;
+import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.util.ScreenUtil;
+import dorkbox.util.SwingUtil;
+
 /**
- * Class for handling all system tray interaction, via SWING
+ * Class for handling all system tray interaction, via SWING.
+ *
+ * It doesn't work well on linux. See bugs:
+ * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
+ * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
+ * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
  */
 public
 class SwingSystemTray extends dorkbox.systemTray.SystemTray {
