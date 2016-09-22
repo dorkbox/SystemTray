@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Listener;
  * SWT system tray types are just GTK trays.
  * <p>
  * This isn't possible with reflection - so we compile it AHEAD of time and save the bytecode (which is then included with the release)
+ * We **COULD** do some ASM/Bytecode generation, but why bother with even more libraries when it's just as easy to include it pre-compiled.
  */
 public
 class Swt {
