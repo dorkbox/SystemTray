@@ -56,6 +56,7 @@ class SystemTray {
 
     public static final int LINUX_GTK = 1;
     public static final int LINUX_APP_INDICATOR = 2;
+    public static final int SWING_INDICATOR = 3;
 
     @Property
     /** How long to wait when updating menu entries before the request times-out */
@@ -70,15 +71,8 @@ class SystemTray {
     public static boolean FORCE_GTK2 = false;
 
     @Property
-    /** If != 0, forces the system tray in linux to be GTK (1) or AppIndicator (2). This is an advanced feature. */
+    /** If != 0, forces the system tray in linux to be GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
     public static int FORCE_LINUX_TYPE = 0;
-
-    @Property
-    /**
-     * Forces the system to enter into JavaFX/SWT compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
-     * This is only necessary if autodetection fails.
-     */
-    public static boolean COMPATIBILITY_MODE = false;
 
     @Property
     /**
@@ -93,8 +87,39 @@ class SystemTray {
      */
     public static boolean DEBUG = false;
 
+
     private static volatile SystemTray systemTray = null;
     static boolean isKDE = false;
+
+    public final static boolean isJavaFxLoaded;
+    public final static boolean isSwtLoaded;
+
+    static {
+        // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
+        // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
+        // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
+        // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+
+        boolean isJavaFxLoaded_ = false;
+        boolean isSwtLoaded_ = false;
+        try {
+            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if COMPATIBILITY_MODE is enabled.
+            // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
+            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            m.setAccessible(true);
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            isJavaFxLoaded_ = (null != m.invoke(cl, "com.sun.javafx.tk.Toolkit")) || (null != m.invoke(cl, "javafx.application.Application"));
+            isSwtLoaded_ = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
+        } catch (Throwable e) {
+            if (DEBUG) {
+                logger.debug("Error detecting javaFX/SWT mode", e);
+            }
+        }
+
+        isJavaFxLoaded = isJavaFxLoaded_;
+        isSwtLoaded = isSwtLoaded_;
+    }
+
 
     private static void init() {
         if (systemTray != null) {
@@ -109,52 +134,73 @@ class SystemTray {
 
         Class<? extends SystemTray> trayType = null;
 
-        boolean isJavaFxLoaded = false;
-        boolean isSwtLoaded = false;
-        try {
-            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if COMPATIBILITY_MODE is enabled.
-            // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
-            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-            m.setAccessible(true);
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            isJavaFxLoaded = (null != m.invoke(cl, "com.sun.javafx.tk.Toolkit")) || (null != m.invoke(cl, "javafx.application.Application"));
-            isSwtLoaded = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
-        } catch (Throwable e) {
-            if (DEBUG) {
-                logger.debug("Error detecting compatibility mode", e);
+        // kablooie if SWT is not configured in a way that works with us.
+        if (FORCE_LINUX_TYPE != SWING_INDICATOR && OS.isLinux()) {
+            if (isSwtLoaded) {
+                // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
+                // System.setProperty("SWT_GTK3", "0");
+
+                // was SWT forced?
+                boolean isSwt_GTK3 = !System.getProperty("SWT_GTK3").equals("0");
+                if (!isSwt_GTK3) {
+                    // check a different property
+                    isSwt_GTK3 = !System.getProperty("org.eclipse.swt.internal.gtk.version").startsWith("2.");
+                }
+
+                if (isSwt_GTK3 && FORCE_GTK2) {
+                    logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
+                                 "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
+                                 "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+
+                    throw new RuntimeException("SWT configured to use GTK3 and is incompatible with the SystemTray GTK2.");
+                } else if (!isSwt_GTK3 && !FORCE_GTK2) {
+                    // we must use GTK2, because SWT is GTK2
+                    if (DEBUG) {
+                        logger.debug("Forcing GTK2 because SWT is GTK2");
+                    }
+                    FORCE_GTK2 = true;
+                }
+            }
+            else if (isJavaFxLoaded) {
+                // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
+                // see
+                // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+                // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
+                // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
+                boolean isJFX_GTK3 = System.getProperty("jdk.gtk.version", "2").equals("3");
+                if (isJFX_GTK3 && FORCE_GTK2) {
+                    // if we are java9, then we can change it -- otherwise we cannot.
+                    if (OS.javaVersion == 9) {
+                        logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
+                                     "GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                     "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`");
+
+                        throw new RuntimeException("JavaFX configured to use GTK3 and is incompatible with the SystemTray GTK2.");
+                    } else {
+                        logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
+                                     "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
+
+                        throw new RuntimeException("JavaFX configured to use GTK3 and is incompatible with the SystemTray GTK2.");
+                    }
+                } else if (!isJFX_GTK3 && !FORCE_GTK2) {
+                    // we must use GTK2, because JavaFX is GTK2
+                    if (DEBUG) {
+                        logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                    }
+                    FORCE_GTK2 = true;
+                }
             }
         }
-
-        // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
-        // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
-        // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
-        // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
-        COMPATIBILITY_MODE = OS.isLinux() && (isJavaFxLoaded || isSwtLoaded);
-
 
         if (DEBUG) {
+            switch (FORCE_LINUX_TYPE) {
+                case 1: logger.debug("Forcing GTK type"); break;
+                case 2: logger.debug("Forcing AppIndicator type"); break;
+                case 3: logger.debug("Forcing Swing type"); break;
+
+                default: logger.debug("Auto-detecting indicator type"); break;
+            }
             logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
-            logger.debug("COMPATIBILITY_MODE: {}", COMPATIBILITY_MODE);
-        }
-
-        // kablooie if SWT is not configured in a way that works with us.
-        if (OS.isLinux() && isSwtLoaded) {
-            // Necessary for us to work with SWT
-            // System.setProperty("SWT_GTK3", "0"); // Necessary for us to work with SWT
-
-            // was SWT forced?
-            boolean isSwt_GTK3 = !System.getProperty("SWT_GTK3").equals("0");
-            if (!isSwt_GTK3) {
-                // check a different property
-                isSwt_GTK3 = !System.getProperty("org.eclipse.swt.internal.gtk.version").startsWith("2.");
-            }
-
-            if (isSwt_GTK3) {
-                logger.error("Unable to use the SystemTray when SWT is configured to use GTK3. Please configure SWT to use GTK2, one such " +
-                             "example is to set the system property `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is initialized");
-
-                throw new RuntimeException("SWT configured to use GTK3 and is incompatible with the SystemTray.");
-            }
         }
 
 
@@ -163,11 +209,11 @@ class SystemTray {
         // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
 
         if (OS.isWindows()) {
-            // the tray icon size in windows is DIFFERENT than on Mac (TODO: test on mac with retina stuff).
+            // the tray icon size in windows is DIFFERENT than on Mac (TODO: test on mac with retina stuff. Also check HiDpi setups).
             TRAY_SIZE -= 4;
         }
 
-        if (OS.isLinux()) {
+        if (FORCE_LINUX_TYPE != SWING_INDICATOR && OS.isLinux()) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
@@ -201,6 +247,8 @@ class SystemTray {
                     }
                 }
             }
+            // don't check for SWING type at this spot, it is done elsewhere.
+
 
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
@@ -322,8 +370,9 @@ class SystemTray {
                         }
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        // have to install the gnome extension
+                        // have to install the gnome extension AND customize the restart command
                         trayType = null;
+                        GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
                     }
                 }
 
@@ -494,7 +543,7 @@ class SystemTray {
 
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
-            if (COMPATIBILITY_MODE && ENABLE_SHUTDOWN_HOOK) {
+            if (ENABLE_SHUTDOWN_HOOK) {
                 if (isJavaFxLoaded) {
                     // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
                     // Also, it's nice to have us shutdown at the same time as the main application
@@ -518,7 +567,9 @@ class SystemTray {
                             @Override
                             public
                             void run() {
-                                systemTray.shutdown();
+                                if (systemTray != null) {
+                                    systemTray.shutdown();
+                                }
                             }
                         });
                     } catch (Throwable e) {
@@ -542,7 +593,9 @@ class SystemTray {
                             @Override
                             public
                             void run() {
-                                systemTray.shutdown();
+                                if (systemTray != null) {
+                                    systemTray.shutdown();
+                                }
                             }
                         });
                     } catch (Throwable e) {

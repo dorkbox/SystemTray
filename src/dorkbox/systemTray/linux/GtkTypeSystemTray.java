@@ -16,15 +16,16 @@
 
 package dorkbox.systemTray.linux;
 
+import java.io.InputStream;
+import java.net.URL;
+
 import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-
-import java.io.InputStream;
-import java.net.URL;
 
 /**
  * Derived from

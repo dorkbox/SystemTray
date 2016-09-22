@@ -17,15 +17,19 @@ package dorkbox.systemTray.linux;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
+import javafx.application.Platform;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -34,7 +38,7 @@ import dorkbox.systemTray.linux.jna.Gtk;
  */
 public
 class GtkSystemTray extends GtkTypeSystemTray {
-    private Pointer trayIcon;
+    private volatile Pointer trayIcon;
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
     private final List<Object> gtkCallbacks = new ArrayList<Object>();
@@ -49,23 +53,21 @@ class GtkSystemTray extends GtkTypeSystemTray {
         super();
         Gtk.startGui();
 
+        final CountDownLatch blockUntilStarted = new CountDownLatch(1);
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
+                trayIcon = trayIcon_;
+
 
                 // necessary for gnome icon detection/placement because we move tray icons around by name. The name is hardcoded
                 //  in extension.js, so don't change it
                 Gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray");
 
-                // can cause on fedora 23
-                // // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
-                Gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
 
-                trayIcon = trayIcon_;
-
-                final GEventCallback gtkCallback = new GEventCallback() {
+                final GEventCallback gtkCallback2 = new GEventCallback() {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
@@ -75,13 +77,42 @@ class GtkSystemTray extends GtkTypeSystemTray {
                         }
                     }
                 };
-                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
+                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon_, "button_press_event", gtkCallback2,
+                                                                                      null, 0);
 
                 // have to do this to prevent GC on these objects
-                gtkCallbacks.add(gtkCallback);
+                gtkCallbacks.add(gtkCallback2);
                 gtkCallbacks.add(button_press_event);
+
+                blockUntilStarted.countDown();
             }
         });
+
+        if (SystemTray.isJavaFxLoaded) {
+            if (!Platform.isFxApplicationThread()) {
+                try {
+                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (SystemTray.isSwtLoaded) {
+            if (SystemTray.FORCE_LINUX_TYPE != SystemTray.LINUX_GTK) {
+                // GTK system tray has threading issues if we block here (because it is likely in the event thread)
+                // AppIndicator version doesn't have this problem
+                try {
+                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            try {
+                blockUntilStarted.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
@@ -118,6 +149,13 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
                 if (!isActive) {
                     isActive = true;
+
+                    // can cause
+                    // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
+                    // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+                    // it THIS PLACE IN CODE, these errors don't appear to happen. Nobody knows wtf why this is... This was trial and error
+                    Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
+
                     Gtk.gtk_status_icon_set_visible(trayIcon, true);
                 }
             }

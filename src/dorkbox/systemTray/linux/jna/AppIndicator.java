@@ -58,7 +58,7 @@ class AppIndicator {
             isLoaded = true;
         }
 
-        if (!isLoaded && (SystemTray.FORCE_GTK2 || SystemTray.COMPATIBILITY_MODE)) {
+        if (!isLoaded && SystemTray.FORCE_GTK2) {
             // if specified, try loading appindicator1 first, maybe it's there?
             try {
                 final NativeLibrary library = JnaHelper.register("appindicator1", AppIndicator.class);

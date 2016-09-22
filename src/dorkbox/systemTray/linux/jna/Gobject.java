@@ -31,6 +31,9 @@ class Gobject {
         JnaHelper.register("gobject-2.0", Gobject.class);
     }
 
+
+    public static native void g_idle_add(FuncCallback callback, Pointer data);
+
     public static native void g_free(Pointer object);
     public static native void g_object_unref(Pointer object);
 

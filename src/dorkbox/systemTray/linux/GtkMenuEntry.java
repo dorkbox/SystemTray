@@ -15,18 +15,19 @@
  */
 package dorkbox.systemTray.linux;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.GCallback;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class GtkMenuEntry implements MenuEntry, GCallback {
     private static final AtomicInteger ID_COUNTER = new AtomicInteger();
