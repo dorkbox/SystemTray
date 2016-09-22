@@ -57,7 +57,7 @@ let tray = null;
 let orig_getSource = null;
 let icons = [];
 
-let DEBUG = true;
+let DEBUG = false;
 
 
 // this value is hardcoded into the display manager
