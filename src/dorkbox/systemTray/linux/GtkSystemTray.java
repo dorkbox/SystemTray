@@ -54,7 +54,13 @@ class GtkSystemTray extends GtkTypeSystemTray {
             public
             void run() {
                 final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
-                Gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray");  // necessary for gnome placement
+
+                // necessary for gnome icon detection/placement because we move tray icons around by name. The name is hardcoded
+                //  in extension.js, so don't change it
+                Gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray");
+
+                // can cause on fedora 23
+                // // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
                 Gtk.gtk_status_icon_set_name(trayIcon_, "SystemTray");
 
                 trayIcon = trayIcon_;
