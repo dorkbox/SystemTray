@@ -170,6 +170,10 @@ class Gtk {
 
             // If JavaFX/SWT is used, this is UNNECESSARY
             if (!alreadyRunningGTK) {
+                if (SystemTray.DEBUG) {
+                    logger.error("Running GTK Native Event Loop");
+                }
+
                 // only necessary if we are the only GTK instance running...
                 final CountDownLatch blockUntilStarted = new CountDownLatch(1);
 
@@ -201,7 +205,7 @@ class Gtk {
                 gtkUpdateThread.setName("GTK Native Event Loop");
                 gtkUpdateThread.start();
 
-                try {
+                 try {
                     // we CANNOT continue until the GTK thread has started!
                     blockUntilStarted.await();
                 } catch (InterruptedException e) {
