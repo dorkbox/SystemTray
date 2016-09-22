@@ -16,6 +16,8 @@
 
 package dorkbox;
 
+import java.net.URL;
+
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
@@ -27,8 +29,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
-import java.net.URL;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
