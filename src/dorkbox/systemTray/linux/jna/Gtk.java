@@ -18,7 +18,6 @@ package dorkbox.systemTray.linux.jna;
 import static dorkbox.systemTray.SystemTray.logger;
 import static dorkbox.systemTray.linux.jna.Gobject.g_idle_add;
 
-import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +26,8 @@ import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.util.JavaFX;
+import dorkbox.systemTray.util.Swt;
 
 /**
  * bindings for gtk 2 or 3
@@ -50,8 +51,8 @@ class Gtk {
     private static boolean alreadyRunningGTK = false;
     private static boolean isLoaded = false;
 
-    private static Method swtDispatchMethod = null;
-
+    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
+    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
 
     /**
      * We can have GTK v3 or v2.
@@ -60,10 +61,6 @@ class Gtk {
      * JavaFX uses GTK2, and we can't load GTK3 if GTK2 symbols are loaded
      * SWT uses GTK2 or GTK3. We do not work with the GTK3 version of SWT.
      */
-
-    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
-    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
-
     static {
         boolean shouldUseGtk2 = SystemTray.FORCE_GTK2;
 
@@ -159,8 +156,10 @@ class Gtk {
     private static volatile boolean started = false;
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final LinkedList<Object> gtkCallbacks = new LinkedList<Object>();
 
+    @SuppressWarnings("FieldCanBeLocal")
     private static Thread gtkUpdateThread = null;
 
     public static final int FALSE = 0;
@@ -228,20 +227,6 @@ class Gtk {
                 }
             }
         }
-
-        if (SystemTray.isSwtLoaded) {
-            try {
-                Class<?> clazz = Class.forName("dorkbox.systemTray.swt.Swt");
-                swtDispatchMethod = clazz.getMethod("dispatch", Runnable.class);
-            } catch (Throwable e) {
-                if (SystemTray.DEBUG) {
-                    logger.error("Cannot initialize SWT dispatch", e);
-                    e.printStackTrace();
-                }
-                logger.error("Unable to call into dispatch method for SWT. Please create an issue with your OS and Java " +
-                             "version so we may further investigate this issue.");
-            }
-        }
     }
 
     /**
@@ -253,22 +238,16 @@ class Gtk {
             // SWT/JavaFX
 
             if (SystemTray.isJavaFxLoaded) {
-                if (javafx.application.Platform.isFxApplicationThread()) {
+                if (JavaFX.isEventThread()) {
                     // Run directly on the JavaFX event thread
                     runnable.run();
                 }
                 else {
-                    javafx.application.Platform.runLater(runnable);
+                    JavaFX.dispatch(runnable);
                 }
             }
             else if (SystemTray.isSwtLoaded) {
-                try {
-                    swtDispatchMethod.invoke(null, runnable);
-                } catch (Exception e) {
-                    logger.error("Unable to call into dispatch method for SWT. Please create an issue with your OS and Java " +
-                                 "version so we may further investigate this issue.");
-                    throw new RuntimeException("Unable to invoke required SWT method");
-                }
+                Swt.dispatch(runnable);
             }
         }
         else {
@@ -335,17 +314,6 @@ class Gtk {
      */
     private static native void gtk_main_quit();
 
-    private static native void gdk_threads_init();
-
-    // tricky business. Only when using SWT/JavaFX, because they do it wrong.
-    /**
-     * @return TRUE to run this callback again, FALSE to remove from the list of event sources (and not call it again)
-     */
-    private static native int gdk_threads_add_idle(FuncCallback callback, Pointer data);
-    private static native void gdk_threads_enter();
-    private static native void gdk_threads_leave();
-
-
 
 
 
@@ -371,7 +339,6 @@ class Gtk {
 
     public static native void gtk_label_set_use_markup(Pointer label, int gboolean);
 
-    public static native Pointer gtk_status_icon_new_from_icon_name(String iconName);;
     public static native Pointer gtk_status_icon_new();
 
     public static native void gtk_status_icon_set_from_file(Pointer widget, String label);
@@ -396,8 +363,6 @@ class Gtk {
     public static native void gtk_widget_set_sensitive(Pointer widget, int sensitive);
 
     public static native void gtk_container_remove(Pointer menu, Pointer subItem);
-
-    public static native void gtk_widget_show(Pointer widget);
 
     public static native void gtk_widget_show_all(Pointer widget);
 

@@ -29,7 +29,7 @@ import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import javafx.application.Platform;
+import dorkbox.systemTray.util.JavaFX;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -89,7 +89,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
         });
 
         if (SystemTray.isJavaFxLoaded) {
-            if (!Platform.isFxApplicationThread()) {
+            if (!JavaFX.isEventThread()) {
                 try {
                     blockUntilStarted.await(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {

@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -41,6 +40,8 @@ import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.swing.SwingSystemTray;
+import dorkbox.systemTray.util.JavaFX;
+import dorkbox.systemTray.util.Swt;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -85,7 +86,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = true;
 
 
     private static volatile SystemTray systemTray = null;
@@ -95,21 +96,15 @@ class SystemTray {
     public final static boolean isSwtLoaded;
 
     static {
-        // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
-        // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
-        // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
-        // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
-
         boolean isJavaFxLoaded_ = false;
         boolean isSwtLoaded_ = false;
         try {
-            // First check if JavaFX is loaded - if it's NOT LOADED, then we only proceed if COMPATIBILITY_MODE is enabled.
-            // this is important, because if JavaFX is not being used, calling getToolkit() will initialize it...
-            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-            m.setAccessible(true);
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            isJavaFxLoaded_ = (null != m.invoke(cl, "com.sun.javafx.tk.Toolkit")) || (null != m.invoke(cl, "javafx.application.Application"));
-            isSwtLoaded_ = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
+            // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
+            // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+            isJavaFxLoaded_ = JavaFX.isLoaded();
+
+            // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
+            isSwtLoaded_ = Swt.isLoaded();
         } catch (Throwable e) {
             if (DEBUG) {
                 logger.debug("Error detecting javaFX/SWT mode", e);
@@ -547,65 +542,28 @@ class SystemTray {
                 if (isJavaFxLoaded) {
                     // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
                     // Also, it's nice to have us shutdown at the same time as the main application
-
-                    // com.sun.javafx.tk.Toolkit.getToolkit()
-                    //                          .addShutdownHook(new Runnable() {
-                    //                              @Override
-                    //                              public
-                    //                              void run() {
-                    //                                  systemTray.shutdown();
-                    //                              }
-                    //                          });
-
-                    try {
-                        Class<?> clazz = Class.forName("com.sun.javafx.tk.Toolkit");
-                        Method method = clazz.getMethod("getToolkit");
-                        Object o = method.invoke(null);
-                        Method runnable = o.getClass()
-                                           .getMethod("addShutdownHook", Runnable.class);
-                        runnable.invoke(o, new Runnable() {
-                            @Override
-                            public
-                            void run() {
-                                if (systemTray != null) {
-                                    systemTray.shutdown();
-                                }
+                    JavaFX.onShutdown(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            if (systemTray != null) {
+                                systemTray.shutdown();
                             }
-                        });
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot initialize JavaFX", e);
                         }
-                        logger.error("Unable to insert shutdown hook into JavaFX. Please create an issue with your OS and Java " +
-                                     "version so we may further investigate this issue.");
-                    }
+                    });
                 }
                 else if (isSwtLoaded) {
                     // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
                     // Also, it's nice to have us shutdown at the same time as the main application
-
-                    // During compile time (for production), this class is not compiled, and instead is copied over as a pre-compiled file
-                    // This is so we don't have to rely on having SWT as part of the classpath during build.
-                    try {
-                        Class<?> clazz = Class.forName("dorkbox.systemTray.swt.Swt");
-                        Method method = clazz.getMethod("onShutdown", Runnable.class);
-                        Object o = method.invoke(null, new Runnable() {
-                            @Override
-                            public
-                            void run() {
-                                if (systemTray != null) {
-                                    systemTray.shutdown();
-                                }
+                    Swt.onShutdown(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            if (systemTray != null) {
+                                systemTray.shutdown();
                             }
-                        });
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot initialize SWT", e);
-                            e.printStackTrace();
                         }
-                        logger.error("Unable to insert shutdown hook into SWT. Please create an issue with your OS and Java " +
-                                     "version so we may further investigate this issue.");
-                    }
+                    });
                 }
             }
         }
