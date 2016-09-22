@@ -29,6 +29,11 @@ import org.eclipse.swt.widgets.Listener;
 public
 class Swt {
     public static
+    void dispatch(final Runnable runnable) {
+        Display.getDefault().asyncExec(runnable);
+    }
+
+    public static
     void onShutdown(final Runnable runnable) {
         Display.getCurrent().getShells()[0].addListener(SWT.Close, new Listener() {
             @Override
