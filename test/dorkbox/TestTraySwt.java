@@ -16,15 +16,16 @@
 
 package dorkbox;
 
-import dorkbox.systemTray.MenuEntry;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.SystemTrayMenuAction;
+import java.net.URL;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import java.net.URL;
+import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.SystemTrayMenuAction;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -41,7 +42,7 @@ class TestTraySwt {
     public static
     void main(String[] args) {
         // make sure JNA jar is on the classpath!
-        System.setProperty("SWT_GTK3", "0"); // Necessary for us to work with SWT
+        System.setProperty("SWT_GTK3", "0"); // Can change between GTK2 and GTK3
 
         new TestTraySwt();
     }
