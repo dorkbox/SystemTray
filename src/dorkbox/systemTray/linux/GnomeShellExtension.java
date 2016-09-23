@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray.linux;
 
+import static dorkbox.systemTray.SystemTray.logger;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -26,8 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
-import org.slf4j.Logger;
-
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -38,7 +38,7 @@ class GnomeShellExtension {
 
     @Property
     /** Permit the gnome-shell to be restarted when the extension is installed. */
-    public static boolean ENABLE_SHELL_RESTART = false;
+    public static boolean ENABLE_SHELL_RESTART = true;
 
     @Property
     /** Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate. */
@@ -48,7 +48,7 @@ class GnomeShellExtension {
     /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
     public static String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
 
-    public static void install(final Logger logger, final String shellVersionString) throws IOException {
+    public static void install(final String shellVersionString) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
         PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
@@ -69,7 +69,6 @@ class GnomeShellExtension {
             // topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
             return;
         }
-
 
         // have to copy the extension over and enable it.
         String userHome = System.getProperty("user.home");
@@ -106,6 +105,9 @@ class GnomeShellExtension {
 
 
         if (hasSystemTray) {
+            if (SystemTray.DEBUG) {
+                logger.debug("Checking current version of extension for upgrade");
+            }
             // have to check to see if the version is correct as well (otherwise we have to reinstall it)
 
             StringBuilder builder = new StringBuilder(256);
@@ -139,7 +141,7 @@ class GnomeShellExtension {
             } else {
                 // this means that we need to reinstall our extension, since either GNOME or US have changed versions since
                 // we last installed the extension.
-                hasSystemTray = false;
+                logger.debug("Need to upgrade extension");
             }
         }
 
@@ -200,6 +202,7 @@ class GnomeShellExtension {
 
 
         if (!hasSystemTray) {
+            logger.debug("Enabling extension in gnome-shell");
             // now we have to enable us if we aren't already enabled
 
             // gsettings get org.gnome.shell enabled-extensions
@@ -239,7 +242,7 @@ class GnomeShellExtension {
             stringBuilder.append("]");
 
             // gsettings set org.gnome.shell enabled-extensions "['SystemTray@dorkbox']"
-            // gsettings set org.gnome.shell enabled-extensions "['xyz', 'SystemTray@dorkbox']"
+            // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@dorkbox']"
             final ShellProcessBuilder setGsettings = new ShellProcessBuilder(outputStream);
             setGsettings.setExecutable("gsettings");
             setGsettings.addArgument("set");
@@ -250,6 +253,12 @@ class GnomeShellExtension {
         }
 
         if (ENABLE_SHELL_RESTART) {
+            if (SystemTray.DEBUG) {
+                logger.debug("DEBUG mode enabled. You need to manually restart the shell via '{}'", SHELL_RESTART_COMMAND);
+                return;
+            }
+
+
             logger.info("Restarting gnome-shell so tray notification changes can be applied.");
 
             // now we have to restart the gnome shell via bash
