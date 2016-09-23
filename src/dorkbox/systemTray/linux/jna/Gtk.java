@@ -42,7 +42,7 @@ class Gtk {
     // For funsies to look at, SyncThing did a LOT of work on compatibility in python (unfortunate for us, but interesting).
     // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
-    // NOTE: AppIndicator uses this info to figure out WHAT VERSION OF appindicator to use: GTK2 -> appindiactor1, GTK3 -> appindicator3
+    // NOTE: AppIndicator uses this info to figure out WHAT VERSION OF appindicator to use: GTK2 -> appindicator1, GTK3 -> appindicator3
     public static volatile boolean isGtk2 = false;
 
 
@@ -72,7 +72,6 @@ class Gtk {
         if (SystemTray.FORCE_LINUX_TYPE == SystemTray.SWING_INDICATOR) {
             isLoaded = true;
         }
-
 
         if (!isLoaded && shouldUseGtk2) {
             try {
