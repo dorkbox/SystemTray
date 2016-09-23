@@ -40,6 +40,9 @@ public
 class GtkSystemTray extends GtkTypeSystemTray {
     private volatile Pointer trayIcon;
 
+    // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
+    // https://github.com/djdeath/glib/blob/master/gobject/gobject.c
+
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
     private final List<Object> gtkCallbacks = new ArrayList<Object>();
 
@@ -59,15 +62,33 @@ class GtkSystemTray extends GtkTypeSystemTray {
             public
             void run() {
                 final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
+                Gtk.gtk_status_icon_set_visible(trayIcon_, false); // immediately set false visibility
                 trayIcon = trayIcon_;
+            }
+        });
 
+        // we have to be able to set our name/title, otherwise the gnome-shell extension WILL NOT work
+        // prevent these from happening...
+        // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
+        // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
+                // If you change "SystemTray" to something else, make sure to change it in extension.js as well
 
                 // necessary for gnome icon detection/placement because we move tray icons around by name. The name is hardcoded
                 //  in extension.js, so don't change it
-                Gtk.gtk_status_icon_set_title(trayIcon_, "SystemTray");
+                Gtk.gtk_status_icon_set_title(trayIcon, "SystemTray");
 
+                // ALSO necessary to make sure our gnome-shell extension has the correct name/title! (sometimes it does not)
+                // can cause
+                // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
+                // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+                Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
 
-                final GEventCallback gtkCallback2 = new GEventCallback() {
+                final GEventCallback gtkCallback = new GEventCallback() {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
@@ -77,16 +98,17 @@ class GtkSystemTray extends GtkTypeSystemTray {
                         }
                     }
                 };
-                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon_, "button_press_event", gtkCallback2,
+                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback,
                                                                                       null, 0);
 
                 // have to do this to prevent GC on these objects
-                gtkCallbacks.add(gtkCallback2);
+                gtkCallbacks.add(gtkCallback);
                 gtkCallbacks.add(button_press_event);
 
                 blockUntilStarted.countDown();
             }
         });
+
 
         if (SystemTray.isJavaFxLoaded) {
             if (!JavaFX.isEventThread()) {
@@ -114,6 +136,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
             }
         }
     }
+
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
     @Override
@@ -149,13 +172,6 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
                 if (!isActive) {
                     isActive = true;
-
-                    // can cause
-                    // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
-                    // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
-                    // it THIS PLACE IN CODE, these errors don't appear to happen. Nobody knows wtf why this is... This was trial and error
-                    Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
-
                     Gtk.gtk_status_icon_set_visible(trayIcon, true);
                 }
             }
