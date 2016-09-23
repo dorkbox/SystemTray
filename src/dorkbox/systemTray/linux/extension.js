@@ -290,7 +290,7 @@ function onTrayIconAdded(o, icon) {
         });
     });
 
-    icon.connect("destroy", function() {
+    icon.connect('destroy', function() {
         Main.panel._rightBox.disconnect(icon._proxyAlloc);
         icon.clear_effects();
         clickProxy.destroy();
