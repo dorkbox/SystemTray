@@ -41,10 +41,6 @@ class GnomeShellExtension {
     public static boolean ENABLE_SHELL_RESTART = true;
 
     @Property
-    /** Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate. */
-    public static long SHELL_RESTART_TIMEOUT_MILLIS = 5000L;
-
-    @Property
     /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
     public static String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
 
@@ -267,14 +263,7 @@ class GnomeShellExtension {
             restartShell.addArgument(SHELL_RESTART_COMMAND);
             restartShell.start();
 
-            // have to give the shell time to restart
-            try {
-                Thread.sleep(SHELL_RESTART_TIMEOUT_MILLIS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            logger.info("Shell restarted.");
+            // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
         }
     }
 }
