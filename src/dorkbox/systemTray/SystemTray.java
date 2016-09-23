@@ -72,8 +72,8 @@ class SystemTray {
     public static boolean FORCE_GTK2 = true;
 
     @Property
-    /** If != 0, forces the system tray in linux to be GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
-    public static int FORCE_LINUX_TYPE = 1;
+    /** Forces the system tray detection to be Automatic (0), GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
+    public static int FORCE_LINUX_TYPE = 0;
 
     @Property
     /**
@@ -201,11 +201,11 @@ class SystemTray {
 
         if (DEBUG) {
             switch (FORCE_LINUX_TYPE) {
-                case 1: logger.debug("Forcing GTK type"); break;
-                case 2: logger.debug("Forcing AppIndicator type"); break;
-                case 3: logger.debug("Forcing Swing type"); break;
+                case 1: logger.debug("Forced tray type: GtkStatusIcon"); break;
+                case 2: logger.debug("Forced tray type: AppIndicator"); break;
+                case 3: logger.debug("Forced tray type: Swing"); break;
 
-                default: logger.debug("Auto-detecting indicator type"); break;
+                default: logger.debug("Auto-detecting tray type"); break;
             }
             logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
         }
@@ -232,7 +232,7 @@ class SystemTray {
             // appindicator3 doesn't support menu icons via GTK2!!
             if (Gtk.isGtk2 || AppIndicator.isVersion3) {
                 if (DEBUG) {
-                    logger.trace("Loading libraries");
+                    logger.debug("Loading libraries");
                 }
             }
 
@@ -295,61 +295,35 @@ class SystemTray {
             }
 
 
-            if ("unity".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot initialize AppIndicatorTray", e);
-                    }
-                }
-            }
-            else if ("xfce".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot initialize AppIndicatorTray", e);
-                    }
-
-                    // we can fail on AppIndicator, so this is the fallback
+            if (trayType == null) {
+                if ("unity".equalsIgnoreCase(XDG)) {
                     try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e1) {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize GtkSystemTray", e1);
+                            logger.error("Cannot initialize AppIndicatorTray", e);
                         }
                     }
                 }
-            }
-            else if ("lxde".equalsIgnoreCase(XDG)) {
-                try {
-                    trayType = GtkSystemTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot initialize GtkSystemTray", e);
+                else if ("xfce".equalsIgnoreCase(XDG)) {
+                    try {
+                        trayType = AppIndicatorTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            logger.error("Cannot initialize AppIndicatorTray", e);
+                        }
+
+                        // we can fail on AppIndicator, so this is the fallback
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e1) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize GtkSystemTray", e1);
+                            }
+                        }
                     }
                 }
-            }
-            else if ("kde".equalsIgnoreCase(XDG)) {
-                isKDE = true;
-                try {
-                    trayType = AppIndicatorTray.class;
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot initialize AppIndicatorTray", e);
-                    }
-                }
-            }
-            else if ("gnome".equalsIgnoreCase(XDG)) {
-                // check other DE
-                String GDM = System.getenv("GDMSESSION");
-
-                if (DEBUG) {
-                    logger.debug("Currently using the '{}' session type", GDM);
-                }
-
-                if ("cinnamon".equalsIgnoreCase(GDM)) {
+                else if ("lxde".equalsIgnoreCase(XDG)) {
                     try {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable e) {
@@ -358,30 +332,59 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("gnome-classic".equalsIgnoreCase(GDM)) {
+                else if ("kde".equalsIgnoreCase(XDG)) {
+                    isKDE = true;
                     try {
-                        trayType = GtkSystemTray.class;
+                        trayType = AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize GtkSystemTray", e);
+                            logger.error("Cannot initialize AppIndicatorTray", e);
                         }
                     }
                 }
-                else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                    try {
-                        trayType = GtkSystemTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot initialize GtkSystemTray", e);
+                else if ("gnome".equalsIgnoreCase(XDG)) {
+                    // check other DE
+                    String GDM = System.getenv("GDMSESSION");
+
+                    if (DEBUG) {
+                        logger.debug("Currently using the '{}' session type", GDM);
+                    }
+
+                    if ("cinnamon".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize GtkSystemTray", e);
+                            }
                         }
                     }
-                }
-                else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                    // have to install the gnome extension AND customize the restart command
-                    trayType = null;
-                    GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
+                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize GtkSystemTray", e);
+                            }
+                        }
+                    }
+                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
+                        try {
+                            trayType = GtkSystemTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize GtkSystemTray", e);
+                            }
+                        }
+                    }
+                    else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                        // have to install the gnome extension AND customize the restart command
+                        trayType = null;
+                        GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
+                    }
                 }
             }
+
 
             // is likely 'gnome' (gnome-shell exists on the platform), but it can also be unknown (or something completely different),
             // install extension and go from there
@@ -407,6 +410,7 @@ class SystemTray {
                         }
 
                         GnomeShellExtension.install(output);
+                        // we might be running gnome-shell, we MIGHT NOT. If we are forced to be app-indicator or swing, don't do this.
                         if (trayType == null) {
                             trayType = GtkSystemTray.class;
                         }
