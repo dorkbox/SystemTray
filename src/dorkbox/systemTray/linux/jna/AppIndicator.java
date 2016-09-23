@@ -32,9 +32,7 @@ import dorkbox.systemTray.SystemTray;
 public
 class AppIndicator {
     public static boolean isVersion3 = false;
-
     private static boolean isLoaded = false;
-
     private static boolean LIBRARY_DEBUG = false;
 
     /**
@@ -55,6 +53,9 @@ class AppIndicator {
 
         if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_GTK) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
+            if (LIBRARY_DEBUG) {
+                logger.error("Forcing GTK tray, not using appindicator");
+            }
             isLoaded = true;
         }
 
@@ -207,11 +208,6 @@ class AppIndicator {
                     logger.error("Error loading library: {}", nameToCheck2, e);
                 }
             }
-        }
-
-        if (!isLoaded) {
-            throw new RuntimeException("We apologize for this, but we are unable to determine which the appIndicator library is in use, if " +
-                                       "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
         }
     }
 
