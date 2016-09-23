@@ -69,11 +69,11 @@ class SystemTray {
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static boolean FORCE_GTK2 = false;
+    public static boolean FORCE_GTK2 = true;
 
     @Property
     /** If != 0, forces the system tray in linux to be GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
-    public static int FORCE_LINUX_TYPE = 0;
+    public static int FORCE_LINUX_TYPE = 1;
 
     @Property
     /**
@@ -99,12 +99,18 @@ class SystemTray {
         boolean isJavaFxLoaded_ = false;
         boolean isSwtLoaded_ = false;
         try {
+            // this is important to use reflection, because if JavaFX is not being used, calling getToolkit() will initialize it...
+            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            m.setAccessible(true);
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+
             // JavaFX Java7,8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
             // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
-            isJavaFxLoaded_ = JavaFX.isLoaded();
+            isJavaFxLoaded_ = (null != m.invoke(cl, "com.sun.javafx.tk.Toolkit")) || (null != m.invoke(cl, "javafx.application.Application"));
 
+            // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be the same!!
             // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
-            isSwtLoaded_ = Swt.isLoaded();
+            isSwtLoaded_ = null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
         } catch (Throwable e) {
             if (DEBUG) {
                 logger.debug("Error detecting javaFX/SWT mode", e);
@@ -128,6 +134,12 @@ class SystemTray {
         }
 
         Class<? extends SystemTray> trayType = null;
+
+
+        if (DEBUG) {
+            logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
+            logger.debug("is SWT detected? {}", isSwtLoaded);
+        }
 
         // kablooie if SWT is not configured in a way that works with us.
         if (FORCE_LINUX_TYPE != SWING_INDICATOR && OS.isLinux()) {
@@ -247,70 +259,97 @@ class SystemTray {
 
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-            if (trayType == null) {
-                String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
 
-                // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
-                boolean isReallyGnome = false;
+            // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
+            // we must ALWAYS do this check!!
+            boolean isReallyGnome = false;
+            try {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                // ps a | grep [g]nome-shell
+                final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                shell.setExecutable("ps");
+                shell.addArgument("a");
+                shell.start();
+
+
+                String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                isReallyGnome = output.contains("gnome-shell");
+            } catch (Throwable e) {
+                if (DEBUG) {
+                    logger.error("Cannot detect if gnome-shell is running", e);
+                }
+            }
+
+            if (isReallyGnome) {
+                if (DEBUG) {
+                    logger.error("Auto-detected that gnome-shell is running");
+                }
+                XDG = "gnome";
+            }
+
+            if (DEBUG) {
+                logger.debug("Currently using the '{}' desktop", XDG);
+            }
+
+
+            if ("unity".equalsIgnoreCase(XDG)) {
                 try {
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                    // ps a | grep [g]nome-shell
-                    final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                    shell.setExecutable("ps");
-                    shell.addArgument("a");
-                    shell.start();
-
-
-                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                    isReallyGnome = output.contains("gnome-shell");
+                    trayType = AppIndicatorTray.class;
                 } catch (Throwable e) {
                     if (DEBUG) {
-                        logger.error("Cannot detect if gnome-shell is running", e);
+                        logger.error("Cannot initialize AppIndicatorTray", e);
                     }
                 }
-
-                if (isReallyGnome) {
+            }
+            else if ("xfce".equalsIgnoreCase(XDG)) {
+                try {
+                    trayType = AppIndicatorTray.class;
+                } catch (Throwable e) {
                     if (DEBUG) {
-                        logger.error("Auto-detected that gnome-shell is running");
+                        logger.error("Cannot initialize AppIndicatorTray", e);
                     }
-                    XDG = "gnome";
+
+                    // we can fail on AppIndicator, so this is the fallback
+                    try {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable e1) {
+                        if (DEBUG) {
+                            logger.error("Cannot initialize GtkSystemTray", e1);
+                        }
+                    }
                 }
+            }
+            else if ("lxde".equalsIgnoreCase(XDG)) {
+                try {
+                    trayType = GtkSystemTray.class;
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        logger.error("Cannot initialize GtkSystemTray", e);
+                    }
+                }
+            }
+            else if ("kde".equalsIgnoreCase(XDG)) {
+                isKDE = true;
+                try {
+                    trayType = AppIndicatorTray.class;
+                } catch (Throwable e) {
+                    if (DEBUG) {
+                        logger.error("Cannot initialize AppIndicatorTray", e);
+                    }
+                }
+            }
+            else if ("gnome".equalsIgnoreCase(XDG)) {
+                // check other DE
+                String GDM = System.getenv("GDMSESSION");
 
                 if (DEBUG) {
-                    logger.debug("Currently using the '{}' desktop", XDG);
+                    logger.debug("Currently using the '{}' session type", GDM);
                 }
 
-
-                if ("unity".equalsIgnoreCase(XDG)) {
-                    try {
-                        trayType = AppIndicatorTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
-                        }
-                    }
-                }
-                else if ("xfce".equalsIgnoreCase(XDG)) {
-                    try {
-                        trayType = AppIndicatorTray.class;
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
-                        }
-
-                        // we can fail on AppIndicator, so this is the fallback
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable e1) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e1);
-                            }
-                        }
-                    }
-                }
-                else if ("lxde".equalsIgnoreCase(XDG)) {
+                if ("cinnamon".equalsIgnoreCase(GDM)) {
                     try {
                         trayType = GtkSystemTray.class;
                     } catch (Throwable e) {
@@ -319,88 +358,62 @@ class SystemTray {
                         }
                     }
                 }
-                else if ("kde".equalsIgnoreCase(XDG)) {
-                    isKDE = true;
+                else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                     try {
-                        trayType = AppIndicatorTray.class;
+                        trayType = GtkSystemTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
+                            logger.error("Cannot initialize GtkSystemTray", e);
                         }
                     }
                 }
-                else if ("gnome".equalsIgnoreCase(XDG)) {
-                    // check other DE
-                    String GDM = System.getenv("GDMSESSION");
+                else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
+                    try {
+                        trayType = GtkSystemTray.class;
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            logger.error("Cannot initialize GtkSystemTray", e);
+                        }
+                    }
+                }
+                else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                    // have to install the gnome extension AND customize the restart command
+                    trayType = null;
+                    GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
+                }
+            }
 
+            // is likely 'gnome' (gnome-shell exists on the platform), but it can also be unknown (or something completely different),
+            // install extension and go from there
+            if (isReallyGnome) {
+                // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
+                // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
+
+                try {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                    // gnome-shell --version
+                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                    shellVersion.setExecutable("gnome-shell");
+                    shellVersion.addArgument("--version");
+                    shellVersion.start();
+
+                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                    if (!output.isEmpty()) {
+                        if (DEBUG) {
+                            logger.info("Installing gnome-shell extension");
+                        }
+
+                        GnomeShellExtension.install(output);
+                        if (trayType == null) {
+                            trayType = GtkSystemTray.class;
+                        }
+                    }
+                } catch (Throwable e) {
                     if (DEBUG) {
-                        logger.debug("Currently using the '{}' session type", GDM);
-                    }
-
-                    if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
-                            }
-                        }
-                    }
-                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
-                            }
-                        }
-                    }
-                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
-                            }
-                        }
-                    }
-                    else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        // have to install the gnome extension AND customize the restart command
-                        trayType = null;
-                        GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
-                    }
-                }
-
-                // is likely 'gnome', but it can also be unknown (or something completely different), install extension and go from there
-                if (trayType == null) {
-                    // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
-                    // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
-
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // gnome-shell --version
-                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                        shellVersion.setExecutable("gnome-shell");
-                        shellVersion.addArgument("--version");
-                        shellVersion.start();
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                        if (!output.isEmpty()) {
-                            if (DEBUG) {
-                                logger.info("Installing gnome-shell extension");
-                            }
-                            
-                            GnomeShellExtension.install(logger, output);
-                            trayType = GtkSystemTray.class;
-                        }
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot auto-detect gnome-shell version", e);
-                        }
-                        trayType = null;
+                        logger.error("Cannot auto-detect gnome-shell version", e);
                     }
                 }
             }
