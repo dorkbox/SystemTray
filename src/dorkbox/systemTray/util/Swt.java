@@ -19,25 +19,9 @@ package dorkbox.systemTray.util;
  * Utility methods for SWT.
  * <p>
  * SWT system tray types are just GTK trays.
- * <p>
- * Creating custom methods for a class is not possible with reflection - so we compile it AHEAD of time as Java 1.6, and save the bytecode
- * (which is then included with the release)
- * <p>
- * We **COULD** do some ASM/Bytecode generation, but why bother with even more libraries when it's just as easy to include it pre-compiled.
  */
 public
 class Swt {
-    public static
-    boolean isLoaded() throws Exception {
-        // maybe we should load the SWT version? (In order for us to work with SWT, BOTH must be GTK2!!
-        // SWT is GTK2, but if -DSWT_GTK3=1 is specified, it can be GTK3
-
-        java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-        m.setAccessible(true);
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
-        return null != m.invoke(cl, "org.eclipse.swt.widgets.Display");
-    }
-
     public static
     void dispatch(final Runnable runnable) {
          org.eclipse.swt.widgets.Display.getCurrent()
