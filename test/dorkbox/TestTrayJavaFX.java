@@ -38,9 +38,9 @@ import javafx.stage.Stage;
 public
 class TestTrayJavaFX extends Application {
 
-    public static final URL BLACK_MAIL = TestTrayJavaFX.class.getResource("mail.000000.24.png");
-    public static final URL GREEN_MAIL = TestTrayJavaFX.class.getResource("mail.39AC39.24.png");
-    public static final URL LT_GRAY_MAIL = TestTrayJavaFX.class.getResource("mail.999999.24.png");
+    public static final URL BLACK_MAIL = TestTray.class.getResource("transport_bus_station.p.000000.32.png");
+    public static final URL GREEN_MAIL = TestTray.class.getResource("transport_bus_station.p.39AC39.32.png");
+    public static final URL LT_GRAY_MAIL = TestTray.class.getResource("transport_bus_station.p.999999.32.png");
 
     public static
     void main(String[] args) {
