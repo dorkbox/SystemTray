@@ -47,7 +47,8 @@ class ImageUtils {
     private static final File TEMP_DIR = new File(CacheUtil.TEMP_DIR, "ResizedImages");
 
     // tray/menu-entry size.
-    public static volatile int SIZE = 0;
+    public static volatile int TRAY_SIZE = 0;
+    public static volatile int ENTRY_SIZE = 0;
 
     /**
      * @param trayType
@@ -57,16 +58,21 @@ class ImageUtils {
      */
     public static
     void determineIconSize(int trayType) {
+        int trayScale = 0;
+        int menuScale = 0;
+
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
-                // windows will automatically scale the tray size
-                SIZE = SystemTray.DEFAULT_WINDOWS_SIZE;
+                // windows will automatically scale the tray size BUT NOT the menu entry icon size
+                trayScale = SystemTray.DEFAULT_WINDOWS_SIZE;
+                menuScale = SystemTray.DEFAULT_MENU_SIZE;
             } else {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator will NOT scale the icon
                 if (trayType == SystemTray.TYPE_SWING || trayType == SystemTray.TYPE_GTK_STATUSICON) {
                     // swing or GtkStatusIcon on linux/mac? use the default settings
-                    SIZE = SystemTray.DEFAULT_LINUX_SIZE;
+                    trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                    menuScale = SystemTray.DEFAULT_MENU_SIZE;
                 } else {
                     int uiScalingFactor = 0;
 
@@ -86,13 +92,13 @@ class ImageUtils {
 
                         if (!output.isEmpty()) {
                             if (SystemTray.DEBUG) {
-                                SystemTray.logger.info("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
+                                SystemTray.logger.debug("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
                             }
 
                             // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
                             // should be: uint32 0  or something
-                            if (output.startsWith("uint32")) {
-                                String value = output.substring(output.indexOf(" ")+1, output.length()-1);
+                            if (output.contains("uint32")) {
+                                String value = output.substring(output.indexOf("uint")+7, output.length()-1);
                                 uiScalingFactor = Integer.parseInt(value);
 
                                 // 0 is disabled (no scaling)
@@ -115,23 +121,30 @@ class ImageUtils {
 
                     // the DEFAULT scale is 16
                     if (uiScalingFactor > 1) {
-                        SIZE = SystemTray.DEFAULT_LINUX_SIZE * uiScalingFactor;
+                        trayScale = SystemTray.DEFAULT_LINUX_SIZE * uiScalingFactor;
+                        menuScale = SystemTray.DEFAULT_MENU_SIZE * uiScalingFactor;
                     } else {
-                        SIZE = SystemTray.DEFAULT_LINUX_SIZE;
+                        trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                        menuScale = SystemTray.DEFAULT_MENU_SIZE;
                     }
 
                     if (SystemTray.DEBUG) {
-                        SystemTray.logger.info("uiScaling factor is '{}', auto tray size is '{}'.", uiScalingFactor, SIZE);
+                        SystemTray.logger.debug("uiScaling factor is '{}', auto tray size is '{}'.", uiScalingFactor, trayScale);
                     }
                 }
             }
         } else {
             if (OS.isWindows()) {
-                SIZE = SystemTray.DEFAULT_WINDOWS_SIZE;
+                trayScale = SystemTray.DEFAULT_WINDOWS_SIZE;
+                menuScale = SystemTray.DEFAULT_MENU_SIZE;
             } else {
-                SIZE = SystemTray.DEFAULT_LINUX_SIZE;
+                trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                menuScale = SystemTray.DEFAULT_MENU_SIZE;
             }
         }
+
+        TRAY_SIZE = trayScale;
+        ENTRY_SIZE = menuScale;
     }
 
 
@@ -328,6 +341,10 @@ class ImageUtils {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static
     File resizeFileNoCheck(final int size, final URL fileUrl) throws IOException {
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Resizing URL to {}. '{}'", size, fileUrl.getPath());
+        }
+
         InputStream inputStream = fileUrl.openStream();
 
         // have to resize the file (and return the new path)

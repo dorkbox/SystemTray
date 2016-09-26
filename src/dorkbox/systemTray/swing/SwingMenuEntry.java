@@ -125,7 +125,7 @@ class SwingMenuEntry implements MenuEntry {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
         }
     }
 
@@ -136,7 +136,7 @@ class SwingMenuEntry implements MenuEntry {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
         }
     }
 
@@ -147,7 +147,7 @@ class SwingMenuEntry implements MenuEntry {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream));
         }
     }
 
@@ -159,7 +159,7 @@ class SwingMenuEntry implements MenuEntry {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
         }
     }
 

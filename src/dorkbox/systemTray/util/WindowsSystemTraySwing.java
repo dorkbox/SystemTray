@@ -114,7 +114,7 @@ class WindowsSystemTraySwing {
                 trayClass.getConstructors()[0].setModifiers(trayClass.getConstructors()[0].getModifiers() & javassist.Modifier.PUBLIC);
                 CtMethod ctMethodGet = trayClass.getDeclaredMethod("getTrayIconSize");
                 ctMethodGet.setBody("{" +
-                                    "return new java.awt.Dimension(" + ImageUtils.SIZE + ", " + ImageUtils.SIZE + ");" +
+                                    "return new java.awt.Dimension(" + ImageUtils.TRAY_SIZE + ", " + ImageUtils.TRAY_SIZE + ");" +
                                     "}");
 
                 trayBytes = trayClass.toBytecode();
@@ -125,7 +125,7 @@ class WindowsSystemTraySwing {
                 CtMethod ctMethodCreate = trayIconClass.getDeclaredMethod("createNativeImage");
                 CtMethod ctMethodUpdate = trayIconClass.getDeclaredMethod("updateNativeImage");
 
-                int TRAY_MASK = (ImageUtils.SIZE * ImageUtils.SIZE) / 8;
+                int TRAY_MASK = (ImageUtils.TRAY_SIZE * ImageUtils.TRAY_SIZE) / 8;
                 ctMethodCreate.setBody("{" +
                     "java.awt.image.BufferedImage bufferedImage = $1;\n" +
 
@@ -194,10 +194,10 @@ class WindowsSystemTraySwing {
             BootStrapClassLoader.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
-                logger.info("Successfully changed tray icon size to: {}", ImageUtils.SIZE);
+                logger.debug("Successfully changed tray icon size to: {}", ImageUtils.TRAY_SIZE);
             }
         } catch (Exception e) {
-            logger.error("Error setting tray icon size to: {}", ImageUtils.SIZE, e);
+            logger.error("Error setting tray icon size to: {}", ImageUtils.TRAY_SIZE, e);
         }
     }
 }

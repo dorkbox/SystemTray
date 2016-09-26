@@ -200,7 +200,9 @@ class GnomeShellExtension {
 
             // should be   ['background-logo@fedorahosted.org', 'zyx', 'abs'
             // or will be  [  (if there is nothing)
-            logger.info("Installed extensions (should have leading '[') are: {}", stringBuilder.toString());
+            if (SystemTray.DEBUG) {
+                logger.debug("Installed extensions (should have leading '[') are: {}", stringBuilder.toString());
+            }
 
             // add our extension to the list
             if (stringBuilder.length() > 2) {
@@ -230,8 +232,9 @@ class GnomeShellExtension {
                 return;
             }
 
-
-            logger.info("Restarting gnome-shell so tray notification changes can be applied.");
+            if (SystemTray.DEBUG) {
+                logger.debug("Restarting gnome-shell so tray notification changes can be applied.");
+            }
 
             // now we have to restart the gnome shell via bash
             final ShellProcessBuilder restartShell = new ShellProcessBuilder();

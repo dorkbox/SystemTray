@@ -85,7 +85,7 @@ class Gtk {
                 isLoaded = true;
 
                 if (SystemTray.DEBUG) {
-                    logger.info("GTK: {}", gtk2LibName);
+                    logger.debug("GTK: {}", gtk2LibName);
                 }
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
@@ -107,7 +107,7 @@ class Gtk {
                 isLoaded = true;
 
                 if (SystemTray.DEBUG) {
-                    logger.info("GTK: {}", gtk3LibName);
+                    logger.debug("GTK: {}", gtk3LibName);
                 }
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
@@ -129,7 +129,7 @@ class Gtk {
                 isLoaded = true;
 
                 if (SystemTray.DEBUG) {
-                    logger.info("GTK: {}", gtk2LibName);
+                    logger.debug("GTK: {}", gtk2LibName);
                 }
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
@@ -143,7 +143,7 @@ class Gtk {
         alreadyRunningGTK |= SystemTray.isSwtLoaded;
 
         if (SystemTray.DEBUG) {
-            logger.info("Is the system already running GTK? {}", alreadyRunningGTK);
+            logger.debug("Is the system already running GTK? {}", alreadyRunningGTK);
         }
 
         if (!isLoaded) {

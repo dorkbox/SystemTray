@@ -98,6 +98,14 @@ class SystemTray {
     public static int DEFAULT_LINUX_SIZE = 16;
 
     @Property
+    /**
+     * Size of the menu entries, so that the icon can be properly scaled based on OS.
+     * <p>
+     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
+     */
+    public static int DEFAULT_MENU_SIZE = 16;
+
+    @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static boolean FORCE_GTK2 = false;
 
@@ -120,7 +128,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = true;
 
 
     private static volatile SystemTray systemTray = null;
@@ -477,7 +485,7 @@ class SystemTray {
 
                     if (!output.isEmpty()) {
                         if (DEBUG) {
-                            logger.info("Installing gnome-shell extension");
+                            logger.debug("Installing gnome-shell extension");
                         }
 
                         GnomeShellExtension.install(output);
@@ -732,7 +740,7 @@ class SystemTray {
      */
     public
     void setIcon(String imagePath) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath));
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
     }
 
     /**
@@ -745,7 +753,7 @@ class SystemTray {
      */
     public
     void setIcon(URL imageUrl) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl));
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
     }
 
     /**
@@ -759,7 +767,7 @@ class SystemTray {
      */
     public
     void setIcon(String cacheName, InputStream imageStream) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream));
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, cacheName, imageStream));
     }
 
     /**
@@ -772,7 +780,7 @@ class SystemTray {
      */
     public
     void setIcon(InputStream imageStream) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream));
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
     }
 
 

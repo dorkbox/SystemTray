@@ -142,7 +142,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
         }
     }
 
@@ -153,7 +153,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
         }
     }
 
@@ -164,7 +164,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream));
         }
     }
 
@@ -176,7 +176,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
         }
     }
 

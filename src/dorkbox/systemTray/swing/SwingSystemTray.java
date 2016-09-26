@@ -259,7 +259,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback);
         }
     }
 
@@ -270,7 +270,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
         }
     }
 
@@ -281,7 +281,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream), callback);
         }
     }
 
@@ -293,7 +293,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback);
         }
     }
 }
