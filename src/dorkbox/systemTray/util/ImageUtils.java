@@ -15,6 +15,7 @@
  */
 package dorkbox.systemTray.util;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -58,8 +59,8 @@ class ImageUtils {
      */
     public static
     void determineIconSize(int trayType) {
-        int trayScale = 0;
-        int menuScale = 0;
+        int trayScale;
+        int menuScale;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -74,6 +75,10 @@ class ImageUtils {
                     trayScale = SystemTray.DEFAULT_LINUX_SIZE;
                     menuScale = SystemTray.DEFAULT_MENU_SIZE;
                 } else {
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Auto detecting UI scale");
+                    }
+
                     int uiScalingFactor = 0;
 
                     try {
@@ -147,6 +152,29 @@ class ImageUtils {
         ENTRY_SIZE = menuScale;
     }
 
+
+    public static
+    File getTransparentImage(final int size) {
+        File newFile = new File(TEMP_DIR, size + "_empty.png").getAbsoluteFile();
+
+        if (newFile.canRead() && newFile.isFile()) {
+            return newFile;
+        }
+
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setColor(new Color(0,0,0,0));
+        g2d.fillRect(0, 0, size, size);
+        g2d.dispose();
+
+        try {
+            ImageIO.write(image, "png", newFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return newFile;
+    }
 
     private static
     File getErrorImage(final String cacheName) {
@@ -438,7 +466,7 @@ class ImageUtils {
         // have to resize the file (and return the new path)
 
         // now have to resize this file.
-        File newFile = new File(TEMP_DIR, "temp_resize").getAbsoluteFile();
+        File newFile = new File(TEMP_DIR, "temp_resize" + FileUtil.getExtension(fileName)).getAbsoluteFile();
         Image image;
 
         // is file sitting on drive
