@@ -115,7 +115,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 0;
+    public static int FORCE_TRAY_TYPE = 3;
 
     @Property
     /**
@@ -241,6 +241,10 @@ class SystemTray {
                     FORCE_GTK2 = true;
                 }
             }
+        }
+
+        if (FORCE_TRAY_TYPE < 0 || FORCE_TRAY_TYPE > 3) {
+            throw new RuntimeException("Invalid option for FORCE_TRAY_TYPE: " + FORCE_TRAY_TYPE);
         }
 
         if (DEBUG) {
