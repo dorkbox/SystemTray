@@ -69,7 +69,7 @@ class GtkTypeSystemTray extends SystemTray {
                 }
             }
         } else if (SystemTray.isSwtLoaded) {
-            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTKSTATUSICON) {
+            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
                 // GTK system tray has threading issues if we block here (because it is likely in the event thread)
                 // AppIndicator version doesn't have this problem
                 try {

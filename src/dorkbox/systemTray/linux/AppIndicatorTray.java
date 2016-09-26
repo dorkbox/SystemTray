@@ -45,7 +45,7 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     public
     AppIndicatorTray() {
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTKSTATUSICON) {
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GTK");
         }

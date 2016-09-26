@@ -64,7 +64,7 @@ class ImageUtils {
             } else {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator will NOT scale the icon
-                if (trayType == SystemTray.TYPE_SWING || trayType == SystemTray.TYPE_GTKSTATUSICON) {
+                if (trayType == SystemTray.TYPE_SWING || trayType == SystemTray.TYPE_GTK_STATUSICON) {
                     // swing or GtkStatusIcon on linux/mac? use the default settings
                     SIZE = SystemTray.DEFAULT_LINUX_SIZE;
                 } else {

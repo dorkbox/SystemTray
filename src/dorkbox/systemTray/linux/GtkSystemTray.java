@@ -83,7 +83,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
         super.waitForStartup();
 
-        ImageUtils.determineIconSize(SystemTray.TYPE_GTKSTATUSICON);
+        ImageUtils.determineIconSize(SystemTray.TYPE_GTK_STATUSICON);
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
         dispatch(new Runnable() {

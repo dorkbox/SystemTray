@@ -51,7 +51,7 @@ class AppIndicator {
         //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
         //     appindicator3 doesn't support menu icons via GTK2!!
 
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTKSTATUSICON) {
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             if (LIBRARY_DEBUG) {
                 logger.error("Forcing GTK tray, not using appindicator");

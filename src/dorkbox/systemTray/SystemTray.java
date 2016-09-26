@@ -44,6 +44,7 @@ import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
 import dorkbox.systemTray.util.WindowsSystemTraySwing;
 import dorkbox.util.CacheUtil;
+import dorkbox.util.IO;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -58,7 +59,7 @@ class SystemTray {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     public static final int TYPE_AUTO_DETECT = 0;
-    public static final int TYPE_GTKSTATUSICON = 1;
+    public static final int TYPE_GTK_STATUSICON = 1;
     public static final int TYPE_APP_INDICATOR = 2;
     public static final int TYPE_SWING = 3;
 
@@ -98,11 +99,11 @@ class SystemTray {
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static boolean FORCE_GTK2 = true;
+    public static boolean FORCE_GTK2 = false;
 
     @Property
     /** Forces the system tray detection to be Automatic (0), GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
-    public static int FORCE_TRAY_TYPE = 1;
+    public static int FORCE_TRAY_TYPE = 0;
 
     @Property
     /**
@@ -261,7 +262,7 @@ class SystemTray {
                 }
             }
 
-            if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTKSTATUSICON) {
+            if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
                 try {
                     trayType = GtkSystemTray.class;
                 } catch (Throwable e1) {
@@ -527,29 +528,13 @@ class SystemTray {
                                     break;
                                 }
                             } finally {
-                                if (bin != null) {
-                                    try {
-                                        bin.close();
-                                    } catch (Exception ignored) {
-                                    }
-                                    bin = null;
-                                }
+                                IO.closeQuietly(bin);
                             }
                         }
                     }
                 } catch (Throwable e) {
                     if (DEBUG) {
                         logger.error("Error detecting gnome version", e);
-                    }
-                } finally {
-                    if (bin != null) {
-                        try {
-                            bin.close();
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot close buffered reader", e);
-                            }
-                        }
                     }
                 }
             }
