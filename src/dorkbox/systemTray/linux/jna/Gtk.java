@@ -16,7 +16,7 @@
 package dorkbox.systemTray.linux.jna;
 
 import static dorkbox.systemTray.SystemTray.logger;
-import static dorkbox.systemTray.linux.jna.Gobject.g_idle_add;
+import static dorkbox.systemTray.linux.jna.Gobject.g_idle_add_full;
 
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -235,6 +235,84 @@ class Gtk {
     }
 
     /**
+     * Waits for the GUI to finish loading
+     */
+    public static
+    void waitForStartup() {
+        final CountDownLatch blockUntilStarted = new CountDownLatch(1);
+
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                blockUntilStarted.countDown();
+            }
+        });
+
+
+        if (SystemTray.isJavaFxLoaded) {
+            if (!JavaFX.isEventThread()) {
+                try {
+                    // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
+                    while (true) {
+                        Thread.sleep(100);
+
+                        synchronized (gtkCallbacks) {
+                            if (gtkCallbacks.isEmpty()) {
+                                break;
+                            }
+                        }
+                    }
+
+                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (SystemTray.isSwtLoaded) {
+            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
+                // GTK system tray has threading issues if we block here (because it is likely in the event thread)
+                // AppIndicator version doesn't have this problem
+
+                // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
+                try {
+                    while (true) {
+                        Thread.sleep(100);
+
+                        synchronized (gtkCallbacks) {
+                            if (gtkCallbacks.isEmpty()) {
+                                break;
+                            }
+                        }
+                    }
+
+                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+
+            try {
+                // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
+                while (true) {
+                    Thread.sleep(100);
+
+                    synchronized (gtkCallbacks) {
+                        if (gtkCallbacks.isEmpty()) {
+                            break;
+                        }
+                    }
+                }
+
+                blockUntilStarted.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
      * Best practices for GTK, is to call EVERYTHING for it on the GTK THREAD. This accomplishes that.
      */
     public static
@@ -296,8 +374,8 @@ class Gtk {
                     gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
                 }
 
-                // the correct way to do it
-                g_idle_add(callback, null);
+                // the correct way to do it. Add with a slightly higher value
+                g_idle_add_full(100, callback, null, null);
             }
         }
     }

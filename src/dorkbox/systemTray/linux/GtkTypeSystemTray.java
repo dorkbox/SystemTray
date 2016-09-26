@@ -19,8 +19,6 @@ package dorkbox.systemTray.linux;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import com.sun.jna.Pointer;
 
@@ -29,7 +27,6 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.systemTray.util.JavaFX;
 
 /**
  * Derived from
@@ -46,45 +43,6 @@ class GtkTypeSystemTray extends SystemTray {
     protected
     void dispatch(final Runnable runnable) {
         Gtk.dispatch(runnable);
-    }
-
-    protected
-    void waitForStartup() {
-        final CountDownLatch blockUntilStarted = new CountDownLatch(1);
-
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                blockUntilStarted.countDown();
-            }
-        });
-
-        if (SystemTray.isJavaFxLoaded) {
-            if (!JavaFX.isEventThread()) {
-                try {
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else if (SystemTray.isSwtLoaded) {
-            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
-                // GTK system tray has threading issues if we block here (because it is likely in the event thread)
-                // AppIndicator version doesn't have this problem
-                try {
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            try {
-                blockUntilStarted.await(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
@@ -306,7 +264,8 @@ class GtkTypeSystemTray extends SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
+//            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
+            addMenuEntry_(menuText, ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE), callback);
         }
     }
 

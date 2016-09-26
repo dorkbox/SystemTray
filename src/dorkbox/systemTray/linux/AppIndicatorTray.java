@@ -45,24 +45,27 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     public
     AppIndicatorTray() {
+        super();
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GTK");
+            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
         }
 
+        ImageUtils.determineIconSize(SystemTray.TYPE_APP_INDICATOR);
         Gtk.startGui();
 
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                appIndicator = AppIndicator.app_indicator_new(System.nanoTime() + "DBST", "", AppIndicator.CATEGORY_APPLICATION_STATUS);
+                // we initialize with a blank image
+                File image = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
+                String id = System.nanoTime() + "DBST";
+                appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
 
-        super.waitForStartup();
-
-        ImageUtils.determineIconSize(SystemTray.TYPE_APP_INDICATOR);
+        Gtk.waitForStartup();
     }
 
     @Override

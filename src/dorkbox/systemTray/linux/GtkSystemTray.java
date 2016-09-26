@@ -53,6 +53,12 @@ class GtkSystemTray extends GtkTypeSystemTray {
     public
     GtkSystemTray() {
         super();
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
+            // if we force GTK type system tray, don't attempt to load AppIndicator libs
+            throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
+        }
+
+        ImageUtils.determineIconSize(SystemTray.TYPE_GTK_STATUSICON);
         Gtk.startGui();
 
         dispatch(new Runnable() {
@@ -81,9 +87,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
             }
         });
 
-        super.waitForStartup();
-
-        ImageUtils.determineIconSize(SystemTray.TYPE_GTK_STATUSICON);
+        Gtk.waitForStartup();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
         dispatch(new Runnable() {
