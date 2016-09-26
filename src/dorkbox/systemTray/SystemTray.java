@@ -115,7 +115,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 3;
+    public static int FORCE_TRAY_TYPE = 0;
 
     @Property
     /**
@@ -880,7 +880,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with text {}", origMenuText, newMenuText);
         }
 
         if (!hasValue.get()) {
@@ -925,7 +925,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with image {}", origMenuText, imagePath);
         }
 
         if (!hasValue.get()) {
@@ -943,7 +943,7 @@ class SystemTray {
     void updateMenuEntry(final String origMenuText, final URL imageUrl) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @Override
@@ -971,7 +971,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with image URL {}", origMenuText, imageUrl.getPath());
         }
 
         if (!hasValue.get()) {
@@ -989,7 +989,7 @@ class SystemTray {
     void updateMenuEntry(final String origMenuText, final String cacheName, final InputStream imageStream) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @Override
@@ -1016,7 +1016,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with image stream (named) {}", origMenuText, cacheName);
         }
 
         if (!hasValue.get()) {
@@ -1034,7 +1034,7 @@ class SystemTray {
     void updateMenuEntry(final String origMenuText, final InputStream imageStream) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @SuppressWarnings("deprecation")
@@ -1062,7 +1062,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with iamgeStream {}", origMenuText);
         }
 
         if (!hasValue.get()) {
@@ -1080,7 +1080,7 @@ class SystemTray {
     void updateMenuEntry(final String origMenuText, final SystemTrayMenuAction newCallback) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @Override
@@ -1107,7 +1107,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with new callback", origMenuText);
         }
 
         if (!hasValue.get()) {
@@ -1127,7 +1127,7 @@ class SystemTray {
     void updateMenuEntry(final String origMenuText, final String newMenuText, final SystemTrayMenuAction newCallback) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @Override
@@ -1155,7 +1155,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error updating menu entry: {}, with text and callback {}", origMenuText, newMenuText);
         }
 
         if (!hasValue.get()) {
@@ -1179,7 +1179,7 @@ class SystemTray {
 
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(false);
+        final AtomicBoolean hasValue = new AtomicBoolean(false);
 
         dispatch(new Runnable() {
             @Override
@@ -1215,7 +1215,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error removing menu entry: {}", label);
         }
 
         if (!hasValue.get()) {
@@ -1233,29 +1233,23 @@ class SystemTray {
     void removeMenuEntry(final String menuText) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicBoolean hasValue =  new AtomicBoolean(true);
+        final AtomicBoolean hasValue = new AtomicBoolean(true);
 
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        synchronized (menuEntries) {
-                            MenuEntry menuEntry = getMenuEntry(menuText);
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(menuText);
 
-                            if (menuEntry == null) {
-                                hasValue.set(false);
-                            }
-                            else {
-                                removeMenuEntry(menuEntry);
-                            }
-                        }
-                        countDownLatch.countDown();
+                    if (menuEntry == null) {
+                        hasValue.set(false);
                     }
-                });
+                    else {
+                        removeMenuEntry(menuEntry);
+                    }
+                }
+                countDownLatch.countDown();
             }
         });
 
@@ -1266,7 +1260,7 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Error removing menu entry: {}", menuText);
         }
 
         if (!hasValue.get()) {
