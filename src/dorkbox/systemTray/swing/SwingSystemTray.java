@@ -110,7 +110,8 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     }
 
     protected
-    void dispatch(Runnable runnable) {
+    void dispatch(final Runnable runnable) {
+        // this will properly check if we are running on the EDT
         SwingUtil.invokeLater(runnable);
     }
 
