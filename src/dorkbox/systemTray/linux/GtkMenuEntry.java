@@ -15,6 +15,7 @@
  */
 package dorkbox.systemTray.linux;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,12 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.GCallback;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.util.ImageUtils;
 
 class GtkMenuEntry implements MenuEntry, GCallback {
     private static final AtomicInteger ID_COUNTER = new AtomicInteger();
@@ -48,18 +49,18 @@ class GtkMenuEntry implements MenuEntry, GCallback {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntry(final String label, final String imagePath, final SystemTrayMenuAction callback, final GtkTypeSystemTray parent) {
+    GtkMenuEntry(final String label, final File imagePath, final SystemTrayMenuAction callback, final GtkTypeSystemTray parent) {
         this.parent = parent;
         this.text = label;
         this.callback = callback;
 
         menuItem = Gtk.gtk_image_menu_item_new_with_label(label);
 
-        if (imagePath != null && !imagePath.isEmpty()) {
-            // NOTE: XFCE uses appindicator3, which DOES NOT support images in the menu. This change was reverted.
+        if (imagePath != null) {
+            // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
             // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
             // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
-            image = Gtk.gtk_image_new_from_file(imagePath);
+            image = Gtk.gtk_image_new_from_file(imagePath.getAbsolutePath());
 
             Gtk.gtk_image_menu_item_set_image(menuItem, image);
             //  must always re-set always-show after setting the image
@@ -108,7 +109,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     private
-    void setImage_(final String imagePath) {
+    void setImage_(final File imagePath) {
         Gtk.dispatch(new Runnable() {
             @Override
             public
@@ -120,8 +121,8 @@ class GtkMenuEntry implements MenuEntry, GCallback {
 
                 Gtk.gtk_widget_show_all(menuItem);
 
-                if (imagePath != null && !imagePath.isEmpty()) {
-                    image = Gtk.gtk_image_new_from_file(imagePath);
+                if (imagePath != null) {
+                    image = Gtk.gtk_image_new_from_file(imagePath.getAbsolutePath());
                     Gtk.gtk_image_menu_item_set_image(menuItem, image);
                     Gobject.g_object_ref_sink(image);
 
@@ -141,7 +142,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtil.iconPath(imagePath));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath));
         }
     }
 
@@ -152,7 +153,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtil.iconPath(imageUrl));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl));
         }
     }
 
@@ -163,7 +164,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtil.iconPath(cacheName, imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream));
         }
     }
 
@@ -175,7 +176,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
             setImage_(null);
         }
         else {
-            setImage_(ImageUtil.iconPathNoCache(imageStream));
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream));
         }
     }
 

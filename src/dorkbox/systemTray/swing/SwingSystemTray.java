@@ -25,15 +25,16 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 
-import dorkbox.systemTray.ImageUtil;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
 
@@ -45,6 +46,7 @@ import dorkbox.util.SwingUtil;
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
  */
+@SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
 class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     volatile SwingSystemTrayMenuPopup menu;
@@ -63,6 +65,9 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     public
     SwingSystemTray() {
         super();
+
+        ImageUtils.determineIconSize(dorkbox.systemTray.SystemTray.TYPE_SWING);
+
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public
@@ -141,21 +146,23 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
 
     @Override
     protected
-    void setIcon_(final String iconPath) {
+    void setIcon_(final File iconFile) {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 SwingSystemTray tray = SwingSystemTray.this;
+
+                // stupid java won't scale it right away, so we have to do this twice to get the correct size
+                final Image trayImage = new ImageIcon(iconFile.getAbsolutePath()).getImage();
+                trayImage.flush();
+
                 synchronized (tray) {
                     if (!isActive) {
                         // here we init. everything
                         isActive = true;
 
                         menu = new SwingSystemTrayMenuPopup();
-                        Image trayImage = new ImageIcon(iconPath).getImage()
-                                                                 .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
-                        trayImage.flush();
                         trayIcon = new TrayIcon(trayImage);
 
                         // appindicators don't support this, so we cater to the lowest common denominator
@@ -207,9 +214,6 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                             logger.error("TrayIcon could not be added.", e);
                         }
                     } else {
-                        Image trayImage = new ImageIcon(iconPath).getImage()
-                                                                 .getScaledInstance(TRAY_SIZE, TRAY_SIZE, Image.SCALE_SMOOTH);
-                        trayImage.flush();
                         tray.trayIcon.setImage(trayImage);
                     }
                 }
@@ -221,7 +225,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
      * Will add a new menu entry, or update one if it already exists
      */
     private
-    void addMenuEntry_(final String menuText, final String imagePath, final SystemTrayMenuAction callback) {
+    void addMenuEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
         }
@@ -255,7 +259,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtil.iconPath(imagePath), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath), callback);
         }
     }
 
@@ -266,7 +270,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtil.iconPath(imageUrl), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl), callback);
         }
     }
 
@@ -277,7 +281,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtil.iconPath(cacheName, imageStream), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream), callback);
         }
     }
 
@@ -289,7 +293,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtil.iconPathNoCache(imageStream), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream), callback);
         }
     }
 }

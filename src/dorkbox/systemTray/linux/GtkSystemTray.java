@@ -15,10 +15,9 @@
  */
 package dorkbox.systemTray.linux;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.NativeLong;
@@ -29,7 +28,7 @@ import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.util.JavaFX;
+import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -56,37 +55,12 @@ class GtkSystemTray extends GtkTypeSystemTray {
         super();
         Gtk.startGui();
 
-        final CountDownLatch blockUntilStarted = new CountDownLatch(1);
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
-                Gtk.gtk_status_icon_set_visible(trayIcon_, false); // immediately set false visibility
                 trayIcon = trayIcon_;
-            }
-        });
-
-        // we have to be able to set our name/title, otherwise the gnome-shell extension WILL NOT work
-        // prevent these from happening...
-        // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
-        // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
-                // If you change "SystemTray" to something else, make sure to change it in extension.js as well
-
-                // necessary for gnome icon detection/placement because we move tray icons around by name. The name is hardcoded
-                //  in extension.js, so don't change it
-                Gtk.gtk_status_icon_set_title(trayIcon, "SystemTray");
-
-                // ALSO necessary to make sure our gnome-shell extension has the correct name/title! (sometimes it does not)
-                // can cause
-                // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
-                // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
-                Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
 
                 final GEventCallback gtkCallback = new GEventCallback() {
                     @Override
@@ -104,37 +78,31 @@ class GtkSystemTray extends GtkTypeSystemTray {
                 // have to do this to prevent GC on these objects
                 gtkCallbacks.add(gtkCallback);
                 gtkCallbacks.add(button_press_event);
-
-                blockUntilStarted.countDown();
             }
         });
 
+        super.waitForStartup();
 
-        if (SystemTray.isJavaFxLoaded) {
-            if (!JavaFX.isEventThread()) {
-                try {
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        ImageUtils.determineIconSize(SystemTray.TYPE_GTKSTATUSICON);
+
+        // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
+                // If you change "SystemTray" to something else, make sure to change it in extension.js as well
+
+                // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
+                //  in extension.js, so don't change it
+                Gtk.gtk_status_icon_set_title(trayIcon, "SystemTray");
+
+                // can cause
+                // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
+                // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+                // Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
             }
-        } else if (SystemTray.isSwtLoaded) {
-            if (SystemTray.FORCE_LINUX_TYPE != SystemTray.LINUX_GTK) {
-                // GTK system tray has threading issues if we block here (because it is likely in the event thread)
-                // AppIndicator version doesn't have this problem
-                try {
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            try {
-                blockUntilStarted.await(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        });
     }
 
 
@@ -163,12 +131,12 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
     @Override
     protected
-    void setIcon_(final String iconPath) {
+    void setIcon_(final File iconFile) {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                Gtk.gtk_status_icon_set_from_file(trayIcon, iconPath);
+                Gtk.gtk_status_icon_set_from_file(trayIcon, iconFile.getAbsolutePath());
 
                 if (!isActive) {
                     isActive = true;

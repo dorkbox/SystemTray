@@ -69,7 +69,7 @@ class Gtk {
         String gtk3LibName = "libgtk-3.so.0";
 
         // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
-        if (SystemTray.FORCE_LINUX_TYPE == SystemTray.SWING_INDICATOR) {
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_SWING) {
             isLoaded = true;
         }
 

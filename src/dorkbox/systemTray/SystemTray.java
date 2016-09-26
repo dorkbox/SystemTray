@@ -24,7 +24,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
@@ -40,8 +39,11 @@ import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.swing.SwingSystemTray;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
+import dorkbox.systemTray.util.WindowsSystemTraySwing;
+import dorkbox.util.CacheUtil;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -50,22 +52,49 @@ import dorkbox.util.process.ShellProcessBuilder;
 /**
  * Factory and base-class for system tray implementations.
  */
-@SuppressWarnings({"unused", "Duplicates"})
+@SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
 public abstract
 class SystemTray {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
-    public static final int LINUX_GTK = 1;
-    public static final int LINUX_APP_INDICATOR = 2;
-    public static final int SWING_INDICATOR = 3;
+    public static final int TYPE_AUTO_DETECT = 0;
+    public static final int TYPE_GTKSTATUSICON = 1;
+    public static final int TYPE_APP_INDICATOR = 2;
+    public static final int TYPE_SWING = 3;
 
     @Property
     /** How long to wait when updating menu entries before the request times-out */
     public static final int TIMEOUT = 2;
 
     @Property
-    /** Size of the tray, so that the icon can properly scale based on OS. (if it's not exact) */
-    public static int TRAY_SIZE = 22;
+    /** Enables auto-detection for the system tray. This should be mostly successful.
+     * <p>
+     * Auto-detection will use DEFAULT_WINDOWS_SIZE or DEFAULT_LINUX_SIZE as a 'base-line' for determining what size to use. On Linux,
+     * `gsettings get org.gnome.desktop.interface scaling-factor` is used to determine the scale factor (for HiDPI configurations).
+     * <p>
+     * If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_WINDOWS_SIZE or
+     * DEFAULT_LINUX_SIZE to use them instead
+     */
+    public static boolean AUTO_TRAY_SIZE = true;
+
+    @Property
+    /**
+     * Size of the tray, so that the icon can be properly scaled based on OS.
+     * - Windows will automatically scale up/down.
+     * <p>
+     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
+     */
+    public static int DEFAULT_WINDOWS_SIZE = 32;
+
+    @Property
+    /**
+     * Size of the tray, so that the icon can be properly scaled based on OS.
+     * - GtkStatusIcon will usually automatically scale up/down
+     * - AppIndicators will not always automatically scale (it will sometimes display whatever is specified here)
+     * <p>
+     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
+     */
+    public static int DEFAULT_LINUX_SIZE = 16;
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
@@ -73,7 +102,7 @@ class SystemTray {
 
     @Property
     /** Forces the system tray detection to be Automatic (0), GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
-    public static int FORCE_LINUX_TYPE = 0;
+    public static int FORCE_TRAY_TYPE = 1;
 
     @Property
     /**
@@ -90,7 +119,6 @@ class SystemTray {
 
 
     private static volatile SystemTray systemTray = null;
-    static boolean isKDE = false;
 
     public final static boolean isJavaFxLoaded;
     public final static boolean isSwtLoaded;
@@ -135,6 +163,7 @@ class SystemTray {
 
         Class<? extends SystemTray> trayType = null;
 
+        boolean isKDE = false;
 
         if (DEBUG) {
             logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
@@ -142,16 +171,18 @@ class SystemTray {
         }
 
         // kablooie if SWT is not configured in a way that works with us.
-        if (FORCE_LINUX_TYPE != SWING_INDICATOR && OS.isLinux()) {
+        if (FORCE_TRAY_TYPE != TYPE_SWING && OS.isLinux()) {
             if (isSwtLoaded) {
                 // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                 // System.setProperty("SWT_GTK3", "0");
 
                 // was SWT forced?
-                boolean isSwt_GTK3 = !System.getProperty("SWT_GTK3").equals("0");
+                String swt_gtk3 = System.getProperty("SWT_GTK3");
+                boolean isSwt_GTK3 = swt_gtk3 != null && !swt_gtk3.equals("0");
                 if (!isSwt_GTK3) {
                     // check a different property
-                    isSwt_GTK3 = !System.getProperty("org.eclipse.swt.internal.gtk.version").startsWith("2.");
+                    String property = System.getProperty("org.eclipse.swt.internal.gtk.version");
+                    isSwt_GTK3 = property != null && !property.startsWith("2.");
                 }
 
                 if (isSwt_GTK3 && FORCE_GTK2) {
@@ -200,7 +231,7 @@ class SystemTray {
         }
 
         if (DEBUG) {
-            switch (FORCE_LINUX_TYPE) {
+            switch (FORCE_TRAY_TYPE) {
                 case 1: logger.debug("Forced tray type: GtkStatusIcon"); break;
                 case 2: logger.debug("Forced tray type: AppIndicator"); break;
                 case 3: logger.debug("Forced tray type: Swing"); break;
@@ -210,17 +241,11 @@ class SystemTray {
             logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
         }
 
-
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
         // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
         // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
 
-        if (OS.isWindows()) {
-            // the tray icon size in windows is DIFFERENT than on Mac (TODO: test on mac with retina stuff. Also check HiDpi setups).
-            TRAY_SIZE -= 4;
-        }
-
-        if (FORCE_LINUX_TYPE != SWING_INDICATOR && OS.isLinux()) {
+        if (FORCE_TRAY_TYPE != TYPE_SWING && OS.isLinux()) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
@@ -236,7 +261,7 @@ class SystemTray {
                 }
             }
 
-            if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_GTK) {
+            if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTKSTATUSICON) {
                 try {
                     trayType = GtkSystemTray.class;
                 } catch (Throwable e1) {
@@ -245,7 +270,7 @@ class SystemTray {
                     }
                 }
             }
-            else if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_APP_INDICATOR) {
+            else if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
                 try {
                     trayType = AppIndicatorTray.class;
                 } catch (Throwable e1) {
@@ -260,6 +285,7 @@ class SystemTray {
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
@@ -306,14 +332,54 @@ class SystemTray {
                     }
                 }
                 else if ("xfce".equalsIgnoreCase(XDG)) {
+                    // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
+                    // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
+                    // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
+
+                    // XFCE4 is OK to use appindicator, <XFCE4 we use GTKStatusIcon. God i wish there was an easy way to do this.
+                    boolean isNewXFCE = false;
                     try {
-                        trayType = AppIndicatorTray.class;
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                        // ps aux | grep [x]fce
+                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                        shell.setExecutable("ps");
+                        shell.addArgument("aux");
+                        shell.start();
+
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                        // should last us the next 20 years or so. XFCE development is glacially slow.
+                        isNewXFCE = output.contains("/xfce4/") || output.contains("/xfce5/") ||
+                                    output.contains("/xfce6/") || output.contains("/xfce7/");
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
+                            logger.error("Cannot detect what version of XFCE is running", e);
                         }
+                    }
 
-                        // we can fail on AppIndicator, so this is the fallback
+                    if (DEBUG) {
+                        logger.error("Is 'new' version of XFCE?  {}", isNewXFCE);
+                    }
+
+                    if (isNewXFCE) {
+                        try {
+                            trayType = AppIndicatorTray.class;
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize AppIndicatorTray", e);
+                            }
+
+                            // we can fail on AppIndicator, so this is the fallback
+                            try {
+                                trayType = GtkSystemTray.class;
+                            } catch (Throwable e1) {
+                                if (DEBUG) {
+                                    logger.error("Cannot initialize GtkSystemTray", e1);
+                                }
+                            }
+                        }
+                    } else {
                         try {
                             trayType = GtkSystemTray.class;
                         } catch (Throwable e1) {
@@ -497,6 +563,13 @@ class SystemTray {
             }
         }
 
+
+        // this has to happen BEFORE any sort of swing system tray stuff is accessed
+        if (OS.isWindows()) {
+            // windows is funky, and is hardcoded to 16x16. We fix that.
+            WindowsSystemTraySwing.fix();
+        }
+
         // this is windows OR mac
         if (trayType == null && java.awt.SystemTray.isSupported()) {
             try {
@@ -519,9 +592,16 @@ class SystemTray {
         else {
             SystemTray systemTray_ = null;
 
-            try {
-                ImageUtil.init();
+            /*
+             *  appIndicator/gtk require strings (which is the path)
+             *  swing version loads as an image (which can be stream or path, we use path)
+             *
+             *  For KDE4, it must also be unique across runs
+             */
+            CacheUtil.setUniqueCachePerRun = isKDE;
+            CacheUtil.tempDir = "SysTray";
 
+            try {
                 if (OS.isLinux() &&
                     trayType == AppIndicatorTray.class &&
                     Gtk.isGtk2 &&
@@ -545,8 +625,6 @@ class SystemTray {
                 systemTray_ = (SystemTray) trayType.getConstructors()[0].newInstance();
 
                 logger.info("Successfully Loaded: {}", trayType.getSimpleName());
-            } catch (NoSuchAlgorithmException e) {
-                logger.error("Unsupported hashing algorithm!");
             } catch (Exception e) {
                 logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
@@ -653,7 +731,7 @@ class SystemTray {
     void setStatus(String statusText);
 
     protected abstract
-    void setIcon_(String iconPath);
+    void setIcon_(File iconPath);
 
     /**
      * Changes the tray icon used.
@@ -665,8 +743,7 @@ class SystemTray {
      */
     public
     void setIcon(String imagePath) {
-        final String fullPath = ImageUtil.iconPath(imagePath);
-        setIcon_(fullPath);
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imagePath));
     }
 
     /**
@@ -679,8 +756,7 @@ class SystemTray {
      */
     public
     void setIcon(URL imageUrl) {
-        final String fullPath = ImageUtil.iconPath(imageUrl);
-        setIcon_(fullPath);
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageUrl));
     }
 
     /**
@@ -694,8 +770,7 @@ class SystemTray {
      */
     public
     void setIcon(String cacheName, InputStream imageStream) {
-        final String fullPath = ImageUtil.iconPath(cacheName, imageStream);
-        setIcon_(fullPath);
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, cacheName, imageStream));
     }
 
     /**
@@ -704,17 +779,11 @@ class SystemTray {
      * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
      * the imageStream to a temporary location on disk.
      *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
-     *
      * @param imageStream the InputStream of the icon to use
      */
-    @Deprecated
     public
     void setIcon(InputStream imageStream) {
-        @SuppressWarnings("deprecation")
-        final String fullPath = ImageUtil.iconPathNoCache(imageStream);
-        setIcon_(fullPath);
+        setIcon_(ImageUtils.resizeAndCache(ImageUtils.SIZE, imageStream));
     }
 
 
@@ -764,9 +833,6 @@ class SystemTray {
     /**
      * Adds a menu entry to the tray icon with text + image
      *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
-     *
      * @param menuText string of the text you want to appear
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
@@ -783,7 +849,7 @@ class SystemTray {
      * @param newMenuText the new menu text (this will replace the original menu text)
      */
     public final
-    void updateMenuEntry_Text(final String origMenuText, final String newMenuText) {
+    void updateMenuEntry(final String origMenuText, final String newMenuText) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);
@@ -822,13 +888,13 @@ class SystemTray {
     }
 
     /**
-     * Updates (or changes) the menu entry's text.
+     * Updates (or changes) the menu entry's image (as a String).
      *
      * @param origMenuText the original menu text
      * @param imagePath the new path for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(final String origMenuText, final String imagePath) {
+    void updateMenuEntry_AsImage(final String origMenuText, final String imagePath) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);
@@ -873,7 +939,7 @@ class SystemTray {
      * @param imageUrl the new URL for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(final String origMenuText, final URL imageUrl) {
+    void updateMenuEntry(final String origMenuText, final URL imageUrl) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);
@@ -919,7 +985,7 @@ class SystemTray {
      * @param imageStream the InputStream of the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(final String origMenuText, final String cacheName, final InputStream imageStream) {
+    void updateMenuEntry(final String origMenuText, final String cacheName, final InputStream imageStream) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);
@@ -960,14 +1026,11 @@ class SystemTray {
     /**
      * Updates (or changes) the menu entry's text.
      *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
-     *
      * @param origMenuText the original menu text
      * @param imageStream the new path for the image to use or null to delete the image
      */
     public final
-    void updateMenuEntry_Image(final String origMenuText, final InputStream imageStream) {
+    void updateMenuEntry(final String origMenuText, final InputStream imageStream) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);
@@ -1013,7 +1076,7 @@ class SystemTray {
      * @param newCallback the new callback (this will replace the original callback)
      */
     public final
-    void updateMenuEntry_Callback(final String origMenuText, final SystemTrayMenuAction newCallback) {
+    void updateMenuEntry(final String origMenuText, final SystemTrayMenuAction newCallback) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue =  new AtomicBoolean(true);

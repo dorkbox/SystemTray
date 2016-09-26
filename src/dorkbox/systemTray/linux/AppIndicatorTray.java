@@ -15,14 +15,17 @@
  */
 package dorkbox.systemTray.linux;
 
+import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interactions.
@@ -42,9 +45,9 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     public
     AppIndicatorTray() {
-        if (SystemTray.FORCE_LINUX_TYPE == SystemTray.LINUX_GTK) {
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTKSTATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_LINUX_TYPE' is set to GTK");
+            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GTK");
         }
 
         Gtk.startGui();
@@ -56,6 +59,10 @@ class AppIndicatorTray extends GtkTypeSystemTray {
                 appIndicator = AppIndicator.app_indicator_new(System.nanoTime() + "DBST", "", AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
+
+        super.waitForStartup();
+
+        ImageUtils.determineIconSize(SystemTray.TYPE_APP_INDICATOR);
     }
 
     @Override
@@ -81,12 +88,12 @@ class AppIndicatorTray extends GtkTypeSystemTray {
 
     @Override
     protected
-    void setIcon_(final String iconPath) {
+    void setIcon_(final File iconFile) {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                AppIndicator.app_indicator_set_icon(appIndicator, iconPath);
+                AppIndicator.app_indicator_set_icon(appIndicator, iconFile.getAbsolutePath());
 
                 if (!isActive) {
                     isActive = true;
