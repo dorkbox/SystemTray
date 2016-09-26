@@ -81,21 +81,15 @@ class SystemTray {
     @Property
     /**
      * Size of the tray, so that the icon can be properly scaled based on OS.
-     * - Windows will automatically scale up/down.
      * <p>
-     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
-     */
-    public static int DEFAULT_WINDOWS_SIZE = 32;
-
-    @Property
-    /**
-     * Size of the tray, so that the icon can be properly scaled based on OS.
+     * This value can be automatically scaled based on the the platform and scaling-factor.
+     * - Windows will automatically scale up/down.
      * - GtkStatusIcon will usually automatically scale up/down
      * - AppIndicators will not always automatically scale (it will sometimes display whatever is specified here)
      * <p>
      * You will experience WEIRD graphical glitches if this is NOT a power of 2.
      */
-    public static int DEFAULT_LINUX_SIZE = 16;
+    public static int DEFAULT_TRAY_SIZE = 16;
 
     @Property
     /**

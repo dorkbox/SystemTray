@@ -64,15 +64,97 @@ class ImageUtils {
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
+                // if windows 8.1/10 - default size is x2
+                String windowsVersion = "";
+                try {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                    // cmd.exe /c ver
+                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                    shellVersion.setExecutable("cmd.exe");
+                    shellVersion.addArgument("/c");
+                    shellVersion.addArgument("ver");
+                    shellVersion.start();
+
+                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                    if (!output.isEmpty()) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.debug("Checking windows version, value: '{}'", output);
+                        }
+
+                        // should be: Microsoft Windows [Version 10.0.10586]   or something
+                        if (output.contains("ersion ")) {
+                            int beginIndex = output.indexOf("ersion ") + 7;
+                            windowsVersion = output.substring(beginIndex, beginIndex+6);
+                        }
+                    }
+                } catch (Throwable e) {
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Cannot check windows version factor", e);
+                    }
+                }
+
+                int scalingFactor;
+                if (windowsVersion.startsWith("5.1")) {
+                    // Windows XP	5.1.2600
+                    scalingFactor = 1;
+
+                } else if (windowsVersion.startsWith("5.1")) {
+                    // Windows Server 2003	5.2.3790.1218
+                    scalingFactor = 1;
+
+                } else if (windowsVersion.startsWith("6.0")) {
+                    // Windows Vista	        6.0.6000
+                    // Windows Server 2008 SP1	6.0.6001
+                    // Windows Server 2008 SP2	6.0.6002
+                    scalingFactor = 1;
+
+                } else if (windowsVersion.startsWith("6.1")) {
+                    // Windows 7
+                    // Windows Server 2008 R2       6.1.7600
+                    // Windows Server 2008 R2 SP1   6.1.7601
+                    scalingFactor = 2;
+
+                } else if (windowsVersion.startsWith("6.2")) {
+                    // Windows 8
+                    // Windows Server 2012	6.2.9200
+                    scalingFactor = 2;
+
+                } else if (windowsVersion.startsWith("6.3")) {
+                    // Windows 8.1
+                    // Windows Server 2012	6.3.9200
+                    scalingFactor = 4;
+
+                } else if (windowsVersion.startsWith("6.4")) {
+                    // Windows 10 Technical Preview 1	6.4.9841
+                    scalingFactor = 4;
+
+                } else if (windowsVersion.startsWith("10.0")) {
+                    // Windows 10 Technical Preview 4	10.0.9926
+                    // Windows 10 Insider Preview	    10.0.14915
+                    scalingFactor = 8;
+
+                } else {
+                    // dunnno, but i'm going to assume HiDPI for this...
+                    scalingFactor = 8;
+                }
+
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.error("Windows version (partial): '{}'", windowsVersion);
+                }
+
                 // windows will automatically scale the tray size BUT NOT the menu entry icon size
-                trayScale = SystemTray.DEFAULT_WINDOWS_SIZE;
+                // we want to make sure our "scaled" size is appropriate for the OS.
+                trayScale = SystemTray.DEFAULT_TRAY_SIZE * scalingFactor;
                 menuScale = SystemTray.DEFAULT_MENU_SIZE;
             } else {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator will NOT scale the icon
                 if (trayType == SystemTray.TYPE_SWING || trayType == SystemTray.TYPE_GTK_STATUSICON) {
                     // swing or GtkStatusIcon on linux/mac? use the default settings
-                    trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                    trayScale = SystemTray.DEFAULT_TRAY_SIZE;
                     menuScale = SystemTray.DEFAULT_MENU_SIZE;
                 } else {
                     if (SystemTray.DEBUG) {
@@ -126,10 +208,10 @@ class ImageUtils {
 
                     // the DEFAULT scale is 16
                     if (uiScalingFactor > 1) {
-                        trayScale = SystemTray.DEFAULT_LINUX_SIZE * uiScalingFactor;
+                        trayScale = SystemTray.DEFAULT_TRAY_SIZE * uiScalingFactor;
                         menuScale = SystemTray.DEFAULT_MENU_SIZE * uiScalingFactor;
                     } else {
-                        trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                        trayScale = SystemTray.DEFAULT_TRAY_SIZE;
                         menuScale = SystemTray.DEFAULT_MENU_SIZE;
                     }
 
@@ -140,10 +222,10 @@ class ImageUtils {
             }
         } else {
             if (OS.isWindows()) {
-                trayScale = SystemTray.DEFAULT_WINDOWS_SIZE;
+                trayScale = SystemTray.DEFAULT_TRAY_SIZE;
                 menuScale = SystemTray.DEFAULT_MENU_SIZE;
             } else {
-                trayScale = SystemTray.DEFAULT_LINUX_SIZE;
+                trayScale = SystemTray.DEFAULT_TRAY_SIZE;
                 menuScale = SystemTray.DEFAULT_MENU_SIZE;
             }
         }
@@ -373,12 +455,17 @@ class ImageUtils {
             SystemTray.logger.debug("Resizing URL to {}. '{}'", size, fileUrl.getPath());
         }
 
+        String extension = FileUtil.getExtension(fileUrl.getPath());
+        if (extension.equals("")) {
+            extension = "png"; // made up
+        }
+
         InputStream inputStream = fileUrl.openStream();
 
         // have to resize the file (and return the new path)
 
         // now have to resize this file.
-        File newFile = new File(TEMP_DIR, "temp_resize").getAbsoluteFile();
+        File newFile = new File(TEMP_DIR, "temp_resize." + extension).getAbsoluteFile();
         Image image;
 
 
@@ -396,12 +483,7 @@ class ImageUtils {
         // if it's already there, we have to delete it
         newFile.delete();
 
-
         // now write out the new one
-        String extension = FileUtil.getExtension(fileUrl.getPath());
-        if (extension.equals("")) {
-            extension = "png"; // made up
-        }
         BufferedImage bufferedImage = getBufferedImage(image);
         ImageIO.write(bufferedImage, extension, newFile);
 
@@ -419,7 +501,7 @@ class ImageUtils {
         // have to resize the file (and return the new path)
 
         // now have to resize this file.
-        File newFile = new File(TEMP_DIR, "temp_resize").getAbsoluteFile();
+        File newFile = new File(TEMP_DIR, "temp_resize.png").getAbsoluteFile();
         Image image;
 
 
@@ -465,8 +547,13 @@ class ImageUtils {
 
         // have to resize the file (and return the new path)
 
+        String extension = FileUtil.getExtension(fileName);
+        if (extension.equals("")) {
+            extension = "png"; // made up
+        }
+
         // now have to resize this file.
-        File newFile = new File(TEMP_DIR, "temp_resize" + FileUtil.getExtension(fileName)).getAbsoluteFile();
+        File newFile = new File(TEMP_DIR, "temp_resize." + extension).getAbsoluteFile();
         Image image;
 
         // is file sitting on drive
@@ -499,10 +586,6 @@ class ImageUtils {
 
 
         // now write out the new one
-        String extension = FileUtil.getExtension(fileName);
-        if (extension.equals("")) {
-            extension = "png"; // made up
-        }
         BufferedImage bufferedImage = getBufferedImage(image);
         ImageIO.write(bufferedImage, extension, newFile);
 
