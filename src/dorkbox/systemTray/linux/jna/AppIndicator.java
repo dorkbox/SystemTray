@@ -33,7 +33,6 @@ public
 class AppIndicator {
     public static boolean isVersion3 = false;
     private static boolean isLoaded = false;
-    private static boolean LIBRARY_DEBUG = false;
 
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
@@ -53,8 +52,8 @@ class AppIndicator {
 
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            if (LIBRARY_DEBUG) {
-                logger.error("Forcing GTK tray, not using appindicator");
+            if (SystemTray.DEBUG) {
+                logger.debug("Forcing GTK tray, not using appindicator");
             }
             isLoaded = true;
         }
@@ -67,8 +66,8 @@ class AppIndicator {
                     isLoaded = true;
                 }
             } catch (Throwable e) {
-                if (LIBRARY_DEBUG) {
-                    logger.error("Error loading library: {}", "appindicator1", e);
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading library: {}", "appindicator1", e);
                 }
             }
         }
@@ -88,8 +87,8 @@ class AppIndicator {
                 final NativeLibrary library = JnaHelper.register(nameToCheck1, AppIndicator.class);
                 String s = library.getName();
 
-                if (LIBRARY_DEBUG) {
-                    logger.error("Loading library (first attempt): {}", s);
+                if (SystemTray.DEBUG) {
+                    logger.debug("Loading library (first attempt): {}", s);
                 }
 
                 if (s.contains("appindicator3")) {
@@ -98,8 +97,8 @@ class AppIndicator {
 
                 isLoaded = true;
             } catch (Throwable e) {
-                if (LIBRARY_DEBUG) {
-                    logger.error("Error loading library: {}", nameToCheck1, e);
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading library: {}", nameToCheck1, e);
                 }
             }
         }
@@ -108,8 +107,8 @@ class AppIndicator {
         // Super hacky way to do this.
         if (!isLoaded) {
             if (Gtk.isGtk2) {
-                if (LIBRARY_DEBUG) {
-                    logger.error("Checking GTK2 first for appIndicator");
+                if (SystemTray.DEBUG) {
+                    logger.debug("Checking GTK2 first for appIndicator");
                 }
 
                 // have to check gtk2 first
@@ -120,15 +119,15 @@ class AppIndicator {
 
                             String s = library.getName();
 
-                            if (LIBRARY_DEBUG) {
-                                logger.error("Loading library: {}", s);
+                            if (SystemTray.DEBUG) {
+                                logger.debug("Loading library: {}", s);
                             }
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
                                 isVersion3 = true;
-                                if (LIBRARY_DEBUG) {
-                                    logger.error("Unloading library: {}", s);
+                                if (SystemTray.DEBUG) {
+                                    logger.debug("Unloading library: {}", s);
                                 }
                                 Native.unregister(AppIndicator.class);
                             }
@@ -136,8 +135,8 @@ class AppIndicator {
                             isLoaded = true;
                             break;
                         } catch (Throwable e) {
-                            if (LIBRARY_DEBUG) {
-                                logger.error("Error loading library: {}", "appindicator" + i, e);
+                            if (SystemTray.DEBUG) {
+                                logger.debug("Error loading library: {}", "appindicator" + i, e);
                             }
                         }
                     }
@@ -152,8 +151,8 @@ class AppIndicator {
 
                             String s = library.getName();
 
-                            if (LIBRARY_DEBUG) {
-                                logger.error("Loading library: {}", s);
+                            if (SystemTray.DEBUG) {
+                                logger.debug("Loading library: {}", s);
                             }
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
@@ -164,8 +163,8 @@ class AppIndicator {
                             isLoaded = true;
                             break;
                         } catch (Throwable e) {
-                            if (LIBRARY_DEBUG) {
-                                logger.error("Error loading library: {}", "appindicator" + i, e);
+                            if (SystemTray.DEBUG) {
+                                logger.debug("Error loading library: {}", "appindicator" + i, e);
                             }
                         }
                     }
@@ -192,8 +191,8 @@ class AppIndicator {
                 JnaHelper.register(nameToCheck1, AppIndicator.class);
                 isLoaded = true;
             } catch (Throwable e) {
-                if (LIBRARY_DEBUG) {
-                    logger.error("Error loading library: {}", nameToCheck1, e);
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading library: {}", nameToCheck1, e);
                 }
             }
         }
@@ -204,8 +203,8 @@ class AppIndicator {
                 JnaHelper.register(nameToCheck2, AppIndicator.class);
                 isLoaded = true;
             } catch (Throwable e) {
-                if (LIBRARY_DEBUG) {
-                    logger.error("Error loading library: {}", nameToCheck2, e);
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading library: {}", nameToCheck2, e);
                 }
             }
         }
