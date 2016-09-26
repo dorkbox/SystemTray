@@ -29,9 +29,11 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.IO;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
 
+@SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
 public
 class GnomeShellExtension {
     private static final String UID = "SystemTray@Dorkbox";
@@ -116,14 +118,7 @@ class GnomeShellExtension {
                            .append("\n");
                 }
             } finally {
-                if (bin != null) {
-                    try {
-                        bin.close();
-                    } catch (IOException ioe) {
-                        System.err.println("Error closing the metadata file:" + bin);
-                        ioe.printStackTrace();
-                    }
-                }
+                IO.close(bin, logger);
             }
 
 
@@ -161,39 +156,20 @@ class GnomeShellExtension {
             outputWriter.flush();
             outputWriter.close();
         } finally {
-            if (outputWriter != null) {
-                try {
-                    outputWriter.close();
-                } catch (Exception ignored) {
-                }
-            }
+            IO.close(outputWriter, logger);
         }
 
         // copies our provided extension.js file to the correct location on disk
         InputStream reader = null;
         FileOutputStream fileOutputStream = null;
         try {
-            fileOutputStream = new FileOutputStream(extensionFile);
             reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
+            fileOutputStream = new FileOutputStream(extensionFile);
 
-            byte[] buffer = new byte[4096];
-            int read;
-            while ((read = reader.read(buffer)) > 0) {
-                fileOutputStream.write(buffer, 0, read);
-            }
+            IO.copyStream(reader, fileOutputStream);
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception ignored) {
-                }
-            }
-            if (fileOutputStream != null) {
-                try {
-                    fileOutputStream.close();
-                } catch (Exception ignored) {
-                }
-            }
+            IO.close(reader, logger);
+            IO.close(fileOutputStream, logger);
         }
 
 
