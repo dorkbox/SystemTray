@@ -66,8 +66,12 @@ interface MenuEntry {
      *
      * @param imageStream the InputStream of the image to use
      */
-    @Deprecated
     void setImage(InputStream imageStream);
+
+    /**
+     * @return true if this menu entry has an image assigned to it, or is just text.
+     */
+    boolean hasImage();
 
     /**
      * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry

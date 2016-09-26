@@ -163,10 +163,21 @@ class GtkTypeSystemTray extends SystemTray {
             Gobject.g_object_ref_sink(connectionStatusItem);
         }
 
+        boolean hasImages = false;
+
         // now add back other menu entries
         synchronized (menuEntries) {
             for (int i = 0; i < menuEntries.size(); i++) {
                 GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
+
+                hasImages |= menuEntry__.hasImage();
+            }
+
+
+            for (int i = 0; i < menuEntries.size(); i++) {
+                GtkMenuEntry menuEntry__ = (GtkMenuEntry) menuEntries.get(i);
+                // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
+                menuEntry__.setSpacerImage(hasImages);
 
                 // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                 Gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
@@ -264,8 +275,7 @@ class GtkTypeSystemTray extends SystemTray {
             addMenuEntry_(menuText, null, callback);
         }
         else {
-//            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
-            addMenuEntry_(menuText, ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE), callback);
+            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
         }
     }
 

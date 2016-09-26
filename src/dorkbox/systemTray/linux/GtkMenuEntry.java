@@ -45,6 +45,10 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     private volatile SystemTrayMenuAction callback;
     private volatile Pointer image;
 
+    // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
+    private volatile boolean hasLegitIcon = true;
+    private static File transparentIcon = null;
+
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
@@ -56,13 +60,19 @@ class GtkMenuEntry implements MenuEntry, GCallback {
 
         menuItem = Gtk.gtk_image_menu_item_new_with_label(label);
 
-        if (imagePath != null) {
+        if (transparentIcon == null) {
+            transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
+        }
+
+        hasLegitIcon = imagePath != null;
+        if (hasLegitIcon) {
             // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
             // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
             // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
             image = Gtk.gtk_image_new_from_file(imagePath.getAbsolutePath());
 
             Gtk.gtk_image_menu_item_set_image(menuItem, image);
+
             //  must always re-set always-show after setting the image
             Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
         }
@@ -70,6 +80,34 @@ class GtkMenuEntry implements MenuEntry, GCallback {
         nativeLong = Gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
     }
 
+    /**
+     * the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
+     *
+     * called on the DISPATCH thread
+     */
+    void setSpacerImage(final boolean everyoneElseHasImages) {
+        if (hasLegitIcon) {
+            // we have a legit icon, so there is nothing else we can do.
+            return;
+        }
+
+        if (image != null) {
+            Gtk.gtk_widget_destroy(image);
+            image = null;
+            Gtk.gtk_widget_show_all(menuItem);
+        }
+
+        if (everyoneElseHasImages) {
+            image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
+
+            Gtk.gtk_image_menu_item_set_image(menuItem, image);
+
+            //  must always re-set always-show after setting the image
+            Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+        }
+
+        Gtk.gtk_widget_show_all(menuItem);
+    }
 
     // called by native code
     @Override
@@ -105,7 +143,9 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     private
-    void setImage_(final File imagePath) {
+    void setImage_(final File imageFile) {
+        hasLegitIcon = imageFile != null;
+
         Gtk.dispatch(new Runnable() {
             @Override
             public
@@ -113,12 +153,11 @@ class GtkMenuEntry implements MenuEntry, GCallback {
                 if (image != null) {
                     Gtk.gtk_widget_destroy(image);
                     image = null;
+                    Gtk.gtk_widget_show_all(menuItem);
                 }
 
-                Gtk.gtk_widget_show_all(menuItem);
-
-                if (imagePath != null) {
-                    image = Gtk.gtk_image_new_from_file(imagePath.getAbsolutePath());
+                if (hasLegitIcon) {
+                    image = Gtk.gtk_image_new_from_file(imageFile.getAbsolutePath());
                     Gtk.gtk_image_menu_item_set_image(menuItem, image);
                     Gobject.g_object_ref_sink(image);
 
@@ -165,7 +204,6 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     @Override
-    @Deprecated
     public
     void setImage(final InputStream imageStream) {
         if (imageStream == null) {
@@ -174,6 +212,12 @@ class GtkMenuEntry implements MenuEntry, GCallback {
         else {
             setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
         }
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return hasLegitIcon;
     }
 
     @Override

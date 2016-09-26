@@ -37,6 +37,7 @@ class SwingMenuEntry implements MenuEntry {
     private final JMenuItem menuItem;
     private final ActionListener swingCallback;
 
+    private volatile boolean hasLegitIcon = false;
     private volatile String text;
     private volatile SystemTrayMenuAction callback;
 
@@ -61,6 +62,7 @@ class SwingMenuEntry implements MenuEntry {
         menuItem.addActionListener(swingCallback);
 
         if (imagePath != null) {
+            hasLegitIcon = true;
             setImageIcon(imagePath);
         }
 
@@ -110,10 +112,12 @@ class SwingMenuEntry implements MenuEntry {
     private
     void setImageIcon(final File imagePath) {
         if (imagePath != null) {
+            hasLegitIcon = true;
             ImageIcon origIcon = new ImageIcon(imagePath.getAbsolutePath());
             menuItem.setIcon(origIcon);
         }
         else {
+            hasLegitIcon = false;
             menuItem.setIcon(null);
         }
     }
@@ -152,7 +156,6 @@ class SwingMenuEntry implements MenuEntry {
     }
 
     @Override
-    @Deprecated
     public
     void setImage(final InputStream imageStream) {
         if (imageStream == null) {
@@ -161,6 +164,12 @@ class SwingMenuEntry implements MenuEntry {
         else {
             setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
         }
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return hasLegitIcon;
     }
 
     @Override
