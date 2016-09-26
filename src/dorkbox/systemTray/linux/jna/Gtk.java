@@ -25,7 +25,10 @@ import java.util.concurrent.TimeUnit;
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.linux.GtkTypeSystemTray;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
 
@@ -50,6 +53,9 @@ class Gtk {
 
     private static boolean alreadyRunningGTK = false;
     private static boolean isLoaded = false;
+
+    // there is ONLY a single thread EVER setting this value!!
+    private static volatile boolean isDispatch = false;
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
@@ -235,7 +241,6 @@ class Gtk {
     void dispatch(final Runnable runnable) {
         if (alreadyRunningGTK) {
             // SWT/JavaFX
-
             if (SystemTray.isJavaFxLoaded) {
                 if (JavaFX.isEventThread()) {
                     // Run directly on the JavaFX event thread
@@ -246,30 +251,54 @@ class Gtk {
                 }
             }
             else if (SystemTray.isSwtLoaded) {
-                Swt.dispatch(runnable);
+                if (isDispatch) {
+                    // Run directly on the dispatch thread
+                    runnable.run();
+                } else {
+                    Swt.dispatch(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            isDispatch = true;
+
+                            runnable.run();
+
+                            isDispatch = false;
+                        }
+                    });
+                }
             }
         }
         else {
-            final FuncCallback callback = new FuncCallback() {
-                @Override
-                public
-                int callback(final Pointer data) {
-                    synchronized (gtkCallbacks) {
-                        gtkCallbacks.removeFirst();// now that we've 'handled' it, we can remove it from our callback list
+            // non-swt/javafx
+            if (isDispatch) {
+                // Run directly on the dispatch thread
+                runnable.run();
+            } else {
+                final FuncCallback callback = new FuncCallback() {
+                    @Override
+                    public
+                    int callback(final Pointer data) {
+                        synchronized (gtkCallbacks) {
+                            gtkCallbacks.removeFirst();// now that we've 'handled' it, we can remove it from our callback list
+                        }
+
+                        isDispatch = true;
+
+                        runnable.run();
+
+                        isDispatch = false;
+                        return Gtk.FALSE; // don't want to call this again
                     }
+                };
 
-                    runnable.run();
-
-                    return Gtk.FALSE; // don't want to call this again
+                synchronized (gtkCallbacks) {
+                    gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
                 }
-            };
 
-            synchronized (gtkCallbacks) {
-                gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
+                // the correct way to do it
+                g_idle_add(callback, null);
             }
-
-            // the correct way to do it
-            g_idle_add(callback, null);
         }
     }
 
@@ -289,6 +318,22 @@ class Gtk {
         });
     }
 
+    /**
+     * required to properly setup the dispatch flag
+     * @param callback will never be null.
+     */
+    public static
+    void proxyClick(final SystemTrayMenuAction callback, final GtkTypeSystemTray parent, final MenuEntry menuEntry) {
+        Gtk.isDispatch = true;
+
+        try {
+            callback.onClick(parent, menuEntry);
+        } catch (Throwable throwable) {
+            SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
+        }
+
+        Gtk.isDispatch = false;
+    }
 
     /**
      * This would NORMALLY have a 2nd argument that is a String[] -- however JNA direct-mapping DOES NOT support this. We are lucky

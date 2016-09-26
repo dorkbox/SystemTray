@@ -77,11 +77,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     int callback(final Pointer instance, final Pointer data) {
         final SystemTrayMenuAction cb = this.callback;
         if (cb != null) {
-            try {
-                cb.onClick(parent, GtkMenuEntry.this);
-            } catch (Throwable throwable) {
-                throwable.printStackTrace();
-            }
+            Gtk.proxyClick(cb, parent, GtkMenuEntry.this);
         }
 
         return Gtk.TRUE;
