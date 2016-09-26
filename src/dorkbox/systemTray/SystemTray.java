@@ -1181,22 +1181,26 @@ class SystemTray {
             @Override
             public
             void run() {
-                synchronized (menuEntries) {
-                    for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                        final MenuEntry entry = iterator.next();
-                        if (entry.getText()
-                                 .equals(label)) {
-                            iterator.remove();
+                try {
+                    synchronized (menuEntries) {
+                        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                            final MenuEntry entry = iterator.next();
+                            if (entry.getText()
+                                     .equals(label)) {
+                                iterator.remove();
 
-                            // this will also reset the menu
-                            menuEntry.remove();
-                            hasValue.set(true);
-                            countDownLatch.countDown();
-                            return;
+                                // this will also reset the menu
+                                menuEntry.remove();
+                                hasValue.set(true);
+                                break;
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    logger.error("Error removing menu entry from list.", e);
+                } finally {
+                    countDownLatch.countDown();
                 }
-                countDownLatch.countDown();
             }
         });
 
