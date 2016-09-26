@@ -320,95 +320,6 @@ class ImageUtils {
     }
 
 
-
-//    static void asdasd () {
-//
-//        ImageUtils.resizeAndCache(imagePath);
-//
-//        Image trayImage1 = new ImageIcon(iconPath).getImage().getScaledInstance(dorkbox.systemTray.SystemTray.TRAY_SIZE, -1,
-//                                                                                Image.SCALE_SMOOTH);
-//        trayImage1.flush();
-//
-//
-//        Dimension imageSize = null;
-//        try {
-//            imageSize = ImageUtils.getImageSize(imagePath);
-//        } catch (IOException e) {
-//            SystemTray.logger.error("Unable to get the image size for '{}'. Unable to set image for menu entry.", imagePath, e);
-//            return;
-//        }
-//
-//        int origIconHeight = (int) imageSize.getHeight();
-//        int origIconWidth = (int) imageSize.getWidth();
-//
-//        int savedIconHeight = this.iconHeight;
-//
-//        // it is necessary to resize this icon, so that it matches what our preferred size is for icons
-//        if (origIconHeight != savedIconHeight && savedIconHeight != 0) {
-//            //noinspection SuspiciousNameCombination
-//            Dimension newDimension = getScaledDimension(origIconWidth, origIconHeight, savedIconHeight, savedIconHeight);
-//
-//            ImageIcon origIcon = new ImageIcon(imagePath);
-//            Image image = origIcon.getImage();
-//
-//            // scale it the smoothly
-//            Image newImage = image.getScaledInstance(newDimension.width, newDimension.height, java.awt.Image.SCALE_SMOOTH);
-//            origIcon = new ImageIcon(newImage);
-//
-//            // save it to temp spot on disk (so we don't have to KEEP on doing this). (but it MUST be the temp location, otherwise
-//            // it's always 'on the fly')
-//            if (imagePath.startsWith(tempDirPath)) {
-//                // have to delete the old one
-//                File file = new File(imagePath);
-//                boolean delete = file.delete();
-//
-//                if (delete) {
-//                    // now write out the new one
-//                    String extension = CacheUtil.getExtension(imagePath);
-//                    if (extension.equals("")) {
-//                        extension = "png"; // made up
-//                    }
-//                    BufferedImage bufferedImage = getBufferedImage(image);
-//                    try {
-//                        ImageIO.write(bufferedImage, extension, file);
-//                    } catch (IOException e) {
-//                        // this shouldn't happen, but you never know...
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-//    private static
-//    Dimension getScaledDimension(int originalWidth, int originalHeight, int boundWidth, int boundHeight) {
-//        //this function comes from http://stackoverflow.com/questions/10245220/java-image-resize-maintain-aspect-ratio
-//
-//        int newWidth = originalWidth;
-//        int newHeight = originalHeight;
-//
-//        // first check if we need to scale width
-//        if (originalWidth > boundWidth) {
-//            //scale width to fit
-//            newWidth = boundWidth;
-//
-//            //scale height to maintain aspect ratio
-//            newHeight = (newWidth * originalHeight) / originalWidth;
-//        }
-//
-//        // then check if we need to scale even with the new height
-//        if (newHeight > boundHeight) {
-//            //scale height to fit instead
-//            newHeight = boundHeight;
-//
-//            //scale width to maintain aspect ratio
-//            newWidth = (newHeight * originalWidth) / originalHeight;
-//        }
-//
-//        return new Dimension(newWidth, newHeight);
-//    }
-
-
     /**
      * Resizes the given URL to the specified size. No checks are performed if it's the correct size to begin with.
      *
@@ -594,6 +505,7 @@ class ImageUtils {
                 return new Dimension(reader.getWidth(0), reader.getHeight(0));
             }
         } finally {
+            // `ImageInputStream` is not a closeable in 1.6, so we do this manually.
             if (in != null) {
                 try {
                     in.close();
