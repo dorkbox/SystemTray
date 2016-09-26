@@ -102,7 +102,11 @@ class SystemTray {
     public static boolean FORCE_GTK2 = false;
 
     @Property
-    /** Forces the system tray detection to be Automatic (0), GTK (1), AppIndicator (2), or Swing (3). This is an advanced feature. */
+    /**
+     * Forces the system tray detection to be Automatic (0), GtkStatusIcon (1), AppIndicator (2), or Swing (3).
+     * <p>
+     * This is an advanced feature, and it is recommended to leave at 0.
+     */
     public static int FORCE_TRAY_TYPE = 0;
 
     @Property
@@ -116,7 +120,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
 
     private static volatile SystemTray systemTray = null;
