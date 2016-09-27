@@ -59,8 +59,7 @@ class ImageUtils {
      */
     public static
     void determineIconSize(int trayType) {
-        int trayScale;
-        int menuScale;
+        int scalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -96,7 +95,6 @@ class ImageUtils {
                     }
                 }
 
-                int scalingFactor;
                 if (windowsVersion.startsWith("5.1")) {
                     // Windows XP	5.1.2600
                     scalingFactor = 1;
@@ -144,94 +142,70 @@ class ImageUtils {
                 if (SystemTray.DEBUG) {
                     SystemTray.logger.error("Windows version (partial): '{}'", windowsVersion);
                 }
-
-                // windows will automatically scale the tray size BUT NOT the menu entry icon size
-                // we want to make sure our "scaled" size is appropriate for the OS.
-                trayScale = SystemTray.DEFAULT_TRAY_SIZE * scalingFactor;
-                menuScale = SystemTray.DEFAULT_MENU_SIZE;
             } else {
                 // GtkStatusIcon will USUALLY automatically scale the icon
-                // AppIndicator will NOT scale the icon
-                if (trayType == SystemTray.TYPE_SWING || trayType == SystemTray.TYPE_GTK_STATUSICON) {
-                    // swing or GtkStatusIcon on linux/mac? use the default settings
-                    trayScale = SystemTray.DEFAULT_TRAY_SIZE;
-                    menuScale = SystemTray.DEFAULT_MENU_SIZE;
-                } else {
-                    if (SystemTray.DEBUG) {
-                        SystemTray.logger.error("Auto detecting UI scale");
-                    }
+                // AppIndicator MIGHT scale the icon (depends on the OS)
+                try {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
-                    int uiScalingFactor = 0;
+                    // gsettings get org.gnome.desktop.interface scaling-factor
+                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                    shellVersion.setExecutable("gsettings");
+                    shellVersion.addArgument("get");
+                    shellVersion.addArgument("org.gnome.desktop.interface");
+                    shellVersion.addArgument("scaling-factor");
+                    shellVersion.start();
 
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
 
-                        // gsettings get org.gnome.desktop.interface scaling-factor
-                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                        shellVersion.setExecutable("gsettings");
-                        shellVersion.addArgument("get");
-                        shellVersion.addArgument("org.gnome.desktop.interface");
-                        shellVersion.addArgument("scaling-factor");
-                        shellVersion.start();
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                        if (!output.isEmpty()) {
-                            if (SystemTray.DEBUG) {
-                                SystemTray.logger.debug("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
-                            }
-
-                            // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
-                            // should be: uint32 0  or something
-                            if (output.contains("uint32")) {
-                                String value = output.substring(output.indexOf("uint")+7, output.length()-1);
-                                uiScalingFactor = Integer.parseInt(value);
-
-                                // 0 is disabled (no scaling)
-                                // 1 is enabled (default scale)
-                                // 2 is 2x scale
-                                // 3 is 3x scale
-                                // etc
-
-
-                                // A setting of 2, 3, etc, which is all you can do with scaling-factor
-                                // To enable HiDPI, use gsettings:
-                                // gsettings set org.gnome.desktop.interface scaling-factor 2
-                            }
-                        }
-                    } catch (Throwable e) {
+                    if (!output.isEmpty()) {
                         if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Cannot check scaling factor", e);
+                            SystemTray.logger.debug("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
+                        }
+
+                        // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
+                        // should be: uint32 0  or something
+                        if (output.contains("uint32")) {
+                            String value = output.substring(output.indexOf("uint")+7, output.length()-1);
+                            scalingFactor = Integer.parseInt(value);
+
+                            // 0 is disabled (no scaling)
+                            // 1 is enabled (default scale)
+                            // 2 is 2x scale
+                            // 3 is 3x scale
+                            // etc
+
+
+                            // A setting of 2, 3, etc, which is all you can do with scaling-factor
+                            // To enable HiDPI, use gsettings:
+                            // gsettings set org.gnome.desktop.interface scaling-factor 2
                         }
                     }
-
-                    // the DEFAULT scale is 16
-                    if (uiScalingFactor > 1) {
-                        trayScale = SystemTray.DEFAULT_TRAY_SIZE * uiScalingFactor;
-                        menuScale = SystemTray.DEFAULT_MENU_SIZE * uiScalingFactor;
-                    } else {
-                        trayScale = SystemTray.DEFAULT_TRAY_SIZE;
-                        menuScale = SystemTray.DEFAULT_MENU_SIZE;
-                    }
-
+                } catch (Throwable e) {
                     if (SystemTray.DEBUG) {
-                        SystemTray.logger.debug("uiScaling factor is '{}', auto tray size is '{}'.", uiScalingFactor, trayScale);
+                        SystemTray.logger.error("Cannot check scaling factor", e);
                     }
                 }
             }
-        } else {
-            if (OS.isWindows()) {
-                trayScale = SystemTray.DEFAULT_TRAY_SIZE;
-                menuScale = SystemTray.DEFAULT_MENU_SIZE;
-            } else {
-                trayScale = SystemTray.DEFAULT_TRAY_SIZE;
-                menuScale = SystemTray.DEFAULT_MENU_SIZE;
-            }
         }
 
-        TRAY_SIZE = trayScale;
-        ENTRY_SIZE = menuScale;
+        // windows, mac, linux(GtkStatusIcon) will automatically scale the tray size
+        //  the menu entry icon size will NOT get scaled (it will show whatever we specify)
+        // we want to make sure our "scaled" size is appropriate for the OS.
+
+        // the DEFAULT scale is 16
+        if (scalingFactor > 1) {
+            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * scalingFactor;
+            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
+
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", scalingFactor, TRAY_SIZE);
+            }
+        } else {
+            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE;
+            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
+        }
     }
 
 
