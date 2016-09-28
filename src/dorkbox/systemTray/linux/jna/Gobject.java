@@ -32,8 +32,6 @@ class Gobject {
     }
 
 
-    public static native int g_idle_add_full(int priority, FuncCallback callback, Pointer data, Pointer notify);
-
     public static native void g_free(Pointer object);
     public static native void g_object_unref(Pointer object);
 

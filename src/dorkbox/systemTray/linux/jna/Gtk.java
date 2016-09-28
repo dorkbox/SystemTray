@@ -178,8 +178,6 @@ class Gtk {
 
             // startup the GTK GUI event loop. There can be multiple/nested loops.
 
-            // only necessary if we are the only GTK instance running...
-            final CountDownLatch blockUntilStarted = new CountDownLatch(1);
 
             if (!alreadyRunningGTK ) {
                 // If JavaFX/SWT is used, this is UNNECESSARY (we can detect if the GTK main_loop is running)
@@ -201,6 +199,8 @@ class Gtk {
                             return;
                         }
 
+                        gdk_threads_enter();
+
                         // blocks unit quit
                         gtk_main();
 
@@ -210,28 +210,6 @@ class Gtk {
                 };
                 gtkUpdateThread.setName("GTK Native Event Loop");
                 gtkUpdateThread.start();
-
-
-                // notify our main thread to continue
-                // Please note: we don't need to do this on SWT/JavaFX, because they startup the main_loop BEFORE the app starts.
-                dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        blockUntilStarted.countDown();
-                    }
-                });
-
-
-                try {
-                    // we CANNOT continue until the GTK thread has started!
-                    boolean await = blockUntilStarted.await(10, TimeUnit.SECONDS);
-                    if (!await) {
-                        throw new RuntimeException("Unable to initialize GTK. Something is HORRIBLY wrong, aborting.");
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -497,6 +475,7 @@ class Gtk {
     public static native void gtk_widget_destroy(Pointer widget);
 
 
+    public static native void gdk_threads_enter();
     public static native void gdk_threads_leave();
     public static native int gdk_threads_add_idle_full(int priority, FuncCallback function, Pointer data, Pointer notify);
 }
