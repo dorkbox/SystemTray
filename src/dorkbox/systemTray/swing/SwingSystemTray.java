@@ -69,13 +69,13 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             public
             void run() {
                 SwingSystemTray.this.tray = SystemTray.getSystemTray();
+                menu = new SwingSystemTrayMenuPopup();
                 if (SwingSystemTray.this.tray == null) {
                     logger.error("The system tray is not available");
                 }
             }
         });
     }
-
 
     @Override
     public
@@ -84,23 +84,22 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             @Override
             public
             void run() {
-                SwingSystemTray tray = SwingSystemTray.this;
-                synchronized (tray) {
-                    tray.tray.remove(tray.trayIcon);
+                tray.remove(trayIcon);
 
-                    for (MenuEntry menuEntry : tray.menuEntries) {
+                synchronized (menuEntries) {
+                    for (MenuEntry menuEntry : menuEntries) {
                         menuEntry.remove();
                     }
-                    tray.menuEntries.clear();
+                    menuEntries.clear();
                 }
             }
         });
     }
 
-    protected SwingSystemTrayMenuPopup getMenu() {
+    protected
+    SwingSystemTrayMenuPopup getMenu() {
         return menu;
     }
-
 
     @Override
     public
@@ -128,33 +127,30 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             @Override
             public
             void run() {
-                SwingSystemTray tray = SwingSystemTray.this;
-                synchronized (tray) {
-                    synchronized (menuEntries) {
+                synchronized (menuEntries) {
+                    // status is ALWAYS at 0 index...
+                    SwingMenuEntry menuEntry = null;
+                    if (!menuEntries.isEmpty()) {
+                        menuEntry = (SwingMenuEntry) menuEntries.get(0);
+                    }
+
+                    if (menuEntry instanceof SwingMenuEntryStatus) {
+                        // set the text or delete...
+
+                        if (statusText == null) {
+                            // delete
+                            removeMenuEntry(menuEntry);
+                        }
+                        else {
+                            // set text
+                            menuEntry.setText(statusText);
+                        }
+
+                    } else {
+                        // create a new one
+                        menuEntry = new SwingMenuEntryStatus(statusText, SwingSystemTray.this);
                         // status is ALWAYS at 0 index...
-                        SwingMenuEntry menuEntry = null;
-                        if (!menuEntries.isEmpty()) {
-                            menuEntry = (SwingMenuEntry) menuEntries.get(0);
-                        }
-
-                        if (menuEntry instanceof SwingMenuEntryStatus) {
-                            // set the text or delete...
-
-                            if (statusText == null) {
-                                // delete
-                                removeMenuEntry(menuEntry);
-                            }
-                            else {
-                                // set text
-                                menuEntry.setText(statusText);
-                            }
-
-                        } else {
-                            // create a new one
-                            menuEntry = new SwingMenuEntryStatus(statusText, tray);
-                            // status is ALWAYS at 0 index...
-                            menuEntries.add(0, menuEntry);
-                        }
+                        menuEntries.add(0, menuEntry);
                     }
                 }
             }
@@ -169,13 +165,10 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             @Override
             public
             void run() {
-                SwingSystemTray tray = SwingSystemTray.this;
-                synchronized (tray) {
+                synchronized (menuEntries) {
                     synchronized (menuEntries) {
-                        synchronized (menuEntries) {
-                            MenuEntry menuEntry = new SwingMenuEntrySpacer(tray);
-                            menuEntries.add(menuEntry);
-                        }
+                        MenuEntry menuEntry = new SwingMenuEntrySpacer(SwingSystemTray.this);
+                        menuEntries.add(menuEntry);
                     }
                 }
             }
@@ -190,71 +183,67 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             @Override
             public
             void run() {
-                SwingSystemTray tray = SwingSystemTray.this;
-
                 // stupid java won't scale it right away, so we have to do this twice to get the correct size
                 final Image trayImage = new ImageIcon(iconFile.getAbsolutePath()).getImage();
                 trayImage.flush();
 
-                synchronized (tray) {
-                    if (!isActive) {
-                        // here we init. everything
-                        isActive = true;
+                if (!isActive) {
+                    // here we init. everything
+                    isActive = true;
 
-                        menu = new SwingSystemTrayMenuPopup();
-                        trayIcon = new TrayIcon(trayImage);
+                    trayIcon = new TrayIcon(trayImage);
 
-                        // appindicators don't support this, so we cater to the lowest common denominator
-                        // trayIcon.setToolTip(SwingSystemTray.this.appName);
+                    // appindicators DO NOT support anything other than PLAIN gtk-menus
+                    //   they ALSO do not support tooltips, so we cater to the lowest common denominator
+                    // trayIcon.setToolTip(SwingSystemTray.this.appName);
 
-                        trayIcon.addMouseListener(new MouseAdapter() {
-                            @Override
-                            public
-                            void mousePressed(MouseEvent e) {
-                                Dimension size = menu.getPreferredSize();
+                    trayIcon.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public
+                        void mousePressed(MouseEvent e) {
+                            Dimension size = menu.getPreferredSize();
 
-                                Point point = e.getPoint();
-                                Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
+                            Point point = e.getPoint();
+                            Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
-                                int x = point.x;
-                                int y = point.y;
+                            int x = point.x;
+                            int y = point.y;
 
-                                if (y < bounds.y) {
-                                    y = bounds.y;
-                                }
-                                else if (y + size.height > bounds.y + bounds.height) {
-                                    // our menu cannot have the top-edge snap to the mouse
-                                    // so we make the bottom-edge snap to the mouse
-                                    y -= size.height; // snap to edge of mouse
-                                }
-
-                                if (x < bounds.x) {
-                                    x = bounds.x;
-                                }
-                                else if (x + size.width > bounds.x + bounds.width) {
-                                    // our menu cannot have the left-edge snap to the mouse
-                                    // so we make the right-edge snap to the mouse
-                                    x -= size.width; // snap to edge of mouse
-                                }
-
-                                // voodoo to get this to popup to have the correct parent
-                                // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
-                                menu.setInvoker(menu);
-                                menu.setLocation(x, y);
-                                menu.setVisible(true);
-                                menu.setFocusable(true);
-                                menu.requestFocusInWindow();
+                            if (y < bounds.y) {
+                                y = bounds.y;
                             }
-                        });
+                            else if (y + size.height > bounds.y + bounds.height) {
+                                // our menu cannot have the top-edge snap to the mouse
+                                // so we make the bottom-edge snap to the mouse
+                                y -= size.height; // snap to edge of mouse
+                            }
 
-                        try {
-                            SwingSystemTray.this.tray.add(trayIcon);
-                        } catch (AWTException e) {
-                            logger.error("TrayIcon could not be added.", e);
+                            if (x < bounds.x) {
+                                x = bounds.x;
+                            }
+                            else if (x + size.width > bounds.x + bounds.width) {
+                                // our menu cannot have the left-edge snap to the mouse
+                                // so we make the right-edge snap to the mouse
+                                x -= size.width; // snap to edge of mouse
+                            }
+
+                            // voodoo to get this to popup to have the correct parent
+                            // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
+                            menu.setInvoker(menu);
+                            menu.setLocation(x, y);
+                            menu.setVisible(true);
+                            menu.setFocusable(true);
+                            menu.requestFocusInWindow();
                         }
-                    } else {
-                        tray.trayIcon.setImage(trayImage);
+                    });
+
+                    try {
+                        SwingSystemTray.this.tray.add(trayIcon);
+                    } catch (AWTException e) {
+                        logger.error("TrayIcon could not be added.", e);
                     }
+                } else {
+                    trayIcon.setImage(trayImage);
                 }
             }
         });
@@ -273,18 +262,19 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
             @Override
             public
             void run() {
-                SwingSystemTray tray = SwingSystemTray.this;
-                synchronized (tray) {
-                    synchronized (menuEntries) {
-                        MenuEntry menuEntry = getMenuEntry(menuText);
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = getMenuEntry(menuText);
 
-                        if (menuEntry != null) {
-                            throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
-                        }
-                        else {
-                            menuEntry = new SwingMenuEntryItem(menuText, imagePath, callback, tray);
-                            menuEntries.add(menuEntry);
-                        }
+                    if (menuEntry != null) {
+                        throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
+                    }
+                    else {
+                        // must always be called on the EDT
+                        menuEntry = new SwingMenuEntryItem(callback, SwingSystemTray.this);
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
+
+                        menuEntries.add(menuEntry);
                     }
                 }
             }

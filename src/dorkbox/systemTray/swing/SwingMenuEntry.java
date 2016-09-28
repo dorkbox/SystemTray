@@ -30,18 +30,18 @@ abstract
 class SwingMenuEntry implements MenuEntry {
     private final int id = SwingSystemTray.MENU_ID_COUNTER.getAndIncrement();
 
-    private final SwingSystemTrayMenuPopup menu;
+    final SwingSystemTray systemTray;
     final JComponent menuItem;
 
     // this have to be volatile, because they can be changed from any thread
     private volatile String text;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntry(JComponent menuItem, final SwingSystemTrayMenuPopup menu) {
+    SwingMenuEntry(JComponent menuItem, final SwingSystemTray systemTray) {
         this.menuItem = menuItem;
-        this.menu = menu;
+        this.systemTray = systemTray;
 
-        menu.add(menuItem);
+        systemTray.getMenu().add(menuItem);
     }
 
     /**
@@ -137,7 +137,7 @@ class SwingMenuEntry implements MenuEntry {
             public
             void run() {
                 removePrivate();
-                menu.remove(menuItem);
+                systemTray.getMenu().remove(menuItem);
             }
         });
     }

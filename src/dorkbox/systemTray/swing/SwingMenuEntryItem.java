@@ -26,17 +26,17 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.SwingUtil;
 
+public
 class SwingMenuEntryItem extends SwingMenuEntry {
     private final ActionListener swingCallback;
 
     private volatile boolean hasLegitIcon = false;
     private volatile SystemTrayMenuAction callback;
 
+    public
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryItem(final String label, final File image, final SystemTrayMenuAction callback, final SwingSystemTray systemTray) {
-        super(new JMenuItem(label), systemTray);
-
-        setText(label);
+    SwingMenuEntryItem(final SystemTrayMenuAction callback, final SwingSystemTray systemTray) {
+        super(new JMenuItem(), systemTray);
 
         this.callback = callback;
         swingCallback = new ActionListener() {
@@ -49,8 +49,6 @@ class SwingMenuEntryItem extends SwingMenuEntry {
         };
 
         ((JMenuItem) menuItem).addActionListener(swingCallback);
-
-        setImage_(image);
     }
 
     @Override
@@ -61,9 +59,8 @@ class SwingMenuEntryItem extends SwingMenuEntry {
 
     private
     void handle() {
-        SystemTrayMenuAction cb = this.callback;
-        if (cb != null) {
-            cb.onClick(systemTray, this);
+        if (callback != null) {
+            callback.onClick(systemTray, this);
         }
     }
 

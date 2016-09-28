@@ -15,17 +15,19 @@
  */
 package dorkbox.systemTray.swing;
 
-import dorkbox.util.DelayTimer;
-import dorkbox.util.Property;
-import dorkbox.util.SwingUtil;
-
-import javax.swing.JPopupMenu;
 import java.awt.Dimension;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import javax.swing.JPopupMenu;
+
+import dorkbox.util.DelayTimer;
+import dorkbox.util.Property;
+import dorkbox.util.SwingUtil;
+
+public
 class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
@@ -44,6 +46,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 //    protected boolean mouseStillOnMenu;
 //    private JDialog hiddenDialog;
 
+    public
     SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
