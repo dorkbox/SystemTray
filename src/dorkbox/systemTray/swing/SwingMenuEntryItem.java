@@ -16,6 +16,7 @@
 
 package dorkbox.systemTray.swing;
 
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -28,6 +29,20 @@ import dorkbox.util.SwingUtil;
 
 public
 class SwingMenuEntryItem extends SwingMenuEntry {
+    private static
+    class AdjustedJMenuItem extends JMenuItem {
+        @Override
+        public
+        Insets getMargin() {
+            Insets margin = super.getMargin();
+            if (margin != null) {
+                margin.set(2, -2, 2, 4);
+            }
+            return margin;
+        }
+    }
+
+
     private final ActionListener swingCallback;
 
     private volatile boolean hasLegitIcon = false;
@@ -36,7 +51,7 @@ class SwingMenuEntryItem extends SwingMenuEntry {
     public
     // this is ALWAYS called on the EDT.
     SwingMenuEntryItem(final SystemTrayMenuAction callback, final SwingSystemTray systemTray) {
-        super(new JMenuItem(), systemTray);
+        super(new AdjustedJMenuItem(), systemTray);
 
         this.callback = callback;
         swingCallback = new ActionListener() {

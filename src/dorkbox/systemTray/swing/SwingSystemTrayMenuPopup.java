@@ -22,6 +22,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
+import javax.swing.border.EmptyBorder;
 
 import dorkbox.util.DelayTimer;
 import dorkbox.util.Property;
@@ -50,7 +51,8 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
     SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
-//        setBorder(new BorderUIResource.EmptyBorderUIResource(0,0,0,0));
+//        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
+        setBorder(new EmptyBorder(1, 1, 1, 1));
 
         this.timer = new DelayTimer("PopupMenuHider", true, new Runnable() {
 
