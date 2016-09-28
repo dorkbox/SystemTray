@@ -16,7 +16,6 @@
 package dorkbox.systemTray.linux.jna;
 
 import static dorkbox.systemTray.SystemTray.logger;
-import static dorkbox.systemTray.linux.jna.Gobject.g_idle_add_full;
 
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -204,6 +203,9 @@ class Gtk {
 
                         // blocks unit quit
                         gtk_main();
+
+                        // clean up threads
+                        gdk_threads_leave();
                     }
                 };
                 gtkUpdateThread.setName("GTK Native Event Loop");
@@ -377,7 +379,7 @@ class Gtk {
                 }
 
                 // the correct way to do it. Add with a slightly higher value
-                g_idle_add_full(100, callback, null, null);
+                gdk_threads_add_idle_full(100, callback, null, null);
             }
         }
     }
@@ -493,5 +495,9 @@ class Gtk {
     public static native void gtk_widget_show_all(Pointer widget);
 
     public static native void gtk_widget_destroy(Pointer widget);
+
+
+    public static native void gdk_threads_leave();
+    public static native int gdk_threads_add_idle_full(int priority, FuncCallback function, Pointer data, Pointer notify);
 }
 
