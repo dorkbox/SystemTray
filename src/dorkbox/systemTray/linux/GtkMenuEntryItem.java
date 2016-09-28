@@ -30,9 +30,11 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     private static File transparentIcon = null;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
+
     // these have to be volatile, because they can be changed from any thread
     private volatile SystemTrayMenuAction callback;
     private volatile Pointer image;
+
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private volatile boolean hasLegitIcon = true;
 
@@ -84,7 +86,8 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     }
 
     /**
-     * the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
+     * the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images.
+     * This is primarily only with AppIndicators, although not always.
      * <p>
      * called on the DISPATCH thread
      */
@@ -102,7 +105,6 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
 
         if (everyoneElseHasImages) {
             image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
-
             Gtk.gtk_image_menu_item_set_image(menuItem, image);
 
             //  must always re-set always-show after setting the image
@@ -139,7 +141,6 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
                 if (imageFile != null) {
                     image = Gtk.gtk_image_new_from_file(imageFile.getAbsolutePath());
                     Gtk.gtk_image_menu_item_set_image(menuItem, image);
-                    Gobject.g_object_ref_sink(image);
 
                     //  must always re-set always-show after setting the image
                     Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
@@ -155,6 +156,7 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
 
         if (image != null) {
             Gtk.gtk_widget_destroy(image);
+            image = null;
         }
     }
 }
