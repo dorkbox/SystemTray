@@ -99,6 +99,7 @@ class TestTraySwt {
         };
 
         this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        this.systemTray.addMenuSpacer();
 
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override

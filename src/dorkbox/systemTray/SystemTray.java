@@ -697,9 +697,16 @@ class SystemTray {
      * Must be wrapped in a synchronized block for object visibility
      */
     protected
-    MenuEntry getMenuEntry(String menuText) {
+    MenuEntry getMenuEntry(final String menuText) {
+        if (menuText == null) {
+            return null;
+        }
+
         for (MenuEntry entry : menuEntries) {
-            if (entry.getText().equals(menuText)) {
+            String text = entry.getText();
+
+            // text can be null
+            if (menuText.equals(text)) {
                 return entry;
             }
         }
@@ -832,7 +839,6 @@ class SystemTray {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    @Deprecated
     public abstract
     void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback);
 
@@ -1169,8 +1175,6 @@ class SystemTray {
             throw new NullPointerException("No menu entry exists for menuEntry");
         }
 
-        final String label = menuEntry.getText();
-
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue = new AtomicBoolean(false);
@@ -1183,14 +1187,26 @@ class SystemTray {
                     synchronized (menuEntries) {
                         for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
                             final MenuEntry entry = iterator.next();
-                            if (entry.getText()
-                                     .equals(label)) {
+                            if (entry == menuEntry) {
                                 iterator.remove();
 
                                 // this will also reset the menu
                                 menuEntry.remove();
                                 hasValue.set(true);
                                 break;
+                            }
+                        }
+
+                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                        if (!menuEntries.isEmpty()) {
+                            if (menuEntries.get(0) instanceof MenuSpacer) {
+                                removeMenuEntry(menuEntries.get(0));
+                            }
+                        }
+                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                        if (!menuEntries.isEmpty()) {
+                            if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
+                                removeMenuEntry(menuEntries.get(menuEntries.size()-1));
                             }
                         }
                     }
@@ -1209,11 +1225,11 @@ class SystemTray {
 
             }
         } catch (InterruptedException e) {
-            logger.error("Error removing menu entry: {}", label);
+            logger.error("Error removing menu entry: {}", menuEntry.getText());
         }
 
         if (!hasValue.get()) {
-            throw new NullPointerException("Menu entry '" + label + "'not found in list while trying to remove it.");
+            throw new NullPointerException("Menu entry '" + menuEntry.getText() + "'not found in list while trying to remove it.");
         }
     }
 
@@ -1261,5 +1277,21 @@ class SystemTray {
             throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
         }
     }
+
+
+    /**
+     * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
+     * menu, will also be removed. For example:
+     *
+     * Original     Entry3 deleted     Result
+     *
+     * <Status>         <Status>       <Status>
+     * Entry1           Entry1         Entry1
+     * Entry2      ->   Entry2    ->   Entry2
+     * <Spacer>         (deleted)
+     * Entry3           (deleted)
+     */
+    public abstract
+    void addMenuSpacer();
 }
 

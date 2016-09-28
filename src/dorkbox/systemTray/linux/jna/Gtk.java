@@ -317,6 +317,8 @@ class Gtk {
      */
     public static
     void dispatch(final Runnable runnable) {
+        // FIXME: on mac, check -XstartOnFirstThread.. there are issues with javaFX (possibly SWT as well)
+
         if (alreadyRunningGTK) {
             // SWT/JavaFX
             if (SystemTray.isJavaFxLoaded) {
@@ -442,6 +444,8 @@ class Gtk {
     public static native Pointer gtk_menu_new();
 
     public static native Pointer gtk_menu_item_new_with_label(String label);
+
+    public static native Pointer gtk_separator_menu_item_new();
 
     // to create a menu entry WITH an icon.
     public static native Pointer gtk_image_new_from_file(String iconPath);

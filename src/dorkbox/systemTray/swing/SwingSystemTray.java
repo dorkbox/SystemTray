@@ -17,7 +17,6 @@ package dorkbox.systemTray.swing;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -28,9 +27,9 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTrayMenuAction;
@@ -49,10 +48,9 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
 class SwingSystemTray extends dorkbox.systemTray.SystemTray {
-    volatile SwingSystemTrayMenuPopup menu;
+    static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
 
-    volatile JMenuItem connectionStatusItem;
-    private volatile String statusText = null;
+    volatile SwingSystemTrayMenuPopup menu;
 
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
@@ -96,17 +94,27 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                         menuEntry.remove();
                     }
                     tray.menuEntries.clear();
-
-                    tray.connectionStatusItem = null;
                 }
             }
         });
     }
 
+    protected SwingSystemTrayMenuPopup getMenu() {
+        return menu;
+    }
+
+
     @Override
     public
     String getStatus() {
-        return this.statusText;
+        synchronized (menuEntries) {
+            MenuEntry menuEntry = menuEntries.get(0);
+            if (menuEntry instanceof SwingMenuEntryStatus) {
+                return menuEntry.getText();
+            }
+        }
+
+        return null;
     }
 
     protected
@@ -118,32 +126,64 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     @Override
     public
     void setStatus(final String statusText) {
-        this.statusText = statusText;
-
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 SwingSystemTray tray = SwingSystemTray.this;
                 synchronized (tray) {
-                    if (tray.connectionStatusItem == null) {
-                        final JMenuItem connectionStatusItem = new JMenuItem(statusText);
-                        Font font = connectionStatusItem.getFont();
-                        Font font1 = font.deriveFont(Font.BOLD);
-                        connectionStatusItem.setFont(font1);
+                    synchronized (menuEntries) {
+                        // status is ALWAYS at 0 index...
+                        SwingMenuEntry menuEntry = null;
+                        if (!menuEntries.isEmpty()) {
+                            menuEntry = (SwingMenuEntry) menuEntries.get(0);
+                        }
 
-                        connectionStatusItem.setEnabled(false);
-                        tray.menu.add(connectionStatusItem);
+                        if (menuEntry instanceof SwingMenuEntryStatus) {
+                            // set the text or delete...
 
-                        tray.connectionStatusItem = connectionStatusItem;
-                    }
-                    else {
-                        tray.connectionStatusItem.setText(statusText);
+                            if (statusText == null) {
+                                // delete
+                                removeMenuEntry(menuEntry);
+                            }
+                            else {
+                                // set text
+                                menuEntry.setText(statusText);
+                            }
+
+                        } else {
+                            // create a new one
+                            menuEntry = new SwingMenuEntryStatus(statusText, tray);
+                            // status is ALWAYS at 0 index...
+                            menuEntries.add(0, menuEntry);
+                        }
                     }
                 }
             }
         });
     }
+
+
+    @Override
+    public
+    void addMenuSpacer() {
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                SwingSystemTray tray = SwingSystemTray.this;
+                synchronized (tray) {
+                    synchronized (menuEntries) {
+                        synchronized (menuEntries) {
+                            MenuEntry menuEntry = new SwingMenuEntrySpacer(tray);
+                            menuEntries.add(menuEntry);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
 
     @Override
     protected
@@ -244,7 +284,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                             throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
                         }
                         else {
-                            menuEntry = new SwingMenuEntry(menu, menuText, imagePath, callback, tray);
+                            menuEntry = new SwingMenuEntryItem(menuText, imagePath, callback, tray);
                             menuEntries.add(menuEntry);
                         }
                     }
@@ -287,7 +327,6 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     }
 
     @Override
-    @Deprecated
     public
     void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) {
         if (imageStream == null) {

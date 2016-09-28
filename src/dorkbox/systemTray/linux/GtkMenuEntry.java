@@ -18,108 +18,49 @@ package dorkbox.systemTray.linux;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.MenuEntry;
-import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.linux.jna.GCallback;
-import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
-class GtkMenuEntry implements MenuEntry, GCallback {
-    private static final AtomicInteger ID_COUNTER = new AtomicInteger();
-    private final int id = ID_COUNTER.getAndIncrement();
+abstract
+class GtkMenuEntry implements MenuEntry {
+    private final int id = GtkTypeSystemTray.MENU_ID_COUNTER.getAndIncrement();
 
     final Pointer menuItem;
-    final GtkTypeSystemTray parent;
+    final GtkTypeSystemTray systemTray;
 
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final NativeLong nativeLong;
-
-    // these have to be volatile, because they can be changed from any thread
+    // this have to be volatile, because they can be changed from any thread
     private volatile String text;
-    private volatile SystemTrayMenuAction callback;
-    private volatile Pointer image;
-
-    // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
-    private volatile boolean hasLegitIcon = true;
-    private static File transparentIcon = null;
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntry(final String label, final File imagePath, final SystemTrayMenuAction callback, final GtkTypeSystemTray parent) {
-        this.parent = parent;
-        this.text = label;
-        this.callback = callback;
-
-        menuItem = Gtk.gtk_image_menu_item_new_with_label(label);
-
-        if (transparentIcon == null) {
-            transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
-        }
-
-        hasLegitIcon = imagePath != null;
-        if (hasLegitIcon) {
-            // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
-            // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
-            // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
-            image = Gtk.gtk_image_new_from_file(imagePath.getAbsolutePath());
-
-            Gtk.gtk_image_menu_item_set_image(menuItem, image);
-
-            //  must always re-set always-show after setting the image
-            Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
-        }
-
-        nativeLong = Gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
+    GtkMenuEntry(Pointer menuItem, final GtkTypeSystemTray systemTray) {
+        this.systemTray = systemTray;
+        this.menuItem = menuItem;
     }
 
     /**
      * the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
      *
-     * called on the DISPATCH thread
+     * always called on the DISPATCH thread
      */
-    void setSpacerImage(final boolean everyoneElseHasImages) {
-        if (hasLegitIcon) {
-            // we have a legit icon, so there is nothing else we can do.
-            return;
-        }
+    abstract
+    void setSpacerImage(final boolean everyoneElseHasImages);
 
-        if (image != null) {
-            Gtk.gtk_widget_destroy(image);
-            image = null;
-            Gtk.gtk_widget_show_all(menuItem);
-        }
+    /**
+     * must always be called in the GTK thread
+     */
+    abstract
+    void renderText(final String text);
 
-        if (everyoneElseHasImages) {
-            image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
+    abstract
+    void setImage_(final File imageFile);
 
-            Gtk.gtk_image_menu_item_set_image(menuItem, image);
-
-            //  must always re-set always-show after setting the image
-            Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
-        }
-
-        Gtk.gtk_widget_show_all(menuItem);
-    }
-
-    // called by native code
-    @Override
-    public
-    int callback(final Pointer instance, final Pointer data) {
-        final SystemTrayMenuAction cb = this.callback;
-        if (cb != null) {
-            Gtk.proxyClick(cb, parent, GtkMenuEntry.this);
-        }
-
-        return Gtk.TRUE;
-    }
 
     @Override
     public
@@ -128,50 +69,21 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     @Override
-    public
+    public final
     void setText(final String newText) {
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                text = newText;
-                Gtk.gtk_menu_item_set_label(menuItem, newText);
-
-                Gtk.gtk_widget_show_all(menuItem);
-            }
-        });
-    }
-
-    private
-    void setImage_(final File imageFile) {
-        hasLegitIcon = imageFile != null;
+        text = newText;
 
         Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
-                    image = null;
-                    Gtk.gtk_widget_show_all(menuItem);
-                }
-
-                if (hasLegitIcon) {
-                    image = Gtk.gtk_image_new_from_file(imageFile.getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(menuItem, image);
-                    Gobject.g_object_ref_sink(image);
-
-                    //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
-                }
-
-                Gtk.gtk_widget_show_all(menuItem);
+                renderText(text);
             }
         });
     }
 
     @Override
-    public
+    public final
     void setImage(final String imagePath) {
         if (imagePath == null) {
             setImage_(null);
@@ -182,7 +94,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     @Override
-    public
+    public final
     void setImage(final URL imageUrl) {
         if (imageUrl == null) {
             setImage_(null);
@@ -193,7 +105,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     @Override
-    public
+    public final
     void setImage(final String cacheName, final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
@@ -204,7 +116,7 @@ class GtkMenuEntry implements MenuEntry, GCallback {
     }
 
     @Override
-    public
+    public final
     void setImage(final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
@@ -214,56 +126,41 @@ class GtkMenuEntry implements MenuEntry, GCallback {
         }
     }
 
-    @Override
-    public
-    boolean hasImage() {
-        return hasLegitIcon;
-    }
-
-    @Override
-    public
-    void setCallback(final SystemTrayMenuAction callback) {
-        this.callback = callback;
-    }
-
     /**
      * This is ONLY called via systray.menuEntry.remove() !!
      */
-    public
+    public final
     void remove() {
         Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
+                Gtk.gtk_container_remove(systemTray.getMenu(), menuItem);
+                Gtk.gtk_menu_shell_deactivate(systemTray.getMenu(), menuItem);
+                Gtk.gtk_widget_destroy(menuItem);
+
                 removePrivate();
 
                 // have to rebuild the menu now...
-                parent.deleteMenu();
-                parent.createMenu();
+                systemTray.deleteMenu();
+                systemTray.createMenu();
             }
         });
     }
 
-    void removePrivate() {
-        callback = null;
-        Gtk.gtk_menu_shell_deactivate(parent.getMenu(), menuItem);
-
-        if (image != null) {
-            Gtk.gtk_widget_destroy(image);
-        }
-
-        Gtk.gtk_widget_destroy(menuItem);
-    }
+    // called when this item is removed. Necessary to cleanup/remove itself
+    abstract
+    void removePrivate();
 
     @Override
-    public
+    public final
     int hashCode() {
         return id;
     }
 
 
     @Override
-    public
+    public final
     boolean equals(Object obj) {
         if (this == obj) {
             return true;

@@ -16,66 +16,43 @@
 
 package dorkbox.systemTray.swing;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
+import javax.swing.JComponent;
 
 import dorkbox.systemTray.MenuEntry;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
+abstract
 class SwingMenuEntry implements MenuEntry {
-    private final SwingSystemTrayMenuPopup parent;
-    private final SystemTray systemTray;
-    private final JMenuItem menuItem;
-    private final ActionListener swingCallback;
+    private final int id = SwingSystemTray.MENU_ID_COUNTER.getAndIncrement();
 
-    private volatile boolean hasLegitIcon = false;
+    final SwingSystemTray systemTray;
+    final JComponent menuItem;
+
+    // this have to be volatile, because they can be changed from any thread
     private volatile String text;
-    private volatile SystemTrayMenuAction callback;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntry(final SwingSystemTrayMenuPopup parentMenu, final String label, final File imagePath, final SystemTrayMenuAction callback,
-                   final SystemTray systemTray) {
-        this.parent = parentMenu;
-        this.text = label;
-        this.callback = callback;
+    SwingMenuEntry(JComponent menuItem, final SwingSystemTray systemTray) {
+        this.menuItem = menuItem;
         this.systemTray = systemTray;
 
-        swingCallback = new ActionListener() {
-            @Override
-            public
-            void actionPerformed(ActionEvent e) {
-                // we want it to run on the EDT
-                handle();
-            }
-        };
-
-        menuItem = new JMenuItem(label);
-        menuItem.addActionListener(swingCallback);
-
-        if (imagePath != null) {
-            hasLegitIcon = true;
-            setImageIcon(imagePath);
-        }
-
-        parentMenu.add(menuItem);
+        systemTray.getMenu().add(menuItem);
     }
 
-    private
-    void handle() {
-        SystemTrayMenuAction cb = this.callback;
-        if (cb != null) {
-            cb.onClick(systemTray, this);
-        }
-    }
+    /**
+     * must always be called in the GTK thread
+     */
+    abstract
+    void renderText(final String text);
+
+    abstract
+    void setImage_(final File imageFile);
+
 
     @Override
     public
@@ -92,38 +69,13 @@ class SwingMenuEntry implements MenuEntry {
             @Override
             public
             void run() {
-                menuItem.setText(newText);
+                renderText(newText);
             }
         });
-    }
-
-    private
-    void setImage_(final File imagePath) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                setImageIcon(imagePath);
-            }
-        });
-    }
-
-    // always called on the EDT
-    private
-    void setImageIcon(final File imagePath) {
-        if (imagePath != null) {
-            hasLegitIcon = true;
-            ImageIcon origIcon = new ImageIcon(imagePath.getAbsolutePath());
-            menuItem.setIcon(origIcon);
-        }
-        else {
-            hasLegitIcon = false;
-            menuItem.setIcon(null);
-        }
     }
 
     @Override
-    public
+    public final
     void setImage(final String imagePath) {
         if (imagePath == null) {
             setImage_(null);
@@ -134,7 +86,7 @@ class SwingMenuEntry implements MenuEntry {
     }
 
     @Override
-    public
+    public final
     void setImage(final URL imageUrl) {
         if (imageUrl == null) {
             setImage_(null);
@@ -145,7 +97,7 @@ class SwingMenuEntry implements MenuEntry {
     }
 
     @Override
-    public
+    public final
     void setImage(final String cacheName, final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
@@ -156,7 +108,7 @@ class SwingMenuEntry implements MenuEntry {
     }
 
     @Override
-    public
+    public final
     void setImage(final InputStream imageStream) {
         if (imageStream == null) {
             setImage_(null);
@@ -167,27 +119,43 @@ class SwingMenuEntry implements MenuEntry {
     }
 
     @Override
-    public
-    boolean hasImage() {
-        return hasLegitIcon;
-    }
-
-    @Override
-    public
-    void setCallback(final SystemTrayMenuAction callback) {
-        this.callback = callback;
-    }
-
-    @Override
-    public
+    public final
     void remove() {
         SwingUtil.invokeAndWait(new Runnable() {
             @Override
             public
             void run() {
-                menuItem.removeActionListener(swingCallback);
-                parent.remove(menuItem);
+                removePrivate();
+                systemTray.getMenu().remove(menuItem);
             }
         });
+    }
+
+    // called when this item is removed. Necessary to cleanup/remove itself
+    abstract
+    void removePrivate();
+
+    @Override
+    public final
+    int hashCode() {
+        return id;
+    }
+
+
+    @Override
+    public final
+    boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        SwingMenuEntry other = (SwingMenuEntry) obj;
+        return this.id == other.id;
     }
 }
