@@ -15,34 +15,30 @@
  */
 package dorkbox.systemTray.linux;
 
-import java.io.File;
-
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.MenuStatus;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
-class GtkMenuEntryStatus extends GtkMenuEntry implements MenuStatus {
+// you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
+// where a GtkStatusIndicator + SwingTray will have everything lined up. (with or without icons).  This is to normalize how it looks
+class GtkMenuEntryStatus extends GtkMenuEntryItem {
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuEntryStatus(final String label, final GtkTypeSystemTray parent) {
-        super(Gtk.gtk_menu_item_new_with_label(""), parent);
-        setText(label);
-    }
-
-    @Override
-    void setSpacerImage(final boolean everyoneElseHasImages) {
+        super(label, null, null, parent);
     }
 
     // called in the GTK thread
     @Override
     void renderText(final String text) {
         // evil hacks abound...
+        // https://developer.gnome.org/pango/stable/PangoMarkupFormat.html
+
         Pointer label = Gtk.gtk_bin_get_child(menuItem);
         Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
         Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", text);
@@ -53,22 +49,7 @@ class GtkMenuEntryStatus extends GtkMenuEntry implements MenuStatus {
     }
 
     @Override
-    void setImage_(final File imageFile) {
-    }
-
-    @Override
-    void removePrivate() {
-    }
-
-    @Override
-    public
-    boolean hasImage() {
-        return false;
-    }
-
-    @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
-
     }
 }
