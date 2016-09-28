@@ -58,8 +58,9 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
     public
-    AppIndicatorTray() {
-        super();
+    AppIndicatorTray(final SystemTray systemTray) {
+        super(systemTray);
+
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
@@ -103,8 +104,7 @@ class AppIndicatorTray extends GtkTypeSystemTray {
         }
     }
 
-    @Override
-    protected
+    public
     void setIcon_(final File iconFile) {
         dispatch(new Runnable() {
             @Override

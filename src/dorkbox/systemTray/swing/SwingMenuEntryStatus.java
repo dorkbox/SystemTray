@@ -26,20 +26,20 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 class SwingMenuEntryStatus extends SwingMenuEntry implements MenuStatus {
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryStatus(final String label, final SwingSystemTray systemTray) {
-        super(new JMenuItem(), systemTray);
+    SwingMenuEntryStatus(final SwingMenu parentMenu, final String label) {
+        super(parentMenu, new JMenuItem());
         setText(label);
     }
 
     // called in the EDT thread
     @Override
     void renderText(final String text) {
-        ((JMenuItem) menuItem).setText(text);
-        Font font = menuItem.getFont();
+        ((JMenuItem) _native).setText(text);
+        Font font = _native.getFont();
         Font font1 = font.deriveFont(Font.BOLD);
-        menuItem.setFont(font1);
+        _native.setFont(font1);
 
-        menuItem.setEnabled(false);
+        _native.setEnabled(false);
     }
 
     @Override

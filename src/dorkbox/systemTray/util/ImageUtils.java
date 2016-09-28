@@ -217,6 +217,9 @@ class ImageUtils {
             return newFile;
         }
 
+        // make sure the directory exists
+        newFile.getParentFile().mkdirs();
+
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(0,0,0,0));

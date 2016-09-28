@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.systemTray.swing;
 
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -27,43 +25,35 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.SwingUtil;
 
-public
 class SwingMenuEntryItem extends SwingMenuEntry {
-    private static
-    class AdjustedJMenuItem extends JMenuItem {
-        @Override
-        public
-        Insets getMargin() {
-            Insets margin = super.getMargin();
-            if (margin != null) {
-                margin.set(2, -2, 2, 4);
-            }
-            return margin;
-        }
-    }
-
 
     private final ActionListener swingCallback;
 
     private volatile boolean hasLegitIcon = false;
     private volatile SystemTrayMenuAction callback;
 
-    public
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryItem(final SystemTrayMenuAction callback, final SwingSystemTray systemTray) {
-        super(new AdjustedJMenuItem(), systemTray);
-
+    SwingMenuEntryItem(final SwingMenu parentMenu, final SystemTrayMenuAction callback) {
+        super(parentMenu, new AdjustedJMenuItem());
         this.callback = callback;
-        swingCallback = new ActionListener() {
-            @Override
-            public
-            void actionPerformed(ActionEvent e) {
-                // we want it to run on the EDT
-                handle();
-            }
-        };
 
-        ((JMenuItem) menuItem).addActionListener(swingCallback);
+
+        if (callback != null) {
+            _native.setEnabled(true);
+            swingCallback = new ActionListener() {
+                @Override
+                public
+                void actionPerformed(ActionEvent e) {
+                    // we want it to run on the EDT
+                    handle();
+                }
+            };
+
+            ((JMenuItem) _native).addActionListener(swingCallback);
+        } else {
+            _native.setEnabled(false);
+            swingCallback = null;
+        }
     }
 
     @Override
@@ -75,7 +65,7 @@ class SwingMenuEntryItem extends SwingMenuEntry {
     private
     void handle() {
         if (callback != null) {
-            callback.onClick(systemTray, this);
+            callback.onClick(getParent().getSystemTray(), getParent(), this);
         }
     }
 
@@ -87,13 +77,13 @@ class SwingMenuEntryItem extends SwingMenuEntry {
 
     @Override
     void removePrivate() {
-        ((JMenuItem) menuItem).removeActionListener(swingCallback);
+        ((JMenuItem) _native).removeActionListener(swingCallback);
     }
 
     // always called in the EDT
     @Override
     void renderText(final String text) {
-        ((JMenuItem) menuItem).setText(text);
+        ((JMenuItem) _native).setText(text);
     }
 
     @Override
@@ -106,10 +96,10 @@ class SwingMenuEntryItem extends SwingMenuEntry {
             void run() {
                 if (imageFile != null) {
                     ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenuItem) menuItem).setIcon(origIcon);
+                    ((JMenuItem) _native).setIcon(origIcon);
                 }
                 else {
-                    ((JMenuItem) menuItem).setIcon(null);
+                    ((JMenuItem) _native).setIcon(null);
                 }
             }
         });

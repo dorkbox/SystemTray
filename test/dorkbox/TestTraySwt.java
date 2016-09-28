@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
@@ -61,7 +62,7 @@ class TestTraySwt {
         helloWorldTest.pack();
 
 
-        this.systemTray = SystemTray.getSystemTray();
+        this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
@@ -73,7 +74,7 @@ class TestTraySwt {
         callbackGreen = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final dorkbox.systemTray.Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
                 systemTray.setIcon(GREEN_MAIL);
 
@@ -87,7 +88,7 @@ class TestTraySwt {
         callbackGray = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
 
@@ -104,7 +105,7 @@ class TestTraySwt {
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.shutdown();
 
                 display.asyncExec(new Runnable() {

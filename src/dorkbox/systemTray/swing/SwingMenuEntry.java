@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.systemTray.swing;
 
 import java.io.File;
@@ -22,26 +21,33 @@ import java.net.URL;
 
 import javax.swing.JComponent;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 abstract
 class SwingMenuEntry implements MenuEntry {
-    private final int id = SwingSystemTray.MENU_ID_COUNTER.getAndIncrement();
+    private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 
-    final SwingSystemTray systemTray;
-    final JComponent menuItem;
+    private final SwingMenu parentMenu;
+    final JComponent _native;
 
     // this have to be volatile, because they can be changed from any thread
     private volatile String text;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntry(JComponent menuItem, final SwingSystemTray systemTray) {
-        this.menuItem = menuItem;
-        this.systemTray = systemTray;
+    SwingMenuEntry(final SwingMenu parentMenu, final JComponent menuItem) {
+        this.parentMenu = parentMenu;
+        this._native = menuItem;
 
-        systemTray.getMenu().add(menuItem);
+        parentMenu._native.add(menuItem);
+    }
+
+    @Override
+    public
+    Menu getParent() {
+        return parentMenu;
     }
 
     /**
@@ -137,7 +143,7 @@ class SwingMenuEntry implements MenuEntry {
             public
             void run() {
                 removePrivate();
-                systemTray.getMenu().remove(menuItem);
+                parentMenu._native.remove(_native);
             }
         });
     }

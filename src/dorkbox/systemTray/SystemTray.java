@@ -49,7 +49,7 @@ import dorkbox.util.process.ShellProcessBuilder;
  * Factory and base-class for system tray implementations.
  */
 @SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
-public abstract
+public
 class SystemTray extends Menu {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
@@ -121,6 +121,7 @@ class SystemTray extends Menu {
 
 
     private static volatile SystemTray systemTray = null;
+    private static volatile Menu systemTrayMenu = null;
 
     public final static boolean isJavaFxLoaded;
     public final static boolean isSwtLoaded;
@@ -157,13 +158,15 @@ class SystemTray extends Menu {
             return;
         }
 
+        systemTray = new SystemTray();
+
         // no tray in a headless environment
         if (GraphicsEnvironment.isHeadless()) {
             logger.error("Cannot use the SystemTray in a headless environment");
             throw new HeadlessException();
         }
 
-        Class<? extends SystemTray> trayType = null;
+        Class<? extends Menu> trayType = null;
 
         boolean isKDE = false;
 
@@ -577,10 +580,10 @@ class SystemTray extends Menu {
         if (trayType == null) {
             // unsupported tray
             logger.error("Unable to discover what tray implementation to use!");
-            systemTray = null;
+            systemTrayMenu = null;
         }
         else {
-            SystemTray systemTray_ = null;
+            Menu menu_ = null;
 
             /*
              *  appIndicator/gtk require strings (which is the path)
@@ -612,14 +615,14 @@ class SystemTray extends Menu {
                     }
                 }
 
-                systemTray_ = (SystemTray) trayType.getConstructors()[0].newInstance();
+                menu_ = (Menu) trayType.getConstructors()[0].newInstance(systemTray);
 
                 logger.info("Successfully Loaded: {}", trayType.getSimpleName());
             } catch (Exception e) {
                 logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
 
-            systemTray = systemTray_;
+            systemTrayMenu = menu_;
 
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
@@ -671,36 +674,82 @@ class SystemTray extends Menu {
      * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
      */
     public static
-    SystemTray getSystemTray() {
+    SystemTray get() {
         init();
         return systemTray;
     }
 
 
-    protected
+    private
     SystemTray() {
+        super(null, null);
     }
 
 
-    public abstract
-    void shutdown();
+    public
+    void shutdown() {
+        final Menu menu = systemTrayMenu;
+
+        if (menu instanceof AppIndicatorTray) {
+            ((AppIndicatorTray) menu).shutdown();
+        }
+        else if (menu instanceof GtkSystemTray) {
+            ((GtkSystemTray) menu).shutdown();
+        } else {
+            // swing
+            ((SwingSystemTray) menu).shutdown();
+        }
+    }
 
     /**
      * Gets the 'status' string assigned to the system tray
      */
-    public abstract
-    String getStatus();
+    public
+    String getStatus() {
+        final Menu menu = systemTrayMenu;
+        if (menu instanceof AppIndicatorTray) {
+            return ((AppIndicatorTray) menu).getStatus();
+        }
+        else if (menu instanceof GtkSystemTray) {
+            return ((GtkSystemTray) menu).getStatus();
+        } else {
+            // swing
+            return ((SwingSystemTray) menu).getStatus();
+        }
+    }
 
     /**
      * Sets a 'status' string at the first position in the popup menu. This 'status' string appears as a disabled menu entry.
      *
      * @param statusText the text you want displayed, null if you want to remove the 'status' string
      */
-    public abstract
-    void setStatus(String statusText);
+    public
+    void setStatus(String statusText) {
+        final Menu menu = systemTrayMenu;
+        if (menu instanceof AppIndicatorTray) {
+            ((AppIndicatorTray) menu).setStatus(statusText);
+        }
+        else if (menu instanceof GtkSystemTray) {
+            ((GtkSystemTray) menu).setStatus(statusText);
+        } else {
+            // swing
+            ((SwingSystemTray) menu).setStatus(statusText);
+        }
+    }
 
-    protected abstract
-    void setIcon_(File iconPath);
+    protected
+    void setIcon_(File iconPath) {
+        final Menu menu = systemTrayMenu;
+        if (menu instanceof AppIndicatorTray) {
+            ((AppIndicatorTray) menu).setIcon_(iconPath);
+        }
+        else if (menu instanceof GtkSystemTray) {
+            ((GtkSystemTray) menu).setIcon_(iconPath);
+        } else {
+            // swing
+            ((SwingSystemTray) menu).setIcon_(iconPath);
+        }
+    }
 
     /**
      * Changes the tray icon used.
@@ -753,6 +802,148 @@ class SystemTray extends Menu {
     public
     void setIcon(InputStream imageStream) {
         setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+    }
+
+    /**
+     * @return the parent menu (of this menu) or null if we are the root menu
+     */
+    public
+    Menu getParent() {
+        return null;
+    }
+
+    /**
+     * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
+     * menu, will also be removed. For example:
+     *
+     * Original     Entry3 deleted     Result
+     *
+     * <Status>         <Status>       <Status>
+     * Entry1           Entry1         Entry1
+     * Entry2      ->   Entry2    ->   Entry2
+     * <Spacer>         (deleted)
+     * Entry3           (deleted)
+     */
+    public
+    void addMenuSpacer() {
+        systemTrayMenu.addMenuSpacer();
+    }
+
+    /**
+     * Gets the menu entry for a specified text
+     *
+     * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
+     */
+    public final
+    MenuEntry getMenuEntry(final String menuText) {
+        return systemTrayMenu.getMenuEntry(menuText);
+    }
+
+    /**
+     * Gets the first menu entry, ignoring status and spacers
+     */
+    public final
+    MenuEntry getFirstMenuEntry() {
+        return systemTrayMenu.getFirstMenuEntry();
+    }
+
+    /**
+     * Gets the last menu entry, ignoring status and spacers
+     */
+    public final
+    MenuEntry getLastMenuEntry() {
+        return systemTrayMenu.getLastMenuEntry();
+    }
+
+    /**
+     * Gets the menu entry for a specified index (zero-index), ignoring status and spacers
+     *
+     * @param menuIndex the menu entry index to use to retrieve the menu entry.
+     */
+    public final
+    MenuEntry getMenuEntry(final int menuIndex) {
+        return systemTrayMenu.getMenuEntry(menuIndex);
+    }
+
+    /**
+     * Adds a menu entry to the tray icon with text (no image)
+     *
+     * @param menuText string of the text you want to appear
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public final
+    void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
+        addMenuEntry(menuText, (String) null, callback);
+    }
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imagePath the image (full path required) to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public final
+    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+        systemTrayMenu.addMenuEntry(menuText, imagePath, callback);
+    }
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageUrl the URL of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public final
+    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+        systemTrayMenu.addMenuEntry(menuText, imageUrl, callback);
+    }
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public
+    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+        systemTrayMenu.addMenuEntry(menuText, cacheName, imageStream, callback);
+    }
+
+    /**
+     * Adds a menu entry to the tray icon with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    public final
+    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+        systemTrayMenu.addMenuEntry(menuText, imageStream, callback);
+    }
+
+    /**
+     *  This removes a menu entry from the dropdown menu.
+     *
+     * @param menuEntry This is the menu entry to remove
+     */
+    public final
+    void removeMenuEntry(final MenuEntry menuEntry) {
+        systemTrayMenu.removeMenuEntry(menuEntry);
+    }
+
+
+    /**
+     *  This removes a menu entry (via the text label) from the dropdown menu.
+     *
+     * @param menuText This is the label for the menu entry to remove
+     */
+    public final
+    void removeMenuEntry(final String menuText) {
+        systemTrayMenu.removeMenuEntry(menuText);
     }
 }
 

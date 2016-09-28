@@ -18,6 +18,7 @@ package dorkbox;
 
 import java.net.URL;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
@@ -44,7 +45,7 @@ class TestTray {
 
     public
     TestTray() {
-        this.systemTray = SystemTray.getSystemTray();
+        this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
@@ -55,7 +56,7 @@ class TestTray {
         callbackGreen = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
                 systemTray.setIcon(GREEN_MAIL);
 
@@ -69,7 +70,7 @@ class TestTray {
         callbackGray = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
 
@@ -82,11 +83,12 @@ class TestTray {
 
         this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
         this.systemTray.addMenuSpacer();
+        this.systemTray.addMenuEntry("AAAAAAAA", LT_GRAY_MAIL, null);
 
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.shutdown();
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }

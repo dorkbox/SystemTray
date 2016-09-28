@@ -29,8 +29,8 @@ class GtkMenuEntryStatus extends GtkMenuEntryItem {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntryStatus(final String label, final GtkTypeSystemTray parent) {
-        super(label, null, null, parent);
+    GtkMenuEntryStatus(final GtkMenu parentMenu, final String label) {
+        super(parentMenu, label, null, null);
     }
 
     // called in the GTK thread
@@ -39,13 +39,13 @@ class GtkMenuEntryStatus extends GtkMenuEntryItem {
         // evil hacks abound...
         // https://developer.gnome.org/pango/stable/PangoMarkupFormat.html
 
-        Pointer label = Gtk.gtk_bin_get_child(menuItem);
+        Pointer label = Gtk.gtk_bin_get_child(_native);
         Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
         Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", text);
         Gtk.gtk_label_set_markup(label, markup);
         Gobject.g_free(markup);
 
-        Gtk.gtk_widget_set_sensitive(menuItem, Gtk.FALSE);
+        Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
     }
 
     @Override

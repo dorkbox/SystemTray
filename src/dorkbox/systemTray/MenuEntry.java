@@ -25,6 +25,12 @@ import java.net.URL;
  */
 public
 interface MenuEntry {
+
+    /**
+     * @return the menu that contains this menu entry
+     */
+    Menu getParent();
+
     /**
      * @return the text label that the menu entry has assigned
      */

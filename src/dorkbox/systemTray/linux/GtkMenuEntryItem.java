@@ -28,6 +28,7 @@ import dorkbox.systemTray.util.ImageUtils;
 
 class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     private static File transparentIcon = null;
+
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
 
@@ -42,8 +43,8 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntryItem(final String label, final File image, final SystemTrayMenuAction callback, final GtkTypeSystemTray systemTray) {
-        super(Gtk.gtk_image_menu_item_new_with_label(""), systemTray);
+    GtkMenuEntryItem(final GtkMenu parentMenu, final String label, final File image, final SystemTrayMenuAction callback) {
+        super(parentMenu, Gtk.gtk_image_menu_item_new_with_label(""));
         this.callback = callback;
         setText(label);
 
@@ -54,9 +55,11 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
         setImage_(image);
 
         if (callback != null) {
-            nativeLong = Gobject.g_signal_connect_object(menuItem, "activate", this, null, 0);
+            Gtk.gtk_widget_set_sensitive(_native, Gtk.TRUE);
+            nativeLong = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
         }
         else {
+            Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
             nativeLong = null;
         }
     }
@@ -73,7 +76,7 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     int callback(final Pointer instance, final Pointer data) {
         final SystemTrayMenuAction cb = this.callback;
         if (cb != null) {
-            Gtk.proxyClick(cb, systemTray, GtkMenuEntryItem.this);
+            Gtk.proxyClick(getParent(), GtkMenuEntryItem.this, cb);
         }
 
         return Gtk.TRUE;
@@ -100,26 +103,26 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
         if (image != null) {
             Gtk.gtk_widget_destroy(image);
             image = null;
-            Gtk.gtk_widget_show_all(menuItem);
+            Gtk.gtk_widget_show_all(_native);
         }
 
         if (everyoneElseHasImages) {
             image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
-            Gtk.gtk_image_menu_item_set_image(menuItem, image);
+            Gtk.gtk_image_menu_item_set_image(_native, image);
 
             //  must always re-set always-show after setting the image
-            Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+            Gtk.gtk_image_menu_item_set_always_show_image(_native, Gtk.TRUE);
         }
 
-        Gtk.gtk_widget_show_all(menuItem);
+        Gtk.gtk_widget_show_all(_native);
     }
 
     /**
      * must always be called in the GTK thread
      */
     void renderText(final String text) {
-        Gtk.gtk_menu_item_set_label(menuItem, text);
-        Gtk.gtk_widget_show_all(menuItem);
+        Gtk.gtk_menu_item_set_label(_native, text);
+        Gtk.gtk_widget_show_all(_native);
     }
 
     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
@@ -135,18 +138,18 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
                 if (image != null) {
                     Gtk.gtk_widget_destroy(image);
                     image = null;
-                    Gtk.gtk_widget_show_all(menuItem);
+                    Gtk.gtk_widget_show_all(_native);
                 }
 
                 if (imageFile != null) {
                     image = Gtk.gtk_image_new_from_file(imageFile.getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(menuItem, image);
+                    Gtk.gtk_image_menu_item_set_image(_native, image);
 
                     //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(menuItem, Gtk.TRUE);
+                    Gtk.gtk_image_menu_item_set_always_show_image(_native, Gtk.TRUE);
                 }
 
-                Gtk.gtk_widget_show_all(menuItem);
+                Gtk.gtk_widget_show_all(_native);
             }
         });
     }

@@ -18,6 +18,7 @@ package dorkbox;
 
 import java.net.URL;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
@@ -77,7 +78,7 @@ class TestTrayJavaFX extends Application {
         primaryStage.show();
 
 
-        this.systemTray = SystemTray.getSystemTray();
+        this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
@@ -89,7 +90,7 @@ class TestTrayJavaFX extends Application {
         callbackGreen = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setIcon(GREEN_MAIL);
                 systemTray.setStatus("Some Mail!");
 
@@ -103,7 +104,7 @@ class TestTrayJavaFX extends Application {
         callbackGray = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
 
@@ -120,7 +121,7 @@ class TestTrayJavaFX extends Application {
         systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
                 systemTray.shutdown();
                 Platform.exit();  // necessary to close javaFx
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.

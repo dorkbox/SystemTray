@@ -21,16 +21,17 @@ import java.net.URL;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
 abstract
 class GtkMenuEntry implements MenuEntry {
-    private final int id = GtkTypeSystemTray.MENU_ID_COUNTER.getAndIncrement();
+    private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 
-    final Pointer menuItem;
-    final GtkTypeSystemTray systemTray;
+    private final GtkMenu parentMenu;
+    final Pointer _native;
 
     // this have to be volatile, because they can be changed from any thread
     private volatile String text;
@@ -39,9 +40,14 @@ class GtkMenuEntry implements MenuEntry {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntry(Pointer menuItem, final GtkTypeSystemTray systemTray) {
-        this.systemTray = systemTray;
-        this.menuItem = menuItem;
+    GtkMenuEntry(final GtkMenu parentMenu, final Pointer menuItem) {
+        this.parentMenu = parentMenu;
+        this._native = menuItem;
+    }
+
+    public
+    Menu getParent() {
+        return parentMenu;
     }
 
     /**
@@ -142,16 +148,16 @@ class GtkMenuEntry implements MenuEntry {
      */
     public final
     void remove() {
-        Gtk.gtk_container_remove(systemTray.getMenu(), menuItem);
-        Gtk.gtk_menu_shell_deactivate(systemTray.getMenu(), menuItem);
+        Gtk.gtk_container_remove(parentMenu._native, _native);
+        Gtk.gtk_menu_shell_deactivate(parentMenu._native, _native);
 
         removePrivate();
 
-        Gtk.gtk_widget_destroy(menuItem);
+        Gtk.gtk_widget_destroy(_native);
 
         // have to rebuild the menu now...
-        systemTray.deleteMenu();
-        systemTray.createMenu();
+        parentMenu.deleteMenu();
+        parentMenu.createMenu();
     }
 
     // called when this item is removed. Necessary to cleanup/remove itself

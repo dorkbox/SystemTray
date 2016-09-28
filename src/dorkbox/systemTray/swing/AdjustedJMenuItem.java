@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray;
+package dorkbox.systemTray.swing;
 
-public
-interface SystemTrayMenuAction {
-    /**
-     * This method will ALWAYS be called in the correct context, either in the swing EDT (if it's swing based), or in a separate thread
-     * (GtkStatusIcon/AppIndicator based).
-     *
-     * @param systemTray this is the parent, system tray object
-     * @param parentMenu this is the parent menu of this menu entry
-     * @param menuEntry this is the menu entry that was clicked
-     */
-    void onClick(SystemTray systemTray, Menu parentMenu, final MenuEntry menuEntry);
+import java.awt.Insets;
+
+import javax.swing.JMenuItem;
+
+class AdjustedJMenuItem extends JMenuItem {
+    @Override
+    public
+    Insets getMargin() {
+        Insets margin = super.getMargin();
+        if (margin != null) {
+            margin.set(2, -2, 2, 4);
+        }
+        return margin;
+    }
 }

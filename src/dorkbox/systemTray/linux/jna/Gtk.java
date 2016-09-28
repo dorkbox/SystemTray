@@ -24,10 +24,10 @@ import java.util.concurrent.TimeUnit;
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.linux.GtkTypeSystemTray;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
 
@@ -383,11 +383,11 @@ class Gtk {
      * @param callback will never be null.
      */
     public static
-    void proxyClick(final SystemTrayMenuAction callback, final GtkTypeSystemTray parent, final MenuEntry menuEntry) {
+    void proxyClick(final Menu parentMenu, final MenuEntry menuEntry, final SystemTrayMenuAction callback) {
         Gtk.isDispatch = true;
 
         try {
-            callback.onClick(parent, menuEntry);
+            callback.onClick(parentMenu.getSystemTray(), parentMenu, menuEntry);
         } catch (Throwable throwable) {
             SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
         }
@@ -419,11 +419,10 @@ class Gtk {
     private static native void gtk_main_quit();
 
 
-
-
     public static native Pointer gtk_menu_new();
+    public static native Pointer gtk_menu_item_set_submenu(Pointer menuEntry, Pointer menu);
 
-    public static native Pointer gtk_menu_item_new_with_label(String label);
+
 
     public static native Pointer gtk_separator_menu_item_new();
 

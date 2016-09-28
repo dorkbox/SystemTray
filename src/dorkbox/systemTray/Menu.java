@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import dorkbox.systemTray.util.ImageUtils;
 
@@ -34,7 +35,39 @@ import dorkbox.systemTray.util.ImageUtils;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public
 class Menu {
+    public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
+    private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
+
     protected final java.util.List<MenuEntry> menuEntries = new ArrayList<MenuEntry>();
+
+    private final SystemTray systemTray;
+    private final Menu parent;
+
+    /**
+     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param parent the parent of this menu, null if the parent is the system tray
+     */
+    public
+    Menu(final SystemTray systemTray, final Menu parent) {
+        this.systemTray = systemTray;
+        this.parent = parent;
+    }
+
+    /**
+     * @return the parent menu (of this menu) or null if we are the root menu
+     */
+    public
+    Menu getParent() {
+        return parent;
+    }
+
+    /**
+     * @return the system tray that this menu is ultimately attached to
+     */
+    public
+    SystemTray getSystemTray() {
+        return systemTray;
+    }
 
     /**
      * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
@@ -71,7 +104,7 @@ class Menu {
      *
      * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
      */
-    public final
+    public
     MenuEntry getMenuEntry(final String menuText) {
         if (menuText == null || menuText.isEmpty()) {
             return null;
@@ -95,7 +128,7 @@ class Menu {
     /**
      * Gets the first menu entry, ignoring status and spacers
      */
-    public final
+    public
     MenuEntry getFirstMenuEntry() {
         return getMenuEntry(0);
     }
@@ -103,7 +136,7 @@ class Menu {
     /**
      * Gets the last menu entry, ignoring status and spacers
      */
-    public final
+    public
     MenuEntry getLastMenuEntry() {
         // Must be wrapped in a synchronized block for object visibility
         synchronized (menuEntries) {
@@ -127,7 +160,7 @@ class Menu {
      *
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
-    public final
+    public
     MenuEntry getMenuEntry(final int menuIndex) {
         if (menuIndex < 0) {
             return null;
@@ -162,7 +195,7 @@ class Menu {
      * @param menuText string of the text you want to appear
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    public final
+    public
     void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
         addMenuEntry(menuText, (String) null, callback);
     }
@@ -174,7 +207,7 @@ class Menu {
      * @param imagePath the image (full path required) to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    public final
+    public
     void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
         if (imagePath == null) {
             addMenuEntry_(menuText, null, callback);
@@ -191,7 +224,7 @@ class Menu {
      * @param imageUrl the URL of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    public final
+    public
     void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
         if (imageUrl == null) {
             addMenuEntry_(menuText, null, callback);
@@ -209,7 +242,7 @@ class Menu {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    public final
+    public
     void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
@@ -226,7 +259,7 @@ class Menu {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    public final
+    public
     void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
         if (imageStream == null) {
             addMenuEntry_(menuText, null, callback);
@@ -241,7 +274,7 @@ class Menu {
      *
      * @param menuEntry This is the menu entry to remove
      */
-    public final
+    public
     void removeMenuEntry(final MenuEntry menuEntry) {
         if (menuEntry == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
@@ -311,7 +344,7 @@ class Menu {
      *
      * @param menuText This is the label for the menu entry to remove
      */
-    public final
+    public
     void removeMenuEntry(final String menuText) {
         // have to wait for the value
         final CountDownLatch countDownLatch = new CountDownLatch(1);

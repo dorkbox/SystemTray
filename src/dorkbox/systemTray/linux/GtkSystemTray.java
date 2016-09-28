@@ -51,8 +51,8 @@ class GtkSystemTray extends GtkTypeSystemTray {
     private volatile boolean isActive = false;
 
     public
-    GtkSystemTray() {
-        super();
+    GtkSystemTray(final SystemTray systemTray) {
+        super(systemTray);
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
@@ -74,7 +74,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
                     void callback(Pointer notUsed, final GdkEventButton event) {
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
-                            Gtk.gtk_menu_popup(getMenu(), null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                            Gtk.gtk_menu_popup(_native, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                         }
                     }
                 };
@@ -140,8 +140,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
         }
     }
 
-    @Override
-    protected
+    public
     void setIcon_(final File iconFile) {
         dispatch(new Runnable() {
             @Override

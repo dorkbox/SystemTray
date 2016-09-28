@@ -27,8 +27,8 @@ class GtkMenuEntrySpacer extends GtkMenuEntry implements MenuSpacer {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntrySpacer(final GtkTypeSystemTray parent) {
-        super(Gtk.gtk_separator_menu_item_new(), parent);
+    GtkMenuEntrySpacer(final GtkMenu parent) {
+        super(parent, Gtk.gtk_separator_menu_item_new());
     }
 
     @Override
