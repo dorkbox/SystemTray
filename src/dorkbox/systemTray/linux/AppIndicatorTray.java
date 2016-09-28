@@ -34,6 +34,20 @@ import dorkbox.systemTray.util.ImageUtils;
  * <p/>
  * Derived from
  * Lantern: https://github.com/getlantern/lantern/ Apache 2.0 License Copyright 2010 Brave New Software Project, Inc.
+ *
+ * AppIndicators DO NOT support anything other than PLAIN gtk-menus (because of how they use dbus)
+ * (so no tooltips AND no custom widgets)
+ *
+ * http://unity.ubuntu.com/projects/appindicators/
+ *
+ * http://askubuntu.com/questions/16431/putting-an-arbitrary-gtk-widget-into-an-appindicator-indicator
+ *
+ * If we re-implement appindicators dbus functionality, we could POTENTIALLY do whatever we want...
+ *
+ * https://developer.ubuntu.com/api/devel/ubuntu-12.04/c/dbusmenugtk/index.html
+ * https://launchpad.net/ido
+ * http://bazaar.launchpad.net/~canonical-dx-team/ido/trunk/view/head:/src/idoentrymenuitem.c
+ * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
 public
 class AppIndicatorTray extends GtkTypeSystemTray {
