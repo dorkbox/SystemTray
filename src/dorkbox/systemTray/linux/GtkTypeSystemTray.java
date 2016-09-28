@@ -180,7 +180,7 @@ class GtkTypeSystemTray extends SystemTray {
 
                 // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                 Gtk.gtk_menu_shell_append(this.menu, menuEntry__.menuItem);
-                Gobject.g_object_ref_sink(menuEntry__.menuItem);
+                Gobject.g_object_ref_sink(menuEntry__.menuItem);  // undoes "floating"
             }
 
             onMenuAdded(menu);
