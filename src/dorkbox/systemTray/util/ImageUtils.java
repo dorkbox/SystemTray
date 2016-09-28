@@ -258,6 +258,10 @@ class ImageUtils {
         return null;
     }
 
+    public static synchronized
+    File resizeAndCache(final int size, final File file) {
+        return resizeAndCache(size, file.getAbsolutePath());
+    }
 
     public static synchronized
     File resizeAndCache(final int size, final String fileName) {

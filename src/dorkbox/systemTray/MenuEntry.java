@@ -16,6 +16,7 @@
 
 package dorkbox.systemTray;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -35,6 +36,13 @@ interface MenuEntry {
      * @param newText the new text to set
      */
     void setText(String newText);
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *
+     * @param imageFile the file of the image to use or null
+     */
+    void setImage(File imageFile);
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image

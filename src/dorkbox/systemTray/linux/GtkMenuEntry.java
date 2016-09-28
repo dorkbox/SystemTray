@@ -83,6 +83,17 @@ class GtkMenuEntry implements MenuEntry {
     }
 
     @Override
+    public
+    void setImage(final File imageFile) {
+        if (imageFile == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile));
+        }
+    }
+
+    @Override
     public final
     void setImage(final String imagePath) {
         if (imagePath == null) {
