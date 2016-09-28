@@ -25,8 +25,6 @@ import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.ImageIcon;
@@ -265,7 +263,7 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
     /**
      * Will add a new menu entry, or update one if it already exists
      */
-    private
+    protected
     void addMenuEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
@@ -291,49 +289,5 @@ class SwingSystemTray extends dorkbox.systemTray.SystemTray {
                 }
             }
         });
-    }
-
-    @Override
-    public
-    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
-        if (imagePath == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) {
-        if (imageUrl == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback) {
-        if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) {
-        if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback);
-        }
     }
 }

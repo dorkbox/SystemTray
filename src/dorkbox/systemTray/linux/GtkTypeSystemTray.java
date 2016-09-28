@@ -17,8 +17,6 @@
 package dorkbox.systemTray.linux;
 
 import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.jna.Pointer;
@@ -28,7 +26,6 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Derived from
@@ -222,7 +219,7 @@ class GtkTypeSystemTray extends SystemTray {
         return menu;
     }
 
-    private
+    protected
     void addMenuEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
         // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
         // see: https://bugs.launchpad.net/glipper/+bug/1203888
@@ -250,49 +247,5 @@ class GtkTypeSystemTray extends SystemTray {
                 }
             }
         });
-    }
-
-    @Override
-    public
-    void addMenuEntry(String menuText, final String imagePath, final SystemTrayMenuAction callback) {
-        if (imagePath == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final URL imageUrl, final SystemTrayMenuAction callback) {
-        if (imageUrl == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final String cacheName, final InputStream imageStream, final SystemTrayMenuAction callback) {
-        if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream), callback);
-        }
-    }
-
-    @Override
-    public
-    void addMenuEntry(final String menuText, final InputStream imageStream, final SystemTrayMenuAction callback) {
-        if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
-        }
-        else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback);
-        }
     }
 }
