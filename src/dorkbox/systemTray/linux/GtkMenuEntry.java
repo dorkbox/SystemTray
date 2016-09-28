@@ -138,25 +138,20 @@ class GtkMenuEntry implements MenuEntry {
     }
 
     /**
-     * This is ONLY called via systray.menuEntry.remove() !!
+     * will always be on the dispatch thread
      */
     public final
     void remove() {
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk.gtk_container_remove(systemTray.getMenu(), menuItem);
-                Gtk.gtk_menu_shell_deactivate(systemTray.getMenu(), menuItem);
-                Gtk.gtk_widget_destroy(menuItem);
+        Gtk.gtk_container_remove(systemTray.getMenu(), menuItem);
+        Gtk.gtk_menu_shell_deactivate(systemTray.getMenu(), menuItem);
 
-                removePrivate();
+        removePrivate();
 
-                // have to rebuild the menu now...
-                systemTray.deleteMenu();
-                systemTray.createMenu();
-            }
-        });
+        Gtk.gtk_widget_destroy(menuItem);
+
+        // have to rebuild the menu now...
+        systemTray.deleteMenu();
+        systemTray.createMenu();
     }
 
     // called when this item is removed. Necessary to cleanup/remove itself
