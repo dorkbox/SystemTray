@@ -34,6 +34,8 @@ class AppIndicator {
     public static boolean isVersion3 = false;
     private static boolean isLoaded = false;
 
+    private static final boolean VERBOSE_DEBUG = false;
+
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
      * standard library naming convention or features/API set is. We just try until we find one that work, and are able to map the
@@ -60,14 +62,18 @@ class AppIndicator {
 
         if (!isLoaded && SystemTray.FORCE_GTK2) {
             // if specified, try loading appindicator1 first, maybe it's there?
+            // note: we can have GTK2 + appindicator3, but NOT ALWAYS.
             try {
                 final NativeLibrary library = JnaHelper.register("appindicator1", AppIndicator.class);
                 if (library != null) {
                     isLoaded = true;
                 }
             } catch (Throwable e) {
-                if (SystemTray.DEBUG) {
+                if (VERBOSE_DEBUG) {
                     logger.debug("Error loading library: {}", "appindicator1", e);
+                }
+                else if (SystemTray.DEBUG) {
+                    logger.debug("Error loading GTK2 explicit appindicator1");
                 }
             }
         }
@@ -85,10 +91,10 @@ class AppIndicator {
         if (!isLoaded) {
             try {
                 final NativeLibrary library = JnaHelper.register(nameToCheck1, AppIndicator.class);
-                String s = library.getName();
+                String s = library.getFile().getName();
 
                 if (SystemTray.DEBUG) {
-                    logger.debug("Loading library (first attempt): {}", s);
+                    logger.debug("Loading library (first attempt): '{}'", s);
                 }
 
                 if (s.contains("appindicator3")) {
@@ -98,7 +104,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: {}", nameToCheck1, e);
+                    logger.debug("Error loading library: '{}'", nameToCheck1, e);
                 }
             }
         }
@@ -116,18 +122,17 @@ class AppIndicator {
                     if (!isLoaded) {
                         try {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
-
-                            String s = library.getName();
+                            String s = library.getFile().getName();
 
                             if (SystemTray.DEBUG) {
-                                logger.debug("Loading library: {}", s);
+                                logger.debug("Loading library: '{}'", s);
                             }
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
                                 isVersion3 = true;
                                 if (SystemTray.DEBUG) {
-                                    logger.debug("Unloading library: {}", s);
+                                    logger.debug("Unloading library: '{}'", s);
                                 }
                                 Native.unregister(AppIndicator.class);
                             }
@@ -136,7 +141,7 @@ class AppIndicator {
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: {}", "appindicator" + i, e);
+                                logger.debug("Error loading library: '{}'", "appindicator" + i, e);
                             }
                         }
                     }
@@ -148,11 +153,10 @@ class AppIndicator {
                     if (!isLoaded) {
                         try {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
-
-                            String s = library.getName();
+                            String s = library.getFile().getName();
 
                             if (SystemTray.DEBUG) {
-                                logger.debug("Loading library: {}", s);
+                                logger.debug("Loading library: '{}'", s);
                             }
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
@@ -164,7 +168,7 @@ class AppIndicator {
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: {}", "appindicator" + i, e);
+                                logger.debug("Error loading library: '{}'", "appindicator" + i, e);
                             }
                         }
                     }
@@ -192,7 +196,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: {}", nameToCheck1, e);
+                    logger.debug("Error loading library: '{}'", nameToCheck1, e);
                 }
             }
         }
@@ -204,7 +208,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: {}", nameToCheck2, e);
+                    logger.debug("Error loading library: '{}'", nameToCheck2, e);
                 }
             }
         }
