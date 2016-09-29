@@ -29,8 +29,9 @@ class GtkMenuEntryStatus extends GtkMenuEntryItem {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntryStatus(final GtkMenu parentMenu, final String label) {
-        super(parentMenu, label, null, null);
+    GtkMenuEntryStatus(final GtkMenu parentMenu, final String text) {
+        super(parentMenu, null);
+        setText(text);
     }
 
     // called in the GTK thread

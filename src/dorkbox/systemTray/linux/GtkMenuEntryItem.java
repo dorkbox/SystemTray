@@ -43,16 +43,14 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntryItem(final GtkMenu parentMenu, final String label, final File image, final SystemTrayMenuAction callback) {
+    GtkMenuEntryItem(final GtkMenu parentMenu, final SystemTrayMenuAction callback) {
         super(parentMenu, Gtk.gtk_image_menu_item_new_with_label(""));
         this.callback = callback;
-        setText(label);
+
 
         if (transparentIcon == null) {
             transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
         }
-
-        setImage_(image);
 
         if (callback != null) {
             Gtk.gtk_widget_set_sensitive(_native, Gtk.TRUE);

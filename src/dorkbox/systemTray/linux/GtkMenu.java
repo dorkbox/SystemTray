@@ -183,13 +183,16 @@ class GtkMenu extends Menu {
                         // To work around this issue, we destroy then recreate the menu every time something is changed.
                         deleteMenu();
 
-                        menuEntry = new GtkMenuEntryItem(GtkMenu.this, menuText, imagePath, callback);
+                        menuEntry = new GtkMenuEntryItem(GtkMenu.this, callback);
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
                         menuEntries.add(menuEntry);
 
                         if (menuText.equals("AAAAAAAA")) {
-//                            GtkMenu subMenu = new GtkMenu();
-//                            subMenu.addMenuEntry("asdasdasd", null, null, null);
-//                            Gtk.gtk_menu_item_set_submenu(((GtkMenuEntryItem) menuEntry).nativeMenuItem, subMenu.nativeMenu);
+                            Gtk.gtk_widget_set_sensitive(((GtkMenuEntryItem) menuEntry)._native, Gtk.TRUE);
+                            GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this);
+                            subMenu.addMenuEntry("asdasdasd", null, null, null);
+                            Gtk.gtk_menu_item_set_submenu(((GtkMenuEntryItem) menuEntry)._native, subMenu._native);
                         }
 
                         createMenu();
