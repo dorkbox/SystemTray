@@ -22,7 +22,6 @@ import java.net.URL;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Menu;
@@ -56,10 +55,12 @@ class SwingMenu extends Menu implements MenuEntry {
             @Override
             public
             void run() {
-                _native = new JMenu();
-
                 if (parent != null) {
+                    _native = new AdjustedJMenu();
                     ((SwingMenu) parent)._native.add(_native);
+                } else {
+                    // when we are the system tray
+                    _native = new SwingSystemTrayMenuPopup();
                 }
             }
         });
