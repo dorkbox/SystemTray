@@ -22,8 +22,8 @@ interface SystemTrayMenuAction {
      * (GtkStatusIcon/AppIndicator based).
      *
      * @param systemTray this is the parent, system tray object
-     * @param parentMenu this is the parent menu of this menu entry
-     * @param menuEntry this is the menu entry that was clicked
+     * @param parent this is the parent menu of this menu entry
+     * @param entry this is the menu entry that was clicked
      */
-    void onClick(SystemTray systemTray, Menu parentMenu, final MenuEntry menuEntry);
+    void onClick(SystemTray systemTray, Menu parent, final MenuEntry entry);
 }

@@ -383,11 +383,11 @@ class Gtk {
      * @param callback will never be null.
      */
     public static
-    void proxyClick(final Menu parentMenu, final MenuEntry menuEntry, final SystemTrayMenuAction callback) {
+    void proxyClick(final Menu parent, final MenuEntry menuEntry, final SystemTrayMenuAction callback) {
         Gtk.isDispatch = true;
 
         try {
-            callback.onClick(parentMenu.getSystemTray(), parentMenu, menuEntry);
+            callback.onClick(parent.getSystemTray(), parent, menuEntry);
         } catch (Throwable throwable) {
             SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
         }

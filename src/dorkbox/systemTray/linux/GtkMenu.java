@@ -27,12 +27,12 @@ import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
 class GtkMenu extends Menu {
+    // must ONLY be created at the end of delete!
     volatile Pointer _native;
 
     // called on dispatch
-    GtkMenu(SystemTray systemTray, GtkMenu parentMenu) {
-        super(systemTray, parentMenu);
-//        this._native = Gtk.gtk_menu_new();
+    GtkMenu(SystemTray systemTray, GtkMenu parent) {
+        super(systemTray, parent);
     }
 
 
