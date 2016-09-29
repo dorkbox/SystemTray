@@ -54,9 +54,6 @@ class SwingSystemTray extends SwingMenu {
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null);
 
-        // have to reassign our type...
-        _native = new SwingSystemTrayMenuPopup();
-
         ImageUtils.determineIconSize(dorkbox.systemTray.SystemTray.TYPE_SWING);
 
         SwingUtil.invokeAndWait(new Runnable() {

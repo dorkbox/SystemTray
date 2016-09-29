@@ -22,6 +22,13 @@ import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
 
 class AdjustedJMenu extends JMenu {
+    private final SwingSystemTrayMenuPopup mainPopup;
+
+    public
+    AdjustedJMenu(final SwingSystemTrayMenuPopup mainPopup) {
+        this.mainPopup = mainPopup;
+    }
+
     @Override
     public
     Insets getMargin() {
@@ -36,5 +43,21 @@ class AdjustedJMenu extends JMenu {
         }
 
         return margin;
+    }
+
+    @Override
+    public
+    void setPopupMenuVisible(final boolean visible) {
+        mainPopup.track(getPopupMenu(), visible);
+
+        super.setPopupMenuVisible(visible);
+    }
+
+    @Override
+    public
+    void removeNotify() {
+        // have to make sure that when we are removed, we remove ourself from the tracker
+        mainPopup.track(getPopupMenu(), false);
+        super.removeNotify();
     }
 }

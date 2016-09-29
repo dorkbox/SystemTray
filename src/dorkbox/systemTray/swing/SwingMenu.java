@@ -56,7 +56,7 @@ class SwingMenu extends Menu implements MenuEntry {
             public
             void run() {
                 if (parent != null) {
-                    _native = new AdjustedJMenu();
+                    _native = new AdjustedJMenu((SwingSystemTrayMenuPopup)((SwingMenu) systemTray.getMenu())._native);
                     ((SwingMenu) parent)._native.add(_native);
                 } else {
                     // when we are the system tray

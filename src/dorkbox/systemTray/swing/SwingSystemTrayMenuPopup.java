@@ -20,6 +20,8 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
@@ -44,6 +46,8 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 
     protected volatile Point mouseClickLocation = null;
 
+    private final List<JPopupMenu> trackedMenus = new ArrayList<JPopupMenu>(4);
+
 //    protected boolean mouseStillOnMenu;
 //    private JDialog hiddenDialog;
 
@@ -53,10 +57,9 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         setFocusable(true);
 //        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
         setBorder(new EmptyBorder(1, 1, 1, 1));
+        trackedMenus.add(this);
 
         this.timer = new DelayTimer("PopupMenuHider", true, new Runnable() {
-
-
             @Override
             public
             void run() {
@@ -64,31 +67,41 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
                     @Override
                     public
                     void run() {
-                        Point location = MouseInfo.getPointerInfo().getLocation();
-                        Point menuLocation = getLocationOnScreen();
-                        Dimension size = getSize();
+                        Point location = MouseInfo.getPointerInfo()
+                                                  .getLocation();
 
-                        // is the mouse pointer still inside of the popup?
-                        if (location.x >= menuLocation.x && location.x < menuLocation.x + size.width &&
-                            location.y >= menuLocation.y && location.y < menuLocation.y + size.height) {
+                        // are we inside one of our tracked menus (the root menu is included)
+                        synchronized (trackedMenus) {
+                            for (JPopupMenu trackedMenu : trackedMenus) {
+                                Point menuLocation = trackedMenu.getLocationOnScreen();
+                                Dimension size = trackedMenu.getSize();
 
-                            // restart the timer
-                            SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+                                if (location.x >= menuLocation.x && location.x < menuLocation.x + size.width &&
+                                    location.y >= menuLocation.y && location.y < menuLocation.y + size.height
+                                   ) {
+
+                                    // restart the timer
+                                    SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+                                    return;
+                                }
+                            }
                         }
+
 
                         // has the mouse pointer moved > delta pixels from it's original location (when the tray icon was clicked)?
-                        else if (mouseClickLocation != null &&
-                                 location.x >= mouseClickLocation.x - MOVEMENT_DELTA && location.x < mouseClickLocation.x + MOVEMENT_DELTA &&
-                                 location.y >= mouseClickLocation.y - MOVEMENT_DELTA && location.y < mouseClickLocation.y + MOVEMENT_DELTA) {
+                        if (mouseClickLocation != null &&
+                            location.x >= mouseClickLocation.x - MOVEMENT_DELTA && location.x < mouseClickLocation.x + MOVEMENT_DELTA &&
+                            location.y >= mouseClickLocation.y - MOVEMENT_DELTA && location.y < mouseClickLocation.y + MOVEMENT_DELTA
+                            ) {
 
                             // restart the timer
                             SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+                            return;
                         }
 
-                        else {
-                            // else, we hide it
-                            setVisible(false);
-                        }
+
+                        // else, we hide it
+                        setVisible(false);
                     }
                 });
             }
@@ -137,5 +150,22 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 
 //        this.hiddenDialog.setVisible(makeVisible);
         super.setVisible(makeVisible);
+    }
+
+
+    public
+    void track(final JPopupMenu menu, final boolean visible) {
+        if (visible) {
+            synchronized (trackedMenus) {
+                trackedMenus.add(menu);
+            }
+        } else {
+            synchronized (trackedMenus) {
+                trackedMenus.remove(menu);
+            }
+        }
+
+        // restart the timer
+        SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
     }
 }
