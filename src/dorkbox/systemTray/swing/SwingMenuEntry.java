@@ -30,24 +30,24 @@ abstract
 class SwingMenuEntry implements MenuEntry {
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 
-    private final SwingMenu parentMenu;
+    private final SwingMenu parent;
     final JComponent _native;
 
     // this have to be volatile, because they can be changed from any thread
     private volatile String text;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntry(final SwingMenu parentMenu, final JComponent menuItem) {
-        this.parentMenu = parentMenu;
+    SwingMenuEntry(final SwingMenu parent, final JComponent menuItem) {
+        this.parent = parent;
         this._native = menuItem;
 
-        parentMenu._native.add(menuItem);
+        parent._native.add(menuItem);
     }
 
     @Override
     public
     Menu getParent() {
-        return parentMenu;
+        return parent;
     }
 
     /**
@@ -143,7 +143,7 @@ class SwingMenuEntry implements MenuEntry {
             public
             void run() {
                 removePrivate();
-                parentMenu._native.remove(_native);
+                parent._native.remove(_native);
             }
         });
     }

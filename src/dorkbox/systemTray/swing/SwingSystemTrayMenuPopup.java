@@ -42,7 +42,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 
     private DelayTimer timer;
 
-    protected volatile Point previousLocation = null;
+    protected volatile Point mouseClickLocation = null;
 
 //    protected boolean mouseStillOnMenu;
 //    private JDialog hiddenDialog;
@@ -77,9 +77,9 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
                         }
 
                         // has the mouse pointer moved > delta pixels from it's original location (when the tray icon was clicked)?
-                        else if (previousLocation != null &&
-                            location.x >= previousLocation.x - MOVEMENT_DELTA && location.x < previousLocation.x + MOVEMENT_DELTA &&
-                            location.y >= previousLocation.y - MOVEMENT_DELTA && location.y < previousLocation.y + MOVEMENT_DELTA) {
+                        else if (mouseClickLocation != null &&
+                                 location.x >= mouseClickLocation.x - MOVEMENT_DELTA && location.x < mouseClickLocation.x + MOVEMENT_DELTA &&
+                                 location.y >= mouseClickLocation.y - MOVEMENT_DELTA && location.y < mouseClickLocation.y + MOVEMENT_DELTA) {
 
                             // restart the timer
                             SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
@@ -125,10 +125,11 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
     @Override
     public
     void setVisible(boolean makeVisible) {
+        // only allow java to close this popup if our timer closed it
         this.timer.cancel();
 
         if (makeVisible) {
-            previousLocation = MouseInfo.getPointerInfo().getLocation();
+            mouseClickLocation = MouseInfo.getPointerInfo().getLocation();
 
             // if the mouse isn't inside the popup in x seconds, close the popup
             this.timer.delay(POPUP_HIDE_DELAY);

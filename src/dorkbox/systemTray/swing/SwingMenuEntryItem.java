@@ -33,8 +33,8 @@ class SwingMenuEntryItem extends SwingMenuEntry {
     private volatile SystemTrayMenuAction callback;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryItem(final SwingMenu parentMenu, final SystemTrayMenuAction callback) {
-        super(parentMenu, new AdjustedJMenuItem());
+    SwingMenuEntryItem(final SwingMenu parent, final SystemTrayMenuAction callback) {
+        super(parent, new AdjustedJMenuItem());
         this.callback = callback;
 
 
@@ -86,6 +86,7 @@ class SwingMenuEntryItem extends SwingMenuEntry {
         ((JMenuItem) _native).setText(text);
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     void setImage_(final File imageFile) {
         hasLegitIcon = imageFile != null;

@@ -26,8 +26,8 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 class SwingMenuEntryStatus extends SwingMenuEntry implements MenuStatus {
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryStatus(final SwingMenu parentMenu, final String label) {
-        super(parentMenu, new JMenuItem());
+    SwingMenuEntryStatus(final SwingMenu parent, final String label) {
+        super(parent, new JMenuItem());
         setText(label);
     }
 

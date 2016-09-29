@@ -25,8 +25,8 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 class SwingMenuEntrySpacer extends SwingMenuEntry implements MenuSpacer {
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntrySpacer(final SwingMenu parentMenu) {
-        super(parentMenu, new JSeparator(JSeparator.HORIZONTAL));
+    SwingMenuEntrySpacer(final SwingMenu parent) {
+        super(parent, new JSeparator(JSeparator.HORIZONTAL));
     }
 
     // called in the EDT thread

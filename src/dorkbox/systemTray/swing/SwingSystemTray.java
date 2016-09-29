@@ -47,14 +47,15 @@ class SwingSystemTray extends SwingMenu {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
-    volatile boolean isActive = false;
-
     /**
      * Creates a new system tray handler class.
      */
     public
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null);
+
+        // have to reassign our type...
+        _native = new SwingSystemTrayMenuPopup();
 
         ImageUtils.determineIconSize(dorkbox.systemTray.SystemTray.TYPE_SWING);
 
@@ -143,10 +144,8 @@ class SwingSystemTray extends SwingMenu {
                 final Image trayImage = new ImageIcon(iconFile.getAbsolutePath()).getImage();
                 trayImage.flush();
 
-                if (!isActive) {
+                if (trayIcon == null) {
                     // here we init. everything
-                    isActive = true;
-
                     trayIcon = new TrayIcon(trayImage);
 
                     // appindicators DO NOT support anything other than PLAIN gtk-menus
@@ -185,7 +184,7 @@ class SwingSystemTray extends SwingMenu {
 
                             // voodoo to get this to popup to have the correct parent
                             // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
-                            _native.setInvoker(_native);
+                            ((SwingSystemTrayMenuPopup) _native).setInvoker(_native);
                             _native.setLocation(x, y);
                             _native.setVisible(true);
                             _native.setFocusable(true);
@@ -194,7 +193,7 @@ class SwingSystemTray extends SwingMenu {
                     });
 
                     try {
-                        SwingSystemTray.this.tray.add(trayIcon);
+                        tray.add(trayIcon);
                     } catch (AWTException e) {
                         dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                     }

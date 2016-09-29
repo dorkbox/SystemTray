@@ -17,17 +17,30 @@ package dorkbox.systemTray.swing;
 
 
 import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
+// this is a weird composite class, because it must be a Menu, but ALSO a MenuEntry -- so it has both
 public
-class SwingMenu extends Menu {
+class SwingMenu extends Menu implements MenuEntry {
 
-    volatile SwingSystemTrayMenuPopup _native;
+    volatile JComponent _native;
+
+    // this have to be volatile, because they can be changed from any thread
+    private volatile String text;
+    private volatile boolean hasLegitIcon = false;
 
     /**
      * @param systemTray
@@ -43,7 +56,11 @@ class SwingMenu extends Menu {
             @Override
             public
             void run() {
-                _native = new SwingSystemTrayMenuPopup();
+                _native = new JMenu();
+
+                if (parent != null) {
+                    ((SwingMenu) parent)._native.add(_native);
+                }
             }
         });
     }
@@ -92,13 +109,147 @@ class SwingMenu extends Menu {
                     }
                     else {
                         // must always be called on the EDT
-                        menuEntry = new SwingMenuEntryItem(SwingMenu.this, callback);
-                        menuEntry.setText(menuText);
-                        menuEntry.setImage(imagePath);
+                        if (!menuText.equals("AAAAAAAA")) {
+                            menuEntry = new SwingMenuEntryItem(SwingMenu.this, callback);
+                            menuEntry.setText(menuText);
+                            menuEntry.setImage(imagePath);
+                        } else {
+                            menuEntry = new SwingMenu(getSystemTray(), SwingMenu.this);
+                            menuEntry.setText(menuText);
+                            menuEntry.setImage(imagePath);
+                            ((SwingMenu) menuEntry).addMenuEntry("asdasdasd", null, null, null);
+                        }
 
                         menuEntries.add(menuEntry);
                     }
                 }
+            }
+        });
+    }
+
+
+
+
+
+
+    // always called in the EDT
+    void renderText(final String text) {
+        ((JMenuItem) _native).setText(text);
+    }
+
+    @SuppressWarnings("Duplicates")
+    void setImage_(final File imageFile) {
+        hasLegitIcon = imageFile != null;
+
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (imageFile != null) {
+                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
+                    ((JMenuItem) _native).setIcon(origIcon);
+                }
+                else {
+                    ((JMenuItem) _native).setIcon(null);
+                }
+            }
+        });
+    }
+
+
+    @Override
+    public
+    String getText() {
+        return text;
+    }
+
+    @Override
+    public
+    void setText(final String newText) {
+        text = newText;
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                renderText(newText);
+            }
+        });
+    }
+
+    @Override
+    public
+    void setImage(final File imageFile) {
+        if (imageFile == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile));
+        }
+    }
+
+    @Override
+    public final
+    void setImage(final String imagePath) {
+        if (imagePath == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
+        }
+    }
+
+    @Override
+    public final
+    void setImage(final URL imageUrl) {
+        if (imageUrl == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
+        }
+    }
+
+    @Override
+    public final
+    void setImage(final String cacheName, final InputStream imageStream) {
+        if (imageStream == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream));
+        }
+    }
+
+    @Override
+    public final
+    void setImage(final InputStream imageStream) {
+        if (imageStream == null) {
+            setImage_(null);
+        }
+        else {
+            setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
+        }
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return hasLegitIcon;
+    }
+
+    @Override
+    public
+    void setCallback(final SystemTrayMenuAction callback) {
+    }
+
+    @Override
+    public final
+    void remove() {
+        SwingUtil.invokeAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                ((SwingMenu) getParent())._native.remove(_native);
             }
         });
     }
