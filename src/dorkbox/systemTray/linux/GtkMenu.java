@@ -40,6 +40,8 @@ class GtkMenu extends Menu implements MenuEntry {
     // must ONLY be created at the end of delete!
     volatile Pointer _native;
 
+    // have to make sure no other methods can call obliterate, delete, or create menu once it's already started
+    private boolean obliterateInProgress = false;
 
     // called on dispatch
     GtkMenu(final SystemTray systemTray, final GtkMenu parent, final GtkEntryItem menuEntry) {
@@ -80,11 +82,17 @@ class GtkMenu extends Menu implements MenuEntry {
             }
         });
 
+        // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
+        // thread occur in REASONABLE time-frames, and alert the user if not.
         try {
             if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.error("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                            "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                } else {
+                    throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                               "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                }
             }
         } catch (InterruptedException e) {
             SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception());
@@ -94,7 +102,7 @@ class GtkMenu extends Menu implements MenuEntry {
 
     public
     void shutdown() {
-        dispatch(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -216,7 +224,7 @@ class GtkMenu extends Menu implements MenuEntry {
      * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
      */
     void deleteMenu() {
-        if (_native != null) {
+        if (_native != null && !obliterateInProgress) {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
@@ -256,6 +264,10 @@ class GtkMenu extends Menu implements MenuEntry {
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
     // To work around this issue, we destroy then recreate the menu every time something is changed.
     void createMenu() {
+        if (obliterateInProgress) {
+            return;
+        }
+
         if (getParent() != null) {
             ((GtkMenu) getParent()).createMenu();
         }
@@ -311,7 +323,9 @@ class GtkMenu extends Menu implements MenuEntry {
      * Completely obliterates the menu, no possible way to reconstruct it.
      */
     void obliterateMenu() {
-        if (_native != null) {
+        if (_native != null && !obliterateInProgress) {
+            obliterateInProgress = true;
+
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
@@ -328,6 +342,8 @@ class GtkMenu extends Menu implements MenuEntry {
 
                 Gtk.gtk_widget_destroy(_native);
             }
+
+            obliterateInProgress = false;
         }
     }
 
