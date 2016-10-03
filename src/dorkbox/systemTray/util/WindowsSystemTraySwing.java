@@ -89,7 +89,7 @@ class WindowsSystemTraySwing {
          *
          * Important distinction: We are not DISTRIBUTING java, nor modifying the distribution class files.
          *
-         * What we are doing is modifying what is already present, post-distribution, and it is impossible to distribute is modified
+         * What we are doing is modifying what is already present, post-distribution, and it is impossible to distribute what is modified
          *
          * To see what files we need to fix...
          * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
