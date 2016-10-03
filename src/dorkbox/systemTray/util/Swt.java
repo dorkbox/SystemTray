@@ -25,7 +25,7 @@ class Swt {
     public static
     void dispatch(final Runnable runnable) {
          org.eclipse.swt.widgets.Display.getCurrent()
-                                        .asyncExec(runnable);
+                                        .syncExec(runnable);
     }
 
     public static
