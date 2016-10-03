@@ -156,4 +156,9 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
         // restart the timer
         SwingSystemTrayLinuxMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
     }
+
+    public
+    void close() {
+        this.timer.cancel();
+    }
 }

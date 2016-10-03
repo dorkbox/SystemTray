@@ -104,7 +104,7 @@ class SystemTray extends Menu {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 0;
+    public static int FORCE_TRAY_TYPE = 3;
 
     @Property
     /**
@@ -813,6 +813,14 @@ class SystemTray extends Menu {
     }
 
     /**
+     * @return the attached menu to this system tray
+     */
+    public
+    Menu getMenu() {
+        return systemTrayMenu;
+    }
+
+    /**
      * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
      * menu, will also be removed. For example:
      *
@@ -825,9 +833,48 @@ class SystemTray extends Menu {
      * Entry3           (deleted)
      */
     public
-    void addMenuSpacer() {
-        systemTrayMenu.addMenuSpacer();
+    void addSeparator() {
+        systemTrayMenu.addSeparator();
     }
+
+
+    // NO OP.
+    @Override
+    protected
+    MenuEntry addEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
+        return null;
+    }
+
+    // NO OP.
+    @Override
+    protected
+    Menu addMenu_(final String menuText, final File imagePath) {
+        return null;
+    }
+
+    // NO OP.
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
+    }
+
+    // NO OP.
+    @Override
+    protected
+    void dispatch(final Runnable runnable) {
+    }
+
+    // NO OP.
+    @Override
+    protected
+    void dispatchAndWait(final Runnable runnable) {
+    }
+
+    // NO OP.
+    protected
+    void removePrivate() {
+    }
+
 
     /**
      * Gets the menu entry for a specified text
@@ -835,24 +882,24 @@ class SystemTray extends Menu {
      * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
      */
     public final
-    MenuEntry getMenuEntry(final String menuText) {
-        return systemTrayMenu.getMenuEntry(menuText);
+    MenuEntry get(final String menuText) {
+        return systemTrayMenu.get(menuText);
     }
 
     /**
      * Gets the first menu entry, ignoring status and spacers
      */
     public final
-    MenuEntry getFirstMenuEntry() {
-        return systemTrayMenu.getFirstMenuEntry();
+    MenuEntry getFirst() {
+        return systemTrayMenu.getFirst();
     }
 
     /**
      * Gets the last menu entry, ignoring status and spacers
      */
     public final
-    MenuEntry getLastMenuEntry() {
-        return systemTrayMenu.getLastMenuEntry();
+    MenuEntry getLast() {
+        return systemTrayMenu.getLast();
     }
 
     /**
@@ -861,9 +908,13 @@ class SystemTray extends Menu {
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
     public final
-    MenuEntry getMenuEntry(final int menuIndex) {
-        return systemTrayMenu.getMenuEntry(menuIndex);
+    MenuEntry get(final int menuIndex) {
+        return systemTrayMenu.get(menuIndex);
     }
+
+
+
+
 
     /**
      * Adds a menu entry to the tray icon with text (no image)
@@ -872,8 +923,8 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
-        addMenuEntry(menuText, (String) null, callback);
+    MenuEntry addEntry(String menuText, SystemTrayMenuAction callback) {
+        return addEntry(menuText, (String) null, callback);
     }
 
     /**
@@ -884,8 +935,8 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
-        systemTrayMenu.addMenuEntry(menuText, imagePath, callback);
+    MenuEntry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+        return systemTrayMenu.addEntry(menuText, imagePath, callback);
     }
 
     /**
@@ -896,8 +947,8 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
-        systemTrayMenu.addMenuEntry(menuText, imageUrl, callback);
+    MenuEntry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+        return systemTrayMenu.addEntry(menuText, imageUrl, callback);
     }
 
     /**
@@ -909,8 +960,8 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
-        systemTrayMenu.addMenuEntry(menuText, cacheName, imageStream, callback);
+    MenuEntry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+        return systemTrayMenu.addEntry(menuText, cacheName, imageStream, callback);
     }
 
     /**
@@ -921,9 +972,71 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
-        systemTrayMenu.addMenuEntry(menuText, imageStream, callback);
+    MenuEntry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+        return systemTrayMenu.addEntry(menuText, imageStream, callback);
     }
+
+
+
+
+
+    /**
+     * Adds a sub-menu entry with text (no image)
+     *
+     * @param menuText string of the text you want to appear
+     */
+    public
+    Menu addMenu(String menuText) {
+        return addMenu(menuText, (String) null);
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imagePath the image (full path required) to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, String imagePath) {
+        return systemTrayMenu.addMenu(menuText, imagePath);
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageUrl the URL of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, URL imageUrl) {
+        return systemTrayMenu.addMenu(menuText, imageUrl);
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, String cacheName, InputStream imageStream) {
+        return systemTrayMenu.addMenu(menuText, cacheName, imageStream);
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, InputStream imageStream) {
+        return systemTrayMenu.addMenu(menuText, imageStream);
+    }
+
+
+
 
     /**
      *  This removes a menu entry from the dropdown menu.
@@ -931,8 +1044,8 @@ class SystemTray extends Menu {
      * @param menuEntry This is the menu entry to remove
      */
     public final
-    void removeMenuEntry(final MenuEntry menuEntry) {
-        systemTrayMenu.removeMenuEntry(menuEntry);
+    void remove(final MenuEntry menuEntry) {
+        systemTrayMenu.remove(menuEntry);
     }
 
 
@@ -942,8 +1055,8 @@ class SystemTray extends Menu {
      * @param menuText This is the label for the menu entry to remove
      */
     public final
-    void removeMenuEntry(final String menuText) {
-        systemTrayMenu.removeMenuEntry(menuText);
+    void remove(final String menuText) {
+        systemTrayMenu.remove(menuText);
     }
 }
 

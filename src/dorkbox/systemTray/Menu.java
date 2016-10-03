@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dorkbox.systemTray.util.ImageUtils;
@@ -33,7 +32,7 @@ public abstract
 class Menu {
     public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
-// TODO: enable/disable entries and menus?
+
     protected final java.util.List<MenuEntry> menuEntries = new ArrayList<MenuEntry>();
 
     private final SystemTray systemTray;
@@ -93,6 +92,12 @@ class Menu {
     Menu addMenu_(final String menuText, final File imagePath);
 
     /*
+     * Called when this menu is removed from it's parent menu
+     */
+    protected abstract
+    void removePrivate();
+
+    /*
      * Necessary to guarantee all updates occur on the dispatch thread
      */
     protected abstract
@@ -103,6 +108,13 @@ class Menu {
      */
     protected abstract
     void dispatchAndWait(Runnable runnable);
+
+    /**
+     * Enables, or disables the sub-menu entry.
+     */
+    public abstract
+    void setEnabled(final boolean enabled);
+
 
     /**
      * Gets the menu entry for a specified text
@@ -353,9 +365,6 @@ class Menu {
     }
 
 
-
-
-
     /**
      *  This removes a menu entry from the dropdown menu.
      *
@@ -366,9 +375,6 @@ class Menu {
         if (menuEntry == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
         }
-
-        // have to wait for the value
-        final AtomicBoolean hasValue = new AtomicBoolean(false);
 
         dispatchAndWait(new Runnable() {
             @Override
@@ -383,7 +389,6 @@ class Menu {
 
                                 // this will also reset the menu
                                 menuEntry.remove();
-                                hasValue.set(true);
                                 break;
                             }
                         }
@@ -406,10 +411,6 @@ class Menu {
                 }
             }
         });
-
-        if (!hasValue.get()) {
-            throw new NullPointerException("Menu entry '" + menuEntry.getText() + "'not found in list while trying to remove it.");
-        }
     }
 
     /**
@@ -417,16 +418,50 @@ class Menu {
      *
      * @param menu This is the menu entry to remove
      */
+    @SuppressWarnings("Duplicates")
     public
     void remove(final Menu menu) {
         if (menu == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
         }
 
+        dispatchAndWait(new Runnable() {
+            @SuppressWarnings("Duplicates")
+            @Override
+            public
+            void run() {
+                try {
+                    synchronized (menuEntries) {
+                        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                            final MenuEntry entry = iterator.next();
+                            if (entry == menu) {
+                                iterator.remove();
 
+                                // this will also reset the menu
+                                menu.removePrivate();
+                                break;
+                            }
+                        }
 
+                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                        if (!menuEntries.isEmpty()) {
+                            if (menuEntries.get(0) instanceof MenuSpacer) {
+                                remove(menuEntries.get(0));
+                            }
+                        }
+                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                        if (!menuEntries.isEmpty()) {
+                            if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
+                                remove(menuEntries.get(menuEntries.size() - 1));
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    SystemTray.logger.error("Error removing menu entry from list.", e);
+                }
+            }
+        });
     }
-
 
     /**
      *  This removes a menu entry or sub-menu (via the text label) from the dropdown menu.
@@ -435,9 +470,6 @@ class Menu {
      */
     public
     void remove(final String menuText) {
-        // have to wait for the value
-        final AtomicBoolean hasValue = new AtomicBoolean(true);
-
         dispatchAndWait(new Runnable() {
             @Override
             public
@@ -445,18 +477,11 @@ class Menu {
                 synchronized (menuEntries) {
                     MenuEntry menuEntry = get(menuText);
 
-                    if (menuEntry == null) {
-                        hasValue.set(false);
-                    }
-                    else {
+                    if (menuEntry != null) {
                         remove(menuEntry);
                     }
                 }
             }
         });
-
-        if (!hasValue.get()) {
-            throw new NullPointerException("No menu entry exists for string '" + menuText + "'");
-        }
     }
 }

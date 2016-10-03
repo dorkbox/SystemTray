@@ -105,6 +105,19 @@ class GtkMenu extends Menu implements MenuEntry {
         });
     }
 
+    /**
+     * Enables, or disables the sub-menu entry.
+     */
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
+        if (enabled) {
+            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.TRUE);
+        } else {
+            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.FALSE);
+        }
+    }
+
     @Override
     public
     void addSeparator() {

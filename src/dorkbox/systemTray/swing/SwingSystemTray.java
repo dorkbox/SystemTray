@@ -80,6 +80,8 @@ class SwingSystemTray extends SwingMenu {
                     }
                     menuEntries.clear();
                 }
+
+                remove();
             }
         });
     }

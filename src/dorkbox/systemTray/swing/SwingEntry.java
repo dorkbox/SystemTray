@@ -59,6 +59,14 @@ class SwingEntry implements MenuEntry {
     abstract
     void setImage_(final File imageFile);
 
+    /**
+     * Enables, or disables the sub-menu entry.
+     */
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
+        _native.setEnabled(enabled);
+    }
 
     @Override
     public

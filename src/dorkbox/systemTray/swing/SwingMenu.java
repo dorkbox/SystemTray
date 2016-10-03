@@ -58,11 +58,11 @@ class SwingMenu extends Menu implements MenuEntry {
             public
             void run() {
                 if (parent != null) {
-                    if (!OS.isLinux()) {
-                        _native = new AdjustedJMenu(null);
+                    if (OS.isLinux()) {
+                        _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
                     }
                     else {
-                        _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
+                        _native = new AdjustedJMenu(null);
                     }
 
                     ((SwingMenu) parent)._native.add(_native);
@@ -106,6 +106,15 @@ class SwingMenu extends Menu implements MenuEntry {
                 }
             }
         });
+    }
+
+    /**
+     * Enables, or disables the sub-menu entry.
+     */
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
+        _native.setEnabled(enabled);
     }
 
     /**
@@ -303,8 +312,27 @@ class SwingMenu extends Menu implements MenuEntry {
             @Override
             public
             void run() {
-                ((SwingMenu) getParent())._native.remove(_native);
+                _native.setVisible(false);
+                if (_native instanceof SwingSystemTrayMenuPopup) {
+                    ((SwingSystemTrayMenuPopup) _native).close();
+                }
+                else if (_native instanceof SwingSystemTrayLinuxMenuPopup) {
+                    ((SwingSystemTrayLinuxMenuPopup) _native).close();
+                }
+
+                SwingMenu parent = (SwingMenu) getParent();
+                if (parent != null) {
+                    parent._native.remove(_native);
+                }
             }
         });
+    }
+
+   /*
+    * Called when this menu is removed from it's parent menu
+    */
+    protected
+    void removePrivate() {
+        remove();
     }
 }

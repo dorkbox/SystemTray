@@ -67,6 +67,18 @@ class GtkEntry implements MenuEntry {
     abstract
     void setImage_(final File imageFile);
 
+    /**
+     * Enables, or disables the sub-menu entry.
+     */
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
+        if (enabled) {
+            Gtk.gtk_widget_set_sensitive(_native, Gtk.TRUE);
+        } else {
+            Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
+        }
+    }
 
     @Override
     public

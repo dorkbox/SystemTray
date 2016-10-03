@@ -46,6 +46,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         this.hiddenDialog = new JDialog((Frame)null);
         this.hiddenDialog.setEnabled(false);
         this.hiddenDialog.setUndecorated(true);
+        this.hiddenDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         this.hiddenDialog.setSize(1, 1);
 
@@ -67,5 +68,11 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         this.hiddenDialog.setEnabled(false);
 
         super.setVisible(makeVisible);
+    }
+
+    public
+    void close() {
+        this.hiddenDialog.setVisible(false);
+        this.hiddenDialog.dispatchEvent(new WindowEvent(this.hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 }

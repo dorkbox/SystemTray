@@ -32,6 +32,11 @@ interface MenuEntry {
     Menu getParent();
 
     /**
+     * Enables, or disables the entry.
+     */
+    void setEnabled(final boolean enabled);
+
+    /**
      * @return the text label that the menu entry has assigned
      */
     String getText();

@@ -57,6 +57,10 @@ class GtkEntrySeparator extends GtkEntry implements MenuSpacer {
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
+    }
 
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
     }
 }
