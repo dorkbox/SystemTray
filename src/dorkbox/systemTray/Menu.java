@@ -414,7 +414,7 @@ class Menu {
     }
 
     /**
-     *  This removes a sub-menu entry or sub-menu from the dropdown menu.
+     *  This removes a sub-menu entry from the dropdown menu.
      *
      * @param menu This is the menu entry to remove
      */
@@ -483,5 +483,13 @@ class Menu {
                 }
             }
         });
+    }
+
+    /**
+     *  This removes the sub-menu entry from the dropdown menu.
+     */
+    public
+    void remove() {
+        getParent().remove(this);
     }
 }

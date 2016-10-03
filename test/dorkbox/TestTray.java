@@ -50,45 +50,61 @@ class TestTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        this.systemTray.setIcon(LT_GRAY_MAIL);
+        systemTray.setIcon(LT_GRAY_MAIL);
         systemTray.setStatus("No Mail");
 
         callbackGreen = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
                 systemTray.setIcon(GREEN_MAIL);
 
                 menuEntry.setCallback(callbackGray);
                 menuEntry.setImage(BLACK_MAIL);
                 menuEntry.setText("Delete Mail");
-//                systemTray.removeMenuEntry(menuEntry);
+//                systemTray.remove(menuEntry);
             }
         };
 
         callbackGray = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
                 systemTray.setIcon(BLACK_MAIL);
 
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
-                systemTray.removeMenuEntry(menuEntry);
+                systemTray.remove(menuEntry);
                 System.err.println("POW");
             }
         };
 
-        this.systemTray.addMenuEntry("Green Mail", GREEN_MAIL, callbackGreen);
-        this.systemTray.addMenuSpacer();
-        this.systemTray.addMenuEntry("AAAAAAAA", LT_GRAY_MAIL, null);
+        this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        this.systemTray.addSeparator();
 
-        systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
+        final Menu submenu = this.systemTray.addMenu("Options", BLACK_MAIL);
+        submenu.addEntry("Disable menu", LT_GRAY_MAIL, new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parentMenu, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry entry) {
+                submenu.setEnabled(false);
+            }
+        });
+        submenu.addEntry("Remove menu", GREEN_MAIL, new SystemTrayMenuAction() {
+            @Override
+            public
+            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry entry) {
+                submenu.remove();
+            }
+        });
+
+
+        systemTray.addEntry("Quit", new SystemTrayMenuAction() {
+            @Override
+            public
+            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
                 systemTray.shutdown();
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
