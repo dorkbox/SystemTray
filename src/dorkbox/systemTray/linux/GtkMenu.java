@@ -34,18 +34,23 @@ import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
 class GtkMenu extends Menu implements MenuEntry {
-    // menu entry that this menu is attached to
+    // menu entry that this menu is attached to. Will be NULL when it's the system tray
     private final GtkEntryItem menuEntry;
 
     // must ONLY be created at the end of delete!
     volatile Pointer _native;
 
+
     // called on dispatch
-    GtkMenu(SystemTray systemTray, GtkMenu parent, final GtkEntryItem menuEntry) {
+    GtkMenu(final SystemTray systemTray, final GtkMenu parent, final GtkEntryItem menuEntry) {
         super(systemTray, parent);
+
+        if (menuEntry != null) {
+            // by default, no callback on a menu entry means it's DISABLED. we have to undo that, because we don't have a callback for menus
+            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.TRUE);
+        }
         this.menuEntry = menuEntry;
     }
-
 
     /**
      * Necessary to guarantee all updates occur on the dispatch thread
@@ -123,6 +128,75 @@ class GtkMenu extends Menu implements MenuEntry {
         });
     }
 
+    @Override
+    public
+    String getText() {
+        return menuEntry.getText();
+    }
+
+    @Override
+    public
+    void setText(final String newText) {
+        menuEntry.setText(newText);
+    }
+
+    @Override
+    public
+    void setImage(final File imageFile) {
+        menuEntry.setImage(imageFile);
+    }
+
+    @Override
+    public
+    void setImage(final String imagePath) {
+        menuEntry.setImage(imagePath);
+    }
+
+    @Override
+    public
+    void setImage(final URL imageUrl) {
+        menuEntry.setImage(imageUrl);
+    }
+
+    @Override
+    public
+    void setImage(final String cacheName, final InputStream imageStream) {
+        menuEntry.setImage(cacheName, imageStream);
+    }
+
+    @Override
+    public
+    void setImage(final InputStream imageStream) {
+        menuEntry.setImage(imageStream);
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return menuEntry.hasImage();
+    }
+
+    @Override
+    public
+    void setCallback(final SystemTrayMenuAction callback) {
+        // NO OP.
+    }
+
+
+   /**
+    * Called when this sub-menu is removed from it's parent menu
+    */
+    protected
+    void removePrivate() {
+        // delete all of the children
+        obliterateMenu();
+
+        // remove the gtk entry item from our parent menu
+        if (menuEntry != null) {
+            menuEntry.remove();
+        }
+    }
+
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
     // To work around this issue, we destroy then recreate the menu every time something is changed.
     /**
@@ -133,10 +207,20 @@ class GtkMenu extends Menu implements MenuEntry {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
-                    GtkEntry menuEntry__ = (GtkEntry) menuEntries.get(i);
+                    MenuEntry menuEntry__ = menuEntries.get(i);
 
-                    Gobject.g_object_force_floating(menuEntry__._native);
-                    Gtk.gtk_container_remove(_native, menuEntry__._native);
+                    if (menuEntry__ instanceof GtkEntry) {
+                        GtkEntry entry = (GtkEntry) menuEntry__;
+
+                        Gobject.g_object_force_floating(entry._native);
+                        Gtk.gtk_container_remove(_native, entry._native);
+                    }
+                    else if (menuEntry__ instanceof GtkMenu) {
+                        GtkMenu subMenu = (GtkMenu) menuEntry__;
+
+                        Gobject.g_object_force_floating(subMenu.menuEntry._native);
+                        Gtk.gtk_container_remove(_native, subMenu.menuEntry._native);
+                    }
                 }
 
                 Gtk.gtk_widget_destroy(_native);
@@ -173,23 +257,27 @@ class GtkMenu extends Menu implements MenuEntry {
             }
 
             for (int i = 0; i < menuEntries.size(); i++) {
-                GtkEntry menuEntry__ = (GtkEntry) menuEntries.get(i);
+                MenuEntry menuEntry__ = menuEntries.get(i);
+
                 // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
-                menuEntry__.setSpacerImage(hasImages);
+                if (menuEntry__ instanceof GtkEntry) {
+                    GtkEntry entry = (GtkEntry) menuEntry__;
+                    entry.setSpacerImage(hasImages);
 
-                // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-                Gtk.gtk_menu_shell_append(this._native, menuEntry__._native);
-                Gobject.g_object_ref_sink(menuEntry__._native);  // undoes "floating"
+                    // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
+                    Gtk.gtk_menu_shell_append(this._native, entry._native);
+                    Gobject.g_object_ref_sink(entry._native);  // undoes "floating"
+                }
+                else if (menuEntry__ instanceof GtkMenu) {
+                    GtkMenu subMenu = (GtkMenu) menuEntry__;
 
-                if (menuEntry__ instanceof GtkEntryItem) {
-                    GtkMenu subMenu = ((GtkEntryItem) menuEntry__).getSubMenu();
-                    if (subMenu != null) {
+                    // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
+                    Gtk.gtk_menu_shell_append(this._native, subMenu.menuEntry._native);
+                    Gobject.g_object_ref_sink(subMenu.menuEntry._native);  // undoes "floating"
+
+                    if (subMenu.getParent() != GtkMenu.this) {
                         // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
-                        if (subMenu.getParent() != GtkMenu.this) {
-                            subMenu.createMenu();
-                        } else {
-                            Gtk.gtk_widget_set_sensitive(menuEntry__._native, Gtk.TRUE);
-                        }
+                        subMenu.createMenu();
                     }
                 }
             }
@@ -214,8 +302,14 @@ class GtkMenu extends Menu implements MenuEntry {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
-                    GtkEntry menuEntry__ = (GtkEntry) menuEntries.get(i);
-                    menuEntry__.removePrivate();
+                    MenuEntry menuEntry__ = menuEntries.get(i);
+
+                    if (menuEntry__ instanceof GtkEntry) {
+                        ((GtkEntry) menuEntry__).removePrivate();
+                    }
+                    else if (menuEntry__ instanceof GtkMenu) {
+                        ((GtkMenu) menuEntry__).removePrivate();
+                    }
                 }
                 menuEntries.clear();
 
@@ -295,29 +389,20 @@ class GtkMenu extends Menu implements MenuEntry {
                         // To work around this issue, we destroy then recreate the menu every time something is changed.
                         deleteMenu();
 
+                        GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this, new GtkEntryItem(GtkMenu.this, null));
+                        subMenu.setText(menuText);
+                        subMenu.setImage(imagePath);
 
-                        menuEntry = new GtkEntryItem(GtkMenu.this, null);
-                        Gtk.gtk_widget_set_sensitive(_native, Gtk.TRUE); // submenu needs to be active
-                        menuEntry.setText(menuText);
-                        menuEntry.setImage(imagePath);
-                        menuEntries.add(menuEntry);
-
-                        GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this, (GtkEntryItem) menuEntry);
-
-                        ((GtkEntryItem) menuEntry).setSubMenu(subMenu);
+                        menuEntries.add(subMenu);
 
                         value.set(subMenu);
 
                         createMenu();
-                    } else if (menuEntry instanceof GtkEntryItem) {
-                        GtkMenu subMenu = ((GtkEntryItem) menuEntry).getSubMenu();
-                        if (subMenu != null) {
+                    } else if (menuEntry instanceof GtkMenu) {
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
 
-                            menuEntry.setText(menuText);
-                            menuEntry.setImage(imagePath);
-
-                            value.set(subMenu);
-                        }
+                        value.set(((GtkMenu) menuEntry));
                     }
                 }
             }
@@ -328,61 +413,18 @@ class GtkMenu extends Menu implements MenuEntry {
 
     @Override
     public
-    String getText() {
-        return null;
-    }
-
-    @Override
-    public
-    void setText(final String newText) {
-
-    }
-
-    @Override
-    public
-    void setImage(final File imageFile) {
-
-    }
-
-    @Override
-    public
-    void setImage(final String imagePath) {
-
-    }
-
-    @Override
-    public
-    void setImage(final URL imageUrl) {
-
-    }
-
-    @Override
-    public
-    void setImage(final String cacheName, final InputStream imageStream) {
-
-    }
-
-    @Override
-    public
-    void setImage(final InputStream imageStream) {
-
-    }
-
-    @Override
-    public
-    boolean hasImage() {
-        return false;
-    }
-
-    @Override
-    public
-    void setCallback(final SystemTrayMenuAction callback) {
-
-    }
-
-    @Override
-    public
     void remove() {
+        GtkMenu parent = (GtkMenu) getParent();
 
+        Gtk.gtk_container_remove(parent._native, _native);
+        Gtk.gtk_menu_shell_deactivate(parent._native, _native);
+
+        removePrivate();
+
+        Gtk.gtk_widget_destroy(_native);
+
+        // have to rebuild the menu now...
+        parent.deleteMenu();
+        parent.createMenu();
     }
 }

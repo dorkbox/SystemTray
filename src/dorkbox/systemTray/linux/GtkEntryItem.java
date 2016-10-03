@@ -39,9 +39,6 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private volatile boolean hasLegitIcon = true;
 
-    // only set when this entry has a submenu attached to it. One cannot "unattach" a sub-menu, they must delete+add
-    private GtkMenu subMenu;
-
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
@@ -63,20 +60,6 @@ class GtkEntryItem extends GtkEntry implements GCallback {
             Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
             nativeLong = null;
         }
-    }
-
-    /**
-     * Saves the sub-menu for an entry, so we can recreate all of the menus when one entry changes (because of how GTK on some systems work
-     *
-     * @param subMenu The submenu that is attached to this menu entry
-     */
-    void setSubMenu(GtkMenu subMenu) {
-        this.subMenu = subMenu;
-    }
-
-    // only needed for recursive create/delete menus
-    GtkMenu getSubMenu() {
-        return subMenu;
     }
 
     @Override
@@ -175,10 +158,6 @@ class GtkEntryItem extends GtkEntry implements GCallback {
         if (image != null) {
             Gtk.gtk_widget_destroy(image);
             image = null;
-        }
-
-        if (subMenu != null) {
-            subMenu.obliterateMenu();
         }
     }
 }
