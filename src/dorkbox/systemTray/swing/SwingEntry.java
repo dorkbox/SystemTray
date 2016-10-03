@@ -27,7 +27,7 @@ import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 abstract
-class SwingMenuEntry implements MenuEntry {
+class SwingEntry implements MenuEntry {
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 
     private final SwingMenu parent;
@@ -37,7 +37,7 @@ class SwingMenuEntry implements MenuEntry {
     private volatile String text;
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntry(final SwingMenu parent, final JComponent menuItem) {
+    SwingEntry(final SwingMenu parent, final JComponent menuItem) {
         this.parent = parent;
         this._native = menuItem;
 
@@ -172,7 +172,7 @@ class SwingMenuEntry implements MenuEntry {
             return false;
         }
 
-        SwingMenuEntry other = (SwingMenuEntry) obj;
+        SwingEntry other = (SwingEntry) obj;
         return this.id == other.id;
     }
 }

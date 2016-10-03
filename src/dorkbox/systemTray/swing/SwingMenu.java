@@ -19,6 +19,7 @@ package dorkbox.systemTray.swing;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -29,6 +30,7 @@ import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a MenuEntry -- so it has both
@@ -56,11 +58,21 @@ class SwingMenu extends Menu implements MenuEntry {
             public
             void run() {
                 if (parent != null) {
-                    _native = new AdjustedJMenu((SwingSystemTrayMenuPopup)((SwingMenu) systemTray.getMenu())._native);
+                    if (!OS.isLinux()) {
+                        _native = new AdjustedJMenu(null);
+                    }
+                    else {
+                        _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
+                    }
+
                     ((SwingMenu) parent)._native.add(_native);
                 } else {
                     // when we are the system tray
-                    _native = new SwingSystemTrayMenuPopup();
+                    if (OS.isLinux()) {
+                        _native = new SwingSystemTrayLinuxMenuPopup();
+                    } else {
+                        _native = new SwingSystemTrayMenuPopup();
+                    }
                 }
             }
         });
@@ -72,16 +84,23 @@ class SwingMenu extends Menu implements MenuEntry {
         SwingUtil.invokeLater(runnable);
     }
 
+    protected
+    void dispatchAndWait(final Runnable runnable) {
+        // this will properly check if we are running on the EDT
+        SwingUtil.invokeAndWait(runnable);
+    }
+
+
     @Override
     public
-    void addMenuSpacer() {
+    void addSeparator() {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
                     synchronized (menuEntries) {
-                        MenuEntry menuEntry = new SwingMenuEntrySpacer(SwingMenu.this);
+                        MenuEntry menuEntry = new SwingEntrySeparator(SwingMenu.this);
                         menuEntries.add(menuEntry);
                     }
                 }
@@ -93,43 +112,77 @@ class SwingMenu extends Menu implements MenuEntry {
      * Will add a new menu entry, or update one if it already exists
      */
     protected
-    void addMenuEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
+    MenuEntry addEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
         }
 
-        dispatch(new Runnable() {
+        final AtomicReference<MenuEntry> value = new AtomicReference<MenuEntry>();
+
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
-                    MenuEntry menuEntry = getMenuEntry(menuText);
+                    MenuEntry menuEntry = get(menuText);
 
-                    if (menuEntry != null) {
-                        throw new IllegalArgumentException("Menu entry already exists for given label '" + menuText + "'");
-                    }
-                    else {
+                    if (menuEntry == null) {
                         // must always be called on the EDT
-                        if (!menuText.equals("AAAAAAAA")) {
-                            menuEntry = new SwingMenuEntryItem(SwingMenu.this, callback);
-                            menuEntry.setText(menuText);
-                            menuEntry.setImage(imagePath);
-                        } else {
-                            menuEntry = new SwingMenu(getSystemTray(), SwingMenu.this);
-                            menuEntry.setText(menuText);
-                            menuEntry.setImage(imagePath);
-                            ((SwingMenu) menuEntry).addMenuEntry("asdasdasd", null, null, null);
-                        }
+                        menuEntry = new SwingEntryItem(SwingMenu.this, callback);
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
 
                         menuEntries.add(menuEntry);
+                    } else if (menuEntry instanceof SwingEntryItem) {
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
                     }
+
+                    value.set(menuEntry);
                 }
             }
         });
+
+        return value.get();
     }
 
+    /**
+     * Will add a new sub-menu entry, or update one if it already exists
+     */
+    protected
+    Menu addMenu_(final String menuText, final File imagePath) {
+        if (menuText == null) {
+            throw new NullPointerException("Menu text cannot be null");
+        }
 
+        final AtomicReference<Menu> value = new AtomicReference<Menu>();
 
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    MenuEntry menuEntry = get(menuText);
+
+                    if (menuEntry == null) {
+                        // must always be called on the EDT
+                        menuEntry = new SwingMenu(getSystemTray(), SwingMenu.this);
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
+                        value.set((Menu)menuEntry);
+
+                    } else if (menuEntry instanceof SwingMenu) {
+                        menuEntry.setText(menuText);
+                        menuEntry.setImage(imagePath);
+                    }
+
+                    menuEntries.add(menuEntry);
+                }
+            }
+        });
+
+        return value.get();
+    }
 
 
 

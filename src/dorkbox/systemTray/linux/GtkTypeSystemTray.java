@@ -27,14 +27,14 @@ abstract
 class GtkTypeSystemTray extends GtkMenu {
 
     GtkTypeSystemTray(final SystemTray systemTray) {
-        super(systemTray, null);
+        super(systemTray, null, null);
     }
 
     public
     String getStatus() {
         synchronized (menuEntries) {
             MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof GtkMenuEntryStatus) {
+            if (menuEntry instanceof GtkEntryStatus) {
                 return menuEntry.getText();
             }
         }
@@ -52,14 +52,14 @@ class GtkTypeSystemTray extends GtkMenu {
                 // To work around this issue, we destroy then recreate the menu every time something is changed.
                 synchronized (menuEntries) {
                     // status is ALWAYS at 0 index...
-                    GtkMenuEntry menuEntry = null;
+                    GtkEntry menuEntry = null;
                     if (!menuEntries.isEmpty()) {
-                        menuEntry = (GtkMenuEntry) menuEntries.get(0);
+                        menuEntry = (GtkEntry) menuEntries.get(0);
                     }
 
-                    if (menuEntry instanceof GtkMenuEntryStatus) {
+                    if (menuEntry instanceof GtkEntryStatus) {
                         // always delete...
-                        removeMenuEntry(menuEntry);
+                        remove(menuEntry);
                     }
 
                     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
@@ -67,13 +67,13 @@ class GtkTypeSystemTray extends GtkMenu {
                     deleteMenu();
 
                     if (menuEntry == null) {
-                        menuEntry = new GtkMenuEntryStatus( GtkTypeSystemTray.this, statusText);
+                        menuEntry = new GtkEntryStatus(GtkTypeSystemTray.this, statusText);
                         // status is ALWAYS at 0 index...
                         menuEntries.add(0, menuEntry);
-                    } else if (menuEntry instanceof GtkMenuEntryStatus) {
+                    } else if (menuEntry instanceof GtkEntryStatus) {
                         // change the text?
                         if (statusText != null) {
-                            menuEntry = new GtkMenuEntryStatus( GtkTypeSystemTray.this, statusText);
+                            menuEntry = new GtkEntryStatus(GtkTypeSystemTray.this, statusText);
                             menuEntries.add(0, menuEntry);
                         }
                     }

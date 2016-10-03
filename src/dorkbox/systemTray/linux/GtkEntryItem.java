@@ -26,7 +26,7 @@ import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
-class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
+class GtkEntryItem extends GtkEntry implements GCallback {
     private static File transparentIcon = null;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
@@ -39,11 +39,14 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private volatile boolean hasLegitIcon = true;
 
+    // only set when this entry has a submenu attached to it. One cannot "unattach" a sub-menu, they must delete+add
+    private GtkMenu subMenu;
+
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntryItem(final GtkMenu parent, final SystemTrayMenuAction callback) {
+    GtkEntryItem(final GtkMenu parent, final SystemTrayMenuAction callback) {
         super(parent, Gtk.gtk_image_menu_item_new_with_label(""));
         this.callback = callback;
 
@@ -62,6 +65,20 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
         }
     }
 
+    /**
+     * Saves the sub-menu for an entry, so we can recreate all of the menus when one entry changes (because of how GTK on some systems work
+     *
+     * @param subMenu The submenu that is attached to this menu entry
+     */
+    void setSubMenu(GtkMenu subMenu) {
+        this.subMenu = subMenu;
+    }
+
+    // only needed for recursive create/delete menus
+    GtkMenu getSubMenu() {
+        return subMenu;
+    }
+
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
@@ -74,7 +91,7 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
     int callback(final Pointer instance, final Pointer data) {
         final SystemTrayMenuAction cb = this.callback;
         if (cb != null) {
-            Gtk.proxyClick(getParent(), GtkMenuEntryItem.this, cb);
+            Gtk.proxyClick(getParent(), GtkEntryItem.this, cb);
         }
 
         return Gtk.TRUE;
@@ -158,6 +175,10 @@ class GtkMenuEntryItem extends GtkMenuEntry implements GCallback {
         if (image != null) {
             Gtk.gtk_widget_destroy(image);
             image = null;
+        }
+
+        if (subMenu != null) {
+            subMenu.obliterateMenu();
         }
     }
 }

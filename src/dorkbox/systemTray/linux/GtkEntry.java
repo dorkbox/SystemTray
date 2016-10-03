@@ -27,7 +27,7 @@ import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
 abstract
-class GtkMenuEntry implements MenuEntry {
+class GtkEntry implements MenuEntry {
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 
     private final GtkMenu parent;
@@ -40,7 +40,7 @@ class GtkMenuEntry implements MenuEntry {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntry(final GtkMenu parent, final Pointer menuItem) {
+    GtkEntry(final GtkMenu parent, final Pointer menuItem) {
         this.parent = parent;
         this._native = menuItem;
     }
@@ -184,7 +184,7 @@ class GtkMenuEntry implements MenuEntry {
             return false;
         }
 
-        GtkMenuEntry other = (GtkMenuEntry) obj;
+        GtkEntry other = (GtkEntry) obj;
         return this.id == other.id;
     }
 }

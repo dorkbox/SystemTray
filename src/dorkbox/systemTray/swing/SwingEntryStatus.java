@@ -23,10 +23,10 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.MenuStatus;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
-class SwingMenuEntryStatus extends SwingMenuEntry implements MenuStatus {
+class SwingEntryStatus extends SwingEntry implements MenuStatus {
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntryStatus(final SwingMenu parent, final String label) {
+    SwingEntryStatus(final SwingMenu parent, final String label) {
         super(parent, new JMenuItem());
         setText(label);
     }

@@ -15,15 +15,11 @@
  */
 package dorkbox.systemTray;
 
-import static dorkbox.systemTray.SystemTray.TIMEOUT;
-
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,11 +29,11 @@ import dorkbox.systemTray.util.ImageUtils;
  * Represents a cross-platform menu that is displayed by the tray-icon or as a sub-menu
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public
+public abstract
 class Menu {
     public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
-
+// TODO: enable/disable entries and menus?
     protected final java.util.List<MenuEntry> menuEntries = new ArrayList<MenuEntry>();
 
     private final SystemTray systemTray;
@@ -81,23 +77,32 @@ class Menu {
      * <Spacer>         (deleted)
      * Entry3           (deleted)
      */
-    public
-    void addMenuSpacer() {
-    }
+    public abstract
+    void addSeparator();
 
     /*
      * Will add a new menu entry, or update one if it already exists
      */
-    protected
-    void addMenuEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
-    }
+    protected abstract
+    MenuEntry addEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback);
+
+    /*
+     * Will add a new sub-menu entry, or update one if it already exists
+     */
+    protected abstract
+    Menu addMenu_(final String menuText, final File imagePath);
 
     /*
      * Necessary to guarantee all updates occur on the dispatch thread
      */
-    protected
-    void dispatch(Runnable runnable) {
-    }
+    protected abstract
+    void dispatch(Runnable runnable);
+
+    /*
+     * Necessary to guarantee all updates occur on the dispatch thread
+     */
+    protected abstract
+    void dispatchAndWait(Runnable runnable);
 
     /**
      * Gets the menu entry for a specified text
@@ -105,7 +110,7 @@ class Menu {
      * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
      */
     public
-    MenuEntry getMenuEntry(final String menuText) {
+    MenuEntry get(final String menuText) {
         if (menuText == null || menuText.isEmpty()) {
             return null;
         }
@@ -126,18 +131,18 @@ class Menu {
     }
 
     /**
-     * Gets the first menu entry, ignoring status and spacers
+     * Gets the first menu entry or sub-menu, ignoring status and spacers
      */
     public
-    MenuEntry getFirstMenuEntry() {
-        return getMenuEntry(0);
+    MenuEntry getFirst() {
+        return get(0);
     }
 
     /**
-     * Gets the last menu entry, ignoring status and spacers
+     * Gets the last menu entry or sub-menu, ignoring status and spacers
      */
     public
-    MenuEntry getLastMenuEntry() {
+    MenuEntry getLast() {
         // Must be wrapped in a synchronized block for object visibility
         synchronized (menuEntries) {
             if (!menuEntries.isEmpty()) {
@@ -156,12 +161,12 @@ class Menu {
     }
 
     /**
-     * Gets the menu entry for a specified index (zero-index), ignoring status and spacers
+     * Gets the menu entry or sub-menu for a specified index (zero-index), ignoring status and spacers
      *
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
     public
-    MenuEntry getMenuEntry(final int menuIndex) {
+    MenuEntry get(final int menuIndex) {
         if (menuIndex < 0) {
             return null;
         }
@@ -190,52 +195,52 @@ class Menu {
 
 
     /**
-     * Adds a menu entry to the tray icon with text (no image)
+     * Adds a menu entry with text (no image)
      *
      * @param menuText string of the text you want to appear
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, SystemTrayMenuAction callback) {
-        addMenuEntry(menuText, (String) null, callback);
+    MenuEntry addEntry(String menuText, SystemTrayMenuAction callback) {
+        return addEntry(menuText, (String) null, callback);
     }
 
     /**
-     * Adds a menu entry to the tray icon with text + image
+     * Adds a menu entry with text + image
      *
      * @param menuText string of the text you want to appear
      * @param imagePath the image (full path required) to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+    MenuEntry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
         if (imagePath == null) {
-            addMenuEntry_(menuText, null, callback);
+            return addEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback);
+            return addEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback);
         }
     }
 
     /**
-     * Adds a menu entry to the tray icon with text + image
+     * Adds a menu entry with text + image
      *
      * @param menuText string of the text you want to appear
      * @param imageUrl the URL of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+    MenuEntry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
         if (imageUrl == null) {
-            addMenuEntry_(menuText, null, callback);
+            return addEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
+            return addEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback);
         }
     }
 
     /**
-     * Adds a menu entry to the tray icon with text + image
+     * Adds a menu entry with text + image
      *
      * @param menuText string of the text you want to appear
      * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
@@ -243,31 +248,113 @@ class Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+    MenuEntry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
         if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
+            return addEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream), callback);
+            return addEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream), callback);
         }
     }
 
     /**
-     * Adds a menu entry to the tray icon with text + image
+     * Adds a menu entry with text + image
      *
      * @param menuText string of the text you want to appear
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    void addMenuEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+    MenuEntry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
         if (imageStream == null) {
-            addMenuEntry_(menuText, null, callback);
+            return addEntry_(menuText, null, callback);
         }
         else {
-            addMenuEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback);
+            return addEntry_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback);
         }
     }
+
+
+
+
+    /**
+     * Adds a sub-menu entry with text (no image)
+     *
+     * @param menuText string of the text you want to appear
+     */
+    public
+    Menu addMenu(String menuText) {
+        return addMenu(menuText, (String) null);
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imagePath the image (full path required) to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, String imagePath) {
+        if (imagePath == null) {
+            return addMenu_(menuText, null);
+        }
+        else {
+            return addMenu_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
+        }
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageUrl the URL of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, URL imageUrl) {
+        if (imageUrl == null) {
+            return addMenu_(menuText, null);
+        }
+        else {
+            return addMenu_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
+        }
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, String cacheName, InputStream imageStream) {
+        if (imageStream == null) {
+            return addMenu_(menuText, null);
+        }
+        else {
+            return addMenu_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, cacheName, imageStream));
+        }
+    }
+
+    /**
+     * Adds a sub-menu entry with text + image
+     *
+     * @param menuText string of the text you want to appear
+     * @param imageStream the InputStream of the image to use. If null, no image will be used
+     */
+    public
+    Menu addMenu(String menuText, InputStream imageStream) {
+        if (imageStream == null) {
+            return addMenu_(menuText, null);
+        }
+        else {
+            return addMenu_(menuText, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
+        }
+    }
+
+
+
+
 
     /**
      *  This removes a menu entry from the dropdown menu.
@@ -275,16 +362,15 @@ class Menu {
      * @param menuEntry This is the menu entry to remove
      */
     public
-    void removeMenuEntry(final MenuEntry menuEntry) {
+    void remove(final MenuEntry menuEntry) {
         if (menuEntry == null) {
             throw new NullPointerException("No menu entry exists for menuEntry");
         }
 
         // have to wait for the value
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue = new AtomicBoolean(false);
 
-        dispatch(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -305,78 +391,69 @@ class Menu {
                         // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
                         if (!menuEntries.isEmpty()) {
                             if (menuEntries.get(0) instanceof MenuSpacer) {
-                                removeMenuEntry(menuEntries.get(0));
+                                remove(menuEntries.get(0));
                             }
                         }
                         // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
                         if (!menuEntries.isEmpty()) {
                             if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
-                                removeMenuEntry(menuEntries.get(menuEntries.size()-1));
+                                remove(menuEntries.get(menuEntries.size() - 1));
                             }
                         }
                     }
                 } catch (Exception e) {
                     SystemTray.logger.error("Error removing menu entry from list.", e);
-                } finally {
-                    countDownLatch.countDown();
                 }
             }
         });
-
-        try {
-            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-
-            }
-        } catch (InterruptedException e) {
-            SystemTray.logger.error("Error removing menu entry: {}", menuEntry.getText());
-        }
 
         if (!hasValue.get()) {
             throw new NullPointerException("Menu entry '" + menuEntry.getText() + "'not found in list while trying to remove it.");
         }
     }
 
-
     /**
-     *  This removes a menu entry (via the text label) from the dropdown menu.
+     *  This removes a sub-menu entry or sub-menu from the dropdown menu.
      *
-     * @param menuText This is the label for the menu entry to remove
+     * @param menu This is the menu entry to remove
      */
     public
-    void removeMenuEntry(final String menuText) {
+    void remove(final Menu menu) {
+        if (menu == null) {
+            throw new NullPointerException("No menu entry exists for menuEntry");
+        }
+
+
+
+    }
+
+
+    /**
+     *  This removes a menu entry or sub-menu (via the text label) from the dropdown menu.
+     *
+     * @param menuText This is the label for the menu entry or sub-menu to remove
+     */
+    public
+    void remove(final String menuText) {
         // have to wait for the value
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicBoolean hasValue = new AtomicBoolean(true);
 
-        dispatch(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
-                    MenuEntry menuEntry = getMenuEntry(menuText);
+                    MenuEntry menuEntry = get(menuText);
 
                     if (menuEntry == null) {
                         hasValue.set(false);
                     }
                     else {
-                        removeMenuEntry(menuEntry);
+                        remove(menuEntry);
                     }
                 }
-                countDownLatch.countDown();
             }
         });
-
-        try {
-            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                           "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-
-            }
-        } catch (InterruptedException e) {
-            SystemTray.logger.error("Error removing menu entry: {}", menuText);
-        }
 
         if (!hasValue.get()) {
             throw new NullPointerException("No menu entry exists for string '" + menuText + "'");

@@ -22,10 +22,11 @@ import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
 
 class AdjustedJMenu extends JMenu {
-    private final SwingSystemTrayMenuPopup mainPopup;
 
-    public
-    AdjustedJMenu(final SwingSystemTrayMenuPopup mainPopup) {
+    // only necessary in linux
+    private final SwingSystemTrayLinuxMenuPopup mainPopup;
+
+    AdjustedJMenu(final SwingSystemTrayLinuxMenuPopup mainPopup) {
         this.mainPopup = mainPopup;
     }
 
@@ -48,7 +49,9 @@ class AdjustedJMenu extends JMenu {
     @Override
     public
     void setPopupMenuVisible(final boolean visible) {
-        mainPopup.track(getPopupMenu(), visible);
+        if (mainPopup != null) {
+            mainPopup.track(getPopupMenu(), visible);
+        }
 
         super.setPopupMenuVisible(visible);
     }
@@ -56,8 +59,11 @@ class AdjustedJMenu extends JMenu {
     @Override
     public
     void removeNotify() {
-        // have to make sure that when we are removed, we remove ourself from the tracker
-        mainPopup.track(getPopupMenu(), false);
+        if (mainPopup != null) {
+            // have to make sure that when we are removed, we remove ourself from the tracker
+            mainPopup.track(getPopupMenu(), false);
+        }
+
         super.removeNotify();
     }
 }

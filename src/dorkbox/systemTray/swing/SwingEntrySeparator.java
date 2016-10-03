@@ -22,10 +22,10 @@ import javax.swing.JSeparator;
 import dorkbox.systemTray.MenuSpacer;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
-class SwingMenuEntrySpacer extends SwingMenuEntry implements MenuSpacer {
+class SwingEntrySeparator extends SwingEntry implements MenuSpacer {
 
     // this is ALWAYS called on the EDT.
-    SwingMenuEntrySpacer(final SwingMenu parent) {
+    SwingEntrySeparator(final SwingMenu parent) {
         super(parent, new JSeparator(JSeparator.HORIZONTAL));
     }
 

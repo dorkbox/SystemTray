@@ -27,6 +27,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.util.ImageUtils;
@@ -87,7 +88,7 @@ class SwingSystemTray extends SwingMenu {
     String getStatus() {
         synchronized (menuEntries) {
             MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof SwingMenuEntryStatus) {
+            if (menuEntry instanceof SwingEntryStatus) {
                 return menuEntry.getText();
             }
         }
@@ -103,17 +104,17 @@ class SwingSystemTray extends SwingMenu {
             void run() {
                 synchronized (menuEntries) {
                     // status is ALWAYS at 0 index...
-                    SwingMenuEntry menuEntry = null;
+                    SwingEntry menuEntry = null;
                     if (!menuEntries.isEmpty()) {
-                        menuEntry = (SwingMenuEntry) menuEntries.get(0);
+                        menuEntry = (SwingEntry) menuEntries.get(0);
                     }
 
-                    if (menuEntry instanceof SwingMenuEntryStatus) {
+                    if (menuEntry instanceof SwingEntryStatus) {
                         // set the text or delete...
 
                         if (statusText == null) {
                             // delete
-                            removeMenuEntry(menuEntry);
+                            remove(menuEntry);
                         }
                         else {
                             // set text
@@ -122,7 +123,7 @@ class SwingSystemTray extends SwingMenu {
 
                     } else {
                         // create a new one
-                        menuEntry = new SwingMenuEntryStatus(SwingSystemTray.this, statusText);
+                        menuEntry = new SwingEntryStatus(SwingSystemTray.this, statusText);
                         // status is ALWAYS at 0 index...
                         menuEntries.add(0, menuEntry);
                     }
@@ -181,7 +182,7 @@ class SwingSystemTray extends SwingMenu {
 
                             // voodoo to get this to popup to have the correct parent
                             // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
-                            ((SwingSystemTrayMenuPopup) _native).setInvoker(_native);
+                            ((JPopupMenu) _native).setInvoker(_native);
                             _native.setLocation(x, y);
                             _native.setVisible(true);
                             _native.setFocusable(true);

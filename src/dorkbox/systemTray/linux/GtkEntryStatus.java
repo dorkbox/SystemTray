@@ -15,48 +15,42 @@
  */
 package dorkbox.systemTray.linux;
 
-import java.io.File;
+import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.MenuSpacer;
 import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
-class GtkMenuEntrySpacer extends GtkMenuEntry implements MenuSpacer {
+// you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
+// where a GtkStatusIndicator + SwingTray will have everything lined up. (with or without icons).  This is to normalize how it looks
+class GtkEntryStatus extends GtkEntryItem {
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkMenuEntrySpacer(final GtkMenu parent) {
-        super(parent, Gtk.gtk_separator_menu_item_new());
-    }
-
-    @Override
-    void setSpacerImage(final boolean everyoneElseHasImages) {
+    GtkEntryStatus(final GtkMenu parent, final String text) {
+        super(parent, null);
+        setText(text);
     }
 
     // called in the GTK thread
     @Override
     void renderText(final String text) {
-    }
+        // evil hacks abound...
+        // https://developer.gnome.org/pango/stable/PangoMarkupFormat.html
 
-    @Override
-    void setImage_(final File imageFile) {
-    }
+        Pointer label = Gtk.gtk_bin_get_child(_native);
+        Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
+        Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", text);
+        Gtk.gtk_label_set_markup(label, markup);
+        Gobject.g_free(markup);
 
-    @Override
-    void removePrivate() {
-    }
-
-    @Override
-    public
-    boolean hasImage() {
-        return false;
+        Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
     }
 
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
-
     }
 }
