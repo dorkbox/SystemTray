@@ -32,7 +32,6 @@ import javax.swing.JPopupMenu;
 import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.ScreenUtil;
-import dorkbox.util.SwingUtil;
 
 /**
  * Class for handling all system tray interaction, via SWING.
@@ -57,7 +56,7 @@ class SwingSystemTray extends SwingMenu {
 
         ImageUtils.determineIconSize(dorkbox.systemTray.SystemTray.TYPE_SWING);
 
-        SwingUtil.invokeAndWait(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -68,7 +67,7 @@ class SwingSystemTray extends SwingMenu {
 
     public
     void shutdown() {
-        SwingUtil.invokeAndWait(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {

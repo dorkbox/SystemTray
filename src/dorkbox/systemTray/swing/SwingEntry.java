@@ -23,6 +23,7 @@ import javax.swing.JComponent;
 
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
@@ -146,14 +147,18 @@ class SwingEntry implements MenuEntry {
     @Override
     public final
     void remove() {
-        SwingUtil.invokeAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                removePrivate();
-                parent._native.remove(_native);
-            }
-        });
+        try {
+            SwingUtil.invokeAndWait(new Runnable() {
+                @Override
+                public
+                void run() {
+                    removePrivate();
+                    parent._native.remove(_native);
+                }
+            });
+        } catch (Exception e) {
+            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
+        }
     }
 
     // called when this item is removed. Necessary to cleanup/remove itself

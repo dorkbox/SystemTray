@@ -122,7 +122,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
     public
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
-            dispatch(new Runnable() {
+            dispatchAndWait(new Runnable() {
                 @Override
                 public
                 void run() {

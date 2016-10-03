@@ -53,29 +53,33 @@ class SwingMenu extends Menu implements MenuEntry {
     SwingMenu(final SystemTray systemTray, final Menu parent) {
         super(systemTray, parent);
 
-        SwingUtil.invokeAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (parent != null) {
-                    if (OS.isLinux()) {
-                        _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
-                    }
-                    else {
-                        _native = new AdjustedJMenu(null);
-                    }
+        try {
+            SwingUtil.invokeAndWait(new Runnable() {
+                @Override
+                public
+                void run() {
+                    if (parent != null) {
+                        if (OS.isLinux()) {
+                            _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
+                        }
+                        else {
+                            _native = new AdjustedJMenu(null);
+                        }
 
-                    ((SwingMenu) parent)._native.add(_native);
-                } else {
-                    // when we are the system tray
-                    if (OS.isLinux()) {
-                        _native = new SwingSystemTrayLinuxMenuPopup();
+                        ((SwingMenu) parent)._native.add(_native);
                     } else {
-                        _native = new SwingSystemTrayMenuPopup();
+                        // when we are the system tray
+                        if (OS.isLinux()) {
+                            _native = new SwingSystemTrayLinuxMenuPopup();
+                        } else {
+                            _native = new SwingSystemTrayMenuPopup();
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (Exception e) {
+            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
+        }
     }
 
     protected
@@ -87,7 +91,11 @@ class SwingMenu extends Menu implements MenuEntry {
     protected
     void dispatchAndWait(final Runnable runnable) {
         // this will properly check if we are running on the EDT
-        SwingUtil.invokeAndWait(runnable);
+        try {
+            SwingUtil.invokeAndWait(runnable);
+        } catch (Exception e) {
+            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
+        }
     }
 
 
@@ -308,7 +316,7 @@ class SwingMenu extends Menu implements MenuEntry {
     @Override
     public final
     void remove() {
-        SwingUtil.invokeAndWait(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
