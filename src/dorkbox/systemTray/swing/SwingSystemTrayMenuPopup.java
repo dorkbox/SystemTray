@@ -35,7 +35,7 @@ import dorkbox.util.SwingUtil;
  * work, so we must implement an "auto-hide" feature that checks if our mouse is still inside a menu every POPUP_HIDE_DELAY seconds
  */
 public
-class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
+class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
     @Property
@@ -56,7 +56,7 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
     // NOTE: we can use the "hidden dialog" focus window trick... only on windows and mac
     // private JDialog hiddenDialog;
 
-    SwingSystemTrayLinuxMenuPopup() {
+    SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
 //        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
@@ -89,7 +89,7 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
                                    ) {
 
                                     // restart the timer
-                                    SwingSystemTrayLinuxMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+                                    SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
                                     return;
                                 }
                             }
@@ -103,7 +103,7 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
                             ) {
 
                             // restart the timer
-                            SwingSystemTrayLinuxMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+                            SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
                             return;
                         }
 
@@ -119,7 +119,7 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
             public
             void mouseExited(MouseEvent event) {
                 // wait before checking if mouse is still on the menu
-                SwingSystemTrayLinuxMenuPopup.this.timer.delay(SwingSystemTrayLinuxMenuPopup.this.timer.getDelay());
+                SwingSystemTrayMenuPopup.this.timer.delay(SwingSystemTrayMenuPopup.this.timer.getDelay());
             }
         });
     }
@@ -154,7 +154,7 @@ class SwingSystemTrayLinuxMenuPopup extends JPopupMenu {
         }
 
         // restart the timer
-        SwingSystemTrayLinuxMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
+        SwingSystemTrayMenuPopup.this.timer.delay(POPUP_HIDE_DELAY);
     }
 
     public

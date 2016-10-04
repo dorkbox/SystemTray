@@ -59,20 +59,20 @@ class SwingMenu extends Menu implements MenuEntry {
                 public
                 void run() {
                     if (parent != null) {
-                        if (OS.isLinux()) {
-                            _native = new AdjustedJMenu((SwingSystemTrayLinuxMenuPopup)((SwingMenu) systemTray.getMenu())._native);
+                        if (OS.isWindows()) {
+                            _native = new AdjustedJMenu(null);
                         }
                         else {
-                            _native = new AdjustedJMenu(null);
+                            _native = new AdjustedJMenu((SwingSystemTrayMenuPopup)((SwingMenu) systemTray.getMenu())._native);
                         }
 
                         ((SwingMenu) parent)._native.add(_native);
                     } else {
                         // when we are the system tray
-                        if (OS.isLinux()) {
-                            _native = new SwingSystemTrayLinuxMenuPopup();
-                        } else {
+                        if (OS.isWindows()) {
                             _native = new SwingSystemTrayMenuWindowsPopup();
+                        } else {
+                            _native = new SwingSystemTrayMenuPopup();
                         }
                     }
                 }
@@ -324,8 +324,8 @@ class SwingMenu extends Menu implements MenuEntry {
                 if (_native instanceof SwingSystemTrayMenuWindowsPopup) {
                     ((SwingSystemTrayMenuWindowsPopup) _native).close();
                 }
-                else if (_native instanceof SwingSystemTrayLinuxMenuPopup) {
-                    ((SwingSystemTrayLinuxMenuPopup) _native).close();
+                else if (_native instanceof SwingSystemTrayMenuPopup) {
+                    ((SwingSystemTrayMenuPopup) _native).close();
                 }
 
                 SwingMenu parent = (SwingMenu) getParent();

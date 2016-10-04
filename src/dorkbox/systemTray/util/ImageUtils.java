@@ -51,14 +51,8 @@ class ImageUtils {
     public static volatile int TRAY_SIZE = 0;
     public static volatile int ENTRY_SIZE = 0;
 
-    /**
-     * @param trayType
-     * LINUX_GTK = 1;
-     * LINUX_APP_INDICATOR = 2;
-     * SWING_INDICATOR = 3;
-     */
     public static
-    void determineIconSize(int trayType) {
+    void determineIconSize() {
         int scalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
@@ -142,7 +136,7 @@ class ImageUtils {
                 if (SystemTray.DEBUG) {
                     SystemTray.logger.error("Windows version (partial): '{}'", windowsVersion);
                 }
-            } else {
+            } else if (OS.isLinux()) {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator MIGHT scale the icon (depends on the OS)
                 try {
@@ -187,6 +181,10 @@ class ImageUtils {
                         SystemTray.logger.error("Cannot check scaling factor", e);
                     }
                 }
+            } else if (OS.isMacOsX()) {
+                // don't know how exactly to determine this, but we are going to assume HiDPI for this...
+                // the OS should go up/down as needed.
+                scalingFactor = 8;
             }
         }
 

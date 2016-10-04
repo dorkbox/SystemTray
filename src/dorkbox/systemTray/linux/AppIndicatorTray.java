@@ -66,7 +66,7 @@ class AppIndicatorTray extends GtkTypeSystemTray {
             throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
         }
 
-        ImageUtils.determineIconSize(SystemTray.TYPE_APP_INDICATOR);
+        ImageUtils.determineIconSize();
         Gtk.startGui();
 
         dispatch(new Runnable() {

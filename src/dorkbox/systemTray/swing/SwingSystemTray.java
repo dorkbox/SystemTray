@@ -54,7 +54,7 @@ class SwingSystemTray extends SwingMenu {
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null);
 
-        ImageUtils.determineIconSize(dorkbox.systemTray.SystemTray.TYPE_SWING);
+        ImageUtils.determineIconSize();
 
         dispatchAndWait(new Runnable() {
             @Override

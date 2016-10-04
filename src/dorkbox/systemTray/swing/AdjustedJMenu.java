@@ -24,9 +24,9 @@ import javax.swing.border.EmptyBorder;
 class AdjustedJMenu extends JMenu {
 
     // only necessary in linux
-    private final SwingSystemTrayLinuxMenuPopup mainPopup;
+    private final SwingSystemTrayMenuPopup mainPopup;
 
-    AdjustedJMenu(final SwingSystemTrayLinuxMenuPopup mainPopup) {
+    AdjustedJMenu(final SwingSystemTrayMenuPopup mainPopup) {
         this.mainPopup = mainPopup;
     }
 
