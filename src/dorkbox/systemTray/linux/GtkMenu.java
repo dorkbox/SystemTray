@@ -20,6 +20,7 @@ import static dorkbox.systemTray.SystemTray.TIMEOUT;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,14 +45,16 @@ class GtkMenu extends Menu implements MenuEntry {
     private boolean obliterateInProgress = false;
 
     // called on dispatch
-    GtkMenu(final SystemTray systemTray, final GtkMenu parent, final GtkEntryItem menuEntry) {
+    GtkMenu(final SystemTray systemTray, final GtkMenu parent) {
         super(systemTray, parent);
 
-        if (menuEntry != null) {
+        if (parent != null) {
+            this.menuEntry = new GtkEntryItem(parent, null);
             // by default, no callback on a menu entry means it's DISABLED. we have to undo that, because we don't have a callback for menus
-            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.TRUE);
+            menuEntry.setEnabled(true);
+        } else {
+            this.menuEntry = null;
         }
-        this.menuEntry = menuEntry;
     }
 
     /**
@@ -197,25 +200,18 @@ class GtkMenu extends Menu implements MenuEntry {
         return menuEntry.hasImage();
     }
 
+    // NO OP.
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
-        // NO OP.
     }
 
-
-   /**
-    * Called when this sub-menu is removed from it's parent menu
-    */
+    /**
+     * Called inside the gdk_threads block
+     */
     protected
-    void removePrivate() {
-        // delete all of the children
-        obliterateMenu();
-
-        // remove the gtk entry item from our parent menu
-        if (menuEntry != null) {
-            menuEntry.remove();
-        }
+    void onMenuAdded(final Pointer menu) {
+        // only needed for AppIndicator
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
@@ -224,7 +220,11 @@ class GtkMenu extends Menu implements MenuEntry {
      * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
      */
     void deleteMenu() {
-        if (_native != null && !obliterateInProgress) {
+        if (obliterateInProgress) {
+            return;
+        }
+
+        if (_native != null) {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
@@ -313,15 +313,11 @@ class GtkMenu extends Menu implements MenuEntry {
     }
 
     /**
-     * Called inside the gdk_threads block
-     */
-    void onMenuAdded(final Pointer menu) {
-        // only needed for AppIndicator
-    }
-
-    /**
+     * must be called on the dispatch thread
+     *
      * Completely obliterates the menu, no possible way to reconstruct it.
      */
+    private
     void obliterateMenu() {
         if (_native != null && !obliterateInProgress) {
             obliterateInProgress = true;
@@ -330,13 +326,7 @@ class GtkMenu extends Menu implements MenuEntry {
             synchronized (menuEntries) {
                 for (int i = 0; i < menuEntries.size(); i++) {
                     MenuEntry menuEntry__ = menuEntries.get(i);
-
-                    if (menuEntry__ instanceof GtkEntry) {
-                        ((GtkEntry) menuEntry__).removePrivate();
-                    }
-                    else if (menuEntry__ instanceof GtkMenu) {
-                        ((GtkMenu) menuEntry__).removePrivate();
-                    }
+                    menuEntry__.remove();
                 }
                 menuEntries.clear();
 
@@ -418,7 +408,7 @@ class GtkMenu extends Menu implements MenuEntry {
                         // To work around this issue, we destroy then recreate the menu every time something is changed.
                         deleteMenu();
 
-                        GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this, new GtkEntryItem(GtkMenu.this, null));
+                        GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this);
                         subMenu.setText(menuText);
                         subMenu.setImage(imagePath);
 
@@ -440,20 +430,42 @@ class GtkMenu extends Menu implements MenuEntry {
         return value.get();
     }
 
+
+    // a child will always remove itself from the parent.
     @Override
     public
     void remove() {
-        GtkMenu parent = (GtkMenu) getParent();
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                GtkMenu parent = (GtkMenu) getParent();
 
-        Gtk.gtk_container_remove(parent._native, _native);
-        Gtk.gtk_menu_shell_deactivate(parent._native, _native);
+                // have to remove from the  parent.menuEntries first
+                for (Iterator<MenuEntry> iterator = parent.menuEntries.iterator(); iterator.hasNext(); ) {
+                    final MenuEntry entry = iterator.next();
+                    if (entry == GtkMenu.this) {
+                        iterator.remove();
+                        break;
+                    }
+                }
 
-        removePrivate();
+                // cleans up the menu
+                parent.remove__(null);
 
-        Gtk.gtk_widget_destroy(_native);
+                // delete all of the children of this submenu (must happen before the menuEntry is removed)
+                obliterateMenu();
 
-        // have to rebuild the menu now...
-        parent.deleteMenu();
-        parent.createMenu();
+                // remove the gtk entry item from our parent menu NATIVE components
+                // NOTE: this will rebuild the parent menu
+                if (menuEntry != null) {
+                    menuEntry.remove();
+                } else {
+                    // have to rebuild the menu now...
+                    parent.deleteMenu();
+                    parent.createMenu();
+                }
+            }
+        });
     }
 }

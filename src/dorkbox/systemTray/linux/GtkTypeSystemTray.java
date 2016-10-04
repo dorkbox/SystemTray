@@ -27,7 +27,7 @@ abstract
 class GtkTypeSystemTray extends GtkMenu {
 
     GtkTypeSystemTray(final SystemTray systemTray) {
-        super(systemTray, null, null);
+        super(systemTray, null);
     }
 
     public

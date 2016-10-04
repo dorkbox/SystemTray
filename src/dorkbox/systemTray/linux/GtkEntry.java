@@ -64,8 +64,18 @@ class GtkEntry implements MenuEntry {
     abstract
     void renderText(final String text);
 
+    /**
+     * must always be called in the GTK thread
+     */
     abstract
     void setImage_(final File imageFile);
+
+    /**
+     * must always be called in the GTK thread
+     * called when this item is removed. Necessary to cleanup/remove itself
+     */
+    abstract
+    void removePrivate();
 
     /**
      * Enables, or disables the sub-menu entry.
@@ -155,26 +165,27 @@ class GtkEntry implements MenuEntry {
         }
     }
 
-    /**
-     * will always be on the dispatch thread
-     */
+    // a child will always remove itself from the parent.
+    @Override
     public final
     void remove() {
-        Gtk.gtk_container_remove(parent._native, _native);
-        Gtk.gtk_menu_shell_deactivate(parent._native, _native);
+        parent.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                Gtk.gtk_container_remove(parent._native, _native);
+                Gtk.gtk_menu_shell_deactivate(parent._native, _native);
 
-        removePrivate();
+                removePrivate();
 
-        Gtk.gtk_widget_destroy(_native);
+                Gtk.gtk_widget_destroy(_native);
 
-        // have to rebuild the menu now...
-        parent.deleteMenu();
-        parent.createMenu();
+                // have to rebuild the menu now...
+                parent.deleteMenu();
+                parent.createMenu();
+            }
+        });
     }
-
-    // called when this item is removed. Necessary to cleanup/remove itself
-    abstract
-    void removePrivate();
 
     @Override
     public final

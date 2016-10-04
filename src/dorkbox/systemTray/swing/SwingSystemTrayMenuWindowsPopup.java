@@ -28,13 +28,13 @@ import javax.swing.border.EmptyBorder;
  * work, so we must implement an "auto-hide" feature that checks if our mouse is still inside a menu every POPUP_HIDE_DELAY seconds
  */
 public
-class SwingSystemTrayMenuPopup extends JPopupMenu {
+class SwingSystemTrayMenuWindowsPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
     // NOTE: we can use the "hidden dialog" focus window trick... only on windows and mac
     private JDialog hiddenDialog;
 
-    SwingSystemTrayMenuPopup() {
+    SwingSystemTrayMenuWindowsPopup() {
         super();
         setFocusable(true);
 //        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
@@ -54,7 +54,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         this.hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus (WindowEvent we ) {
-                SwingSystemTrayMenuPopup.this.setVisible(false);
+                SwingSystemTrayMenuWindowsPopup.this.setVisible(false);
             }
             @Override
             public void windowGainedFocus (WindowEvent we) {}

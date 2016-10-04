@@ -104,7 +104,7 @@ class SystemTray extends Menu {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 3;
+    public static int FORCE_TRAY_TYPE = 0;
 
     @Property
     /**
@@ -875,6 +875,14 @@ class SystemTray extends Menu {
     void removePrivate() {
     }
 
+    /**
+     * Removes the system tray. This is the same as calling `shutdown()`
+     */
+    public
+    void remove() {
+        shutdown();
+    }
+
 
     /**
      * Gets the menu entry for a specified text
@@ -1047,7 +1055,6 @@ class SystemTray extends Menu {
     void remove(final MenuEntry menuEntry) {
         systemTrayMenu.remove(menuEntry);
     }
-
 
     /**
      *  This removes a menu entry (via the text label) from the dropdown menu.

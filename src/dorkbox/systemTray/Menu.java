@@ -92,12 +92,6 @@ class Menu {
     Menu addMenu_(final String menuText, final File imagePath);
 
     /*
-     * Called when this menu is removed from it's parent menu
-     */
-    protected abstract
-    void removePrivate();
-
-    /*
      * Necessary to guarantee all updates occur on the dispatch thread
      */
     protected abstract
@@ -380,35 +374,7 @@ class Menu {
             @Override
             public
             void run() {
-                try {
-                    synchronized (menuEntries) {
-                        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                            final MenuEntry entry = iterator.next();
-                            if (entry == menuEntry) {
-                                iterator.remove();
-
-                                // this will also reset the menu
-                                menuEntry.remove();
-                                break;
-                            }
-                        }
-
-                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                        if (!menuEntries.isEmpty()) {
-                            if (menuEntries.get(0) instanceof MenuSpacer) {
-                                remove(menuEntries.get(0));
-                            }
-                        }
-                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                        if (!menuEntries.isEmpty()) {
-                            if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
-                                remove(menuEntries.get(menuEntries.size() - 1));
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    SystemTray.logger.error("Error removing menu entry from list.", e);
-                }
+                remove__(menuEntry);
             }
         });
     }
@@ -422,45 +388,51 @@ class Menu {
     public
     void remove(final Menu menu) {
         if (menu == null) {
-            throw new NullPointerException("No menu entry exists for menuEntry");
+            throw new NullPointerException("No sub-menu entry exists for menu");
         }
 
         dispatchAndWait(new Runnable() {
-            @SuppressWarnings("Duplicates")
             @Override
             public
             void run() {
-                try {
-                    synchronized (menuEntries) {
-                        for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                            final MenuEntry entry = iterator.next();
-                            if (entry == menu) {
-                                iterator.remove();
-
-                                // this will also reset the menu
-                                menu.removePrivate();
-                                break;
-                            }
-                        }
-
-                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                        if (!menuEntries.isEmpty()) {
-                            if (menuEntries.get(0) instanceof MenuSpacer) {
-                                remove(menuEntries.get(0));
-                            }
-                        }
-                        // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                        if (!menuEntries.isEmpty()) {
-                            if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
-                                remove(menuEntries.get(menuEntries.size() - 1));
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    SystemTray.logger.error("Error removing menu entry from list.", e);
-                }
+                remove__(menu);
             }
         });
+    }
+
+    protected
+    void remove__(final Object menuEntry) {
+        try {
+            synchronized (menuEntries) {
+                // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
+                // removed themselves from the menuEntries)
+                if (menuEntry != null) {
+                    for (Iterator<MenuEntry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                        final MenuEntry entry = iterator.next();
+                        if (entry == menuEntry) {
+                            iterator.remove();
+                            entry.remove();
+                            break;
+                        }
+                    }
+                }
+
+                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                if (!menuEntries.isEmpty()) {
+                    if (menuEntries.get(0) instanceof MenuSpacer) {
+                        remove(menuEntries.get(0));
+                    }
+                }
+                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+                if (!menuEntries.isEmpty()) {
+                    if (menuEntries.get(menuEntries.size()-1) instanceof MenuSpacer) {
+                        remove(menuEntries.get(menuEntries.size() - 1));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            SystemTray.logger.error("Error removing entry from menu.", e);
+        }
     }
 
     /**

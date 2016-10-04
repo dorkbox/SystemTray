@@ -72,7 +72,7 @@ class SwingMenu extends Menu implements MenuEntry {
                         if (OS.isLinux()) {
                             _native = new SwingSystemTrayLinuxMenuPopup();
                         } else {
-                            _native = new SwingSystemTrayMenuPopup();
+                            _native = new SwingSystemTrayMenuWindowsPopup();
                         }
                     }
                 }
@@ -321,8 +321,8 @@ class SwingMenu extends Menu implements MenuEntry {
             public
             void run() {
                 _native.setVisible(false);
-                if (_native instanceof SwingSystemTrayMenuPopup) {
-                    ((SwingSystemTrayMenuPopup) _native).close();
+                if (_native instanceof SwingSystemTrayMenuWindowsPopup) {
+                    ((SwingSystemTrayMenuWindowsPopup) _native).close();
                 }
                 else if (_native instanceof SwingSystemTrayLinuxMenuPopup) {
                     ((SwingSystemTrayLinuxMenuPopup) _native).close();
@@ -334,13 +334,5 @@ class SwingMenu extends Menu implements MenuEntry {
                 }
             }
         });
-    }
-
-   /*
-    * Called when this menu is removed from it's parent menu
-    */
-    protected
-    void removePrivate() {
-        remove();
     }
 }
