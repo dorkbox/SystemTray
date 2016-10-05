@@ -173,6 +173,14 @@ class SystemTray extends Menu {
         if (DEBUG) {
             logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("is SWT detected? {}", isSwtLoaded);
+        } else {
+            // windows and mac ONLY support the Swing SystemTray.
+            // Linux CAN support Swing SystemTray, but it looks like crap (so we wrote our own GtkStatusIcon/AppIndicator)
+            if (OS.isWindows() && FORCE_TRAY_TYPE != TYPE_SWING) {
+                throw new RuntimeException("Windows is incompatible with the specified option for FORCE_TRAY_TYPE: " + FORCE_TRAY_TYPE);
+            } else if (OS.isMacOsX() && FORCE_TRAY_TYPE != TYPE_SWING) {
+                throw new RuntimeException("MacOSx is incompatible with the specified option for FORCE_TRAY_TYPE: " + FORCE_TRAY_TYPE);
+            }
         }
 
         // kablooie if SWT is not configured in a way that works with us.
