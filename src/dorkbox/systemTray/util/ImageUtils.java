@@ -182,9 +182,24 @@ class ImageUtils {
                     }
                 }
             } else if (OS.isMacOsX()) {
-                // don't know how exactly to determine this, but we are going to assume HiDPI for this...
-                // the OS should go up/down as needed.
-                scalingFactor = 8;
+                // let's hope this wasn't just hardcoded like windows...
+                int height = (int) java.awt.SystemTray.getSystemTray()
+                                                   .getTrayIconSize()
+                                                   .getHeight();
+
+                if (height < 32) {
+                    // lock in at 32
+                    scalingFactor = 2;
+                }
+                else if ((height & (height - 1)) == 0) {
+                    // is this a power of 2 number? If so, we can use it
+                    scalingFactor = height/SystemTray.DEFAULT_TRAY_SIZE;
+                }
+                else {
+                    // don't know how exactly to determine this, but we are going to assume very high "HiDPI" for this...
+                    // the OS should go up/down as needed.
+                    scalingFactor = 8;
+                }
             }
         }
 
