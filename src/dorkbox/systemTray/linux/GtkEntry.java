@@ -92,6 +92,11 @@ class GtkEntry implements MenuEntry {
 
     @Override
     public
+    void setShortcut(final char key) {
+    }
+
+    @Override
+    public
     String getText() {
         return text;
     }

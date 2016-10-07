@@ -154,6 +154,12 @@ class GtkMenu extends Menu implements MenuEntry {
 
     @Override
     public
+    void setShortcut(final char key) {
+        menuEntry.setShortcut(key);
+    }
+
+    @Override
+    public
     String getText() {
         return menuEntry.getText();
     }

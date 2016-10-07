@@ -39,12 +39,17 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private volatile boolean hasLegitIcon = true;
 
+    // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
+    // AppIndicators will only show if you use the keyboard to navigate
+    // GtkStatusIndicator will show on mouse+keyboard movement
+    private volatile char mnemonicKey = 0;
+
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkEntryItem(final GtkMenu parent, final SystemTrayMenuAction callback) {
-        super(parent, Gtk.gtk_image_menu_item_new_with_label(""));
+        super(parent, Gtk.gtk_image_menu_item_new_with_mnemonic(""));
         this.callback = callback;
 
 
@@ -60,6 +65,20 @@ class GtkEntryItem extends GtkEntry implements GCallback {
             Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
             nativeLong = null;
         }
+    }
+
+    @Override
+    public
+    void setShortcut(final char key) {
+        this.mnemonicKey = Character.toLowerCase(key);
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                renderText(getText());
+            }
+        });
     }
 
     @Override
@@ -118,8 +137,19 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     /**
      * must always be called in the GTK thread
      */
-    void renderText(final String text) {
+    void renderText(String text) {
+        if (this.mnemonicKey != 0) {
+            // they are CASE INSENSITIVE!
+            int i = text.toLowerCase()
+                        .indexOf(this.mnemonicKey);
+
+            if (i >= 0) {
+                text = text.substring(0, i) + "_" + text.substring(i);
+            }
+        }
+
         Gtk.gtk_menu_item_set_label(_native, text);
+
         Gtk.gtk_widget_show_all(_native);
     }
 

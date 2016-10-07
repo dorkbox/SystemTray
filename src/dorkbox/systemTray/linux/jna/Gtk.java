@@ -429,8 +429,8 @@ class Gtk {
     // to create a menu entry WITH an icon.
     public static native Pointer gtk_image_new_from_file(String iconPath);
 
-
-    public static native Pointer gtk_image_menu_item_new_with_label(String label);
+    // uses '_' to define which key is the mnemonic
+    public static native Pointer gtk_image_menu_item_new_with_mnemonic(String label);
 
     public static native void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
 

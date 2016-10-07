@@ -100,6 +100,16 @@ interface MenuEntry {
     void setCallback(SystemTrayMenuAction callback);
 
     /**
+     * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.
+     *
+     * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
+     * of it will be underlined.
+     *
+     * @param key this is the key to set as the mnemonic
+     */
+    void setShortcut(char key);
+
+    /**
      * Removes this menu entry from the menu and releases all system resources associated with this menu entry
      */
     void remove();
