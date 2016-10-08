@@ -38,7 +38,7 @@ import dorkbox.util.OS;
  * This custom popup is required, because we cannot close this popup by clicking OUTSIDE the popup. For whatever reason, that does not
  * work, so we must implement an "auto-hide" feature that checks if our mouse is still inside a menu every POPUP_HIDE_DELAY seconds
  */
-class SwingSystemTrayMenuWindowsPopup extends JPopupMenu {
+class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
     // NOTE: we can use the "hidden dialog" focus window trick... only on windows and mac
@@ -46,7 +46,7 @@ class SwingSystemTrayMenuWindowsPopup extends JPopupMenu {
     private volatile File iconFile;
 
     @SuppressWarnings("unchecked")
-    SwingSystemTrayMenuWindowsPopup() {
+    SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
 //        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
@@ -103,7 +103,7 @@ class SwingSystemTrayMenuWindowsPopup extends JPopupMenu {
         this.hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus (WindowEvent we ) {
-                SwingSystemTrayMenuWindowsPopup.this.setVisible(false);
+                SwingSystemTrayMenuPopup.this.setVisible(false);
             }
             @Override
             public void windowGainedFocus (WindowEvent we) {

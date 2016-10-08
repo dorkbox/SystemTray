@@ -63,7 +63,7 @@ class SwingMenu extends Menu implements MenuEntry {
                         ((SwingMenu) parent)._native.add(_native);
                     } else {
                         // when we are the system tray
-                        _native = new SwingSystemTrayMenuWindowsPopup();
+                        _native = new SwingSystemTrayMenuPopup();
                     }
                 }
             });
@@ -329,8 +329,8 @@ class SwingMenu extends Menu implements MenuEntry {
             public
             void run() {
                 _native.setVisible(false);
-                if (_native instanceof SwingSystemTrayMenuWindowsPopup) {
-                    ((SwingSystemTrayMenuWindowsPopup) _native).close();
+                if (_native instanceof SwingSystemTrayMenuPopup) {
+                    ((SwingSystemTrayMenuPopup) _native).close();
                 }
 
                 SwingMenu parent = (SwingMenu) getParent();

@@ -185,19 +185,19 @@ class SwingSystemTray extends SwingMenu {
                                 x -= size.width; // snap to edge of mouse
                             }
 
-                            SwingSystemTrayMenuWindowsPopup popupMenu = (SwingSystemTrayMenuWindowsPopup) _native;
+                            SwingSystemTrayMenuPopup popupMenu = (SwingSystemTrayMenuPopup) _native;
                             popupMenu.doShow(x, y);
                         }
                     });
 
                     try {
                         tray.add(trayIcon);
-                        ((SwingSystemTrayMenuWindowsPopup) _native).setIcon(iconFile);
+                        ((SwingSystemTrayMenuPopup) _native).setIcon(iconFile);
                     } catch (AWTException e) {
                         dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                     }
                 } else {
-                    ((SwingSystemTrayMenuWindowsPopup) _native).setIcon(iconFile);
+                    ((SwingSystemTrayMenuPopup) _native).setIcon(iconFile);
                     trayIcon.setImage(trayImage);
                 }
             }
