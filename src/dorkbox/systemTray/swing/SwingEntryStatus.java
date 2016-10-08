@@ -52,6 +52,11 @@ class SwingEntryStatus extends SwingEntry implements MenuStatus {
 
     @Override
     public
+    void setShortcut(final char key) {
+    }
+
+    @Override
+    public
     boolean hasImage() {
         return false;
     }

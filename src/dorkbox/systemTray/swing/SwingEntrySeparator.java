@@ -44,6 +44,11 @@ class SwingEntrySeparator extends SwingEntry implements MenuSpacer {
 
     @Override
     public
+    void setShortcut(final char key) {
+    }
+
+    @Override
+    public
     boolean hasImage() {
         return false;
     }
