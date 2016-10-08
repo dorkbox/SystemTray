@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.swing;
 
-import java.awt.Font;
 import java.io.File;
 
 import javax.swing.JMenuItem;
@@ -34,10 +33,10 @@ class SwingEntryStatus extends SwingEntry implements MenuStatus {
     // called in the EDT thread
     @Override
     void renderText(final String text) {
+        // AppIndicator strips out markup text, so we disable bold in order to have all of the menus MOSTLY look the same
+        // https://mail.gnome.org/archives/commits-list/2016-March/msg05444.html
+
         ((JMenuItem) _native).setText(text);
-        Font font = _native.getFont();
-        Font font1 = font.deriveFont(Font.BOLD);
-        _native.setFont(font1);
 
         _native.setEnabled(false);
     }

@@ -15,10 +15,7 @@
  */
 package dorkbox.systemTray.linux;
 
-import com.sun.jna.Pointer;
-
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
@@ -31,20 +28,19 @@ class GtkEntryStatus extends GtkEntryItem {
      */
     GtkEntryStatus(final GtkMenu parent, final String text) {
         super(parent, null);
+        // need that extra space so it matches windows/mac
+        hasLegitIcon = false;
         setText(text);
     }
 
     // called in the GTK thread
     @Override
     void renderText(final String text) {
-        // evil hacks abound...
-        // https://developer.gnome.org/pango/stable/PangoMarkupFormat.html
+        // AppIndicator strips out markup text.
+        // https://mail.gnome.org/archives/commits-list/2016-March/msg05444.html
 
-        Pointer label = Gtk.gtk_bin_get_child(_native);
-        Gtk.gtk_label_set_use_markup(label, Gtk.TRUE);
-        Pointer markup = Gobject.g_markup_printf_escaped("<b>%s</b>", text);
-        Gtk.gtk_label_set_markup(label, markup);
-        Gobject.g_free(markup);
+        Gtk.gtk_menu_item_set_label(_native, text);
+        Gtk.gtk_widget_show_all(_native);
 
         Gtk.gtk_widget_set_sensitive(_native, Gtk.FALSE);
     }

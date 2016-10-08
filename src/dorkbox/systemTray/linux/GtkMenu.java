@@ -282,14 +282,11 @@ class GtkMenu extends Menu implements MenuEntry {
 
         // now add back other menu entries
         synchronized (menuEntries) {
-            for (int i = 0; i < menuEntries.size(); i++) {
-                MenuEntry menuEntry__ = menuEntries.get(i);
+            for (MenuEntry menuEntry__ : menuEntries) {
                 hasImages |= menuEntry__.hasImage();
             }
 
-            for (int i = 0; i < menuEntries.size(); i++) {
-                MenuEntry menuEntry__ = menuEntries.get(i);
-
+            for (MenuEntry menuEntry__ : menuEntries) {
                 // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
                 if (menuEntry__ instanceof GtkEntry) {
                     GtkEntry entry = (GtkEntry) menuEntry__;

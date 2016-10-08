@@ -37,7 +37,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     private volatile Pointer image;
 
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
-    private volatile boolean hasLegitIcon = true;
+    protected volatile boolean hasLegitIcon = true;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
     // AppIndicators will only show if you use the keyboard to navigate
@@ -52,7 +52,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
         super(parent, Gtk.gtk_image_menu_item_new_with_mnemonic(""));
         this.callback = callback;
 
-
+        // cannot be done in a static initializer, because the tray icon size might not yet have been determined
         if (transparentIcon == null) {
             transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
         }
@@ -149,7 +149,6 @@ class GtkEntryItem extends GtkEntry implements GCallback {
         }
 
         Gtk.gtk_menu_item_set_label(_native, text);
-
         Gtk.gtk_widget_show_all(_native);
     }
 

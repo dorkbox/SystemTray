@@ -38,7 +38,7 @@ import dorkbox.systemTray.util.Swt;
  *
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings("Duplicates")
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc"})
 public
 class Gtk {
     // For funsies to look at, SyncThing did a LOT of work on compatibility in python (unfortunate for us, but interesting).
@@ -435,14 +435,6 @@ class Gtk {
     public static native void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
 
     public static native void gtk_image_menu_item_set_always_show_image(Pointer menu_item, int forceShow);
-
-    public static native Pointer gtk_bin_get_child(Pointer parent);
-
-    public static native void gtk_label_set_text(Pointer label, String text);
-
-    public static native void gtk_label_set_markup(Pointer label, Pointer markup);
-
-    public static native void gtk_label_set_use_markup(Pointer label, int gboolean);
 
     public static native Pointer gtk_status_icon_new();
 
