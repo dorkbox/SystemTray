@@ -16,6 +16,8 @@
 package dorkbox.systemTray.swing;
 
 
+import static dorkbox.systemTray.swing.SwingEntry.getVkKey;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -30,11 +32,9 @@ import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a MenuEntry -- so it has both
-public
 class SwingMenu extends Menu implements MenuEntry {
 
     volatile JComponent _native;
@@ -49,7 +49,6 @@ class SwingMenu extends Menu implements MenuEntry {
      * @param parent
      *                 the parent of this menu, null if the parent is the system tray
      */
-    public
     SwingMenu(final SystemTray systemTray, final Menu parent) {
         super(systemTray, parent);
 
@@ -59,21 +58,12 @@ class SwingMenu extends Menu implements MenuEntry {
                 public
                 void run() {
                     if (parent != null) {
-                        if (OS.isWindows()) {
-                            _native = new AdjustedJMenu(null);
-                        }
-                        else {
-                            _native = new AdjustedJMenu((SwingSystemTrayMenuPopup)((SwingMenu) systemTray.getMenu())._native);
-                        }
-
+                        // when we are a sub-menu
+                        _native = new AdjustedJMenu();
                         ((SwingMenu) parent)._native.add(_native);
                     } else {
                         // when we are the system tray
-                        if (OS.isWindows()) {
-                            _native = new SwingSystemTrayMenuWindowsPopup();
-                        } else {
-                            _native = new SwingSystemTrayMenuPopup();
-                        }
+                        _native = new SwingSystemTrayMenuWindowsPopup();
                     }
                 }
             });
@@ -204,11 +194,13 @@ class SwingMenu extends Menu implements MenuEntry {
 
 
     // always called in the EDT
+    private
     void renderText(final String text) {
         ((JMenuItem) _native).setText(text);
     }
 
     @SuppressWarnings("Duplicates")
+    private
     void setImage_(final File imageFile) {
         hasLegitIcon = imageFile != null;
 
@@ -314,6 +306,22 @@ class SwingMenu extends Menu implements MenuEntry {
     }
 
     @Override
+    public
+    void setShortcut(final char key) {
+        if (_native instanceof JMenuItem) {
+            // yikes...
+            final int vKey = getVkKey(key);
+            dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    ((JMenuItem) _native).setMnemonic(vKey);
+                }
+            });
+        }
+    }
+
+    @Override
     public final
     void remove() {
         dispatchAndWait(new Runnable() {
@@ -323,9 +331,6 @@ class SwingMenu extends Menu implements MenuEntry {
                 _native.setVisible(false);
                 if (_native instanceof SwingSystemTrayMenuWindowsPopup) {
                     ((SwingSystemTrayMenuWindowsPopup) _native).close();
-                }
-                else if (_native instanceof SwingSystemTrayMenuPopup) {
-                    ((SwingSystemTrayMenuPopup) _native).close();
                 }
 
                 SwingMenu parent = (SwingMenu) getParent();

@@ -233,19 +233,25 @@ class ImageUtils {
         // make sure the directory exists
         newFile.getParentFile().mkdirs();
 
-        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = image.createGraphics();
-        g2d.setColor(new Color(0,0,0,0));
-        g2d.fillRect(0, 0, size, size);
-        g2d.dispose();
-
         try {
+            BufferedImage image = getTransparentImageAsImage(size);
             ImageIO.write(image, "png", newFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         return newFile;
+    }
+
+    public static
+    BufferedImage getTransparentImageAsImage(final int size) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setColor(new Color(0,0,0,0));
+        g2d.fillRect(0, 0, size, size);
+        g2d.dispose();
+
+        return image;
     }
 
     private static
