@@ -35,13 +35,12 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.util.OS;
 
 /**
- * This custom popup is required, because we cannot close this popup by clicking OUTSIDE the popup. For whatever reason, that does not
- * work, so we must implement an "auto-hide" feature that checks if our mouse is still inside a menu every POPUP_HIDE_DELAY seconds
+ * This custom popup is required if we want to be able to show images on the menu,
  */
 class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
-    // NOTE: we can use the "hidden dialog" focus window trick... only on windows and mac
+    // NOTE: we can use the "hidden dialog" focus window trick...
     private JDialog hiddenDialog;
     private volatile File iconFile;
 
@@ -54,27 +53,27 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 
 
         // Initialize the hidden dialog as a headless, title-less dialog window
-        this.hiddenDialog = new JDialog((Frame)null, "Tray menu");
-        this.hiddenDialog.setUndecorated(true);
-        this.hiddenDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.hiddenDialog.setAlwaysOnTop(true);
+        hiddenDialog = new JDialog((Frame)null, "Tray menu");
+        hiddenDialog.setUndecorated(true);
+        hiddenDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        hiddenDialog.setAlwaysOnTop(true);
 
         // on Linux, the following two entries will **MOST OF THE TIME** prevent the hidden dialog from showing in the task-bar
         // on MacOS, you need "special permission" to not have a hidden dialog show on the dock.
-        this.hiddenDialog.getContentPane().setLayout(null);
+        hiddenDialog.getContentPane().setLayout(null);
 
-        // this is a java 1.7 deal, so we have to use reflection to set this. It's not critical for this to be set, but it helps
-        // this.hiddenDialog.setType(Window.Type.POPUP);
+        // this is java 1.7, so we have to use reflection. It's not critical for this to be set, but it helps hide the title in the taskbar
+        // hiddenDialog.setType(Window.Type.POPUP);
         if (OS.javaVersion >= 7) {
             try {
-                Class<? extends JDialog> hiddenDialogClass = this.hiddenDialog.getClass();
+                Class<? extends JDialog> hiddenDialogClass = hiddenDialog.getClass();
                 Method[] methods = hiddenDialogClass.getMethods();
                 for (Method method : methods) {
                     if (method.getName()
                               .equals("setType")) {
 
                         Class<Enum> cl = (Class<Enum>) Class.forName("java.awt.Window$Type");
-                        method.invoke(this.hiddenDialog, Enum.valueOf(cl, "POPUP"));
+                        method.invoke(hiddenDialog, Enum.valueOf(cl, "POPUP"));
                         break;
                     }
                 }
@@ -83,8 +82,8 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
             }
         }
 
-        this.hiddenDialog.pack();
-        this.hiddenDialog.setBounds(0,0,0,0);
+        hiddenDialog.pack();
+        hiddenDialog.setBounds(0,0,0,0);
 
         addPopupMenuListener(new PopupMenuListener() {
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
@@ -100,7 +99,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         });
 
         // Add the window focus listener to the hidden dialog
-        this.hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
+        hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus (WindowEvent we ) {
                 SwingSystemTrayMenuPopup.this.setVisible(false);
@@ -123,7 +122,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
                 image.flush();
 
                 // we set the dialog window to have the same icon as what is on the system tray
-                this.hiddenDialog.setIconImage(image);
+                hiddenDialog.setIconImage(image);
             } catch (IOException e) {
                 SystemTray.logger.error("Error setting the icon for the popup menu task tray dialog");
             }
@@ -132,10 +131,10 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
 
     void doShow(final int x, final int y) {
         // critical to get the keyboard listeners working for the popup menu
-        setInvoker(this.hiddenDialog.getContentPane());
+        setInvoker(hiddenDialog.getContentPane());
 
-        this.hiddenDialog.setLocation(x, y);
-        this.hiddenDialog.setVisible(true);
+        hiddenDialog.setLocation(x, y);
+        hiddenDialog.setVisible(true);
 
         setLocation(x, y);
         setVisible(true);
@@ -143,7 +142,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
     }
 
     void close() {
-        this.hiddenDialog.setVisible(false);
-        this.hiddenDialog.dispatchEvent(new WindowEvent(this.hiddenDialog, WindowEvent.WINDOW_CLOSING));
+        hiddenDialog.setVisible(false);
+        hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 }
