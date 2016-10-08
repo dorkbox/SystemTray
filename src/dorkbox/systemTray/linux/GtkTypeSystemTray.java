@@ -70,7 +70,8 @@ class GtkTypeSystemTray extends GtkMenu {
                         menuEntry = new GtkEntryStatus(GtkTypeSystemTray.this, statusText);
                         // status is ALWAYS at 0 index...
                         menuEntries.add(0, menuEntry);
-                    } else if (menuEntry instanceof GtkEntryStatus) {
+                    }
+                    else if (menuEntry instanceof GtkEntryStatus) {
                         // change the text?
                         if (statusText != null) {
                             menuEntry = new GtkEntryStatus(GtkTypeSystemTray.this, statusText);

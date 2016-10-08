@@ -34,7 +34,8 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 
-class GtkMenu extends Menu implements MenuEntry {
+@SuppressWarnings("ForLoopReplaceableByForEach")
+class GtkMenu extends Menu {
     // menu entry that this menu is attached to. Will be NULL when it's the system tray
     private final GtkEntryItem menuEntry;
 
@@ -233,9 +234,8 @@ class GtkMenu extends Menu implements MenuEntry {
         if (_native != null) {
             // have to remove all other menu entries
             synchronized (menuEntries) {
-                for (int i = 0; i < menuEntries.size(); i++) {
-                    MenuEntry menuEntry__ = menuEntries.get(i);
-
+                for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                    final MenuEntry menuEntry__ = menuEntries.get(i);
                     if (menuEntry__ instanceof GtkEntry) {
                         GtkEntry entry = (GtkEntry) menuEntry__;
 
@@ -282,11 +282,13 @@ class GtkMenu extends Menu implements MenuEntry {
 
         // now add back other menu entries
         synchronized (menuEntries) {
-            for (MenuEntry menuEntry__ : menuEntries) {
+            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                final MenuEntry menuEntry__ = menuEntries.get(i);
                 hasImages |= menuEntry__.hasImage();
             }
 
-            for (MenuEntry menuEntry__ : menuEntries) {
+            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                final MenuEntry menuEntry__ = menuEntries.get(i);
                 // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
                 if (menuEntry__ instanceof GtkEntry) {
                     GtkEntry entry = (GtkEntry) menuEntry__;
@@ -327,8 +329,8 @@ class GtkMenu extends Menu implements MenuEntry {
 
             // have to remove all other menu entries
             synchronized (menuEntries) {
-                for (int i = 0; i < menuEntries.size(); i++) {
-                    MenuEntry menuEntry__ = menuEntries.get(i);
+                for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                    final MenuEntry menuEntry__ = menuEntries.get(i);
                     menuEntry__.remove();
                 }
                 menuEntries.clear();

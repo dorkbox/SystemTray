@@ -67,7 +67,7 @@ class TestTraySwt {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        this.systemTray.setIcon(LT_GRAY_MAIL);
+        this.systemTray.setImage(LT_GRAY_MAIL);
 
         systemTray.setStatus("No Mail");
 
@@ -76,7 +76,7 @@ class TestTraySwt {
             public
             void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
                 systemTray.setStatus("Some Mail!");
-                systemTray.setIcon(GREEN_MAIL);
+                systemTray.setImage(GREEN_MAIL);
 
                 menuEntry.setCallback(callbackGray);
                 menuEntry.setImage(BLACK_MAIL);
@@ -90,7 +90,7 @@ class TestTraySwt {
             public
             void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
                 systemTray.setStatus(null);
-                systemTray.setIcon(BLACK_MAIL);
+                systemTray.setImage(BLACK_MAIL);
 
                 menuEntry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
@@ -99,7 +99,10 @@ class TestTraySwt {
             }
         };
 
-        this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        MenuEntry menuEntry = this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        // case does not matter
+        menuEntry.setShortcut('G');
+
         this.systemTray.addSeparator();
 
         final Menu submenu = this.systemTray.addMenu("Options", BLACK_MAIL);
@@ -132,7 +135,7 @@ class TestTraySwt {
 
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
-        });
+        }).setShortcut('q'); // case does not matter
 
 
 

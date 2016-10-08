@@ -746,70 +746,17 @@ class SystemTray extends Menu {
     }
 
     protected
-    void setIcon_(File iconPath) {
+    void setImage_(File iconPath) {
         final Menu menu = systemTrayMenu;
         if (menu instanceof AppIndicatorTray) {
-            ((AppIndicatorTray) menu).setIcon_(iconPath);
+            ((AppIndicatorTray) menu).setImage_(iconPath);
         }
         else if (menu instanceof GtkSystemTray) {
-            ((GtkSystemTray) menu).setIcon_(iconPath);
+            ((GtkSystemTray) menu).setImage_(iconPath);
         } else {
-            // swing
-            ((SwingSystemTray) menu).setIcon_(iconPath);
+            // swing (windows/mac)
+            ((SwingSystemTray) menu).setImage_(iconPath);
         }
-    }
-
-    /**
-     * Changes the tray icon used.
-     *
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray,
-     * this will directly use the contents of the specified file.
-     *
-     * @param imagePath the path of the icon to use
-     */
-    public
-    void setIcon(String imagePath) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
-    }
-
-    /**
-     * Changes the tray icon used.
-     *
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the URL to a temporary location on disk, based on the path specified by the URL.
-     *
-     * @param imageUrl the URL of the icon to use
-     */
-    public
-    void setIcon(URL imageUrl) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
-    }
-
-    /**
-     * Changes the tray icon used.
-     *
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the imageStream to a temporary location on disk, based on the `cacheName` specified.
-     *
-     * @param cacheName the name to use for lookup in the cache for the iconStream
-     * @param imageStream the InputStream of the icon to use
-     */
-    public
-    void setIcon(String cacheName, InputStream imageStream) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, cacheName, imageStream));
-    }
-
-    /**
-     * Changes the tray icon used.
-     *
-     * Because the cross-platform, underlying system uses a file path to load icons for the system tray, this will copy the contents of
-     * the imageStream to a temporary location on disk.
-     *
-     * @param imageStream the InputStream of the icon to use
-     */
-    public
-    void setIcon(InputStream imageStream) {
-        setIcon_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
     }
 
     /**
@@ -864,6 +811,110 @@ class SystemTray extends Menu {
     @Override
     public
     void setEnabled(final boolean enabled) {
+    }
+
+    @Override
+    public
+    String getText() {
+        return "";
+    }
+
+    // NO OP.
+    @Override
+    public
+    void setText(final String newText) {
+    }
+
+    /**
+     * Changes the tray image used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load images for the system tray,
+     * this will directly use the contents of the specified file.
+     *
+     * @param imageFile the path of the image to use
+     */
+    @Override
+    public
+    void setImage(final File imageFile) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageFile));
+    }
+
+    /**
+     * Changes the tray image used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load images for the system tray,
+     * this will directly use the contents of the specified file.
+     *
+     * @param imagePath the path of the image to use
+     */
+    @Override
+    public
+    void setImage(final String imagePath) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
+    }
+
+    /**
+     * Changes the tray image used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
+     * the URL to a temporary location on disk, based on the path specified by the URL.
+     *
+     * @param imageUrl the URL of the image to use
+     */
+    @Override
+    public
+    void setImage(URL imageUrl) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
+    }
+
+    /**
+     * Changes the tray image used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
+     * the imageStream to a temporary location on disk, based on the `cacheName` specified.
+     *
+     * @param cacheName the name to use for lookup in the cache for the imageStream
+     * @param imageStream the InputStream of the image to use
+     */
+    @Override
+    public
+    void setImage(String cacheName, InputStream imageStream) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, cacheName, imageStream));
+    }
+
+    /**
+     * Changes the tray image used.
+     *
+     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
+     * the imageStream to a temporary location on disk.
+     *
+     * @param imageStream the InputStream of the image to use
+     */
+    @Override
+    public
+    void setImage(final InputStream imageStream) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+    }
+
+    /**
+     * By default, we always have an image for the system tray
+     */
+    @Override
+    public
+    boolean hasImage() {
+        return true;
+    }
+
+    // NO OP.
+    @Override
+    public
+    void setCallback(final SystemTrayMenuAction callback) {
+    }
+
+    // NO OP.
+    @Override
+    public
+    void setShortcut(final char key) {
     }
 
     // NO OP.

@@ -105,7 +105,7 @@ class AppIndicatorTray extends GtkTypeSystemTray {
     }
 
     public
-    void setIcon_(final File iconFile) {
+    void setImage_(final File iconFile) {
         dispatch(new Runnable() {
             @Override
             public

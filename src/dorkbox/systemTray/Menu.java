@@ -29,7 +29,7 @@ import dorkbox.systemTray.util.ImageUtils;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract
-class Menu {
+class Menu implements MenuEntry {
     public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
     private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
 

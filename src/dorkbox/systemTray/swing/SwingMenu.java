@@ -35,7 +35,7 @@ import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a MenuEntry -- so it has both
-class SwingMenu extends Menu implements MenuEntry {
+class SwingMenu extends Menu {
 
     volatile JComponent _native;
 
