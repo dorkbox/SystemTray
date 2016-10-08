@@ -147,6 +147,10 @@ class SwingSystemTray extends SwingMenu {
                     // here we init. everything
                     trayIcon = new TrayIcon(trayImage);
 
+                    JPopupMenu popupMenu = (JPopupMenu) _native;
+                    popupMenu.pack();
+                    popupMenu.setFocusable(true);
+
                     // appindicators DO NOT support anything other than PLAIN gtk-menus
                     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
                     // trayIcon.setToolTip(SwingSystemTray.this.appName);
@@ -181,22 +185,19 @@ class SwingSystemTray extends SwingMenu {
                                 x -= size.width; // snap to edge of mouse
                             }
 
-                            // voodoo to get this to popup to have the correct parent
-                            // from: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6285881
-                            ((JPopupMenu) _native).setInvoker(_native);
-                            _native.setLocation(x, y);
-                            _native.setVisible(true);
-                            _native.setFocusable(true);
-                            _native.requestFocusInWindow();
+                            SwingSystemTrayMenuWindowsPopup popupMenu = (SwingSystemTrayMenuWindowsPopup) _native;
+                            popupMenu.doShow(x, y);
                         }
                     });
 
                     try {
                         tray.add(trayIcon);
+                        ((SwingSystemTrayMenuWindowsPopup) _native).setIcon(iconFile);
                     } catch (AWTException e) {
                         dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                     }
                 } else {
+                    ((SwingSystemTrayMenuWindowsPopup) _native).setIcon(iconFile);
                     trayIcon.setImage(trayImage);
                 }
             }
