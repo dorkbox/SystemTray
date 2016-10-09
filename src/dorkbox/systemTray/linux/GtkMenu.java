@@ -20,6 +20,7 @@ import static dorkbox.systemTray.SystemTray.TIMEOUT;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -329,11 +330,16 @@ class GtkMenu extends Menu {
 
             // have to remove all other menu entries
             synchronized (menuEntries) {
-                for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                    final MenuEntry menuEntry__ = menuEntries.get(i);
+                // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
+                // do this, errors will be had because indices don't line up anymore.
+                ArrayList<MenuEntry> menuEntriesCopy = new ArrayList<MenuEntry>(this.menuEntries);
+
+                for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
+                    final MenuEntry menuEntry__ = menuEntriesCopy.get(i);
                     menuEntry__.remove();
                 }
-                menuEntries.clear();
+                this.menuEntries.clear();
+                menuEntriesCopy.clear();
 
                 Gtk.gtk_widget_destroy(_native);
             }
