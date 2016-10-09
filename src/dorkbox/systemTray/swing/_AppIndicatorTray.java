@@ -15,18 +15,10 @@
  */
 package dorkbox.systemTray.swing;
 
-import static dorkbox.systemTray.SystemTray.TIMEOUT;
-
-import java.awt.Dimension;
 import java.awt.MouseInfo;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.swing.JPopupMenu;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -40,7 +32,6 @@ import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.util.ScreenUtil;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -89,7 +80,7 @@ import dorkbox.util.SwingUtil;
  * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
 public
-class AppIndicatorTray extends SwingGenericTray {
+class _AppIndicatorTray extends GenericTray {
     private AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
 
@@ -102,56 +93,21 @@ class AppIndicatorTray extends SwingGenericTray {
     private final Runnable popupRunnable;
 
     public
-    AppIndicatorTray(final SystemTray systemTray) {
-        super(systemTray,null, new SwingSystemTrayMenuPopup());
+    _AppIndicatorTray(final SystemTray systemTray) {
+        super(systemTray,null, new TrayPopup());
 
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
         }
 
-        JPopupMenu popupMenu = (JPopupMenu) _native;
+        TrayPopup popupMenu = (TrayPopup) _native;
         popupMenu.pack();
         popupMenu.setFocusable(true);
-
-        popupRunnable = new Runnable() {
+        popupMenu.setOnHideRunnable(new Runnable() {
             @Override
             public
             void run() {
-                Dimension size = _native.getPreferredSize();
-
-                Point point = MouseInfo.getPointerInfo()
-                                       .getLocation();
-                Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
-
-                int x = point.x;
-                int y = point.y;
-
-                if (y < bounds.y) {
-                    y = bounds.y;
-                }
-                else if (y + size.height > bounds.y + bounds.height) {
-                    // our menu cannot have the top-edge snap to the mouse
-                    // so we make the bottom-edge snap to the mouse
-                    y -= size.height; // snap to edge of mouse
-                }
-
-                if (x < bounds.x) {
-                    x = bounds.x;
-
-                    x -= 32; // display over the stupid appindicator menu (which has to show, this is a major hack!)
-                }
-                else if (x + size.width > bounds.x + bounds.width) {
-                    // our menu cannot have the left-edge snap to the mouse
-                    // so we make the right-edge snap to the mouse
-                    x -= size.width; // snap to edge of mouse
-
-                    x += 32; // display over the stupid appindicator menu (which has to show, this is a major hack!)
-                }
-
-                SwingSystemTrayMenuPopup popupMenu = (SwingSystemTrayMenuPopup) _native;
-                popupMenu.doShow(x, y);
-
                 // Such ugly hacks to get AppIndicator support properly working. This is so horrible I am ashamed.
                 Gtk.dispatch(new Runnable() {
                     @Override
@@ -162,11 +118,23 @@ class AppIndicatorTray extends SwingGenericTray {
                     }
                 });
             }
+        });
+
+        popupRunnable = new Runnable() {
+            @Override
+            public
+            void run() {
+                Point point = MouseInfo.getPointerInfo()
+                                       .getLocation();
+
+                TrayPopup popupMenu = (TrayPopup) _native;
+                popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
+            }
         };
 
         // appindicators DO NOT support anything other than PLAIN gtk-menus
         //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-        // trayIcon.setToolTip(SwingSystemTray.this.appName);
+        // trayIcon.setToolTip(_SwingTray.this.appName);
 
         Gtk.startGui();
 
@@ -219,35 +187,19 @@ class AppIndicatorTray extends SwingGenericTray {
     public
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
-            final CountDownLatch countDownLatch = new CountDownLatch(1);
 
             Gtk.dispatch(new Runnable() {
                 @Override
                 public
                 void run() {
-                    try {
-                        // STATUS_PASSIVE hides the indicator
-                        AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
-                        Pointer p = appIndicator.getPointer();
-                        Gobject.g_object_unref(p);
+                    // STATUS_PASSIVE hides the indicator
+                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                    Pointer p = appIndicator.getPointer();
+                    Gobject.g_object_unref(p);
 
-                        appIndicator = null;
-                    } finally {
-                        countDownLatch.countDown();
-                    }
+                    appIndicator = null;
                 }
             });
-
-            // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
-            // thread occur in REASONABLE time-frames, and alert the user if not.
-            try {
-                if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                    SystemTray.logger.error("Event dispatch queue took longer than " + TIMEOUT + " seconds to shutdown. Please adjust " +
-                                            "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-                }
-            } catch (InterruptedException e) {
-                SystemTray.logger.error("Error waiting for shutdown dispatch to complete.", new Exception());
-            }
 
             Gtk.shutdownGui();
 
@@ -284,7 +236,7 @@ class AppIndicatorTray extends SwingGenericTray {
             @Override
             public
             void run() {
-                ((SwingSystemTrayMenuPopup) _native).setTitleBarImage(imageFile);
+                ((TrayPopup) _native).setTitleBarImage(imageFile);
             }
         });
     }

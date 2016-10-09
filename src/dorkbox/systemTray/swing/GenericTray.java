@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package dorkbox.systemTray.swing;
 
 import javax.swing.JComponent;
@@ -7,20 +22,12 @@ import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.ImageUtils;
 
-/**
- *
- */
 public abstract
-class SwingGenericTray extends SwingMenu {
+class GenericTray extends SwingMenu {
     /**
      * Called in the EDT
-     *
-     * @param systemTray
-     *                 the system tray (which is the object that sits in the system tray)
-     * @param parent
-     * @param _native
      */
-    SwingGenericTray(final SystemTray systemTray, final Menu parent, final JComponent _native) {
+    GenericTray(final SystemTray systemTray, final Menu parent, final JComponent _native) {
         super(systemTray, parent, _native);
 
         ImageUtils.determineIconSize();
@@ -30,7 +37,7 @@ class SwingGenericTray extends SwingMenu {
     String getStatus() {
         synchronized (menuEntries) {
             MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof SwingEntryStatus) {
+            if (menuEntry instanceof EntryStatus) {
                 return menuEntry.getText();
             }
         }
@@ -47,12 +54,12 @@ class SwingGenericTray extends SwingMenu {
             void run() {
                 synchronized (menuEntries) {
                     // status is ALWAYS at 0 index...
-                    SwingEntry menuEntry = null;
+                    Entry menuEntry = null;
                     if (!menuEntries.isEmpty()) {
-                        menuEntry = (SwingEntry) menuEntries.get(0);
+                        menuEntry = (Entry) menuEntries.get(0);
                     }
 
-                    if (menuEntry instanceof SwingEntryStatus) {
+                    if (menuEntry instanceof EntryStatus) {
                         // set the text or delete...
 
                         if (statusText == null) {
@@ -66,7 +73,7 @@ class SwingGenericTray extends SwingMenu {
 
                     } else {
                         // create a new one
-                        menuEntry = new SwingEntryStatus(_this, statusText);
+                        menuEntry = new EntryStatus(_this, statusText);
                         // status is ALWAYS at 0 index...
                         menuEntries.add(0, menuEntry);
                     }

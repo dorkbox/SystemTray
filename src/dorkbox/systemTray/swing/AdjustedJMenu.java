@@ -22,7 +22,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
 
 class AdjustedJMenu extends JMenu {
-
     AdjustedJMenu() {
     }
 

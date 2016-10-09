@@ -36,6 +36,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.LocationResolver;
@@ -89,6 +90,11 @@ class ImageUtils {
                     }
                 }
 
+                // 1 = 16
+                // 2 = 32
+                // 4 = 64
+                // 8 = 128
+
                 if (windowsVersion.startsWith("5.1")) {
                     // Windows XP	5.1.2600
                     scalingFactor = 1;
@@ -139,46 +145,97 @@ class ImageUtils {
             } else if (OS.isLinux()) {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator MIGHT scale the icon (depends on the OS)
-                try {
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
-                    // gsettings get org.gnome.desktop.interface scaling-factor
-                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                    shellVersion.setExecutable("gsettings");
-                    shellVersion.addArgument("get");
-                    shellVersion.addArgument("org.gnome.desktop.interface");
-                    shellVersion.addArgument("scaling-factor");
-                    shellVersion.start();
 
-                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                // KDE is bonkers.
+                if (Gtk.isKDE) {
+                    try {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
-                    if (!output.isEmpty()) {
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.debug("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
+                        // plasma-desktop -v
+                        // plasmashell --version
+                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                        shellVersion.setExecutable("plasmashell");
+                        shellVersion.addArgument("--version");
+                        shellVersion.start();
+
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                        if (!output.isEmpty()) {
+                            if (SystemTray.DEBUG) {
+                                SystemTray.logger.debug("Checking plasma KDE environment, should start with 'plasmashell', value: '{}'", output);
+                            }
+
+                            // DEFAULT icon size is 16. KDE is bananas on what they did with tray icon scale
+                            // should be: plasmashell 5.6.5   or something
+                            String s = "plasmashell ";
+                            if (output.contains(s)) {
+                                String value = output.substring(output.indexOf(s) + s.length(), output.length() - 1);
+
+                                // 1 = 16
+                                // 2 = 32
+                                // 4 = 64
+                                // 8 = 128
+                                if (value.startsWith("4")) {
+                                    scalingFactor = 2;
+                                } else if (value.startsWith("5")) {
+                                    scalingFactor = 8; // it is insane how large the icon is
+                                } else {
+                                    // assume very low version of plasmashell, default 32
+                                    scalingFactor = 2;
+                                }
+                            }
                         }
-
-                        // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
-                        // should be: uint32 0  or something
-                        if (output.contains("uint32")) {
-                            String value = output.substring(output.indexOf("uint")+7, output.length()-1);
-                            scalingFactor = Integer.parseInt(value);
-
-                            // 0 is disabled (no scaling)
-                            // 1 is enabled (default scale)
-                            // 2 is 2x scale
-                            // 3 is 3x scale
-                            // etc
-
-
-                            // A setting of 2, 3, etc, which is all you can do with scaling-factor
-                            // To enable HiDPI, use gsettings:
-                            // gsettings set org.gnome.desktop.interface scaling-factor 2
+                    } catch (Throwable e) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Cannot check plasmashell version", e);
                         }
                     }
-                } catch (Throwable e) {
-                    if (SystemTray.DEBUG) {
-                        SystemTray.logger.error("Cannot check scaling factor", e);
+                } else {
+                    // it's a GTK environment or something
+
+                    try {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                        // gsettings get org.gnome.desktop.interface scaling-factor
+                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                        shellVersion.setExecutable("gsettings");
+                        shellVersion.addArgument("get");
+                        shellVersion.addArgument("org.gnome.desktop.interface");
+                        shellVersion.addArgument("scaling-factor");
+                        shellVersion.start();
+
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                        if (!output.isEmpty()) {
+                            if (SystemTray.DEBUG) {
+                                SystemTray.logger.debug("Checking scaling factor for GTK environment, should start with 'uint32', value: '{}'", output);
+                            }
+
+                            // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
+                            // should be: uint32 0  or something
+                            if (output.contains("uint32")) {
+                                String value = output.substring(output.indexOf("uint")+7, output.length()-1);
+                                scalingFactor = Integer.parseInt(value);
+
+                                // 0 is disabled (no scaling)
+                                // 1 is enabled (default scale)
+                                // 2 is 2x scale
+                                // 3 is 3x scale
+                                // etc
+
+
+                                // A setting of 2, 3, etc, which is all you can do with scaling-factor
+                                // To enable HiDPI, use gsettings:
+                                // gsettings set org.gnome.desktop.interface scaling-factor 2
+                            }
+                        }
+                    } catch (Throwable e) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Cannot check scaling factor", e);
+                        }
                     }
                 }
             } else if (OS.isMacOsX()) {
@@ -222,6 +279,7 @@ class ImageUtils {
     }
 
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static
     File getTransparentImage(final int size) {
         File newFile = new File(TEMP_DIR, size + "_empty.png").getAbsoluteFile();
@@ -243,6 +301,7 @@ class ImageUtils {
         return newFile;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static
     BufferedImage getTransparentImageAsImage(final int size) {
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);

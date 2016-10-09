@@ -28,12 +28,12 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dorkbox.systemTray.linux.AppIndicatorTray;
 import dorkbox.systemTray.linux.GnomeShellExtension;
-import dorkbox.systemTray.linux.GtkSystemTray;
 import dorkbox.systemTray.linux.jna.AppIndicator;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.swing.SwingSystemTray;
+import dorkbox.systemTray.swing._AppIndicatorTray;
+import dorkbox.systemTray.swing._GtkStatusIconTray;
+import dorkbox.systemTray.swing._SwingTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
@@ -42,6 +42,7 @@ import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.OS;
 import dorkbox.util.Property;
+import dorkbox.util.SwingUtil;
 import dorkbox.util.process.ShellProcessBuilder;
 
 
@@ -104,7 +105,7 @@ class SystemTray extends Menu {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 0;
+    public static int FORCE_TRAY_TYPE = 2;
 
     @Property
     /**
@@ -280,19 +281,19 @@ class SystemTray extends Menu {
 
             if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
                 try {
-                    trayType = GtkSystemTray.class;
+                    trayType = _GtkStatusIconTray.class;
                 } catch (Throwable e1) {
                     if (DEBUG) {
-                        logger.error("Cannot initialize GtkSystemTray", e1);
+                        logger.error("Cannot initialize _GtkStatusIconTray", e1);
                     }
                 }
             }
             else if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
                 try {
-                    trayType = AppIndicatorTray.class;
+                    trayType = _AppIndicatorTray.class;
                 } catch (Throwable e1) {
                     if (DEBUG) {
-                        logger.error("Cannot initialize AppIndicatorTray", e1);
+                        logger.error("Cannot initialize _AppIndicatorTray", e1);
                     }
                 }
             }
@@ -335,16 +336,26 @@ class SystemTray extends Menu {
 
             if (DEBUG) {
                 logger.debug("Currently using the '{}' desktop", XDG);
+
+//                Properties properties = System.getProperties();
+//                for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+//                    logger.debug(entry.getKey() + " : " + entry.getValue());
+//                }
+            }
+
+            // must always be set in case of forced tray types
+            if ("kde".equalsIgnoreCase(XDG)) {
+                isKDE = true;
             }
 
 
             if (trayType == null) {
                 if ("unity".equalsIgnoreCase(XDG)) {
                     try {
-                        trayType = AppIndicatorTray.class;
+                        trayType = _AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
+                            logger.error("Cannot initialize _AppIndicatorTray", e);
                         }
                     }
                 }
@@ -353,75 +364,31 @@ class SystemTray extends Menu {
                     // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
                     // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
 
-                    // XFCE4 is OK to use appindicator, <XFCE4 we use GTKStatusIcon. God i wish there was an easy way to do this.
-                    boolean isNewXFCE = false;
+                    // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
                     try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // ps aux | grep [x]fce
-                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                        shell.setExecutable("ps");
-                        shell.addArgument("aux");
-                        shell.start();
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                        // should last us the next 20 years or so. XFCE development is glacially slow.
-                        isNewXFCE = output.contains("/xfce4/") || output.contains("/xfce5/") ||
-                                    output.contains("/xfce6/") || output.contains("/xfce7/");
-                    } catch (Throwable e) {
+                        trayType = _GtkStatusIconTray.class;
+                    } catch (Throwable e1) {
                         if (DEBUG) {
-                            logger.error("Cannot detect what version of XFCE is running", e);
-                        }
-                    }
-
-                    if (DEBUG) {
-                        logger.error("Is 'new' version of XFCE?  {}", isNewXFCE);
-                    }
-
-                    if (isNewXFCE) {
-                        try {
-                            trayType = AppIndicatorTray.class;
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize AppIndicatorTray", e);
-                            }
-
-                            // we can fail on AppIndicator, so this is the fallback
-                            try {
-                                trayType = GtkSystemTray.class;
-                            } catch (Throwable e1) {
-                                if (DEBUG) {
-                                    logger.error("Cannot initialize GtkSystemTray", e1);
-                                }
-                            }
-                        }
-                    } else {
-                        try {
-                            trayType = GtkSystemTray.class;
-                        } catch (Throwable e1) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e1);
-                            }
+                            logger.error("Cannot initialize _GtkStatusIconTray", e1);
                         }
                     }
                 }
                 else if ("lxde".equalsIgnoreCase(XDG)) {
                     try {
-                        trayType = GtkSystemTray.class;
+                        trayType = _GtkStatusIconTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize GtkSystemTray", e);
+                            logger.error("Cannot initialize _GtkStatusIconTray", e);
                         }
                     }
                 }
                 else if ("kde".equalsIgnoreCase(XDG)) {
-                    isKDE = true;
+                    // kde (at least, plasma 5.5.6) requires appindicator
                     try {
-                        trayType = AppIndicatorTray.class;
+                        trayType = _AppIndicatorTray.class;
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize AppIndicatorTray", e);
+                            logger.error("Cannot initialize _AppIndicatorTray", e);
                         }
                     }
                 }
@@ -435,34 +402,35 @@ class SystemTray extends Menu {
 
                     if ("cinnamon".equalsIgnoreCase(GDM)) {
                         try {
-                            trayType = GtkSystemTray.class;
+                            trayType = _GtkStatusIconTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
+                                logger.error("Cannot initialize _GtkStatusIconTray", e);
                             }
                         }
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                         try {
-                            trayType = GtkSystemTray.class;
+                            trayType = _GtkStatusIconTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
+                                logger.error("Cannot initialize _GtkStatusIconTray", e);
                             }
                         }
                     }
                     else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
                         try {
-                            trayType = GtkSystemTray.class;
+                            trayType = _GtkStatusIconTray.class;
                         } catch (Throwable e) {
                             if (DEBUG) {
-                                logger.error("Cannot initialize GtkSystemTray", e);
+                                logger.error("Cannot initialize _GtkStatusIconTray", e);
                             }
                         }
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
                         // have to install the gnome extension AND customize the restart command
                         trayType = null;
+                        // unity panel service??
                         GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
                     }
                 }
@@ -495,7 +463,7 @@ class SystemTray extends Menu {
                         GnomeShellExtension.install(output);
                         // we might be running gnome-shell, we MIGHT NOT. If we are forced to be app-indicator or swing, don't do this.
                         if (trayType == null) {
-                            trayType = GtkSystemTray.class;
+                            trayType = _GtkStatusIconTray.class;
                         }
                     }
                 } catch (Throwable e) {
@@ -533,7 +501,7 @@ class SystemTray extends Menu {
                                 if (readLine != null && readLine.contains("indicator-app")) {
                                     // make sure we can also load the library (it might be the wrong version)
                                     try {
-                                        trayType = AppIndicatorTray.class;
+                                        trayType = _AppIndicatorTray.class;
                                     } catch (Throwable e) {
                                         if (DEBUG) {
                                             logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK", e);
@@ -558,7 +526,7 @@ class SystemTray extends Menu {
 
             // fallback...
             if (trayType == null) {
-                trayType = GtkSystemTray.class;
+                trayType = _GtkStatusIconTray.class;
                 logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
                              "configuration");
             }
@@ -575,7 +543,7 @@ class SystemTray extends Menu {
         if (trayType == null && java.awt.SystemTray.isSupported()) {
             try {
                 java.awt.SystemTray.getSystemTray();
-                trayType = SwingSystemTray.class;
+                trayType = _SwingTray.class;
             } catch (Throwable e) {
                 if (DEBUG) {
                     logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.", e);
@@ -591,7 +559,7 @@ class SystemTray extends Menu {
             systemTrayMenu = null;
         }
         else {
-            Menu menu_ = null;
+            final Menu[] menuReference = new Menu[1];
 
             /*
              *  appIndicator/gtk require strings (which is the path)
@@ -604,17 +572,17 @@ class SystemTray extends Menu {
 
             try {
                 if (OS.isLinux() &&
-                    trayType == AppIndicatorTray.class &&
+                    trayType == _AppIndicatorTray.class &&
                     Gtk.isGtk2 &&
                     AppIndicator.isVersion3) {
 
                     try {
-                        trayType = GtkSystemTray.class;
+                        trayType = _GtkStatusIconTray.class;
                         logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
                                     "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                     } catch (Throwable e) {
                         if (DEBUG) {
-                            logger.error("Cannot initialize GtkSystemTray", e);
+                            logger.error("Cannot initialize _GtkStatusIconTray", e);
                         }
                         logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
                                      "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
@@ -623,14 +591,29 @@ class SystemTray extends Menu {
                     }
                 }
 
-                menu_ = (Menu) trayType.getConstructors()[0].newInstance(systemTray);
+                // need to set this
+                Gtk.isKDE = isKDE;
 
-                logger.info("Successfully Loaded: {}", trayType.getSimpleName());
+                // have to construct swing stuff inside the swing EDT
+                // this is the safest way to do this.
+                final Class<? extends Menu> finalTrayType = trayType;
+                SwingUtil.invokeAndWait(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        try {
+                            menuReference[0] = (Menu) finalTrayType.getConstructors()[0].newInstance(systemTray);
+                            logger.info("Successfully Loaded: {}", finalTrayType.getSimpleName());
+                        } catch (Exception e) {
+                            logger.error("Unable to create tray type: '" + finalTrayType.getSimpleName() + "'", e);
+                        }
+                    }
+                });
             } catch (Exception e) {
                 logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
 
-            systemTrayMenu = menu_;
+            systemTrayMenu = menuReference[0];
 
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
@@ -698,14 +681,14 @@ class SystemTray extends Menu {
     void shutdown() {
         final Menu menu = systemTrayMenu;
 
-        if (menu instanceof AppIndicatorTray) {
-            ((AppIndicatorTray) menu).shutdown();
+        if (menu instanceof _AppIndicatorTray) {
+            ((_AppIndicatorTray) menu).shutdown();
         }
-        else if (menu instanceof GtkSystemTray) {
-            ((GtkSystemTray) menu).shutdown();
+        else if (menu instanceof _GtkStatusIconTray) {
+            ((_GtkStatusIconTray) menu).shutdown();
         } else {
             // swing
-            ((SwingSystemTray) menu).shutdown();
+            ((_SwingTray) menu).shutdown();
         }
     }
 
@@ -715,14 +698,14 @@ class SystemTray extends Menu {
     public
     String getStatus() {
         final Menu menu = systemTrayMenu;
-        if (menu instanceof AppIndicatorTray) {
-            return ((AppIndicatorTray) menu).getStatus();
+        if (menu instanceof _AppIndicatorTray) {
+            return ((_AppIndicatorTray) menu).getStatus();
         }
-        else if (menu instanceof GtkSystemTray) {
-            return ((GtkSystemTray) menu).getStatus();
+        else if (menu instanceof _GtkStatusIconTray) {
+            return ((_GtkStatusIconTray) menu).getStatus();
         } else {
             // swing
-            return ((SwingSystemTray) menu).getStatus();
+            return ((_SwingTray) menu).getStatus();
         }
     }
 
@@ -734,28 +717,28 @@ class SystemTray extends Menu {
     public
     void setStatus(String statusText) {
         final Menu menu = systemTrayMenu;
-        if (menu instanceof AppIndicatorTray) {
-            ((AppIndicatorTray) menu).setStatus(statusText);
+        if (menu instanceof _AppIndicatorTray) {
+            ((_AppIndicatorTray) menu).setStatus(statusText);
         }
-        else if (menu instanceof GtkSystemTray) {
-            ((GtkSystemTray) menu).setStatus(statusText);
+        else if (menu instanceof _GtkStatusIconTray) {
+            ((_GtkStatusIconTray) menu).setStatus(statusText);
         } else {
             // swing
-            ((SwingSystemTray) menu).setStatus(statusText);
+            ((_SwingTray) menu).setStatus(statusText);
         }
     }
 
     protected
     void setImage_(File iconPath) {
         final Menu menu = systemTrayMenu;
-        if (menu instanceof AppIndicatorTray) {
-            ((AppIndicatorTray) menu).setImage_(iconPath);
+        if (menu instanceof _AppIndicatorTray) {
+            ((_AppIndicatorTray) menu).setImage_(iconPath);
         }
-        else if (menu instanceof GtkSystemTray) {
-            ((GtkSystemTray) menu).setImage_(iconPath);
+        else if (menu instanceof _GtkStatusIconTray) {
+            ((_GtkStatusIconTray) menu).setImage_(iconPath);
         } else {
             // swing (windows/mac)
-            ((SwingSystemTray) menu).setImage_(iconPath);
+            ((_SwingTray) menu).setImage_(iconPath);
         }
     }
 

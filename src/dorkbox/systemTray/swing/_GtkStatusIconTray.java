@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux;
+package dorkbox.systemTray.swing;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.swing.JPopupMenu;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -28,15 +32,15 @@ import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interactions via GTK.
  * <p/>
- * This is the "old" way to do it, and does not work with some desktop environments.
+ * This is the "old" way to do it, and does not work with some desktop environments. This is a hybrid class, because we want to show the
+ * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
  */
 public
-class GtkSystemTray extends GtkTypeSystemTray {
+class _GtkStatusIconTray extends GenericTray {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -50,18 +54,38 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
     private volatile boolean isActive = false;
 
+    // called on the EDT
     public
-    GtkSystemTray(final SystemTray systemTray) {
-        super(systemTray);
+    _GtkStatusIconTray(final SystemTray systemTray) {
+        super(systemTray, null, new TrayPopup());
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
         }
 
-        ImageUtils.determineIconSize();
+        JPopupMenu popupMenu = (JPopupMenu) _native;
+        popupMenu.pack();
+        popupMenu.setFocusable(true);
+
+        final Runnable popupRunnable = new Runnable() {
+            @Override
+            public
+            void run() {
+                Point point = MouseInfo.getPointerInfo()
+                                       .getLocation();
+
+                TrayPopup popupMenu = (TrayPopup) _native;
+                popupMenu.doShow(point, 0);
+            }
+        };
+
+        // appindicators DO NOT support anything other than PLAIN gtk-menus
+        //   they ALSO do not support tooltips, so we cater to the lowest common denominator
+        // trayIcon.setToolTip(_SwingTray.this.appName);
+
         Gtk.startGui();
 
-        dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -72,14 +96,16 @@ class GtkSystemTray extends GtkTypeSystemTray {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
+                        // show the swing menu on the EDT
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
-                            Gtk.gtk_menu_popup(_native, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
+                            // show the swing menu on the EDT
+                            dispatch(popupRunnable);
                         }
                     }
                 };
-                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback,
-                                                                                      null, 0);
+                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event",
+                                                                                      gtkCallback, null, 0);
 
                 // have to do this to prevent GC on these objects
                 gtkCallbacks.add(gtkCallback);
@@ -90,7 +116,7 @@ class GtkSystemTray extends GtkTypeSystemTray {
         Gtk.waitForStartup();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
-        dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -118,11 +144,11 @@ class GtkSystemTray extends GtkTypeSystemTray {
 
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
-    @Override
     public
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
-            dispatchAndWait(new Runnable() {
+
+            Gtk.dispatch(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -136,13 +162,16 @@ class GtkSystemTray extends GtkTypeSystemTray {
                 }
             });
 
-            super.shutdown();
+            Gtk.shutdownGui();
+
+            // uses EDT
+            super.remove();
         }
     }
 
     public
     void setImage_(final File iconFile) {
-        dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -152,6 +181,14 @@ class GtkSystemTray extends GtkTypeSystemTray {
                     isActive = true;
                     Gtk.gtk_status_icon_set_visible(trayIcon, true);
                 }
+            }
+        });
+
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                ((TrayPopup) _native).setTitleBarImage(iconFile);
             }
         });
     }

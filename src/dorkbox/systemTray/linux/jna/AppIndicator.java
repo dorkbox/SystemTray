@@ -28,7 +28,7 @@ import dorkbox.systemTray.SystemTray;
  *
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings("Duplicates")
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc"})
 public
 class AppIndicator {
     public static boolean isVersion3 = false;
@@ -213,14 +213,14 @@ class AppIndicator {
     // See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
     public static final int CATEGORY_APPLICATION_STATUS = 0;
-    public static final int CATEGORY_COMMUNICATIONS = 1;
-    public static final int CATEGORY_SYSTEM_SERVICES = 2;
-    public static final int CATEGORY_HARDWARE = 3;
-    public static final int CATEGORY_OTHER = 4;
+//    public static final int CATEGORY_COMMUNICATIONS = 1;
+//    public static final int CATEGORY_SYSTEM_SERVICES = 2;
+//    public static final int CATEGORY_HARDWARE = 3;
+//    public static final int CATEGORY_OTHER = 4;
 
     public static final int STATUS_PASSIVE = 0;
     public static final int STATUS_ACTIVE = 1;
-    public static final int STATUS_ATTENTION = 2;
+//    public static final int STATUS_ATTENTION = 2;
 
 
     public static native AppIndicatorInstanceStruct app_indicator_new(String id, String icon_name, int category);

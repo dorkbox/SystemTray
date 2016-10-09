@@ -16,10 +16,7 @@
 package dorkbox.systemTray.swing;
 
 import java.awt.AWTException;
-import java.awt.Dimension;
 import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
@@ -30,7 +27,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuEntry;
-import dorkbox.util.ScreenUtil;
 
 /**
  * Class for handling all system tray interaction, via SWING.
@@ -42,16 +38,16 @@ import dorkbox.util.ScreenUtil;
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class SwingSystemTray extends SwingGenericTray {
+class _SwingTray extends GenericTray {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
     // Called in the EDT
     public
-    SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray, null, new SwingSystemTrayMenuPopup());
+    _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
+        super(systemTray, null, new TrayPopup());
 
-        SwingSystemTray.this.tray = SystemTray.getSystemTray();
+        _SwingTray.this.tray = SystemTray.getSystemTray();
     }
 
     public
@@ -94,40 +90,14 @@ class SwingSystemTray extends SwingGenericTray {
 
                     // appindicators DO NOT support anything other than PLAIN gtk-menus
                     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                    // trayIcon.setToolTip(SwingSystemTray.this.appName);
+                    // trayIcon.setToolTip(_SwingTray.this.appName);
 
                     trayIcon.addMouseListener(new MouseAdapter() {
                         @Override
                         public
                         void mousePressed(MouseEvent e) {
-                            Dimension size = _native.getPreferredSize();
-
-                            Point point = e.getPoint();
-                            Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
-
-                            int x = point.x;
-                            int y = point.y;
-
-                            if (y < bounds.y) {
-                                y = bounds.y;
-                            }
-                            else if (y + size.height > bounds.y + bounds.height) {
-                                // our menu cannot have the top-edge snap to the mouse
-                                // so we make the bottom-edge snap to the mouse
-                                y -= size.height; // snap to edge of mouse
-                            }
-
-                            if (x < bounds.x) {
-                                x = bounds.x;
-                            }
-                            else if (x + size.width > bounds.x + bounds.width) {
-                                // our menu cannot have the left-edge snap to the mouse
-                                // so we make the right-edge snap to the mouse
-                                x -= size.width; // snap to edge of mouse
-                            }
-
-                            SwingSystemTrayMenuPopup popupMenu = (SwingSystemTrayMenuPopup) _native;
-                            popupMenu.doShow(x, y);
+                            TrayPopup popupMenu = (TrayPopup) _native;
+                            popupMenu.doShow(e.getPoint(), 0);
                         }
                     });
 
@@ -140,7 +110,7 @@ class SwingSystemTray extends SwingGenericTray {
                     trayIcon.setImage(trayImage);
                 }
 
-                ((SwingSystemTrayMenuPopup) _native).setTitleBarImage(iconFile);
+                ((TrayPopup) _native).setTitleBarImage(iconFile);
             }
         });
     }

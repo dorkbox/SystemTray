@@ -13,29 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux;
+package dorkbox.systemTray.swing;
 
 import java.io.File;
 
+import javax.swing.JSeparator;
+
 import dorkbox.systemTray.MenuSpacer;
 import dorkbox.systemTray.SystemTrayMenuAction;
-import dorkbox.systemTray.linux.jna.Gtk;
 
-class GtkEntrySeparator extends GtkEntry implements MenuSpacer {
+class EntrySeparator extends Entry implements MenuSpacer {
 
-    /**
-     * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
-     * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
-     */
-    GtkEntrySeparator(final GtkMenu parent) {
-        super(parent, Gtk.gtk_separator_menu_item_new());
+    // this is ALWAYS called on the EDT.
+    EntrySeparator(final SwingMenu parent) {
+        super(parent, new JSeparator(JSeparator.HORIZONTAL));
     }
 
-    @Override
-    void setSpacerImage(final boolean everyoneElseHasImages) {
-    }
-
-    // called in the GTK thread
+    // called in the EDT thread
     @Override
     void renderText(final String text) {
     }
@@ -50,6 +44,11 @@ class GtkEntrySeparator extends GtkEntry implements MenuSpacer {
 
     @Override
     public
+    void setShortcut(final char key) {
+    }
+
+    @Override
+    public
     boolean hasImage() {
         return false;
     }
@@ -57,10 +56,5 @@ class GtkEntrySeparator extends GtkEntry implements MenuSpacer {
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
-    }
-
-    @Override
-    public
-    void setEnabled(final boolean enabled) {
     }
 }

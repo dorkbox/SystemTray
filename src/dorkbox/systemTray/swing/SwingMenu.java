@@ -16,7 +16,7 @@
 package dorkbox.systemTray.swing;
 
 
-import static dorkbox.systemTray.swing.SwingEntry.getVkKey;
+import static dorkbox.systemTray.swing.Entry.getVkKey;
 
 import java.io.File;
 import java.io.InputStream;
@@ -38,7 +38,7 @@ import dorkbox.util.SwingUtil;
 class SwingMenu extends Menu {
 
     // sub-menu = AdjustedJMenu
-    // systemtray = SwingSystemTrayMenuPopup
+    // systemtray = TrayPopup
     volatile JComponent _native;
 
     // this have to be volatile, because they can be changed from any thread
@@ -84,7 +84,7 @@ class SwingMenu extends Menu {
             void run() {
                 synchronized (menuEntries) {
                     synchronized (menuEntries) {
-                        MenuEntry menuEntry = new SwingEntrySeparator(SwingMenu.this);
+                        MenuEntry menuEntry = new EntrySeparator(SwingMenu.this);
                         menuEntries.add(menuEntry);
                     }
                 }
@@ -121,12 +121,12 @@ class SwingMenu extends Menu {
 
                     if (menuEntry == null) {
                         // must always be called on the EDT
-                        menuEntry = new SwingEntryItem(SwingMenu.this, callback);
+                        menuEntry = new EntryItem(SwingMenu.this, callback);
                         menuEntry.setText(menuText);
                         menuEntry.setImage(imagePath);
 
                         menuEntries.add(menuEntry);
-                    } else if (menuEntry instanceof SwingEntryItem) {
+                    } else if (menuEntry instanceof EntryItem) {
                         menuEntry.setText(menuText);
                         menuEntry.setImage(imagePath);
                     }
@@ -317,8 +317,8 @@ class SwingMenu extends Menu {
             public
             void run() {
                 _native.setVisible(false);
-                if (_native instanceof SwingSystemTrayMenuPopup) {
-                    ((SwingSystemTrayMenuPopup) _native).close();
+                if (_native instanceof TrayPopup) {
+                    ((TrayPopup) _native).close();
                 }
 
                 SwingMenu parent = (SwingMenu) getParent();

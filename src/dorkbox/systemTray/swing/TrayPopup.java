@@ -15,8 +15,11 @@
  */
 package dorkbox.systemTray.swing;
 
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.io.File;
@@ -33,23 +36,23 @@ import javax.swing.event.PopupMenuListener;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.OS;
+import dorkbox.util.ScreenUtil;
 
 /**
  * This custom popup is required if we want to be able to show images on the menu,
  *
  * This is our "golden standard" since we have 100% control over it.
  */
-public
-class SwingSystemTrayMenuPopup extends JPopupMenu {
+class TrayPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
     // NOTE: we can use the "hidden dialog" focus window trick...
     private JDialog hiddenDialog;
     private volatile File iconFile;
+    private volatile Runnable runnable;
 
     @SuppressWarnings("unchecked")
-    public
-    SwingSystemTrayMenuPopup() {
+    TrayPopup() {
         super();
         setFocusable(true);
 //        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
@@ -106,7 +109,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus (WindowEvent we ) {
-                SwingSystemTrayMenuPopup.this.setVisible(false);
+                TrayPopup.this.setVisible(false);
             }
             @Override
             public void windowGainedFocus (WindowEvent we) {
@@ -133,8 +136,62 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         }
     }
 
+    void setOnHideRunnable(final Runnable runnable) {
+        this.runnable = runnable;
+    }
+
+    @Override
     public
-    void doShow(final int x, final int y) {
+    void setVisible(final boolean b) {
+        if (!b) {
+            Runnable r = this.runnable;
+            if (r != null) {
+                r.run();
+            }
+        }
+        super.setVisible(b);
+    }
+
+    void close() {
+        hiddenDialog.setVisible(false);
+        hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
+    }
+
+    void doShow(final Point point, final int offset) {
+
+        Dimension size = getPreferredSize();
+
+        Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
+
+        int x = point.x;
+        int y = point.y;
+
+        if (y < bounds.y) {
+            y = bounds.y;
+        }
+        else if (y + size.height > bounds.y + bounds.height) {
+            // our menu cannot have the top-edge snap to the mouse
+            // so we make the bottom-edge snap to the mouse
+            y -= size.height; // snap to edge of mouse
+        }
+
+        if (x < bounds.x) {
+            x = bounds.x;
+
+            x -= offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
+        }
+        else if (x + size.width > bounds.x + bounds.width) {
+            // our menu cannot have the left-edge snap to the mouse so we make the right-edge snap to the mouse
+            x -= size.width; // snap right edge of menu to mouse
+
+            x += offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
+        } else {
+            x -= offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
+        }
+
+        System.err.println("SHOWING POPUP @" + x + "," + y);
+
+
         // critical to get the keyboard listeners working for the popup menu
         setInvoker(hiddenDialog.getContentPane());
 
@@ -146,8 +203,5 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
         requestFocusInWindow();
     }
 
-    void close() {
-        hiddenDialog.setVisible(false);
-        hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
-    }
+
 }
