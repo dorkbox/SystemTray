@@ -39,6 +39,4 @@ class Gobject {
     public static native void g_object_ref_sink(Pointer object);
 
     public static native NativeLong g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
-
-    public static native Pointer g_markup_printf_escaped(String pattern, String inputString);
 }
