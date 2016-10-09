@@ -193,7 +193,7 @@ class ImageUtils {
                         }
                     }
                 } else {
-                    // it's a GTK environment or something
+                    // it's likely a Gnome environment
 
                     try {
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
