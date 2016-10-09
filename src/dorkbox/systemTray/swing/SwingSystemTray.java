@@ -48,21 +48,15 @@ class SwingSystemTray extends SwingMenu {
     volatile TrayIcon trayIcon;
 
     /**
-     * Creates a new system tray handler class.
+     * Creates a new system tray handler class. Called in the EDT
      */
     public
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray, null);
+        super(systemTray, null, new SwingSystemTrayMenuPopup());
 
         ImageUtils.determineIconSize();
 
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                SwingSystemTray.this.tray = SystemTray.getSystemTray();
-            }
-        });
+        SwingSystemTray.this.tray = SystemTray.getSystemTray();
     }
 
     public

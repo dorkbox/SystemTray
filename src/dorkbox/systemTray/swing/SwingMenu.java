@@ -37,6 +37,8 @@ import dorkbox.util.SwingUtil;
 // this is a weird composite class, because it must be a Menu, but ALSO a MenuEntry -- so it has both
 class SwingMenu extends Menu {
 
+    // sub-menu = AdjustedJMenu
+    // systemtray = SwingSystemTrayMenuPopup
     volatile JComponent _native;
 
     // this have to be volatile, because they can be changed from any thread
@@ -44,32 +46,16 @@ class SwingMenu extends Menu {
     private volatile boolean hasLegitIcon = false;
 
     /**
+     * Called in the EDT
+     *
      * @param systemTray
      *                 the system tray (which is the object that sits in the system tray)
      * @param parent
      *                 the parent of this menu, null if the parent is the system tray
      */
-    SwingMenu(final SystemTray systemTray, final Menu parent) {
+    SwingMenu(final SystemTray systemTray, final Menu parent, final JComponent _native) {
         super(systemTray, parent);
-
-        try {
-            SwingUtil.invokeAndWait(new Runnable() {
-                @Override
-                public
-                void run() {
-                    if (parent != null) {
-                        // when we are a sub-menu
-                        _native = new AdjustedJMenu();
-                        ((SwingMenu) parent)._native.add(_native);
-                    } else {
-                        // when we are the system tray
-                        _native = new SwingSystemTrayMenuPopup();
-                    }
-                }
-            });
-        } catch (Exception e) {
-            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
-        }
+        this._native = _native;
     }
 
     protected
@@ -173,7 +159,9 @@ class SwingMenu extends Menu {
 
                     if (menuEntry == null) {
                         // must always be called on the EDT
-                        menuEntry = new SwingMenu(getSystemTray(), SwingMenu.this);
+                        menuEntry = new SwingMenu(getSystemTray(), SwingMenu.this, new AdjustedJMenu());
+                        _native.add(((SwingMenu) menuEntry)._native);
+
                         menuEntry.setText(menuText);
                         menuEntry.setImage(imagePath);
                         value.set((Menu)menuEntry);
