@@ -41,7 +41,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
     // AppIndicators will only show if you use the keyboard to navigate
-    // GtkStatusIndicator will show on mouse+keyboard movement
+    // GtkStatusIconTray will show on mouse+keyboard movement
     private volatile char mnemonicKey = 0;
 
     /**

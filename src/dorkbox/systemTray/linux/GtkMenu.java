@@ -71,6 +71,7 @@ class GtkMenu extends Menu {
     /**
      * Necessary to guarantee all updates occur on the dispatch thread
      */
+    @Override
     protected
     void dispatchAndWait(final Runnable runnable) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);

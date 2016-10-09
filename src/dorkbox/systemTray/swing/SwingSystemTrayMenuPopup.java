@@ -36,6 +36,8 @@ import dorkbox.util.OS;
 
 /**
  * This custom popup is required if we want to be able to show images on the menu,
+ *
+ * This is our "golden standard" since we have 100% control over it.
  */
 class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;

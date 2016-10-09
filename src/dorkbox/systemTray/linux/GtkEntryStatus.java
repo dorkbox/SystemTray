@@ -19,7 +19,7 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.linux.jna.Gtk;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
-// where a GtkStatusIndicator + SwingTray will have everything lined up. (with or without icons).  This is to normalize how it looks
+// where a GtkStatusIconTray + SwingTray will have everything lined up. (with or without icons).  This is to normalize how it looks
 class GtkEntryStatus extends GtkEntryItem {
 
     /**

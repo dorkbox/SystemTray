@@ -47,9 +47,7 @@ class SwingSystemTray extends SwingMenu {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
-    /**
-     * Creates a new system tray handler class. Called in the EDT
-     */
+    // Called in the EDT
     public
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null, new SwingSystemTrayMenuPopup());
@@ -91,6 +89,7 @@ class SwingSystemTray extends SwingMenu {
         return null;
     }
 
+    @SuppressWarnings("Duplicates")
     public
     void setStatus(final String statusText) {
         dispatch(new Runnable() {
