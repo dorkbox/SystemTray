@@ -54,6 +54,9 @@ class _GtkStatusIconTray extends _Tray {
 
     private volatile boolean isActive = false;
 
+    // is the system tray visible or not.
+    private volatile boolean visible = true;
+
     // called on the EDT
     public
     _GtkStatusIconTray(final SystemTray systemTray) {
@@ -190,6 +193,23 @@ class _GtkStatusIconTray extends _Tray {
             public
             void run() {
                 ((TrayPopup) _native).setTitleBarImage(iconFile);
+            }
+        });
+    }
+
+    public
+    void setEnabled(final boolean setEnabled) {
+        visible = !setEnabled;
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (visible && !setEnabled) {
+                    Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                } else if (!visible && setEnabled) {
+                    Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                }
             }
         });
     }

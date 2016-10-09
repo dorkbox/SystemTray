@@ -60,10 +60,6 @@ class SystemTray implements Menu {
     public static final int TYPE_SWING = 3;
 
     @Property
-    /** How long to wait when updating menu entries before the request times-out */
-    public static final int TIMEOUT = 2;
-
-    @Property
     /** Enables auto-detection for the system tray. This should be mostly successful.
      * <p>
      * Auto-detection will use DEFAULT_WINDOWS_SIZE or DEFAULT_LINUX_SIZE as a 'base-line' for determining what size to use. On Linux,
@@ -105,12 +101,14 @@ class SystemTray implements Menu {
      * <p>
      * This is an advanced feature, and it is recommended to leave at 0.
      */
-    public static int FORCE_TRAY_TYPE = 2;
+    public static int FORCE_TRAY_TYPE = 0;
 
     @Property
     /**
      * When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
      * This property is available to disable this functionality in situations where you don't want this to happen.
+     * <p>
+     * This is an advanced feature, and it is recommended to leave as true.
      */
     public static boolean ENABLE_SHUTDOWN_HOOK = true;
 
@@ -761,13 +759,13 @@ class SystemTray implements Menu {
         systemTrayMenu.addSeparator();
     }
 
-
     /**
-     * Does nothing. You cannot set the text for the system tray
+     * Shows (if hidden), or hides (if showing) the system tray.
      */
     @Override
     public
     void setEnabled(final boolean enabled) {
+        systemTrayMenu.setEnabled(enabled);
     }
 
     /**

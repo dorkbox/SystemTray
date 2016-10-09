@@ -39,8 +39,11 @@ import dorkbox.systemTray.Entry;
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
 class _SwingTray extends _Tray {
-    volatile SystemTray tray;
-    volatile TrayIcon trayIcon;
+    private volatile SystemTray tray;
+    private volatile TrayIcon trayIcon;
+
+    // is the system tray visible or not.
+    private volatile boolean visible = true;
 
     // Called in the EDT
     public
@@ -111,6 +114,29 @@ class _SwingTray extends _Tray {
                 }
 
                 ((TrayPopup) _native).setTitleBarImage(iconFile);
+            }
+        });
+    }
+
+    public
+    void setEnabled(final boolean setEnabled) {
+        visible = !setEnabled;
+
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+
+                if (visible && !setEnabled) {
+                    tray.remove(trayIcon);
+                }
+                else if (!visible && setEnabled) {
+                    try {
+                        tray.add(trayIcon);
+                    } catch (AWTException e) {
+                        dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray");
+                    }
+                }
             }
         });
     }

@@ -96,6 +96,8 @@ class _AppIndicatorTray extends _Tray {
     // necessary to provide a menu (which we draw over) so we get the "on open" event when the menu is opened via clicking
     private Pointer dummyMenu;
 
+    // is the system tray visible or not.
+    private volatile boolean visible = true;
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
@@ -198,17 +200,18 @@ class _AppIndicatorTray extends _Tray {
     public
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
+            // must happen asap, so our hook properly notices we are in shutdown mode
+            final AppIndicatorInstanceStruct savedAppI = appIndicator;
+            appIndicator = null;
 
             Gtk.dispatch(new Runnable() {
                 @Override
                 public
                 void run() {
                     // STATUS_PASSIVE hides the indicator
-                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
-                    Pointer p = appIndicator.getPointer();
+                    AppIndicator.app_indicator_set_status(savedAppI, AppIndicator.STATUS_PASSIVE);
+                    Pointer p = savedAppI.getPointer();
                     Gobject.g_object_unref(p);
-
-                    appIndicator = null;
                 }
             });
 
@@ -248,6 +251,25 @@ class _AppIndicatorTray extends _Tray {
             public
             void run() {
                 ((TrayPopup) _native).setTitleBarImage(imageFile);
+            }
+        });
+    }
+
+    public
+    void setEnabled(final boolean setEnabled) {
+        visible = !setEnabled;
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                 if (visible && !setEnabled) {
+                    // STATUS_PASSIVE hides the indicator
+                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                }
+                else if (!visible && setEnabled) {
+                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                }
             }
         });
     }

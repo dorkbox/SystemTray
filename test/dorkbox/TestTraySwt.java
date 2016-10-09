@@ -113,6 +113,13 @@ class TestTraySwt {
                 submenu.setEnabled(false);
             }
         });
+        submenu.addEntry("Hide tray", BLACK_MAIL, new SystemTrayMenuAction() {
+            @Override
+            public
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+                systemTray.setEnabled(false);
+            }
+        });
         submenu.addEntry("Remove menu", GREEN_MAIL, new SystemTrayMenuAction() {
             @Override
             public
