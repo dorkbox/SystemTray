@@ -34,8 +34,6 @@ class AppIndicator {
     public static boolean isVersion3 = false;
     private static boolean isLoaded = false;
 
-    private static final boolean VERBOSE_DEBUG = false;
-
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
      * standard library naming convention or features/API set is. We just try until we find one that work, and are able to map the
@@ -69,11 +67,8 @@ class AppIndicator {
                     isLoaded = true;
                 }
             } catch (Throwable e) {
-                if (VERBOSE_DEBUG) {
-                    logger.debug("Error loading library: {}", "appindicator1", e);
-                }
-                else if (SystemTray.DEBUG) {
-                    logger.debug("Error loading GTK2 explicit appindicator1");
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading GTK2 explicit appindicator1. {}", e.getMessage());
                 }
             }
         }
@@ -104,7 +99,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: '{}'", nameToCheck1, e);
+                    logger.debug("Error loading library: '{}'. \n{}", nameToCheck1, e.getMessage());
                 }
             }
         }
@@ -141,7 +136,7 @@ class AppIndicator {
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: '{}'", "appindicator" + i, e);
+                                logger.debug("Error loading library: '{}'. \n{}", "appindicator" + i, e.getMessage());
                             }
                         }
                     }
@@ -168,7 +163,7 @@ class AppIndicator {
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: '{}'", "appindicator" + i, e);
+                                logger.debug("Error loading library: '{}'. \n{}", "appindicator" + i, e.getMessage());
                             }
                         }
                     }
@@ -196,7 +191,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: '{}'", nameToCheck1, e);
+                    logger.debug("Error loading library: '{}'. \n{}", nameToCheck1, e.getMessage());
                 }
             }
         }
@@ -208,7 +203,7 @@ class AppIndicator {
                 isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading library: '{}'", nameToCheck2, e);
+                    logger.debug("Error loading library: '{}'. \n{}", nameToCheck2, e.getMessage());
                 }
             }
         }
@@ -233,4 +228,5 @@ class AppIndicator {
     public static native void app_indicator_set_status(AppIndicatorInstanceStruct self, int status);
     public static native void app_indicator_set_menu(AppIndicatorInstanceStruct self, Pointer menu);
     public static native void app_indicator_set_icon(AppIndicatorInstanceStruct self, String icon_name);
+    public static native void app_indicator_set_label(AppIndicatorInstanceStruct self, String label, String notused);
 }

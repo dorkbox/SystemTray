@@ -33,13 +33,11 @@ import javax.swing.JPopupMenu;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.ScreenUtil;
 
 /**
@@ -49,7 +47,7 @@ import dorkbox.util.ScreenUtil;
  * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
  */
 public
-class GtkStatusIconTray extends SwingMenu {
+class GtkStatusIconTray extends SwingGenericTray {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -71,7 +69,6 @@ class GtkStatusIconTray extends SwingMenu {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
         }
-
 
         JPopupMenu popupMenu = (JPopupMenu) _native;
         popupMenu.pack();
@@ -117,7 +114,6 @@ class GtkStatusIconTray extends SwingMenu {
         //   they ALSO do not support tooltips, so we cater to the lowest common denominator
         // trayIcon.setToolTip(SwingSystemTray.this.appName);
 
-        ImageUtils.determineIconSize();
         Gtk.startGui();
 
         Gtk.dispatch(new Runnable() {
@@ -131,6 +127,7 @@ class GtkStatusIconTray extends SwingMenu {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
+                        // show the swing menu on the EDT
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
                             // show the swing menu on the EDT
@@ -214,6 +211,7 @@ class GtkStatusIconTray extends SwingMenu {
 
             Gtk.shutdownGui();
 
+            // uses EDT
             super.remove();
         }
     }
@@ -232,53 +230,12 @@ class GtkStatusIconTray extends SwingMenu {
                 }
             }
         });
-    }
 
-    public
-    String getStatus() {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof SwingEntryStatus) {
-                return menuEntry.getText();
-            }
-        }
-
-        return null;
-    }
-
-    @SuppressWarnings("Duplicates")
-    public
-    void setStatus(final String statusText) {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    SwingEntry menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (SwingEntry) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof SwingEntryStatus) {
-                        // set the text or delete...
-
-                        if (statusText == null) {
-                            // delete
-                            remove(menuEntry);
-                        }
-                        else {
-                            // set text
-                            menuEntry.setText(statusText);
-                        }
-
-                    } else {
-                        // create a new one
-                        menuEntry = new SwingEntryStatus(GtkStatusIconTray.this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                }
+                ((SwingSystemTrayMenuPopup) _native).setTitleBarImage(iconFile);
             }
         });
     }

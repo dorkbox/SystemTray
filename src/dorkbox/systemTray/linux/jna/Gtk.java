@@ -55,6 +55,7 @@ class Gtk {
 
     // there is ONLY a single thread EVER setting this value!!
     private static volatile boolean isDispatch = false;
+    public static boolean isKDE = false;
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk

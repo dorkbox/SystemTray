@@ -39,6 +39,7 @@ import dorkbox.util.OS;
  *
  * This is our "golden standard" since we have 100% control over it.
  */
+public
 class SwingSystemTrayMenuPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
@@ -47,6 +48,7 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
     private volatile File iconFile;
 
     @SuppressWarnings("unchecked")
+    public
     SwingSystemTrayMenuPopup() {
         super();
         setFocusable(true);
@@ -113,24 +115,25 @@ class SwingSystemTrayMenuPopup extends JPopupMenu {
     }
 
     /**
-     * Sets the icon for the title-bar, so IF it shows in the task-bar, it will have the corresponding icon as the SystemTray icon
+     * Sets the image for the title-bar, so IF it shows in the task-bar, it will have the corresponding image as the SystemTray image
      */
-    void setIcon(final File iconFile) {
-        if (this.iconFile == null || !this.iconFile.equals(iconFile)) {
-            this.iconFile = iconFile;
+    void setTitleBarImage(final File imageFile) {
+        if (this.iconFile == null || !this.iconFile.equals(imageFile)) {
+            this.iconFile = imageFile;
 
             try {
-                Image image = new ImageIcon(ImageIO.read(iconFile)).getImage();
+                Image image = new ImageIcon(ImageIO.read(imageFile)).getImage();
                 image.flush();
 
                 // we set the dialog window to have the same icon as what is on the system tray
                 hiddenDialog.setIconImage(image);
             } catch (IOException e) {
-                SystemTray.logger.error("Error setting the icon for the popup menu task tray dialog");
+                SystemTray.logger.error("Error setting the title-bar image for the popup menu task tray dialog");
             }
         }
     }
 
+    public
     void doShow(final int x, final int y) {
         // critical to get the keyboard listeners working for the popup menu
         setInvoker(hiddenDialog.getContentPane());

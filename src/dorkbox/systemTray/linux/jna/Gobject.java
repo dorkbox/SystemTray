@@ -18,6 +18,7 @@ package dorkbox.systemTray.linux.jna;
 import com.sun.jna.Callback;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
 
 /**
  * bindings for libgobject-2.0
@@ -31,6 +32,8 @@ class Gobject {
         JnaHelper.register("gobject-2.0", Gobject.class);
     }
 
+
+    public static native void g_object_get(Pointer object, String objectName, PointerByReference objectVal, Pointer nullValue);
 
     public static native void g_free(Pointer object);
     public static native void g_object_unref(Pointer object);

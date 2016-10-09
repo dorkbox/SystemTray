@@ -30,7 +30,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuEntry;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.ScreenUtil;
 
 /**
@@ -43,7 +42,7 @@ import dorkbox.util.ScreenUtil;
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class SwingSystemTray extends SwingMenu {
+class SwingSystemTray extends SwingGenericTray {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
@@ -51,8 +50,6 @@ class SwingSystemTray extends SwingMenu {
     public
     SwingSystemTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null, new SwingSystemTrayMenuPopup());
-
-        ImageUtils.determineIconSize();
 
         SwingSystemTray.this.tray = SystemTray.getSystemTray();
     }
@@ -73,55 +70,6 @@ class SwingSystemTray extends SwingMenu {
                 }
 
                 remove();
-            }
-        });
-    }
-
-    public
-    String getStatus() {
-        synchronized (menuEntries) {
-            MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof SwingEntryStatus) {
-                return menuEntry.getText();
-            }
-        }
-
-        return null;
-    }
-
-    @SuppressWarnings("Duplicates")
-    public
-    void setStatus(final String statusText) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    SwingEntry menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (SwingEntry) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof SwingEntryStatus) {
-                        // set the text or delete...
-
-                        if (statusText == null) {
-                            // delete
-                            remove(menuEntry);
-                        }
-                        else {
-                            // set text
-                            menuEntry.setText(statusText);
-                        }
-
-                    } else {
-                        // create a new one
-                        menuEntry = new SwingEntryStatus(SwingSystemTray.this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                }
             }
         });
     }
@@ -185,14 +133,14 @@ class SwingSystemTray extends SwingMenu {
 
                     try {
                         tray.add(trayIcon);
-                        ((SwingSystemTrayMenuPopup) _native).setIcon(iconFile);
                     } catch (AWTException e) {
                         dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                     }
                 } else {
-                    ((SwingSystemTrayMenuPopup) _native).setIcon(iconFile);
                     trayIcon.setImage(trayImage);
                 }
+
+                ((SwingSystemTrayMenuPopup) _native).setTitleBarImage(iconFile);
             }
         });
     }
