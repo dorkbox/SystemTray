@@ -24,6 +24,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,6 @@ import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.swing._AppIndicatorTray;
 import dorkbox.systemTray.swing._GtkStatusIconTray;
 import dorkbox.systemTray.swing._SwingTray;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
 import dorkbox.systemTray.util.WindowsSystemTraySwing;
@@ -51,7 +51,7 @@ import dorkbox.util.process.ShellProcessBuilder;
  */
 @SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
 public
-class SystemTray extends Menu {
+class SystemTray implements Menu {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     public static final int TYPE_AUTO_DETECT = 0;
@@ -559,7 +559,7 @@ class SystemTray extends Menu {
             systemTrayMenu = null;
         }
         else {
-            final Menu[] menuReference = new Menu[1];
+            final AtomicReference<Menu> reference = new AtomicReference<Menu>();
 
             /*
              *  appIndicator/gtk require strings (which is the path)
@@ -602,7 +602,7 @@ class SystemTray extends Menu {
                     public
                     void run() {
                         try {
-                            menuReference[0] = (Menu) finalTrayType.getConstructors()[0].newInstance(systemTray);
+                            reference.set((Menu) finalTrayType.getConstructors()[0].newInstance(systemTray));
                             logger.info("Successfully Loaded: {}", finalTrayType.getSimpleName());
                         } catch (Exception e) {
                             logger.error("Unable to create tray type: '" + finalTrayType.getSimpleName() + "'", e);
@@ -613,7 +613,7 @@ class SystemTray extends Menu {
                 logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
             }
 
-            systemTrayMenu = menuReference[0];
+            systemTrayMenu = reference.get();
 
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
@@ -670,13 +670,6 @@ class SystemTray extends Menu {
         return systemTray;
     }
 
-
-    private
-    SystemTray() {
-        super(null, null);
-    }
-
-
     public
     void shutdown() {
         final Menu menu = systemTrayMenu;
@@ -717,6 +710,7 @@ class SystemTray extends Menu {
     public
     void setStatus(String statusText) {
         final Menu menu = systemTrayMenu;
+
         if (menu instanceof _AppIndicatorTray) {
             ((_AppIndicatorTray) menu).setStatus(statusText);
         }
@@ -728,26 +722,18 @@ class SystemTray extends Menu {
         }
     }
 
-    protected
-    void setImage_(File iconPath) {
-        final Menu menu = systemTrayMenu;
-        if (menu instanceof _AppIndicatorTray) {
-            ((_AppIndicatorTray) menu).setImage_(iconPath);
-        }
-        else if (menu instanceof _GtkStatusIconTray) {
-            ((_GtkStatusIconTray) menu).setImage_(iconPath);
-        } else {
-            // swing (windows/mac)
-            ((_SwingTray) menu).setImage_(iconPath);
-        }
-    }
-
     /**
      * @return the parent menu (of this menu) or null if we are the root menu
      */
     public
     Menu getParent() {
         return null;
+    }
+
+    @Override
+    public
+    SystemTray getSystemTray() {
+        return this;
     }
 
     /**
@@ -776,107 +762,113 @@ class SystemTray extends Menu {
     }
 
 
-    // NO OP.
-    @Override
-    protected
-    MenuEntry addEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
-        return null;
-    }
-
-    // NO OP.
-    @Override
-    protected
-    Menu addMenu_(final String menuText, final File imagePath) {
-        return null;
-    }
-
-    // NO OP.
+    /**
+     * Does nothing. You cannot set the text for the system tray
+     */
     @Override
     public
     void setEnabled(final boolean enabled) {
     }
 
+    /**
+     * Does nothing. You cannot get the text for the system tray
+     */
     @Override
     public
     String getText() {
         return "";
     }
 
-    // NO OP.
+    /**
+     * Does nothing. You cannot set the text for the system tray
+     */
     @Override
     public
     void setText(final String newText) {
+        // NO OP.
     }
 
     /**
-     * Changes the tray image used.
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * Because the cross-platform, underlying system uses a file path to load images for the system tray,
-     * this will directly use the contents of the specified file.
-     *
-     * @param imageFile the path of the image to use
+     * @param imageFile the file of the image to use or null
      */
     @Override
     public
     void setImage(final File imageFile) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageFile));
+        if (imageFile == null) {
+            throw new NullPointerException("imageFile cannot be null!");
+        }
+
+        systemTrayMenu.setImage(imageFile);
     }
 
     /**
-     * Changes the tray image used.
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * Because the cross-platform, underlying system uses a file path to load images for the system tray,
-     * this will directly use the contents of the specified file.
-     *
-     * @param imagePath the path of the image to use
+     * @param imagePath the full path of the image to use or null
      */
     @Override
     public
     void setImage(final String imagePath) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
+        if (imagePath == null) {
+            throw new NullPointerException("imagePath cannot be null!");
+        }
+
+        systemTrayMenu.setImage(imagePath);
     }
 
     /**
-     * Changes the tray image used.
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
-     * the URL to a temporary location on disk, based on the path specified by the URL.
-     *
-     * @param imageUrl the URL of the image to use
+     * @param imageUrl the URL of the image to use or null
      */
     @Override
     public
-    void setImage(URL imageUrl) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
+    void setImage(final URL imageUrl) {
+        if (imageUrl == null) {
+            throw new NullPointerException("imageUrl cannot be null!");
+        }
+
+        systemTrayMenu.setImage(imageUrl);
     }
 
     /**
-     * Changes the tray image used.
-     *
-     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
-     * the imageStream to a temporary location on disk, based on the `cacheName` specified.
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
      * @param cacheName the name to use for lookup in the cache for the imageStream
      * @param imageStream the InputStream of the image to use
      */
     @Override
     public
-    void setImage(String cacheName, InputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, cacheName, imageStream));
+    void setImage(final String cacheName, final InputStream imageStream) {
+        if (cacheName == null) {
+            setImage(imageStream);
+        } else {
+            if (imageStream == null) {
+                throw new NullPointerException("imageStream cannot be null!");
+            }
+
+            systemTrayMenu.setImage(cacheName, imageStream);
+        }
     }
 
     /**
-     * Changes the tray image used.
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * Because the cross-platform, underlying system uses a file path to load images for the system tray, this will copy the contents of
-     * the imageStream to a temporary location on disk.
+     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
+     * also NOT RECOMMENDED, but is provided for simplicity.
      *
      * @param imageStream the InputStream of the image to use
      */
     @Override
     public
     void setImage(final InputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+        if (imageStream == null) {
+            throw new NullPointerException("imageStream cannot be null!");
+        }
+
+        systemTrayMenu.setImage(imageStream);
     }
 
     /**
@@ -888,33 +880,22 @@ class SystemTray extends Menu {
         return true;
     }
 
-    // NO OP.
+    /**
+     * Does nothing. The system tray cannot have a callback when opened
+     */
     @Override
     public
     void setCallback(final SystemTrayMenuAction callback) {
+        // NO OP.
     }
 
-    // NO OP.
+    /**
+     * Does nothing. The system tray cannot be opened via a shortcut key
+     */
     @Override
     public
     void setShortcut(final char key) {
-    }
-
-    // NO OP.
-    @Override
-    protected
-    void dispatch(final Runnable runnable) {
-    }
-
-    // NO OP.
-    @Override
-    protected
-    void dispatchAndWait(final Runnable runnable) {
-    }
-
-    // NO OP.
-    protected
-    void removePrivate() {
+        // NO OP.
     }
 
     /**
@@ -925,14 +906,13 @@ class SystemTray extends Menu {
         shutdown();
     }
 
-
     /**
      * Gets the menu entry for a specified text
      *
      * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
      */
     public final
-    MenuEntry get(final String menuText) {
+    Entry get(final String menuText) {
         return systemTrayMenu.get(menuText);
     }
 
@@ -940,7 +920,7 @@ class SystemTray extends Menu {
      * Gets the first menu entry, ignoring status and spacers
      */
     public final
-    MenuEntry getFirst() {
+    Entry getFirst() {
         return systemTrayMenu.getFirst();
     }
 
@@ -948,7 +928,7 @@ class SystemTray extends Menu {
      * Gets the last menu entry, ignoring status and spacers
      */
     public final
-    MenuEntry getLast() {
+    Entry getLast() {
         return systemTrayMenu.getLast();
     }
 
@@ -958,7 +938,7 @@ class SystemTray extends Menu {
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
     public final
-    MenuEntry get(final int menuIndex) {
+    Entry get(final int menuIndex) {
         return systemTrayMenu.get(menuIndex);
     }
 
@@ -973,7 +953,7 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    MenuEntry addEntry(String menuText, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, SystemTrayMenuAction callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
@@ -985,7 +965,7 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    MenuEntry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
         return systemTrayMenu.addEntry(menuText, imagePath, callback);
     }
 
@@ -997,7 +977,7 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    MenuEntry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
         return systemTrayMenu.addEntry(menuText, imageUrl, callback);
     }
 
@@ -1010,7 +990,7 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    MenuEntry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
         return systemTrayMenu.addEntry(menuText, cacheName, imageStream, callback);
     }
 
@@ -1022,7 +1002,7 @@ class SystemTray extends Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    MenuEntry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
         return systemTrayMenu.addEntry(menuText, imageStream, callback);
     }
 
@@ -1091,11 +1071,31 @@ class SystemTray extends Menu {
     /**
      *  This removes a menu entry from the dropdown menu.
      *
-     * @param menuEntry This is the menu entry to remove
+     * @param entry This is the menu entry to remove
      */
     public final
-    void remove(final MenuEntry menuEntry) {
-        systemTrayMenu.remove(menuEntry);
+    void remove(final Entry entry) {
+        systemTrayMenu.remove(entry);
+    }
+
+    /**
+     *  This removes a sub-menu entry from the dropdown menu.
+     *
+     * @param menu This is the menu entry to remove
+     */
+    @Override
+    public final
+    void remove(final Menu menu) {
+        systemTrayMenu.remove(menu);
+    }
+
+    /**
+     *  This removes al menu entries from this menu
+     */
+    @Override
+    public final
+    void clear() {
+        systemTrayMenu.clear();
     }
 
     /**

@@ -23,8 +23,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
@@ -74,13 +74,13 @@ class TestTraySwt {
         callbackGreen = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.setStatus("Some Mail!");
                 systemTray.setImage(GREEN_MAIL);
 
-                menuEntry.setCallback(callbackGray);
-                menuEntry.setImage(BLACK_MAIL);
-                menuEntry.setText("Delete Mail");
+                entry.setCallback(callbackGray);
+                entry.setImage(BLACK_MAIL);
+                entry.setText("Delete Mail");
 //                systemTray.remove(menuEntry);
             }
         };
@@ -88,18 +88,18 @@ class TestTraySwt {
         callbackGray = new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.setStatus(null);
                 systemTray.setImage(BLACK_MAIL);
 
-                menuEntry.setCallback(null);
+                entry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
-                systemTray.remove(menuEntry);
+                systemTray.remove(entry);
                 System.err.println("POW");
             }
         };
 
-        MenuEntry menuEntry = this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
+        Entry menuEntry = this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
         // case does not matter
         menuEntry.setShortcut('G');
 
@@ -109,14 +109,14 @@ class TestTraySwt {
         submenu.addEntry("Disable menu", LT_GRAY_MAIL, new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry entry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 submenu.setEnabled(false);
             }
         });
         submenu.addEntry("Remove menu", GREEN_MAIL, new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry entry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 submenu.remove();
             }
         });
@@ -124,7 +124,7 @@ class TestTraySwt {
         systemTray.addEntry("Quit", new SystemTrayMenuAction() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final MenuEntry menuEntry) {
+            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.shutdown();
 
                 display.asyncExec(new Runnable() {

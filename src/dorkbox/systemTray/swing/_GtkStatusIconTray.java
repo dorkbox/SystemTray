@@ -40,7 +40,7 @@ import dorkbox.systemTray.linux.jna.Gtk;
  * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
  */
 public
-class _GtkStatusIconTray extends GenericTray {
+class _GtkStatusIconTray extends _Tray {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -58,6 +58,7 @@ class _GtkStatusIconTray extends GenericTray {
     public
     _GtkStatusIconTray(final SystemTray systemTray) {
         super(systemTray, null, new TrayPopup());
+
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
@@ -79,9 +80,9 @@ class _GtkStatusIconTray extends GenericTray {
             }
         };
 
-        // appindicators DO NOT support anything other than PLAIN gtk-menus
+        // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
         //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-        // trayIcon.setToolTip(_SwingTray.this.appName);
+        // trayIcon.setToolTip("app name");
 
         Gtk.startGui();
 

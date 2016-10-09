@@ -80,17 +80,26 @@ import dorkbox.util.SwingUtil;
  * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
 public
-class _AppIndicatorTray extends GenericTray {
-    private AppIndicatorInstanceStruct appIndicator;
+class _AppIndicatorTray extends _Tray {
+    private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
+    private final Runnable popupRunnable;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
-    private volatile NativeLong nativeLong;
-    private volatile GEventCallback gtkCallback;
+    // necessary to prevent GC on these objects
+    private NativeLong nativeLong;
+    private GEventCallback gtkCallback;
+
+
+    // necessary to provide a menu (which we draw over) so we get the "on open" event when the menu is opened via clicking
     private Pointer dummyMenu;
-    private final Runnable popupRunnable;
+
+
+    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
+    //   they ALSO do not support tooltips, so we cater to the lowest common denominator
+    // trayIcon.setToolTip("app name");
 
     public
     _AppIndicatorTray(final SystemTray systemTray) {
@@ -98,7 +107,7 @@ class _AppIndicatorTray extends GenericTray {
 
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            throw new IllegalArgumentException("Unable to start AppIndicator if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
+            throw new IllegalArgumentException("Unable to start AppIndicator Tray if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
         }
 
         TrayPopup popupMenu = (TrayPopup) _native;
@@ -108,6 +117,11 @@ class _AppIndicatorTray extends GenericTray {
             @Override
             public
             void run() {
+                if (appIndicator == null) {
+                    // if we are shutting down, don't hook the menu again
+                    return;
+                }
+
                 // Such ugly hacks to get AppIndicator support properly working. This is so horrible I am ashamed.
                 Gtk.dispatch(new Runnable() {
                     @Override
@@ -131,10 +145,6 @@ class _AppIndicatorTray extends GenericTray {
                 popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
             }
         };
-
-        // appindicators DO NOT support anything other than PLAIN gtk-menus
-        //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-        // trayIcon.setToolTip(_SwingTray.this.appName);
 
         Gtk.startGui();
 
@@ -167,7 +177,7 @@ class _AppIndicatorTray extends GenericTray {
             @Override
             public
             void callback(Pointer notUsed, final GdkEventButton event) {
-                Gtk.gtk_widget_destroy(dummyMenu);
+                Gtk.gtk_widget_destroy(dummyMenu); // destroy the menu, so it will disappear (and we then have focus on our swing menu)
                 SwingUtil.invokeLater(popupRunnable);
             }
         };
@@ -175,7 +185,8 @@ class _AppIndicatorTray extends GenericTray {
         nativeLong = Gobject.g_signal_connect_object(rootMenuItem.getValue(), "about-to-show", gtkCallback, null, 0);
     }
 
-    private void createAppIndicatorMenu() {
+    private
+    void createAppIndicatorMenu() {
         dummyMenu = Gtk.gtk_menu_new();
         Pointer item = Gtk.gtk_image_menu_item_new_with_mnemonic("");
         Gtk.gtk_menu_shell_append(dummyMenu, item);
@@ -223,7 +234,7 @@ class _AppIndicatorTray extends GenericTray {
 
                     // kindof lame, but necessary for KDE
                     if (Gtk.isKDE) {
-                        AppIndicator.app_indicator_set_label(appIndicator, "SystemTray", null);
+                        AppIndicator.app_indicator_set_label(appIndicator, "SystemTray", "SystemTray");
                     }
 
                     // now we have to setup a way for us to catch the "activation" click on this menu. Must be after the menu is set

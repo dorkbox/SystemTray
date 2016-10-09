@@ -18,12 +18,11 @@ package dorkbox.systemTray;
 public
 interface SystemTrayMenuAction {
     /**
-     * This method will ALWAYS be called in the correct context, either in the swing EDT (if it's swing based), or in a separate thread
-     * (GtkStatusIcon/AppIndicator based).
+     * This method will ALWAYS be called in the swing EDT
      *
      * @param systemTray this is the parent, system tray object
      * @param parent this is the parent menu of this menu entry
      * @param entry this is the menu entry that was clicked
      */
-    void onClick(SystemTray systemTray, Menu parent, final MenuEntry entry);
+    void onClick(SystemTray systemTray, Menu parent, final Entry entry);
 }

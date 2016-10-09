@@ -24,7 +24,7 @@ import java.net.URL;
  * This represents a common menu-entry, that is cross platform in nature
  */
 public
-interface MenuEntry {
+interface Entry {
 
     /**
      * @return the menu that contains this menu entry

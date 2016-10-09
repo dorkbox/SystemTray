@@ -19,13 +19,12 @@ import java.io.File;
 
 import javax.swing.JSeparator;
 
-import dorkbox.systemTray.MenuSpacer;
 import dorkbox.systemTray.SystemTrayMenuAction;
 
-class EntrySeparator extends Entry implements MenuSpacer {
+class EntrySeparator extends EntryImpl implements dorkbox.systemTray.Separator {
 
     // this is ALWAYS called on the EDT.
-    EntrySeparator(final SwingMenu parent) {
+    EntrySeparator(final MenuImpl parent) {
         super(parent, new JSeparator(JSeparator.HORIZONTAL));
     }
 

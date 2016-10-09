@@ -23,24 +23,24 @@ import java.net.URL;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 abstract
-class Entry implements MenuEntry {
-    private final int id = Menu.MENU_ID_COUNTER.getAndIncrement();
+class EntryImpl implements Entry {
+    private final int id = MenuImpl.MENU_ID_COUNTER.getAndIncrement();
 
-    private final SwingMenu parent;
+    private final MenuImpl parent;
     final JComponent _native;
 
     // this have to be volatile, because they can be changed from any thread
     private volatile String text;
 
     // this is ALWAYS called on the EDT.
-    Entry(final SwingMenu parent, final JComponent menuItem) {
+    EntryImpl(final MenuImpl parent, final JComponent menuItem) {
         this.parent = parent;
         this._native = menuItem;
 
@@ -54,11 +54,14 @@ class Entry implements MenuEntry {
     }
 
     /**
-     * must always be called in the GTK thread
+     * must always be called in the EDT thread
      */
     abstract
     void renderText(final String text);
 
+    /**
+     * Not always called on the EDT thread
+     */
     abstract
     void setImage_(final File imageFile);
 
@@ -204,7 +207,7 @@ class Entry implements MenuEntry {
             return false;
         }
 
-        Entry other = (Entry) obj;
+        EntryImpl other = (EntryImpl) obj;
         return this.id == other.id;
     }
 

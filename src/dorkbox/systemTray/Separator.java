@@ -17,9 +17,8 @@
 package dorkbox.systemTray;
 
 /**
- * This represents a common menu-status entry, that is cross platform in nature
+ * This represents a common menu-spacer entry, that is cross platform in nature
  */
 public
-interface MenuStatus {
-
+interface Separator {
 }

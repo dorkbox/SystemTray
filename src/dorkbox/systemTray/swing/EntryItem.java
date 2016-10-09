@@ -25,7 +25,7 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.util.SwingUtil;
 
-class EntryItem extends Entry {
+class EntryItem extends EntryImpl {
 
     private final ActionListener swingCallback;
 
@@ -33,7 +33,7 @@ class EntryItem extends Entry {
     private volatile SystemTrayMenuAction callback;
 
     // this is ALWAYS called on the EDT.
-    EntryItem(final SwingMenu parent, final SystemTrayMenuAction callback) {
+    EntryItem(final MenuImpl parent, final SystemTrayMenuAction callback) {
         super(parent, new AdjustedJMenuItem());
         this.callback = callback;
 

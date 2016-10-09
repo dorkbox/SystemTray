@@ -17,17 +17,17 @@ package dorkbox.systemTray.swing;
 
 import javax.swing.JComponent;
 
+import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.MenuEntry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.ImageUtils;
 
 public abstract
-class GenericTray extends SwingMenu {
+class _Tray extends MenuImpl {
     /**
      * Called in the EDT
      */
-    GenericTray(final SystemTray systemTray, final Menu parent, final JComponent _native) {
+    _Tray(final SystemTray systemTray, final Menu parent, final JComponent _native) {
         super(systemTray, parent, _native);
 
         ImageUtils.determineIconSize();
@@ -36,9 +36,9 @@ class GenericTray extends SwingMenu {
     public
     String getStatus() {
         synchronized (menuEntries) {
-            MenuEntry menuEntry = menuEntries.get(0);
-            if (menuEntry instanceof EntryStatus) {
-                return menuEntry.getText();
+            Entry entry = menuEntries.get(0);
+            if (entry instanceof EntryStatus) {
+                return entry.getText();
             }
         }
 
@@ -47,16 +47,16 @@ class GenericTray extends SwingMenu {
 
     public
     void setStatus(final String statusText) {
-        final SwingMenu _this = this;
+        final MenuImpl _this = this;
         dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
                     // status is ALWAYS at 0 index...
-                    Entry menuEntry = null;
+                    EntryImpl menuEntry = null;
                     if (!menuEntries.isEmpty()) {
-                        menuEntry = (Entry) menuEntries.get(0);
+                        menuEntry = (EntryImpl) menuEntries.get(0);
                     }
 
                     if (menuEntry instanceof EntryStatus) {

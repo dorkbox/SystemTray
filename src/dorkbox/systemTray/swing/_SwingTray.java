@@ -26,7 +26,7 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
-import dorkbox.systemTray.MenuEntry;
+import dorkbox.systemTray.Entry;
 
 /**
  * Class for handling all system tray interaction, via SWING.
@@ -38,7 +38,7 @@ import dorkbox.systemTray.MenuEntry;
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class _SwingTray extends GenericTray {
+class _SwingTray extends _Tray {
     volatile SystemTray tray;
     volatile TrayIcon trayIcon;
 
@@ -59,8 +59,8 @@ class _SwingTray extends GenericTray {
                 tray.remove(trayIcon);
 
                 synchronized (menuEntries) {
-                    for (MenuEntry menuEntry : menuEntries) {
-                        menuEntry.remove();
+                    for (Entry entry : menuEntries) {
+                        entry.remove();
                     }
                     menuEntries.clear();
                 }
@@ -88,9 +88,9 @@ class _SwingTray extends GenericTray {
                     popupMenu.pack();
                     popupMenu.setFocusable(true);
 
-                    // appindicators DO NOT support anything other than PLAIN gtk-menus
+                    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
                     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                    // trayIcon.setToolTip(_SwingTray.this.appName);
+                    // trayIcon.setToolTip("app name");
 
                     trayIcon.addMouseListener(new MouseAdapter() {
                         @Override

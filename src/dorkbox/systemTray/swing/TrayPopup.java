@@ -66,7 +66,6 @@ class TrayPopup extends JPopupMenu {
         hiddenDialog.setAlwaysOnTop(true);
 
         // on Linux, the following two entries will **MOST OF THE TIME** prevent the hidden dialog from showing in the task-bar
-        // on MacOS, you need "special permission" to not have a hidden dialog show on the dock.
         hiddenDialog.getContentPane().setLayout(null);
 
         // this is java 1.7, so we have to use reflection. It's not critical for this to be set, but it helps hide the title in the taskbar
@@ -157,14 +156,13 @@ class TrayPopup extends JPopupMenu {
         hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 
-    void doShow(final Point point, final int offset) {
-
+    void doShow(final Point point, int offset) {
         Dimension size = getPreferredSize();
-
         Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
         int x = point.x;
         int y = point.y;
+
 
         if (y < bounds.y) {
             y = bounds.y;
@@ -175,22 +173,19 @@ class TrayPopup extends JPopupMenu {
             y -= size.height; // snap to edge of mouse
         }
 
+
         if (x < bounds.x) {
             x = bounds.x;
-
-            x -= offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
         }
         else if (x + size.width > bounds.x + bounds.width) {
             // our menu cannot have the left-edge snap to the mouse so we make the right-edge snap to the mouse
             x -= size.width; // snap right edge of menu to mouse
 
-            x += offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
-        } else {
-            x -= offset; // display over the stupid appindicator menu (which has to show, this is a major hack!)
+            offset = -offset; // flip offset
         }
 
-        System.err.println("SHOWING POPUP @" + x + "," + y);
-
+        // display over the stupid AppIndicator menu (which has to show, then we remove. THIS IS A HACK!)
+        x -= offset;
 
         // critical to get the keyboard listeners working for the popup menu
         setInvoker(hiddenDialog.getContentPane());
@@ -202,6 +197,4 @@ class TrayPopup extends JPopupMenu {
         setVisible(true);
         requestFocusInWindow();
     }
-
-
 }
