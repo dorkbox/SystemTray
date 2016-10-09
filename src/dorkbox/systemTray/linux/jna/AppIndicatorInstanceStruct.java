@@ -15,12 +15,13 @@
  */
 package dorkbox.systemTray.linux.jna;
 
-import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import dorkbox.util.Keep;
-
 import java.util.Arrays;
 import java.util.List;
+
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
+import dorkbox.util.Keep;
 
 @Keep
 public
