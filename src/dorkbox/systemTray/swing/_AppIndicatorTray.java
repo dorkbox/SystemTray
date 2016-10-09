@@ -235,11 +235,6 @@ class _AppIndicatorTray extends _Tray {
 
                     AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
 
-                    // kindof lame, but necessary for KDE
-                    if (Gtk.isKDE) {
-                        AppIndicator.app_indicator_set_label(appIndicator, "SystemTray", "SystemTray");
-                    }
-
                     // now we have to setup a way for us to catch the "activation" click on this menu. Must be after the menu is set
                     hookMenuOpen();
                 }
