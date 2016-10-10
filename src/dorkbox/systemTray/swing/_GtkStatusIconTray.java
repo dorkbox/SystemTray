@@ -81,7 +81,7 @@ class _GtkStatusIconTray extends MenuImpl {
                                        .getLocation();
 
                 TrayPopup popupMenu = (TrayPopup) _native;
-                popupMenu.doShow(_GtkStatusIconTray.this, point, 0);
+                popupMenu.doShow(point, 0);
             }
         };
 

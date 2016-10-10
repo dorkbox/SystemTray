@@ -145,7 +145,7 @@ class _AppIndicatorTray extends MenuImpl {
                                        .getLocation();
 
                 TrayPopup popupMenu = (TrayPopup) _native;
-                popupMenu.doShow(_AppIndicatorTray.this, point, SystemTray.DEFAULT_TRAY_SIZE);
+                popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
             }
         };
 

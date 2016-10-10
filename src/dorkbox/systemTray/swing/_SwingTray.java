@@ -100,7 +100,7 @@ class _SwingTray extends MenuImpl {
                         public
                         void mousePressed(MouseEvent e) {
                             TrayPopup popupMenu = (TrayPopup) _native;
-                            popupMenu.doShow(_SwingTray.this, e.getPoint(), 0);
+                            popupMenu.doShow(e.getPoint(), 0);
                         }
                     });
 
