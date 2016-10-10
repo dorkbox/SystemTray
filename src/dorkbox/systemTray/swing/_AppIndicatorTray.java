@@ -80,7 +80,7 @@ import dorkbox.util.SwingUtil;
  * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
 public
-class _AppIndicatorTray extends _Tray {
+class _AppIndicatorTray extends MenuImpl {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
     private final Runnable popupRunnable;
@@ -107,10 +107,11 @@ class _AppIndicatorTray extends _Tray {
     _AppIndicatorTray(final SystemTray systemTray) {
         super(systemTray,null, new TrayPopup());
 
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_GTK_STATUSICON) {
-            // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            throw new IllegalArgumentException("Unable to start AppIndicator Tray if 'SystemTray.FORCE_TRAY_TYPE' is set to GtkStatusIcon");
+        if (SystemTray.FORCE_TRAY_TYPE != 0 && SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_APP_INDICATOR) {
+            throw new IllegalArgumentException("Unable to start AppIndicator Tray if 'SystemTray.FORCE_TRAY_TYPE' does not match");
         }
+
+        ImageUtils.determineIconSize();
 
         TrayPopup popupMenu = (TrayPopup) _native;
         popupMenu.pack();
@@ -218,7 +219,8 @@ class _AppIndicatorTray extends _Tray {
             Gtk.shutdownGui();
 
             // uses EDT
-            super.remove();
+            clear();
+            remove();
         }
     }
 

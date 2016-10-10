@@ -32,6 +32,7 @@ import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -40,7 +41,7 @@ import dorkbox.systemTray.linux.jna.Gtk;
  * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
  */
 public
-class _GtkStatusIconTray extends _Tray {
+class _GtkStatusIconTray extends MenuImpl {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -62,10 +63,11 @@ class _GtkStatusIconTray extends _Tray {
     _GtkStatusIconTray(final SystemTray systemTray) {
         super(systemTray, null, new TrayPopup());
 
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_APP_INDICATOR) {
-            // if we force GTK type system tray, don't attempt to load AppIndicator libs
-            throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' is set to AppIndicator");
+        if (SystemTray.FORCE_TRAY_TYPE != 0 && SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
+            throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' does not match");
         }
+
+        ImageUtils.determineIconSize();
 
         JPopupMenu popupMenu = (JPopupMenu) _native;
         popupMenu.pack();
@@ -169,7 +171,8 @@ class _GtkStatusIconTray extends _Tray {
             Gtk.shutdownGui();
 
             // uses EDT
-            super.remove();
+            clear();
+            remove();
         }
     }
 

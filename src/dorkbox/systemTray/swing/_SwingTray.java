@@ -26,7 +26,7 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
-import dorkbox.systemTray.Entry;
+import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interaction, via SWING.
@@ -38,7 +38,7 @@ import dorkbox.systemTray.Entry;
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class _SwingTray extends _Tray {
+class _SwingTray extends MenuImpl {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;
 
@@ -49,6 +49,12 @@ class _SwingTray extends _Tray {
     public
     _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
         super(systemTray, null, new TrayPopup());
+
+        if (dorkbox.systemTray.SystemTray.FORCE_TRAY_TYPE != 0 && dorkbox.systemTray.SystemTray.FORCE_TRAY_TYPE != dorkbox.systemTray.SystemTray.TYPE_SWING) {
+            throw new IllegalArgumentException("Unable to start Swing SystemTray if 'SystemTray.FORCE_TRAY_TYPE' does not match");
+        }
+
+        ImageUtils.determineIconSize();
 
         _SwingTray.this.tray = SystemTray.getSystemTray();
     }
@@ -61,13 +67,7 @@ class _SwingTray extends _Tray {
             void run() {
                 tray.remove(trayIcon);
 
-                synchronized (menuEntries) {
-                    for (Entry entry : menuEntries) {
-                        entry.remove();
-                    }
-                    menuEntries.clear();
-                }
-
+                clear();
                 remove();
             }
         });
