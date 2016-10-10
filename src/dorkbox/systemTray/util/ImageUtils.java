@@ -49,6 +49,8 @@ class ImageUtils {
     private static final File TEMP_DIR = new File(CacheUtil.TEMP_DIR, "ResizedImages");
 
     // tray/menu-entry size.
+    // for more complete info on the linux side of things...
+    // https://wiki.archlinux.org/index.php/HiDPI
     public static volatile int TRAY_SIZE = 0;
     public static volatile int ENTRY_SIZE = 0;
 
@@ -282,7 +284,7 @@ class ImageUtils {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static
     File getTransparentImage(final int size) {
-        File newFile = new File(TEMP_DIR, size + "_empty.png").getAbsoluteFile();
+        final File newFile = new File(TEMP_DIR, size + "_empty.png").getAbsoluteFile();
 
         if (newFile.canRead() && newFile.isFile()) {
             return newFile;
@@ -292,7 +294,7 @@ class ImageUtils {
         newFile.getParentFile().mkdirs();
 
         try {
-            BufferedImage image = getTransparentImageAsImage(size);
+            final BufferedImage image = getTransparentImageAsImage(size);
             ImageIO.write(image, "png", newFile);
         } catch (IOException e) {
             e.printStackTrace();
@@ -304,7 +306,7 @@ class ImageUtils {
     @SuppressWarnings("WeakerAccess")
     public static
     BufferedImage getTransparentImageAsImage(final int size) {
-        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        final BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(0,0,0,0));
         g2d.fillRect(0, 0, size, size);
@@ -316,7 +318,7 @@ class ImageUtils {
     private static
     File getErrorImage(final String cacheName) {
         try {
-            File save = CacheUtil.save(cacheName, ImageUtils.class.getResource("error_32.png"));
+            final File save = CacheUtil.save(cacheName, ImageUtils.class.getResource("error_32.png"));
             // since it's the error file, we want to delete it on exit!
             save.deleteOnExit();
             return save;
@@ -328,7 +330,7 @@ class ImageUtils {
     private static
     File getIfCachedOrError(final String cacheName) {
         try {
-            File check = CacheUtil.check(cacheName);
+            final File check = CacheUtil.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -347,7 +349,7 @@ class ImageUtils {
     public static synchronized
     File resizeAndCache(final int size, final String fileName) {
         // check if we already have this file information saved to disk, based on size
-        String cacheName = size + "_" + fileName;
+        final String cacheName = size + "_" + fileName;
 
         // if we already have this fileName, reuse it
         File check = getIfCachedOrError(cacheName);
@@ -377,12 +379,16 @@ class ImageUtils {
     @SuppressWarnings("Duplicates")
     public static synchronized
     File resizeAndCache(final int size, final URL imageUrl) {
-        String cacheName = size + "_" + imageUrl.getPath();
+        final String cacheName = size + "_" + imageUrl.getPath();
 
         // if we already have this fileName, reuse it
-        File check = getIfCachedOrError(cacheName);
+        final File check = getIfCachedOrError(cacheName);
         if (check != null) {
             return check;
+        }
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("FAILED getting cached URL.");
         }
 
         // no cached file, so we resize then save the new one.
@@ -444,7 +450,7 @@ class ImageUtils {
         cacheName = size + "_" + cacheName;
 
         // if we already have this fileName, reuse it
-        File check = getIfCachedOrError(cacheName);
+        final File check = getIfCachedOrError(cacheName);
         if (check != null) {
             return check;
         }
@@ -509,17 +515,17 @@ class ImageUtils {
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static
-    File resizeFileNoCheck(final int size, final URL fileUrl) throws IOException {
+    File resizeFileNoCheck(final int size, final URL imageUrl) throws IOException {
         if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("Resizing URL to {}. '{}'", size, fileUrl.getPath());
+            SystemTray.logger.debug("Resizing URL to {}. '{}'", size, imageUrl.getPath());
         }
 
-        String extension = FileUtil.getExtension(fileUrl.getPath());
+        String extension = FileUtil.getExtension(imageUrl.getPath());
         if (extension.equals("")) {
             extension = "png"; // made up
         }
 
-        InputStream inputStream = fileUrl.openStream();
+        InputStream inputStream = imageUrl.openStream();
 
         // have to resize the file (and return the new path)
 
