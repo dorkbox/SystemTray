@@ -140,12 +140,7 @@ class TrayPopup extends JPopupMenu {
         hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 
-    void doShow(final Point point, int offset) {
-        // when the menu entries are changed, this makes sure to correctly show them
-        invalidate();
-        revalidate();
-        doLayout();
-
+    void doShow(final MenuImpl systemTray, final Point point, int offset) {
         Dimension size = getPreferredSize();
         Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
@@ -185,6 +180,13 @@ class TrayPopup extends JPopupMenu {
         setLocation(x, y);
         setVisible(true);
 
+        // when the menu entries are changed, this makes sure to correctly show them
+        invalidate();
+        revalidate();
+        doLayout();
+
         requestFocusInWindow();
+
+        ((EntryImpl) systemTray.getFirst())._native.requestFocusInWindow();
     }
 }

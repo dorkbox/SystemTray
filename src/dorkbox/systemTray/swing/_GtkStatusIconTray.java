@@ -81,7 +81,7 @@ class _GtkStatusIconTray extends MenuImpl {
                                        .getLocation();
 
                 TrayPopup popupMenu = (TrayPopup) _native;
-                popupMenu.doShow(point, 0);
+                popupMenu.doShow(_GtkStatusIconTray.this, point, 0);
             }
         };
 
@@ -171,8 +171,8 @@ class _GtkStatusIconTray extends MenuImpl {
             Gtk.shutdownGui();
 
             // uses EDT
-            clear();
-            remove();
+            removeAll();
+            remove();  // remove ourselves from our parent
         }
     }
 

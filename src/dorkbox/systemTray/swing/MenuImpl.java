@@ -30,20 +30,21 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.SystemTrayMenuAction;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
+@SuppressWarnings("ForLoopReplaceableByForEach")
 class MenuImpl implements Menu {
-    public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
+    static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
     private final int id = MenuImpl.MENU_ID_COUNTER.getAndIncrement();
 
-    protected final java.util.List<Entry> menuEntries = new ArrayList<Entry>();
+    private final java.util.List<Entry> menuEntries = new ArrayList<Entry>();
 
     private final SystemTray systemTray;
     private final Menu parent;
@@ -69,13 +70,11 @@ class MenuImpl implements Menu {
         this._native = _native;
     }
 
-    protected
     void dispatch(final Runnable runnable) {
         // this will properly check if we are running on the EDT
         SwingUtil.invokeLater(runnable);
     }
 
-    protected
     void dispatchAndWait(final Runnable runnable) {
         // this will properly check if we are running on the EDT
         try {
@@ -98,7 +97,7 @@ class MenuImpl implements Menu {
      * NOT ALWAYS CALLED ON EDT
      */
     private
-    Entry addEntry_(final String menuText, final File imagePath, final SystemTrayMenuAction callback) {
+    Entry addEntry_(final String menuText, final File imagePath, final Action callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
         }
@@ -154,7 +153,7 @@ class MenuImpl implements Menu {
                     if (entry == null) {
                         // must always be called on the EDT
                         entry = new MenuImpl(getSystemTray(), MenuImpl.this, new AdjustedJMenu());
-                        _native.add(((MenuImpl) entry)._native);
+                        _native.add(((MenuImpl) entry)._native); // have to add it separately
 
                         entry.setText(menuText);
                         entry.setImage(imagePath);
@@ -256,6 +255,31 @@ class MenuImpl implements Menu {
         });
     }
 
+// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
+//    public
+//    Entry addWidget(final JComponent widget) {
+//        if (widget == null) {
+//            throw new NullPointerException("Widget cannot be null");
+//        }
+//
+//        final AtomicReference<Entry> value = new AtomicReference<Entry>();
+//
+//        dispatchAndWait(new Runnable() {
+//            @Override
+//            public
+//            void run() {
+//                synchronized (menuEntries) {
+//                    // must always be called on the EDT
+//                    Entry entry = new EntryWidget(MenuImpl.this, widget);
+//                    value.set(entry);
+//                    menuEntries.add(entry);
+//                }
+//            }
+//        });
+//
+//        return value.get();
+//    }
+
 
     public
     Entry get(final String menuText) {
@@ -265,7 +289,8 @@ class MenuImpl implements Menu {
 
         // Must be wrapped in a synchronized block for object visibility
         synchronized (menuEntries) {
-            for (Entry entry : menuEntries) {
+            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                final Entry entry = menuEntries.get(i);
                 String text = entry.getText();
 
                 // text can be null
@@ -278,23 +303,25 @@ class MenuImpl implements Menu {
         return null;
     }
 
+    // ignores status + separators
     public
     Entry getFirst() {
         return get(0);
     }
 
+    // ignores status + separators
     public
     Entry getLast() {
         // Must be wrapped in a synchronized block for object visibility
         synchronized (menuEntries) {
             if (!menuEntries.isEmpty()) {
-                Entry entry = null;
-                for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                Entry entry;
+                for (int i = menuEntries.size()-1; i >= 0; i--) {
                     entry = menuEntries.get(i);
-                }
 
-                if (!(entry instanceof dorkbox.systemTray.Separator || entry instanceof Status)) {
-                    return entry;
+                    if (!(entry instanceof dorkbox.systemTray.Separator || entry instanceof Status)) {
+                        return entry;
+                    }
                 }
             }
         }
@@ -302,6 +329,7 @@ class MenuImpl implements Menu {
         return null;
     }
 
+    // ignores status + separators
     public
     Entry get(final int menuIndex) {
         if (menuIndex < 0) {
@@ -331,12 +359,12 @@ class MenuImpl implements Menu {
 
 
     public
-    Entry addEntry(String menuText, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, Action callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
     public
-    Entry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String imagePath, Action callback) {
         if (imagePath == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -346,7 +374,7 @@ class MenuImpl implements Menu {
     }
 
     public
-    Entry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, URL imageUrl, Action callback) {
         if (imageUrl == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -356,7 +384,7 @@ class MenuImpl implements Menu {
     }
 
     public
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -366,7 +394,7 @@ class MenuImpl implements Menu {
     }
 
     public
-    Entry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, InputStream imageStream, Action callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -483,29 +511,54 @@ class MenuImpl implements Menu {
         }
     }
 
+    public
+    String getStatus() {
+        synchronized (menuEntries) {
+            Entry entry = menuEntries.get(0);
+            if (entry instanceof EntryStatus) {
+                return entry.getText();
+            }
+        }
 
+        return null;
+    }
 
+    public
+    void setStatus(final String statusText) {
+        final MenuImpl _this = this;
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    // status is ALWAYS at 0 index...
+                    EntryImpl menuEntry = null;
+                    if (!menuEntries.isEmpty()) {
+                        menuEntry = (EntryImpl) menuEntries.get(0);
+                    }
 
+                    if (menuEntry instanceof EntryStatus) {
+                        // set the text or delete...
 
+                        if (statusText == null) {
+                            // delete
+                            remove(menuEntry);
+                        }
+                        else {
+                            // set text
+                            menuEntry.setText(statusText);
+                        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    } else {
+                        // create a new one
+                        menuEntry = new EntryStatus(_this, statusText);
+                        // status is ALWAYS at 0 index...
+                        menuEntries.add(0, menuEntry);
+                    }
+                }
+            }
+        });
+    }
 
 
 
@@ -531,7 +584,7 @@ class MenuImpl implements Menu {
 
     @Override
     public
-    void setCallback(final SystemTrayMenuAction callback) {
+    void setCallback(final Action callback) {
     }
 
     @Override
@@ -702,7 +755,7 @@ class MenuImpl implements Menu {
 
     @Override
     public
-    void clear() {
+    void removeAll() {
         dispatch(new Runnable() {
             @Override
             public
@@ -713,8 +766,33 @@ class MenuImpl implements Menu {
                     for (Entry entry : menuEntriesCopy) {
                         entry.remove();
                     }
+                    menuEntries.clear();
                 }
             }
         });
+    }
+
+    @Override
+    public final
+    int hashCode() {
+        return id;
+    }
+
+
+    @Override
+    public final
+    boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        MenuImpl other = (MenuImpl) obj;
+        return this.id == other.id;
     }
 }

@@ -22,7 +22,7 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 
-import dorkbox.systemTray.SystemTrayMenuAction;
+import dorkbox.systemTray.Action;
 import dorkbox.util.SwingUtil;
 
 class EntryItem extends EntryImpl {
@@ -30,10 +30,10 @@ class EntryItem extends EntryImpl {
     private final ActionListener swingCallback;
 
     private volatile boolean hasLegitIcon = false;
-    private volatile SystemTrayMenuAction callback;
+    private volatile Action callback;
 
     // this is ALWAYS called on the EDT.
-    EntryItem(final MenuImpl parent, final SystemTrayMenuAction callback) {
+    EntryItem(final MenuImpl parent, final Action callback) {
         super(parent, new AdjustedJMenuItem());
         this.callback = callback;
 
@@ -58,7 +58,7 @@ class EntryItem extends EntryImpl {
 
     @Override
     public
-    void setCallback(final SystemTrayMenuAction callback) {
+    void setCallback(final Action callback) {
         this.callback = callback;
     }
 

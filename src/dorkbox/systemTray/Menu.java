@@ -52,7 +52,7 @@ interface Menu extends Entry {
     /**
      *  This removes al menu entries from this menu
      */
-    void clear();
+    void removeAll();
 
     /**
      * Gets the menu entry for a specified text
@@ -62,17 +62,17 @@ interface Menu extends Entry {
     Entry get(final String menuText);
 
     /**
-     * Gets the first menu entry or sub-menu, ignoring status and spacers
+     * Gets the first menu entry or sub-menu, ignoring status and separators
      */
     Entry getFirst();
 
     /**
-     * Gets the last menu entry or sub-menu, ignoring status and spacers
+     * Gets the last menu entry or sub-menu, ignoring status and separators
      */
     Entry getLast();
 
     /**
-     * Gets the menu entry or sub-menu for a specified index (zero-index), ignoring status and spacers
+     * Gets the menu entry or sub-menu for a specified index (zero-index), ignoring status and separators
      *
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
@@ -86,7 +86,7 @@ interface Menu extends Entry {
      * @param menuText string of the text you want to appear
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, SystemTrayMenuAction callback);
+    Entry addEntry(String menuText, Action callback);
 
     /**
      * Adds a menu entry with text + image
@@ -95,7 +95,7 @@ interface Menu extends Entry {
      * @param imagePath the image (full path required) to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback);
+    Entry addEntry(String menuText, String imagePath, Action callback);
 
     /**
      * Adds a menu entry with text + image
@@ -104,7 +104,7 @@ interface Menu extends Entry {
      * @param imageUrl the URL of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback);
+    Entry addEntry(String menuText, URL imageUrl, Action callback);
 
     /**
      * Adds a menu entry with text + image
@@ -114,7 +114,7 @@ interface Menu extends Entry {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback);
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback);
 
     /**
      * Adds a menu entry with text + image
@@ -123,7 +123,7 @@ interface Menu extends Entry {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback);
+    Entry addEntry(String menuText, InputStream imageStream, Action callback);
 
 
 
@@ -167,6 +167,14 @@ interface Menu extends Entry {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      */
     Menu addMenu(String menuText, InputStream imageStream);
+
+    /**
+     * Adds a swing widget as a menu entry.
+     *
+     * @param widget the JComponent that is to be added as an entry
+     */
+// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
+//    Entry addWidget(JComponent widget);
 
 
     /**

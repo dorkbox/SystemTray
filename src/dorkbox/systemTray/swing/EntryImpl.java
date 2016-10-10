@@ -25,9 +25,7 @@ import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.util.SwingUtil;
 
 abstract
 class EntryImpl implements Entry {
@@ -102,7 +100,7 @@ class EntryImpl implements Entry {
     void setText(final String newText) {
         this.text = newText;
 
-        SwingUtil.invokeLater(new Runnable() {
+        parent.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -169,18 +167,14 @@ class EntryImpl implements Entry {
     @Override
     public final
     void remove() {
-        try {
-            SwingUtil.invokeAndWait(new Runnable() {
-                @Override
-                public
-                void run() {
-                    removePrivate();
-                    parent._native.remove(_native);
-                }
-            });
-        } catch (Exception e) {
-            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
-        }
+        parent.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                removePrivate();
+                parent._native.remove(_native);
+            }
+        });
     }
 
     // called when this item is removed. Necessary to cleanup/remove itself

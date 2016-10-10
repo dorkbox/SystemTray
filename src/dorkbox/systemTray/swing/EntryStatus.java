@@ -20,8 +20,8 @@ import java.io.File;
 
 import javax.swing.JMenuItem;
 
+import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.SystemTrayMenuAction;
 
 class EntryStatus extends EntryImpl implements Status {
 
@@ -64,7 +64,7 @@ class EntryStatus extends EntryImpl implements Status {
 
     @Override
     public
-    void setCallback(final SystemTrayMenuAction callback) {
+    void setCallback(final Action callback) {
 
     }
 }

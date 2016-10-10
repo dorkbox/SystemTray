@@ -97,7 +97,7 @@ interface Entry {
      *
      * @param callback the callback to set. If null, the callback is safely removed.
      */
-    void setCallback(SystemTrayMenuAction callback);
+    void setCallback(Action callback);
 
     /**
      * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.

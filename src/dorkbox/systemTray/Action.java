@@ -16,9 +16,9 @@
 package dorkbox.systemTray;
 
 public
-interface SystemTrayMenuAction {
+interface Action {
     /**
-     * This method will ALWAYS be called in the swing EDT
+     * This method will ALWAYS be called in the swing EDT. If there is work conducted in this method, it will slow-down the GUI.
      *
      * @param systemTray this is the parent, system tray object
      * @param parent this is the parent menu of this menu entry

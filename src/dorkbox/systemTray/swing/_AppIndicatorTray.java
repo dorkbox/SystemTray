@@ -145,7 +145,7 @@ class _AppIndicatorTray extends MenuImpl {
                                        .getLocation();
 
                 TrayPopup popupMenu = (TrayPopup) _native;
-                popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
+                popupMenu.doShow(_AppIndicatorTray.this, point, SystemTray.DEFAULT_TRAY_SIZE);
             }
         };
 
@@ -219,8 +219,8 @@ class _AppIndicatorTray extends MenuImpl {
             Gtk.shutdownGui();
 
             // uses EDT
-            clear();
-            remove();
+            removeAll();
+            remove(); // remove ourselves from our parent
         }
     }
 

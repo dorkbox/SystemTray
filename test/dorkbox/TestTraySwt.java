@@ -23,10 +23,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.SystemTrayMenuAction;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -36,9 +36,18 @@ import dorkbox.systemTray.SystemTrayMenuAction;
 public
 class TestTraySwt {
 
-    public static final URL BLACK_MAIL = TestTray.class.getResource("transport_bus_station.p.000000.32.png");
-    public static final URL GREEN_MAIL = TestTray.class.getResource("transport_bus_station.p.39AC39.32.png");
-    public static final URL LT_GRAY_MAIL = TestTray.class.getResource("transport_bus_station.p.999999.32.png");
+    public static final URL BLUE_CAMPING = TestTray.class.getResource("accommodation_camping.glow.0092DA.32.png");
+    public static final URL BLACK_FIRE = TestTray.class.getResource("amenity_firestation.p.000000.32.png");
+
+    public static final URL BLACK_MAIL = TestTray.class.getResource("amenity_post_box.p.000000.32.png");
+    public static final URL GREEN_MAIL = TestTray.class.getResource("amenity_post_box.p.39AC39.32.png");
+
+    public static final URL BLACK_BUS = TestTray.class.getResource("transport_bus_station.p.000000.32.png");
+    public static final URL LT_GRAY_BUS = TestTray.class.getResource("transport_bus_station.p.999999.32.png");
+
+    public static final URL BLACK_TRAIN = TestTray.class.getResource("transport_train_station.p.000000.32.png");
+    public static final URL GREEN_TRAIN = TestTray.class.getResource("transport_train_station.p.39AC39.32.png");
+    public static final URL LT_GRAY_TRAIN = TestTray.class.getResource("transport_train_station.p.666666.32.png");
 
     public static
     void main(String[] args) {
@@ -49,8 +58,8 @@ class TestTraySwt {
     }
 
     private SystemTray systemTray;
-    private SystemTrayMenuAction callbackGreen;
-    private SystemTrayMenuAction callbackGray;
+    private Action callbackGreen;
+    private Action callbackGray;
 
     public
     TestTraySwt() {
@@ -67,16 +76,15 @@ class TestTraySwt {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        this.systemTray.setImage(LT_GRAY_MAIL);
-
+        systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        callbackGreen = new SystemTrayMenuAction() {
+        callbackGreen = new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.setStatus("Some Mail!");
-                systemTray.setImage(GREEN_MAIL);
+                systemTray.setImage(GREEN_TRAIN);
 
                 entry.setCallback(callbackGray);
                 entry.setImage(BLACK_MAIL);
@@ -85,12 +93,12 @@ class TestTraySwt {
             }
         };
 
-        callbackGray = new SystemTrayMenuAction() {
+        callbackGray = new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.setStatus(null);
-                systemTray.setImage(BLACK_MAIL);
+                systemTray.setImage(BLACK_TRAIN);
 
                 entry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
@@ -105,22 +113,34 @@ class TestTraySwt {
 
         this.systemTray.addSeparator();
 
-        final Menu submenu = this.systemTray.addMenu("Options", BLACK_MAIL);
-        submenu.addEntry("Disable menu", LT_GRAY_MAIL, new SystemTrayMenuAction() {
+        final Menu submenu = this.systemTray.addMenu("Options", BLUE_CAMPING);
+        submenu.setShortcut('t');
+        submenu.addEntry("Disable menu", BLACK_BUS, new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 submenu.setEnabled(false);
             }
         });
-        submenu.addEntry("Hide tray", BLACK_MAIL, new SystemTrayMenuAction() {
+// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
+//        submenu.addEntry("Add widget", GREEN_BUS, new Action() {
+//            @Override
+//            public
+//            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+//                JProgressBar progressBar = new JProgressBar(0, 100);
+//                progressBar.setValue(new Random().nextInt(101));
+//                progressBar.setStringPainted(true);
+//                systemTray.addWidget(progressBar);
+//            }
+//        });
+        submenu.addEntry("Hide tray", LT_GRAY_BUS, new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
                 systemTray.setEnabled(false);
             }
         });
-        submenu.addEntry("Remove menu", GREEN_MAIL, new SystemTrayMenuAction() {
+        submenu.addEntry("Remove menu", BLACK_FIRE, new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
@@ -128,7 +148,7 @@ class TestTraySwt {
             }
         });
 
-        systemTray.addEntry("Quit", new SystemTrayMenuAction() {
+        systemTray.addEntry("Quit", new Action() {
             @Override
             public
             void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {

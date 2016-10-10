@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 dorkbox, llc
+ * Copyright 2016 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,18 @@ package dorkbox.systemTray.swing;
 
 import java.io.File;
 
-import javax.swing.JSeparator;
+import javax.swing.JComponent;
 
 import dorkbox.systemTray.Action;
 
-class EntrySeparator extends EntryImpl implements dorkbox.systemTray.Separator {
+// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
+class EntryWidget extends EntryImpl implements dorkbox.systemTray.Separator {
 
     // this is ALWAYS called on the EDT.
-    EntrySeparator(final MenuImpl parent) {
-        super(parent, new JSeparator(JSeparator.HORIZONTAL));
+    EntryWidget(final MenuImpl parent, JComponent widget) {
+        super(parent, widget);
+
+        _native.setEnabled(true);
     }
 
     // called in the EDT thread

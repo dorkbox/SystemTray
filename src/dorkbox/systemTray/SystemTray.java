@@ -562,10 +562,7 @@ class SystemTray implements Menu {
             /*
              *  appIndicator/gtk require strings (which is the path)
              *  swing version loads as an image (which can be stream or path, we use path)
-             *
-             *  For KDE4, it must also be unique across runs
              */
-            CacheUtil.setUniqueCachePerRun = isKDE;
             CacheUtil.tempDir = "SysTray";
 
             try {
@@ -883,7 +880,7 @@ class SystemTray implements Menu {
      */
     @Override
     public
-    void setCallback(final SystemTrayMenuAction callback) {
+    void setCallback(final Action callback) {
         // NO OP.
     }
 
@@ -951,7 +948,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, Action callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
@@ -963,7 +960,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, String imagePath, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String imagePath, Action callback) {
         return systemTrayMenu.addEntry(menuText, imagePath, callback);
     }
 
@@ -975,7 +972,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, URL imageUrl, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, URL imageUrl, Action callback) {
         return systemTrayMenu.addEntry(menuText, imageUrl, callback);
     }
 
@@ -988,7 +985,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback) {
         return systemTrayMenu.addEntry(menuText, cacheName, imageStream, callback);
     }
 
@@ -1000,7 +997,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, InputStream imageStream, SystemTrayMenuAction callback) {
+    Entry addEntry(String menuText, InputStream imageStream, Action callback) {
         return systemTrayMenu.addEntry(menuText, imageStream, callback);
     }
 
@@ -1063,6 +1060,17 @@ class SystemTray implements Menu {
         return systemTrayMenu.addMenu(menuText, imageStream);
     }
 
+    /**
+     * Adds a swing widget as a menu entry.
+     *
+     * @param widget the JComponent that is to be added as an entry
+     */
+// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
+//    @Override
+//    public
+//    Entry addWidget(final JComponent widget) {
+//        return systemTrayMenu.addWidget(widget);
+//    }
 
 
 
@@ -1092,8 +1100,8 @@ class SystemTray implements Menu {
      */
     @Override
     public final
-    void clear() {
-        systemTrayMenu.clear();
+    void removeAll() {
+        systemTrayMenu.removeAll();
     }
 
     /**

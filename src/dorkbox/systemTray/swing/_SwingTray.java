@@ -67,7 +67,7 @@ class _SwingTray extends MenuImpl {
             void run() {
                 tray.remove(trayIcon);
 
-                clear();
+                removeAll();
                 remove();
             }
         });
@@ -100,7 +100,7 @@ class _SwingTray extends MenuImpl {
                         public
                         void mousePressed(MouseEvent e) {
                             TrayPopup popupMenu = (TrayPopup) _native;
-                            popupMenu.doShow(e.getPoint(), 0);
+                            popupMenu.doShow(_SwingTray.this, e.getPoint(), 0);
                         }
                     });
 
