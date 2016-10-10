@@ -21,7 +21,6 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -46,8 +45,10 @@ import dorkbox.util.ScreenUtil;
 class TrayPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
-    // NOTE: we can use the "hidden dialog" focus window trick...
-    private JDialog hiddenDialog;
+    // This lets us click OFF the menu to hide the menu. This will always show an entry in the taskbar
+    // for java1.6 on linux (possibly others)
+    private final JDialog hiddenDialog;
+
     private volatile File iconFile;
     private volatile Runnable runnable;
 
@@ -68,10 +69,11 @@ class TrayPopup extends JPopupMenu {
         // on Linux, the following two entries will **MOST OF THE TIME** prevent the hidden dialog from showing in the task-bar
         hiddenDialog.getContentPane().setLayout(null);
 
-        // this is java 1.7, so we have to use reflection. It's not critical for this to be set, but it helps hide the title in the taskbar
-        // hiddenDialog.setType(Window.Type.POPUP);
         if (OS.javaVersion >= 7) {
             try {
+                // this is java 1.7, so we have to use reflection. It is critical for this to be set to keep the "hidden" dialog
+                // hidden in the taskbar
+                // hiddenDialog.setType(Window.Type.POPUP);
                 Class<? extends JDialog> hiddenDialogClass = hiddenDialog.getClass();
                 Method[] methods = hiddenDialogClass.getMethods();
                 for (Method method : methods) {
@@ -98,20 +100,14 @@ class TrayPopup extends JPopupMenu {
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 hiddenDialog.setVisible(false);
                 hiddenDialog.toBack();
+
+                Runnable r = runnable;
+                if (r != null) {
+                    r.run();
+                }
             }
 
             public void popupMenuCanceled(PopupMenuEvent e) {
-            }
-        });
-
-        // Add the window focus listener to the hidden dialog
-        hiddenDialog.addWindowFocusListener(new WindowFocusListener() {
-            @Override
-            public void windowLostFocus (WindowEvent we ) {
-                TrayPopup.this.setVisible(false);
-            }
-            @Override
-            public void windowGainedFocus (WindowEvent we) {
             }
         });
     }
@@ -139,24 +135,17 @@ class TrayPopup extends JPopupMenu {
         this.runnable = runnable;
     }
 
-    @Override
-    public
-    void setVisible(final boolean b) {
-        if (!b) {
-            Runnable r = this.runnable;
-            if (r != null) {
-                r.run();
-            }
-        }
-        super.setVisible(b);
-    }
-
     void close() {
         hiddenDialog.setVisible(false);
         hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 
     void doShow(final Point point, int offset) {
+        // when the menu entries are changed, this makes sure to correctly show them
+        invalidate();
+        revalidate();
+        doLayout();
+
         Dimension size = getPreferredSize();
         Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
 
@@ -173,7 +162,6 @@ class TrayPopup extends JPopupMenu {
             y -= size.height; // snap to edge of mouse
         }
 
-
         if (x < bounds.x) {
             x = bounds.x;
         }
@@ -184,17 +172,19 @@ class TrayPopup extends JPopupMenu {
             offset = -offset; // flip offset
         }
 
-        // display over the stupid AppIndicator menu (which has to show, then we remove. THIS IS A HACK!)
+        // display over the AppIndicator menu (which has to show, then we remove. THIS IS A HACK!)
         x -= offset;
+
+        // System.err.println("show " + x + "," + y);
 
         // critical to get the keyboard listeners working for the popup menu
         setInvoker(hiddenDialog.getContentPane());
-
         hiddenDialog.setLocation(x, y);
         hiddenDialog.setVisible(true);
 
         setLocation(x, y);
         setVisible(true);
+
         requestFocusInWindow();
     }
 }
