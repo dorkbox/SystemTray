@@ -167,8 +167,6 @@ class SystemTray implements Menu {
 
         Class<? extends Menu> trayType = null;
 
-        boolean isKDE = false;
-
         if (DEBUG) {
             logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("is SWT detected? {}", isSwtLoaded);
@@ -340,12 +338,6 @@ class SystemTray implements Menu {
 //                    logger.debug(entry.getKey() + " : " + entry.getValue());
 //                }
             }
-
-            // must always be set in case of forced tray types
-            if ("kde".equalsIgnoreCase(XDG)) {
-                isKDE = true;
-            }
-
 
             if (trayType == null) {
                 if ("unity".equalsIgnoreCase(XDG)) {
@@ -585,9 +577,6 @@ class SystemTray implements Menu {
                                      " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                     }
                 }
-
-                // need to set this
-                Gtk.isKDE = isKDE;
 
                 // have to construct swing stuff inside the swing EDT
                 // this is the safest way to do this.

@@ -36,7 +36,6 @@ import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.LocationResolver;
@@ -150,7 +149,7 @@ class ImageUtils {
 
 
                 // KDE is bonkers.
-                if (Gtk.isKDE) {
+                if ("kde".equalsIgnoreCase(System.getenv("XDG_CURRENT_DESKTOP"))) {
                     try {
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
                         PrintStream outputStream = new PrintStream(byteArrayOutputStream);
