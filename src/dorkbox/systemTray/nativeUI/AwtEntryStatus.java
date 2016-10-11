@@ -13,24 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.nativeUI;
 
+import static java.awt.Font.DIALOG;
+
+import java.awt.Font;
+import java.awt.MenuItem;
 import java.io.File;
 
-import javax.swing.JSeparator;
-
 import dorkbox.systemTray.Action;
+import dorkbox.systemTray.Status;
 
-class EntrySeparator extends EntryImpl implements dorkbox.systemTray.Separator {
+class AwtEntryStatus extends AwtEntry implements Status {
 
     // this is ALWAYS called on the EDT.
-    EntrySeparator(final MenuImpl parent) {
-        super(parent, new JSeparator(JSeparator.HORIZONTAL));
+    AwtEntryStatus(final AwtMenu parent, final String label) {
+        super(parent, new MenuItem());
+        setText(label);
     }
 
     // called in the EDT thread
     @Override
     void renderText(final String text) {
+        Font font = _native.getFont();
+        if (font == null) {
+            font = new Font(DIALOG, Font.BOLD, 12); // the default font used for dialogs.
+        } else {
+            font = font.deriveFont(Font.BOLD);
+        }
+
+        _native.setFont(font);
+        _native.setLabel(text);
+
+        // this makes sure it can't be selected
+        _native.setEnabled(false);
     }
 
     @Override

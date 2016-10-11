@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.swingUI;
 
 import java.awt.MouseInfo;
 import java.awt.Point;
@@ -79,8 +79,9 @@ import dorkbox.util.SwingUtil;
  * http://bazaar.launchpad.net/~canonical-dx-team/ido/trunk/view/head:/src/idoentrymenuitem.c
  * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
+@SuppressWarnings("Duplicates")
 public
-class _AppIndicatorTray extends MenuImpl {
+class _AppIndicatorTray extends SwingMenu {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
     private final Runnable popupRunnable;
@@ -89,7 +90,9 @@ class _AppIndicatorTray extends MenuImpl {
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
     // necessary to prevent GC on these objects
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private NativeLong nativeLong;
+    @SuppressWarnings("FieldCanBeLocal")
     private GEventCallback gtkCallback;
 
 
@@ -106,12 +109,6 @@ class _AppIndicatorTray extends MenuImpl {
     public
     _AppIndicatorTray(final SystemTray systemTray) {
         super(systemTray,null, new TrayPopup());
-
-        if (SystemTray.FORCE_TRAY_TYPE != 0 && SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_APP_INDICATOR) {
-            throw new IllegalArgumentException("Unable to start AppIndicator Tray if 'SystemTray.FORCE_TRAY_TYPE' does not match");
-        }
-
-        ImageUtils.determineIconSize();
 
         TrayPopup popupMenu = (TrayPopup) _native;
         popupMenu.pack();
@@ -198,11 +195,11 @@ class _AppIndicatorTray extends MenuImpl {
         AppIndicator.app_indicator_set_menu(appIndicator, dummyMenu);
     }
 
-    public
+    public final
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
             // must happen asap, so our hook properly notices we are in shutdown mode
-            final AppIndicatorInstanceStruct savedAppI = appIndicator;
+            final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
             appIndicator = null;
 
             Gtk.dispatch(new Runnable() {
@@ -210,8 +207,8 @@ class _AppIndicatorTray extends MenuImpl {
                 public
                 void run() {
                     // STATUS_PASSIVE hides the indicator
-                    AppIndicator.app_indicator_set_status(savedAppI, AppIndicator.STATUS_PASSIVE);
-                    Pointer p = savedAppI.getPointer();
+                    AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
+                    Pointer p = savedAppIndicator.getPointer();
                     Gobject.g_object_unref(p);
                 }
             });
@@ -224,7 +221,14 @@ class _AppIndicatorTray extends MenuImpl {
         }
     }
 
-    public
+    @Override
+    public final
+    boolean hasImage() {
+        return true;
+    }
+
+    @Override
+    public final
     void setImage_(final File imageFile) {
         dispatch(new Runnable() {
             @Override
@@ -252,7 +256,8 @@ class _AppIndicatorTray extends MenuImpl {
         });
     }
 
-    public
+    @Override
+    public final
     void setEnabled(final boolean setEnabled) {
         visible = !setEnabled;
 

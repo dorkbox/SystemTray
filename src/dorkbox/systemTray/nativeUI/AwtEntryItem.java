@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.nativeUI;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
-
 import dorkbox.systemTray.Action;
-import dorkbox.util.SwingUtil;
 
-class EntryItem extends EntryImpl {
+class AwtEntryItem extends AwtEntry {
 
     private final ActionListener swingCallback;
 
-    private volatile boolean hasLegitIcon = false;
     private volatile Action callback;
 
     // this is ALWAYS called on the EDT.
-    EntryItem(final MenuImpl parent, final Action callback) {
-        super(parent, new AdjustedJMenuItem());
+    AwtEntryItem(final AwtMenu parent, final Action callback) {
+        super(parent, new java.awt.MenuItem());
         this.callback = callback;
 
 
@@ -49,7 +44,7 @@ class EntryItem extends EntryImpl {
                 }
             };
 
-            ((JMenuItem) _native).addActionListener(swingCallback);
+            _native.addActionListener(swingCallback);
         } else {
             _native.setEnabled(false);
             swingCallback = null;
@@ -69,40 +64,27 @@ class EntryItem extends EntryImpl {
         }
     }
 
+    // always called in the EDT
+    @Override
+    void renderText(final String text) {
+        _native.setLabel(text);
+    }
+
+
+    // not supported!
     @Override
     public
     boolean hasImage() {
-        return hasLegitIcon;
+        return false;
+    }
+
+    // not supported!
+    @Override
+    void setImage_(final File imageFile) {
     }
 
     @Override
     void removePrivate() {
-        ((JMenuItem) _native).removeActionListener(swingCallback);
-    }
-
-    // always called in the EDT
-    @Override
-    void renderText(final String text) {
-        ((JMenuItem) _native).setText(text);
-    }
-
-    @SuppressWarnings("Duplicates")
-    @Override
-    void setImage_(final File imageFile) {
-        hasLegitIcon = imageFile != null;
-
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (imageFile != null) {
-                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenuItem) _native).setIcon(origIcon);
-                }
-                else {
-                    ((JMenuItem) _native).setIcon(null);
-                }
-            }
-        });
+        _native.removeActionListener(swingCallback);
     }
 }

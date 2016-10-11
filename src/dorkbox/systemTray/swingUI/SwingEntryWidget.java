@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.swingUI;
 
 import java.io.File;
 
@@ -22,10 +22,10 @@ import javax.swing.JComponent;
 import dorkbox.systemTray.Action;
 
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-class EntryWidget extends EntryImpl implements dorkbox.systemTray.Separator {
+class SwingEntryWidget extends SwingEntry implements dorkbox.systemTray.Separator {
 
     // this is ALWAYS called on the EDT.
-    EntryWidget(final MenuImpl parent, JComponent widget) {
+    SwingEntryWidget(final SwingMenu parent, JComponent widget) {
         super(parent, widget);
 
         _native.setEnabled(true);

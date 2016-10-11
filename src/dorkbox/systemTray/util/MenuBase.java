@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.util;
 
-
-import static dorkbox.systemTray.swing.EntryImpl.getVkKey;
 
 import java.io.File;
 import java.io.InputStream;
@@ -24,175 +22,63 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.swing.ImageIcon;
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
+import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class MenuImpl implements Menu {
-    static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
-    private final int id = MenuImpl.MENU_ID_COUNTER.getAndIncrement();
+public abstract
+class MenuBase implements Menu {
+    public static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger();
+    private final int id = MenuBase.MENU_ID_COUNTER.getAndIncrement();
 
-    private final java.util.List<Entry> menuEntries = new ArrayList<Entry>();
+    protected final java.util.List<Entry> menuEntries = new ArrayList<Entry>();
 
     private final SystemTray systemTray;
     private final Menu parent;
 
-    // sub-menu = AdjustedJMenu
-    // systemtray = TrayPopup
-    volatile JComponent _native;
-
-    // this have to be volatile, because they can be changed from any thread
-    private volatile String text;
-    private volatile boolean hasLegitIcon = false;
-
     /**
-     * Called in the EDT
+     * Called in the EDT/GTK dispatch threads
      *
      * @param systemTray the system tray (which is the object that sits in the system tray)
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param _native the native element that represents this menu
      */
-    MenuImpl(final SystemTray systemTray, final Menu parent, final JComponent _native) {
+    public
+    MenuBase(final SystemTray systemTray, final Menu parent) {
         this.systemTray = systemTray;
         this.parent = parent;
-        this._native = _native;
     }
 
-    void dispatch(final Runnable runnable) {
-        // this will properly check if we are running on the EDT
-        SwingUtil.invokeLater(runnable);
-    }
+    protected abstract
+    void dispatch(final Runnable runnable);
 
-    void dispatchAndWait(final Runnable runnable) {
-        // this will properly check if we are running on the EDT
-        try {
-            SwingUtil.invokeAndWait(runnable);
-        } catch (Exception e) {
-            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
-        }
-    }
-
-    // always called in the EDT
-    private
-    void renderText(final String text) {
-        ((JMenuItem) _native).setText(text);
-    }
-
+    protected abstract
+    void dispatchAndWait(final Runnable runnable);
 
 
     /**
      * Will add a new menu entry, or update one if it already exists
-     * NOT ALWAYS CALLED ON EDT
+     * NOT ALWAYS CALLED ON DISPATCH
      */
-    private
-    Entry addEntry_(final String menuText, final File imagePath, final Action callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = get(menuText);
-
-                    if (entry == null) {
-                        // must always be called on the EDT
-                        entry = new EntryItem(MenuImpl.this, callback);
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-
-                        menuEntries.add(entry);
-                    } else if (entry instanceof EntryItem) {
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                    }
-
-                    value.set(entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
+    protected abstract
+    Entry addEntry_(final String menuText, final File imagePath, final Action callback);
 
     /**
      * Will add a new sub-menu entry, or update one if it already exists
-     * NOT ALWAYS CALLED ON EDT
+     * NOT ALWAYS CALLED ON DISPATCH
      */
-    private
-    Menu addMenu_(final String menuText, final File imagePath) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Menu> value = new AtomicReference<Menu>();
-
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = get(menuText);
-
-                    if (entry == null) {
-                        // must always be called on the EDT
-                        entry = new MenuImpl(getSystemTray(), MenuImpl.this, new AdjustedJMenu());
-                        _native.add(((MenuImpl) entry)._native); // have to add it separately
-
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                        value.set((Menu) entry);
-
-                    } else if (entry instanceof MenuImpl) {
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                    }
-
-                    menuEntries.add(entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
+    protected abstract
+    Menu addMenu_(final String menuText, final File imagePath);
 
 
     // public here so that Swing/Gtk/AppIndicator can override this
-    public
-    void setImage_(final File imageFile) {
-        hasLegitIcon = imageFile != null;
-
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (imageFile != null) {
-                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenuItem) _native).setIcon(origIcon);
-                }
-                else {
-                    ((JMenuItem) _native).setIcon(null);
-                }
-            }
-        });
-    }
+    protected abstract
+    void setImage_(final File imageFile);
 
 
 
@@ -201,58 +87,29 @@ class MenuImpl implements Menu {
 
 
 
-
-    public
+    @Override
+    public final
     Menu getParent() {
         return parent;
     }
 
-    public
+    @Override
+    public final
     SystemTray getSystemTray() {
         return systemTray;
     }
 
-
-    @Override
-    public
-    boolean hasImage() {
-        return hasLegitIcon;
-    }
-
-    /**
-     * Enables, or disables the sub-menu entry.
-     */
-    @Override
-    public
-    void setEnabled(final boolean enabled) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(enabled);
+    // public here so that Swing/Gtk/AppIndicator can access this
+    public final
+    String getStatus() {
+        synchronized (menuEntries) {
+            Entry entry = menuEntries.get(0);
+            if (entry instanceof Status) {
+                return entry.getText();
             }
-        });
-    }
+        }
 
-
-    /**
-     * NOT ALWAYS CALLED ON EDT
-     */
-    @Override
-    public
-    void addSeparator() {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    synchronized (menuEntries) {
-                        Entry entry = new EntrySeparator(MenuImpl.this);
-                        menuEntries.add(entry);
-                    }
-                }
-            }
-        });
+        return null;
     }
 
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
@@ -281,7 +138,8 @@ class MenuImpl implements Menu {
 //    }
 
 
-    public
+    @Override
+    public final
     Entry get(final String menuText) {
         if (menuText == null || menuText.isEmpty()) {
             return null;
@@ -291,6 +149,11 @@ class MenuImpl implements Menu {
         synchronized (menuEntries) {
             for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
                 final Entry entry = menuEntries.get(i);
+
+                if (entry instanceof Separator || entry instanceof Status) {
+                    continue;
+                }
+
                 String text = entry.getText();
 
                 // text can be null
@@ -304,13 +167,15 @@ class MenuImpl implements Menu {
     }
 
     // ignores status + separators
-    public
+    @Override
+    public final
     Entry getFirst() {
         return get(0);
     }
 
     // ignores status + separators
-    public
+    @Override
+    public final
     Entry getLast() {
         // Must be wrapped in a synchronized block for object visibility
         synchronized (menuEntries) {
@@ -319,7 +184,7 @@ class MenuImpl implements Menu {
                 for (int i = menuEntries.size()-1; i >= 0; i--) {
                     entry = menuEntries.get(i);
 
-                    if (!(entry instanceof dorkbox.systemTray.Separator || entry instanceof Status)) {
+                    if (!(entry instanceof Separator || entry instanceof Status)) {
                         return entry;
                     }
                 }
@@ -330,7 +195,8 @@ class MenuImpl implements Menu {
     }
 
     // ignores status + separators
-    public
+    @Override
+    public final
     Entry get(final int menuIndex) {
         if (menuIndex < 0) {
             return null;
@@ -341,7 +207,7 @@ class MenuImpl implements Menu {
             if (!menuEntries.isEmpty()) {
                 int count = 0;
                 for (Entry entry : menuEntries) {
-                    if (entry instanceof dorkbox.systemTray.Separator || entry instanceof Status) {
+                    if (entry instanceof Separator || entry instanceof Status) {
                         continue;
                     }
 
@@ -357,13 +223,14 @@ class MenuImpl implements Menu {
         return null;
     }
 
-
-    public
+    @Override
+    public final
     Entry addEntry(String menuText, Action callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
-    public
+    @Override
+    public final
     Entry addEntry(String menuText, String imagePath, Action callback) {
         if (imagePath == null) {
             return addEntry_(menuText, null, callback);
@@ -373,7 +240,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Entry addEntry(String menuText, URL imageUrl, Action callback) {
         if (imageUrl == null) {
             return addEntry_(menuText, null, callback);
@@ -383,7 +251,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
@@ -393,7 +262,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Entry addEntry(String menuText, InputStream imageStream, Action callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
@@ -407,13 +277,14 @@ class MenuImpl implements Menu {
 
 
 
-
-    public
+    @Override
+    public final
     Menu addMenu(String menuText) {
         return addMenu(menuText, (String) null);
     }
 
-    public
+    @Override
+    public final
     Menu addMenu(String menuText, String imagePath) {
         if (imagePath == null) {
             return addMenu_(menuText, null);
@@ -423,7 +294,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Menu addMenu(String menuText, URL imageUrl) {
         if (imageUrl == null) {
             return addMenu_(menuText, null);
@@ -433,7 +305,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Menu addMenu(String menuText, String cacheName, InputStream imageStream) {
         if (imageStream == null) {
             return addMenu_(menuText, null);
@@ -443,7 +316,8 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
+    @Override
+    public final
     Menu addMenu(String menuText, InputStream imageStream) {
         if (imageStream == null) {
             return addMenu_(menuText, null);
@@ -511,97 +385,16 @@ class MenuImpl implements Menu {
         }
     }
 
-    public
-    String getStatus() {
-        synchronized (menuEntries) {
-            Entry entry = menuEntries.get(0);
-            if (entry instanceof EntryStatus) {
-                return entry.getText();
-            }
-        }
-
-        return null;
-    }
-
-    public
-    void setStatus(final String statusText) {
-        final MenuImpl _this = this;
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    EntryImpl menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (EntryImpl) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof EntryStatus) {
-                        // set the text or delete...
-
-                        if (statusText == null) {
-                            // delete
-                            remove(menuEntry);
-                        }
-                        else {
-                            // set text
-                            menuEntry.setText(statusText);
-                        }
-
-                    } else {
-                        // create a new one
-                        menuEntry = new EntryStatus(_this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                }
-            }
-        });
-    }
 
 
 
 
     @Override
-    public
-    String getText() {
-        return text;
-    }
-
-    @Override
-    public
-    void setText(final String newText) {
-        text = newText;
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                renderText(newText);
-            }
-        });
-    }
-
-    @Override
-    public
+    public final
     void setCallback(final Action callback) {
     }
 
-    @Override
-    public
-    void setShortcut(final char key) {
-        if (_native instanceof JMenuItem) {
-            // yikes...
-            final int vKey = getVkKey(key);
-            dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    ((JMenuItem) _native).setMnemonic(vKey);
-                }
-            });
-        }
-    }
+
 
 
 
@@ -628,7 +421,8 @@ class MenuImpl implements Menu {
      *
      * @param entry This is the menu entry to remove
      */
-    public
+    @Override
+    public final
     void remove(final Entry entry) {
         if (entry == null) {
             throw new NullPointerException("No menu entry exists for entry");
@@ -649,7 +443,7 @@ class MenuImpl implements Menu {
      * @param menu This is the menu entry to remove
      */
     @Override
-    public
+    public final
     void remove(final Menu menu) {
         final Menu parent = getParent();
         if (parent == null) {
@@ -668,14 +462,14 @@ class MenuImpl implements Menu {
                 @Override
                 public
                 void run() {
-                    ((MenuImpl) parent).remove__(_this);
+                    ((MenuBase) parent).remove__(_this);
                 }
             });
         }
     }
 
     // NOT ALWAYS CALLED ON EDT
-    private
+    protected
     void remove__(final Object menuEntry) {
         try {
             synchronized (menuEntries) {
@@ -715,7 +509,7 @@ class MenuImpl implements Menu {
      *
      * @param menuText This is the label for the menu entry or sub-menu to remove
      */
-    public
+    public final
     void remove(final String menuText) {
         dispatchAndWait(new Runnable() {
             @Override
@@ -733,28 +527,28 @@ class MenuImpl implements Menu {
     }
 
 
+//    @Override
+//    public final
+//    void remove() {
+//        dispatchAndWait(new Runnable() {
+//            @Override
+//            public
+//            void run() {
+//                _native.setVisible(false);
+//                if (_native instanceof TrayPopup) {
+//                    ((TrayPopup) _native).close();
+//                }
+//
+//                MenuBase parent = (MenuBase) getParent();
+//                if (parent != null) {
+//                    parent._native.remove(_native);
+//                }
+//            }
+//        });
+//    }
+
     @Override
     public final
-    void remove() {
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setVisible(false);
-                if (_native instanceof TrayPopup) {
-                    ((TrayPopup) _native).close();
-                }
-
-                MenuImpl parent = (MenuImpl) getParent();
-                if (parent != null) {
-                    parent._native.remove(_native);
-                }
-            }
-        });
-    }
-
-    @Override
-    public
     void removeAll() {
         dispatch(new Runnable() {
             @Override
@@ -762,7 +556,7 @@ class MenuImpl implements Menu {
             void run() {
                 synchronized (menuEntries) {
                     // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
-                    ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(MenuImpl.this.menuEntries);
+                    ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(MenuBase.this.menuEntries);
                     for (Entry entry : menuEntriesCopy) {
                         entry.remove();
                     }
@@ -792,7 +586,7 @@ class MenuImpl implements Menu {
             return false;
         }
 
-        MenuImpl other = (MenuImpl) obj;
+        MenuBase other = (MenuBase) obj;
         return this.id == other.id;
     }
 }

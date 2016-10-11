@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 dorkbox, llc
+ * Copyright 2016 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.swingUI;
 
 import java.awt.Insets;
 
-import javax.swing.JMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
+import javax.swing.border.EmptyBorder;
 
-class AdjustedJMenuItem extends JMenuItem {
-    AdjustedJMenuItem() {
-        super();
+class AdjustedJMenu extends JMenu {
+    AdjustedJMenu() {
     }
 
     @Override
@@ -30,7 +31,13 @@ class AdjustedJMenuItem extends JMenuItem {
         Insets margin = super.getMargin();
         if (margin != null) {
             margin.set(2, -2, 2, 4);
+
+            // makes sure the popup menu is created.
+            JPopupMenu popupMenu = getPopupMenu();
+            // now adjust the border of it
+            popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
         }
+
         return margin;
     }
 }

@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.Action;
+import dorkbox.systemTray.Entry;
+import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
@@ -71,7 +74,7 @@ class Gtk {
         String gtk3LibName = "libgtk-3.so.0";
 
         // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TYPE_SWING) {
+        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing) {
             isLoaded = true;
         }
 
@@ -247,7 +250,7 @@ class Gtk {
                 }
             }
         } else if (SystemTray.isSwtLoaded) {
-            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
+            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TrayType.GtkStatusIcon) {
                 // GTK system tray has threading issues if we block here (because it is likely in the event thread)
                 // AppIndicator version doesn't have this problem
 
@@ -376,6 +379,23 @@ class Gtk {
     }
 
     /**
+     * required to properly setup the dispatch flag
+     * @param callback will never be null.
+     */
+    public static
+    void proxyClick(final Menu parent, final Entry menuEntry, final Action callback) {
+        Gtk.isDispatch = true;
+
+        try {
+            callback.onClick(parent.getSystemTray(), parent, menuEntry);
+        } catch (Throwable throwable) {
+            SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
+        }
+
+        Gtk.isDispatch = false;
+    }
+
+    /**
      * This would NORMALLY have a 2nd argument that is a String[] -- however JNA direct-mapping DOES NOT support this. We are lucky
      * enough that we just pass 'null' as the second argument, therefore, we don't have to define that parameter here.
      */
@@ -400,9 +420,21 @@ class Gtk {
 
 
     public static native Pointer gtk_menu_new();
+    public static native Pointer gtk_menu_item_set_submenu(Pointer menuEntry, Pointer menu);
+
+
+
+    public static native Pointer gtk_separator_menu_item_new();
+
+    // to create a menu entry WITH an icon.
+    public static native Pointer gtk_image_new_from_file(String iconPath);
 
     // uses '_' to define which key is the mnemonic
     public static native Pointer gtk_image_menu_item_new_with_mnemonic(String label);
+
+    public static native void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
+
+    public static native void gtk_image_menu_item_set_always_show_image(Pointer menu_item, int forceShow);
 
     public static native Pointer gtk_status_icon_new();
 
@@ -417,7 +449,17 @@ class Gtk {
 
     public static native void gtk_status_icon_set_name(Pointer widget, String name);
 
+    public static native void gtk_menu_popup(Pointer menu, Pointer widget, Pointer bla, Function func, Pointer data, int button, int time);
+
+    public static native void gtk_menu_item_set_label(Pointer menu_item, String label);
+
     public static native void gtk_menu_shell_append(Pointer menu_shell, Pointer child);
+
+    public static native void gtk_menu_shell_deactivate(Pointer menu_shell, Pointer child);
+
+    public static native void gtk_widget_set_sensitive(Pointer widget, int sensitive);
+
+    public static native void gtk_container_remove(Pointer menu, Pointer subItem);
 
     public static native void gtk_widget_show_all(Pointer widget);
 

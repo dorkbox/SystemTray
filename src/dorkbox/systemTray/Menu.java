@@ -168,6 +168,7 @@ interface Menu extends Entry {
      */
     Menu addMenu(String menuText, InputStream imageStream);
 
+
     /**
      * Adds a swing widget as a menu entry.
      *

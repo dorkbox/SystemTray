@@ -13,34 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.nativeUI;
 
-import java.awt.Font;
 import java.io.File;
 
-import javax.swing.JMenuItem;
-
 import dorkbox.systemTray.Action;
-import dorkbox.systemTray.Status;
+import dorkbox.systemTray.Separator;
+import dorkbox.systemTray.linux.jna.Gtk;
 
-class EntryStatus extends EntryImpl implements Status {
+class GtkEntrySeparator extends GtkEntry implements Separator {
 
-    // this is ALWAYS called on the EDT.
-    EntryStatus(final MenuImpl parent, final String label) {
-        super(parent, new JMenuItem());
-        setText(label);
+    /**
+     * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
+     * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
+     */
+    GtkEntrySeparator(final GtkMenu parent) {
+        super(parent, Gtk.gtk_separator_menu_item_new());
     }
 
-    // called in the EDT thread
+    @Override
+    void setSpacerImage(final boolean everyoneElseHasImages) {
+    }
+
+    // called in the GTK thread
     @Override
     void renderText(final String text) {
-        ((JMenuItem) _native).setText(text);
-        Font font = _native.getFont();
-        Font font1 = font.deriveFont(Font.BOLD);
-        _native.setFont(font1);
-
-        // this makes sure it can't be selected
-        _native.setEnabled(false);
     }
 
     @Override
@@ -53,11 +50,6 @@ class EntryStatus extends EntryImpl implements Status {
 
     @Override
     public
-    void setShortcut(final char key) {
-    }
-
-    @Override
-    public
     boolean hasImage() {
         return false;
     }
@@ -65,6 +57,10 @@ class EntryStatus extends EntryImpl implements Status {
     @Override
     public
     void setCallback(final Action callback) {
+    }
 
+    @Override
+    public
+    void setEnabled(final boolean enabled) {
     }
 }

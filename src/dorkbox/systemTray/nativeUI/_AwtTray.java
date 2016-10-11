@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.nativeUI;
 
 import java.awt.AWTException;
 import java.awt.Image;
+import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 
 import javax.swing.ImageIcon;
-import javax.swing.JPopupMenu;
-
-import dorkbox.systemTray.util.ImageUtils;
 
 /**
- * Class for handling all system tray interaction, via SWING.
+ * Class for handling all system tray interaction, via AWT.
  *
  * It doesn't work well on linux. See bugs:
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
@@ -38,7 +34,7 @@ import dorkbox.systemTray.util.ImageUtils;
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class _SwingTray extends MenuImpl {
+class _AwtTray extends AwtMenu {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;
 
@@ -47,28 +43,27 @@ class _SwingTray extends MenuImpl {
 
     // Called in the EDT
     public
-    _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray, null, new TrayPopup());
+    _AwtTray(final dorkbox.systemTray.SystemTray systemTray) {
+        super(systemTray, null, new PopupMenu());
 
-        if (dorkbox.systemTray.SystemTray.FORCE_TRAY_TYPE != 0 && dorkbox.systemTray.SystemTray.FORCE_TRAY_TYPE != dorkbox.systemTray.SystemTray.TYPE_SWING) {
-            throw new IllegalArgumentException("Unable to start Swing SystemTray if 'SystemTray.FORCE_TRAY_TYPE' does not match");
+        if (!SystemTray.isSupported()) {
+            throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
+                                       "type and configuration");
         }
 
-        ImageUtils.determineIconSize();
-
-        _SwingTray.this.tray = SystemTray.getSystemTray();
+        _AwtTray.this.tray = SystemTray.getSystemTray();
     }
 
     public
     void shutdown() {
-        dispatchAndWait(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {
-                tray.remove(trayIcon);
-
                 removeAll();
                 remove();
+
+                tray.remove(trayIcon);
             }
         });
     }
@@ -87,22 +82,11 @@ class _SwingTray extends MenuImpl {
                     // here we init. everything
                     trayIcon = new TrayIcon(trayImage);
 
-                    JPopupMenu popupMenu = (JPopupMenu) _native;
-                    popupMenu.pack();
-                    popupMenu.setFocusable(true);
-
                     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
                     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
                     // trayIcon.setToolTip("app name");
 
-                    trayIcon.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public
-                        void mousePressed(MouseEvent e) {
-                            TrayPopup popupMenu = (TrayPopup) _native;
-                            popupMenu.doShow(e.getPoint(), 0);
-                        }
-                    });
+                    trayIcon.setPopupMenu((PopupMenu) _native);
 
                     try {
                         tray.add(trayIcon);
@@ -112,12 +96,11 @@ class _SwingTray extends MenuImpl {
                 } else {
                     trayIcon.setImage(trayImage);
                 }
-
-                ((TrayPopup) _native).setTitleBarImage(iconFile);
             }
         });
     }
 
+    @SuppressWarnings("Duplicates")
     public
     void setEnabled(final boolean setEnabled) {
         visible = !setEnabled;
@@ -126,7 +109,6 @@ class _SwingTray extends MenuImpl {
             @Override
             public
             void run() {
-
                 if (visible && !setEnabled) {
                     tray.remove(trayIcon);
                 }

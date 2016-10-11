@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swing;
+package dorkbox.systemTray.nativeUI;
 
-import java.awt.MouseInfo;
-import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.swing.JPopupMenu;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -32,16 +28,15 @@ import dorkbox.systemTray.linux.jna.GEventCallback;
 import dorkbox.systemTray.linux.jna.GdkEventButton;
 import dorkbox.systemTray.linux.jna.Gobject;
 import dorkbox.systemTray.linux.jna.Gtk;
-import dorkbox.systemTray.util.ImageUtils;
 
 /**
  * Class for handling all system tray interactions via GTK.
  * <p/>
- * This is the "old" way to do it, and does not work with some desktop environments. This is a hybrid class, because we want to show the
- * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
+ * This is the "old" way to do it, and does not work with some newer desktop environments.
  */
+@SuppressWarnings("Duplicates")
 public
-class _GtkStatusIconTray extends MenuImpl {
+class _GtkStatusIconNativeTray extends GtkMenu {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -60,30 +55,8 @@ class _GtkStatusIconTray extends MenuImpl {
 
     // called on the EDT
     public
-    _GtkStatusIconTray(final SystemTray systemTray) {
-        super(systemTray, null, new TrayPopup());
-
-        if (SystemTray.FORCE_TRAY_TYPE != 0 && SystemTray.FORCE_TRAY_TYPE != SystemTray.TYPE_GTK_STATUSICON) {
-            throw new IllegalArgumentException("Unable to start GtkStatusIcon if 'SystemTray.FORCE_TRAY_TYPE' does not match");
-        }
-
-        ImageUtils.determineIconSize();
-
-        JPopupMenu popupMenu = (JPopupMenu) _native;
-        popupMenu.pack();
-        popupMenu.setFocusable(true);
-
-        final Runnable popupRunnable = new Runnable() {
-            @Override
-            public
-            void run() {
-                Point point = MouseInfo.getPointerInfo()
-                                       .getLocation();
-
-                TrayPopup popupMenu = (TrayPopup) _native;
-                popupMenu.doShow(point, 0);
-            }
-        };
+    _GtkStatusIconNativeTray(final SystemTray systemTray) {
+        super(systemTray, null);
 
         // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
         //   they ALSO do not support tooltips, so we cater to the lowest common denominator
@@ -95,8 +68,7 @@ class _GtkStatusIconTray extends MenuImpl {
             @Override
             public
             void run() {
-                final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
-                trayIcon = trayIcon_;
+                trayIcon = Gtk.gtk_status_icon_new();
 
                 final GEventCallback gtkCallback = new GEventCallback() {
                     @Override
@@ -105,8 +77,7 @@ class _GtkStatusIconTray extends MenuImpl {
                         // show the swing menu on the EDT
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
-                            // show the swing menu on the EDT
-                            dispatch(popupRunnable);
+                            Gtk.gtk_menu_popup(_native, null, null, Gtk.gtk_status_icon_position_menu, trayIcon, 0, event.time);
                         }
                     }
                 };
@@ -150,7 +121,7 @@ class _GtkStatusIconTray extends MenuImpl {
 
 
     @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
-    public
+    public final
     void shutdown() {
         if (!shuttingDown.getAndSet(true)) {
 
@@ -168,15 +139,18 @@ class _GtkStatusIconTray extends MenuImpl {
                 }
             });
 
-            Gtk.shutdownGui();
-
-            // uses EDT
-            removeAll();
-            remove();  // remove ourselves from our parent
+            super.shutdown();
         }
     }
 
-    public
+    @Override
+    public final
+    boolean hasImage() {
+        return true;
+    }
+
+    @Override
+    public final
     void setImage_(final File iconFile) {
         Gtk.dispatch(new Runnable() {
             @Override
@@ -190,17 +164,10 @@ class _GtkStatusIconTray extends MenuImpl {
                 }
             }
         });
-
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                ((TrayPopup) _native).setTitleBarImage(iconFile);
-            }
-        });
     }
 
-    public
+    @Override
+    public final
     void setEnabled(final boolean setEnabled) {
         visible = !setEnabled;
 
