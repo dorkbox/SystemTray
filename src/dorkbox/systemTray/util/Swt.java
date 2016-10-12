@@ -15,6 +15,10 @@
  */
 package dorkbox.systemTray.util;
 
+import static dorkbox.systemTray.SystemTray.logger;
+
+import org.eclipse.swt.widgets.Display;
+
 /**
  * Utility methods for SWT.
  * <p>
@@ -22,16 +26,31 @@ package dorkbox.systemTray.util;
  */
 public
 class Swt {
+    private static final Display currentDisplay;
+
+    static {
+        // we have to save this, otherwise it is "null" when methods are run from the swing EDT.
+        currentDisplay = Display.getCurrent();
+    }
+
+
+    public static
+    void init() {
+        // empty method to initialize class
+        if (currentDisplay == null) {
+            logger.error("Unable to get the current display for SWT. Please create an issue with your OS and Java " +
+                         "version so we may further investigate this issue.");
+        };
+    }
+
     public static
     void dispatch(final Runnable runnable) {
-         org.eclipse.swt.widgets.Display.getCurrent()
-                                        .syncExec(runnable);
+        currentDisplay.syncExec(runnable);
     }
 
     public static
     void onShutdown(final Runnable runnable) {
-        org.eclipse.swt.widgets.Display.getCurrent()
-                                       .getShells()[0].addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
+        currentDisplay.getShells()[0].addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
             @Override
             public
             void handleEvent(final org.eclipse.swt.widgets.Event event) {

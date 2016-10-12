@@ -26,6 +26,8 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.SwingUtilities;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -573,10 +575,26 @@ class SystemTray implements Menu {
                     }
                 }
 
+                if (isJavaFxLoaded) {
+                    // This will initialize javaFX dispatch methods
+                    JavaFX.init();
+                }
+                else if (isSwtLoaded) {
+                    // This will initialize swt dispatch methods
+                    Swt.init();
+                }
 
-                // if it's native + linux, have to do GTK instead. Don't need to be on the dispatch thread though.
-                // _AwtTray must be constructed on the EDT...
-                if (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType == _AwtTray.class) {
+                if ((isJavaFxLoaded || isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
+                    // oh boy! This WILL NOT WORK. Let the dev know
+                    throw new RuntimeException("SystemTray initialization can not occur on the swing Event Dispatch Thread (EDT)");
+                }
+
+                // javaFX and SWT should not start on the EDT!!
+
+                // if it's linux + native menus must not start on the EDT!
+                // _AwtTray must be constructed on the EDT however...
+                if (isJavaFxLoaded || isSwtLoaded ||
+                    (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType == _AwtTray.class)) {
                     try {
                         reference.set((Menu) trayType.getConstructors()[0].newInstance(systemTray));
                         logger.info("Successfully Loaded: {}", trayType.getSimpleName());
@@ -618,7 +636,6 @@ class SystemTray implements Menu {
                 logger.error("Unable to correctly initialize the System Tray. Please write an issue and include your OS type and " +
                              "configuration");
             }
-
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
             if (ENABLE_SHUTDOWN_HOOK) {

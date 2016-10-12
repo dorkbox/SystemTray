@@ -29,24 +29,47 @@ public
 class JavaFX {
 
     // Methods are cached for performance
-    private static Method isEventThread;
-    private static Method dispatchMethod;
+    private static final Method dispatchMethod;
+    private static final Method isEventThreadMethod;
 
-    public static
-    void dispatch(final Runnable runnable) {
-        // javafx.application.Platform.runLater(runnable);
+    static {
+        Method _isEventThreadMethod = null;
+        Method _dispatchMethod = null;
 
         try {
-            if (dispatchMethod == null) {
-                Class<?> clazz = Class.forName("javafx.application.Platform");
-                dispatchMethod = clazz.getMethod("runLater");
-            }
+            Class<?> clazz = Class.forName("javafx.application.Platform");
+            _dispatchMethod = clazz.getMethod("runLater", Runnable.class);
 
-            dispatchMethod.invoke(null, runnable);
+            clazz = Class.forName("javafx.application.Platform");
+            _isEventThreadMethod = clazz.getMethod("isFxApplicationThread");
         } catch (Throwable e) {
             if (SystemTray.DEBUG) {
                 SystemTray.logger.error("Cannot initialize JavaFX", e);
             }
+        }
+
+        dispatchMethod = _dispatchMethod;
+        isEventThreadMethod = _isEventThreadMethod;
+    }
+
+    public static
+    void init() {
+        // empty method to initialize class
+
+        if (dispatchMethod == null || isEventThreadMethod == null) {
+            SystemTray.logger.error("Unable to initialize JavaFX! Please create an issue with your OS and Java " +
+                                    "version so we may further investigate this issue.");
+        }
+    }
+
+
+    public static
+    void dispatch(final Runnable runnable) {
+//         javafx.application.Platform.runLater(runnable);
+
+        try {
+            dispatchMethod.invoke(null, runnable);
+        } catch (Throwable e) {
             SystemTray.logger.error("Unable to execute JavaFX runLater(). Please create an issue with your OS and Java " +
                                     "version so we may further investigate this issue.");
         }
@@ -57,15 +80,8 @@ class JavaFX {
         // javafx.application.Platform.isFxApplicationThread();
 
         try {
-            if (isEventThread == null) {
-                Class<?> clazz = Class.forName("javafx.application.Platform");
-                isEventThread = clazz.getMethod("isFxApplicationThread");
-            }
-            return (Boolean) isEventThread.invoke(null);
+            return (Boolean) isEventThreadMethod.invoke(null);
         } catch (Throwable e) {
-            if (SystemTray.DEBUG) {
-                SystemTray.logger.error("Cannot initialize JavaFX", e);
-            }
             SystemTray.logger.error("Unable to check if JavaFX is in the event thread. Please create an issue with your OS and Java " +
                                     "version so we may further investigate this issue.");
         }
