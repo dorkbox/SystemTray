@@ -166,6 +166,10 @@ class GnomeShellExtension {
             reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
             fileOutputStream = new FileOutputStream(extensionFile);
 
+            if (reader == null) {
+                throw new RuntimeException("The GnomeShell extension.js file cannot be found. Something is severely wrong.");
+            }
+
             IO.copyStream(reader, fileOutputStream);
         } finally {
             IO.close(reader, logger);
