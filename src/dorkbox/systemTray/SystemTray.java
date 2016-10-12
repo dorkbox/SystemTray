@@ -673,7 +673,7 @@ class SystemTray implements Menu {
      */
     public static
     SystemTray get() {
-        forceNativeMenus = true; // TODO set to false for final build
+        forceNativeMenus = false;
         init();
         return systemTray;
     }
