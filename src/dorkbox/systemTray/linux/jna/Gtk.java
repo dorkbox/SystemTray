@@ -379,7 +379,8 @@ class Gtk {
     }
 
     /**
-     * required to properly setup the dispatch flag
+     * required to properly setup the dispatch flag when using native menus
+     *
      * @param callback will never be null.
      */
     public static
