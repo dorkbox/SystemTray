@@ -159,25 +159,27 @@ class GnomeShellExtension {
             IO.close(outputWriter, logger);
         }
 
-        // copies our provided extension.js file to the correct location on disk
-        InputStream reader = null;
-        FileOutputStream fileOutputStream = null;
-        try {
-            reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
-            fileOutputStream = new FileOutputStream(extensionFile);
 
-            if (reader == null) {
-                throw new RuntimeException("The GnomeShell extension.js file cannot be found. Something is severely wrong.");
-            }
-
-            IO.copyStream(reader, fileOutputStream);
-        } finally {
-            IO.close(reader, logger);
-            IO.close(fileOutputStream, logger);
-        }
 
 
         if (!hasSystemTray) {
+            // copies our provided extension.js file to the correct location on disk
+            InputStream reader = null;
+            FileOutputStream fileOutputStream = null;
+            try {
+                reader = GnomeShellExtension.class.getResourceAsStream("extension.js");
+                fileOutputStream = new FileOutputStream(extensionFile);
+
+                if (reader == null) {
+                    throw new RuntimeException("The GnomeShell extension.js file cannot be found. Something is severely wrong.");
+                }
+
+                IO.copyStream(reader, fileOutputStream);
+            } finally {
+                IO.close(reader, logger);
+                IO.close(fileOutputStream, logger);
+            }
+
             logger.debug("Enabling extension in gnome-shell");
             // now we have to enable us if we aren't already enabled
 
