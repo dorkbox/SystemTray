@@ -594,7 +594,7 @@ class SystemTray implements Menu {
                 // if it's linux + native menus must not start on the EDT!
                 // _AwtTray must be constructed on the EDT however...
                 if (isJavaFxLoaded || isSwtLoaded ||
-                    (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType == _AwtTray.class)) {
+                    (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType != _AwtTray.class)) {
                     try {
                         reference.set((Menu) trayType.getConstructors()[0].newInstance(systemTray));
                         logger.info("Successfully Loaded: {}", trayType.getSimpleName());
@@ -603,7 +603,6 @@ class SystemTray implements Menu {
                     }
                 } else {
                     // have to construct swing stuff inside the swing EDT
-                    // this is the safest way to do this.
                     final Class<? extends Menu> finalTrayType = trayType;
                     SwingUtil.invokeAndWait(new Runnable() {
                         @Override
