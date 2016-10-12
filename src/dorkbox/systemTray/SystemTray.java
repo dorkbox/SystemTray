@@ -31,9 +31,9 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.systemTray.jna.linux.AppIndicator;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.linux.GnomeShellExtension;
-import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.Gtk;
 import dorkbox.systemTray.nativeUI.NativeUI;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;

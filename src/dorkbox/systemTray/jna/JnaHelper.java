@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Helper method to get the library info from JNA when registering via direct map
  */
+public
 class JnaHelper {
     @SuppressWarnings("unchecked")
-    static
+    public static
     NativeLibrary register(final String libraryName, final Class<?> clazz) throws IllegalArgumentException {
         final Map<String, Object> options = new HashMap<String, Object>();
         options.put(Library.OPTION_CLASSLOADER, clazz.getClassLoader());

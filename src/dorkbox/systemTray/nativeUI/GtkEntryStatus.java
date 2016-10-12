@@ -16,7 +16,7 @@
 package dorkbox.systemTray.nativeUI;
 
 import dorkbox.systemTray.Action;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.Gtk;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
 // where a GtkStatusIconTray + SwingUI will have everything lined up. (with or without icons).  This is to normalize how it looks

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna.linux;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
@@ -22,6 +22,7 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.jna.JnaHelper;
 
 /**
  * bindings for libappindicator

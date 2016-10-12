@@ -23,7 +23,7 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
 abstract

@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna.linux;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
+
 import dorkbox.util.Keep;
 
 @Keep
-interface FuncCallback extends Callback {
-    /**
-     * @return Gtk.FALSE if it will be automatically removed from the stack once it's handled
-     */
-    int callback(Pointer data);
+public
+interface GEventCallback extends Callback {
+    void callback(Pointer instance, GdkEventButton event);
 }

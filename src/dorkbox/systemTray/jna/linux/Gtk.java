@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna.linux;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
@@ -28,6 +28,7 @@ import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.jna.JnaHelper;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
 

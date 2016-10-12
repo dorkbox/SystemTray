@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.AppIndicatorInstanceStruct;
-import dorkbox.systemTray.linux.jna.Gobject;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.AppIndicator;
+import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
+import dorkbox.systemTray.jna.linux.Gobject;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
 /**

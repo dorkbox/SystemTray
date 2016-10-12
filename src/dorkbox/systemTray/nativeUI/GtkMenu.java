@@ -29,8 +29,8 @@ import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.linux.jna.Gobject;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.Gobject;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.MenuBase;
 
 class GtkMenu extends MenuBase implements NativeUI {

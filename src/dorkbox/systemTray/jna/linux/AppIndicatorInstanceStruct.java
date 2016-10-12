@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna.linux;
 
-import com.sun.jna.Callback;
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
 import dorkbox.util.Keep;
 
 @Keep
 public
-interface GEventCallback extends Callback {
-    void callback(Pointer instance, GdkEventButton event);
+class AppIndicatorInstanceStruct extends Structure {
+    public GObjectStruct parent;
+    public Pointer priv;
+
+    @Override
+    protected
+    List<String> getFieldOrder() {
+        return Arrays.asList("parent", "priv");
+    }
 }

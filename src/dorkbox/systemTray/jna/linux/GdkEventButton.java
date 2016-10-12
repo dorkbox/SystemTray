@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
-
-import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import dorkbox.util.Keep;
+package dorkbox.systemTray.jna.linux;
 
 import java.util.Arrays;
 import java.util.List;
+
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
+import dorkbox.util.Keep;
 
 @Keep
 public

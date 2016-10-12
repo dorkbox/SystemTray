@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
+package dorkbox.systemTray.jna.linux;
 
 import com.sun.jna.Pointer;
+
+import dorkbox.systemTray.jna.JnaHelper;
 
 /**
  * bindings for libgthread

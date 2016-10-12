@@ -13,33 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.linux.jna;
-
-import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import dorkbox.util.Keep;
+package dorkbox.systemTray.jna.linux;
 
 import java.util.Arrays;
 import java.util.List;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
+import dorkbox.util.Keep;
+
 @Keep
 public
-class GObjectStruct extends Structure {
+class GTypeInstanceStruct extends Structure {
     public
-    class ByValue extends GObjectStruct implements Structure.ByValue {}
+    class ByValue extends GTypeInstanceStruct implements Structure.ByValue {}
 
 
     public
-    class ByReference extends GObjectStruct implements Structure.ByReference {}
+    class ByReference extends GTypeInstanceStruct implements Structure.ByReference {}
 
 
-    public GTypeInstanceStruct g_type_instance;
-    public int ref_count;
-    public Pointer qdata;
+    public Pointer g_class;
 
     @Override
     protected
     List<String> getFieldOrder() {
-        return Arrays.asList("g_type_instance", "ref_count", "qdata");
+        return Arrays.asList("g_class");
     }
 }

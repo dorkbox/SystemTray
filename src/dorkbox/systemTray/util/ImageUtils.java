@@ -15,6 +15,10 @@
  */
 package dorkbox.systemTray.util;
 
+import static dorkbox.systemTray.jna.Windows.Gdi32.GetDeviceCaps;
+import static dorkbox.systemTray.jna.Windows.Gdi32.LOGPIXELSX;
+import static dorkbox.systemTray.jna.Windows.Gdi32.LOGPIXELSY;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -35,7 +39,10 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
 
+import com.sun.jna.Pointer;
+
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.jna.Windows.User32;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.LocationResolver;
@@ -91,6 +98,9 @@ class ImageUtils {
                     }
                 }
 
+                // vista - 8.0 - only global DPI settings
+                // 8.1 - 10 - global + per-monitor DPI settings
+
                 // 1 = 16
                 // 2 = 32
                 // 4 = 64
@@ -124,6 +134,8 @@ class ImageUtils {
                 } else if (windowsVersion.startsWith("6.3")) {
                     // Windows 8.1
                     // Windows Server 2012	6.3.9200
+
+
                     scalingFactor = 4;
 
                 } else if (windowsVersion.startsWith("6.4")) {
@@ -133,15 +145,24 @@ class ImageUtils {
                 } else if (windowsVersion.startsWith("10.0")) {
                     // Windows 10 Technical Preview 4	10.0.9926
                     // Windows 10 Insider Preview	    10.0.14915
-                    scalingFactor = 8;
+                    scalingFactor = 4;
 
                 } else {
                     // dunnno, but i'm going to assume HiDPI for this...
                     scalingFactor = 8;
                 }
 
+                Pointer screen = User32.GetDC(null);
+                int dpiX = GetDeviceCaps (screen, LOGPIXELSX);
+                int dpiY = GetDeviceCaps (screen, LOGPIXELSY);
+                User32.ReleaseDC(null, screen);
+
+                System.err.println("DPI : " + dpiX + "," + dpiY);
+
+
+
                 if (SystemTray.DEBUG) {
-                    SystemTray.logger.error("Windows version (partial): '{}'", windowsVersion);
+                    SystemTray.logger.debug("Windows version (partial): '{}'", windowsVersion);
                 }
             } else if (OS.isLinux()) {
                 // GtkStatusIcon will USUALLY automatically scale the icon

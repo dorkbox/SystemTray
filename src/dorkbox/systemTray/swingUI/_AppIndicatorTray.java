@@ -25,12 +25,12 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.linux.jna.AppIndicator;
-import dorkbox.systemTray.linux.jna.AppIndicatorInstanceStruct;
-import dorkbox.systemTray.linux.jna.GEventCallback;
-import dorkbox.systemTray.linux.jna.GdkEventButton;
-import dorkbox.systemTray.linux.jna.Gobject;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.AppIndicator;
+import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
+import dorkbox.systemTray.jna.linux.GEventCallback;
+import dorkbox.systemTray.jna.linux.GdkEventButton;
+import dorkbox.systemTray.jna.linux.Gobject;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 

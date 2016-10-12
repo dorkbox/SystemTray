@@ -21,9 +21,9 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Action;
-import dorkbox.systemTray.linux.jna.GCallback;
-import dorkbox.systemTray.linux.jna.Gobject;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.GCallback;
+import dorkbox.systemTray.jna.linux.Gobject;
+import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
 class GtkEntryItem extends GtkEntry implements GCallback {

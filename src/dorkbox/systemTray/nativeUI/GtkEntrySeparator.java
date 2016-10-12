@@ -19,7 +19,7 @@ import java.io.File;
 
 import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Separator;
-import dorkbox.systemTray.linux.jna.Gtk;
+import dorkbox.systemTray.jna.linux.Gtk;
 
 class GtkEntrySeparator extends GtkEntry implements Separator {
 
