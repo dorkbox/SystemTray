@@ -204,7 +204,7 @@ class SystemTray implements Menu {
         return null;
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
     private static void init(final boolean useNativeMenus) {
         if (systemTray != null) {
             return;
@@ -221,6 +221,10 @@ class SystemTray implements Menu {
         Class<? extends Menu> trayType = null;
 
         if (DEBUG) {
+            logger.debug("OS: {}", System.getProperty("os.name"));
+            logger.debug("Arch: {}", System.getProperty("os.arch"));
+
+            logger.debug("is AutoTraySize? {}", AUTO_TRAY_SIZE);
             logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("is SWT detected? {}", isSwtLoaded);
             logger.debug("is using native menus? {}", useNativeMenus);
@@ -626,14 +630,13 @@ class SystemTray implements Menu {
             // verify that we have what we are expecting.
             if (OS.isWindows() && systemTrayMenu instanceof SwingUI) {
                 // this configuration is OK.
-            }
-            else if (useNativeMenus && systemTrayMenu instanceof NativeUI) {
+            } else if (useNativeMenus && systemTrayMenu instanceof NativeUI) {
                 // this configuration is OK.
             } else if (!useNativeMenus && systemTrayMenu instanceof SwingUI) {
                 // this configuration is OK.
             } else {
-                logger.error("Unable to correctly initialize the System Tray. Please write an issue and include your OS type and " +
-                             "configuration");
+                throw new RuntimeException("Unable to correctly initialize the System Tray. Please write an issue and include your " +
+                                           "OS type and configuration");
             }
 
             // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
@@ -694,7 +697,8 @@ class SystemTray implements Menu {
     }
 
     /**
-     * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu.
+     * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu. The drawback is
+     * that this menu is native, and sometimes native menus looks absolutely HORRID.
      * <p>
      * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
      * supported, in which case this will return NULL.
