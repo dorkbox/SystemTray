@@ -407,10 +407,6 @@ class ImageUtils {
             return check;
         }
 
-        if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("FAILED getting cached URL.");
-        }
-
         // no cached file, so we resize then save the new one.
         boolean needsResize = true;
         try {
@@ -536,10 +532,6 @@ class ImageUtils {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static
     File resizeFileNoCheck(final int size, final URL imageUrl) throws IOException {
-        if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("Resizing URL to {}. '{}'", size, imageUrl.getPath());
-        }
-
         String extension = FileUtil.getExtension(imageUrl.getPath());
         if (extension.equals("")) {
             extension = "png"; // made up
