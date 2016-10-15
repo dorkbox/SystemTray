@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.linux.GnomeShellExtension;
 import dorkbox.systemTray.nativeUI.NativeUI;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
@@ -238,7 +237,7 @@ class SystemTray implements Menu {
             }
         }
 
-        // kablooie if SWT is not configured in a way that works with us.
+        // kablooie if SWT/JavaFX is not configured in a way that works with us.
         if (FORCE_TRAY_TYPE != TrayType.Swing && OS.isLinux()) {
             if (isSwtLoaded) {
                 // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
@@ -309,7 +308,7 @@ class SystemTray implements Menu {
 
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
         // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
-        // all examined ones sometimes have it (and it's more than just text), or they don't have it at all.
+        // all examined ones sometimes have it (and it's more than just text), or they don't have it at all. There is no mouse-over event.
 
         if (FORCE_TRAY_TYPE != TrayType.Swing && OS.isLinux()) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
@@ -414,47 +413,7 @@ class SystemTray implements Menu {
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        // have to install the gnome extension AND customize the restart command
-                        trayType = null;
-                        // unity panel service??
-                        GnomeShellExtension.SHELL_RESTART_COMMAND = "unity --replace &";
-                    }
-                }
-            }
-
-
-            // is likely 'gnome' (gnome-shell exists on the platform), but it can also be unknown (or something completely different),
-            // install extension and go from there
-            if (isReallyGnome) {
-                // if the "topicons" extension is installed, don't install us (because it will override what we do, where ours
-                // is more specialized - so it only modified our tray icon (instead of ALL tray icons)
-
-                try {
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                    // gnome-shell --version
-                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                    shellVersion.setExecutable("gnome-shell");
-                    shellVersion.addArgument("--version");
-                    shellVersion.start();
-
-                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                    if (!output.isEmpty()) {
-                        if (DEBUG) {
-                            logger.debug("Installing gnome-shell extension");
-                        }
-
-                        GnomeShellExtension.install(output);
-                        // we might be running gnome-shell, we MIGHT NOT. If we are forced to be app-indicator or swing, don't do this.
-                        if (trayType == null) {
-                            trayType = selectType(useNativeMenus, TrayType.GtkStatusIcon);
-                        }
-                    }
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot auto-detect gnome-shell version", e);
+                        trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                     }
                 }
             }
@@ -737,6 +696,7 @@ class SystemTray implements Menu {
         else {
             ((_SwingTray) menu).shutdown();
         }
+        systemTrayMenu = null;
     }
 
     /**
