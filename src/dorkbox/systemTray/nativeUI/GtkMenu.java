@@ -112,7 +112,7 @@ class GtkMenu extends MenuBase implements NativeUI {
 
     public
     void shutdown() {
-        dispatchAndWait(new Runnable() {
+        dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -166,9 +166,6 @@ class GtkMenu extends MenuBase implements NativeUI {
             }
         });
     }
-
-
-
 
 
 
@@ -317,6 +314,7 @@ class GtkMenu extends MenuBase implements NativeUI {
                     // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                     Gtk.gtk_menu_shell_append(this._native, entry._native);
                     Gobject.g_object_ref_sink(entry._native);  // undoes "floating"
+                    Gtk.gtk_widget_show_all(entry._native);
                 }
                 else if (menuEntry__ instanceof GtkMenu) {
                     GtkMenu subMenu = (GtkMenu) menuEntry__;
@@ -324,6 +322,7 @@ class GtkMenu extends MenuBase implements NativeUI {
                     // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                     Gtk.gtk_menu_shell_append(this._native, subMenu.menuEntry._native);
                     Gobject.g_object_ref_sink(subMenu.menuEntry._native);  // undoes "floating"
+                    Gtk.gtk_widget_show_all(subMenu.menuEntry._native);
 
                     if (subMenu.getParent() != GtkMenu.this) {
                         // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it

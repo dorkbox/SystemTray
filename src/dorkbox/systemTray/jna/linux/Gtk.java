@@ -191,7 +191,7 @@ class Gtk {
                     public
                     void run() {
                         // prep for the event loop.
-                        GThread.g_thread_init(null);
+                        // GThread.g_thread_init(null);  would be needed for g_idle_add()
 
                         if (!gtk_init_check(0)) {
                             if (SystemTray.DEBUG) {
@@ -200,13 +200,13 @@ class Gtk {
                             return;
                         }
 
-                        gdk_threads_enter();
+                        // gdk_threads_enter();  would be needed for g_idle_add()
 
                         // blocks unit quit
                         gtk_main();
 
                         // clean up threads
-                        gdk_threads_leave();
+                        // gdk_threads_leave();  would be needed for g_idle_add()
                     }
                 };
                 gtkUpdateThread.setName("GTK Native Event Loop");
@@ -331,7 +331,7 @@ class Gtk {
             }
         }
         else {
-            // non-swt/javafx
+            // not swt/javafx
             if (isDispatch) {
                 // Run directly on the dispatch thread
                 runnable.run();
@@ -468,8 +468,6 @@ class Gtk {
     public static native void gtk_widget_destroy(Pointer widget);
 
 
-    public static native void gdk_threads_enter();
-    public static native void gdk_threads_leave();
     public static native int gdk_threads_add_idle_full(int priority, FuncCallback function, Pointer data, Pointer notify);
 }
 
