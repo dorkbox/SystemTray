@@ -162,6 +162,7 @@ class _GtkStatusIconTray extends SwingMenu {
                 }
             });
 
+            // does not need to be called on the dispatch (it does that)
             Gtk.shutdownGui();
 
             // uses EDT
@@ -185,6 +186,7 @@ class _GtkStatusIconTray extends SwingMenu {
             }
         });
 
+        // needs to be on EDT
         dispatch(new Runnable() {
             @Override
             public
@@ -196,16 +198,16 @@ class _GtkStatusIconTray extends SwingMenu {
 
     public
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
-
         Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
                 if (visible && !setEnabled) {
                     Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                    visible = false;
                 } else if (!visible && setEnabled) {
                     Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                    visible = true;
                 }
             }
         });

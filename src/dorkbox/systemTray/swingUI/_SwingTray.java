@@ -118,20 +118,20 @@ class _SwingTray extends SwingMenu {
     @SuppressWarnings("Duplicates")
     public
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
-
         dispatch(new Runnable() {
             @Override
             public
             void run() {
                 if (visible && !setEnabled) {
                     tray.remove(trayIcon);
+                    visible = false;
                 }
                 else if (!visible && setEnabled) {
                     try {
                         tray.add(trayIcon);
+                        visible = true;
                     } catch (AWTException e) {
-                        dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray");
+                        dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
                     }
                 }
             }

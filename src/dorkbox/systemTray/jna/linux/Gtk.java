@@ -57,6 +57,8 @@ class Gtk {
     // there is ONLY a single thread EVER setting this value!!
     private static volatile boolean isDispatch = false;
 
+    private static final int TIMEOUT = 2;
+
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
 
@@ -364,8 +366,43 @@ class Gtk {
     }
 
     public static
+    void dispatchAndWait(final Runnable runnable) {
+
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                try {
+                    runnable.run();
+                } finally {
+                    countDownLatch.countDown();
+                }
+            }
+        });
+
+        // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
+        // thread occur in REASONABLE time-frames, and alert the user if not.
+        try {
+            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.error("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                            "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                } else {
+                    throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
+                                               "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                }
+            }
+        } catch (InterruptedException e) {
+            SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception());
+        }
+
+    }
+
+    public static
     void shutdownGui() {
-        dispatch(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {

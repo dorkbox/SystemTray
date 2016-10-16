@@ -672,12 +672,13 @@ class SystemTray implements Menu {
     }
 
     /**
-     * Shuts-down the SystemTray, by removing the menus + tray icon.
+     * Shuts-down the SystemTray, by removing the menus + tray icon. After calling this method, you MUST call `get()` or `getNative()`
+     * again to obtain a new reference to the SystemTray.
      */
     public
     void shutdown() {
+        // this will call "dispatchAndWait()" behind the scenes, so it is thread-safe
         final Menu menu = systemTrayMenu;
-
         if (menu instanceof _AppIndicatorTray) {
             ((_AppIndicatorTray) menu).shutdown();
         }
@@ -693,7 +694,7 @@ class SystemTray implements Menu {
         else if (menu instanceof _AwtTray) {
             ((_AwtTray) menu).shutdown();
         }
-        else {
+        else if (menu instanceof _SwingTray) {
             ((_SwingTray) menu).shutdown();
         }
         systemTrayMenu = null;
@@ -721,8 +722,11 @@ class SystemTray implements Menu {
         else if (menu instanceof _AwtTray) {
             return ((_AwtTray) menu).getStatus();
         }
-        else {
+        else if (menu instanceof _SwingTray) {
             return ((_SwingTray) menu).getStatus();
+        }
+        else {
+            return "";
         }
     }
 
@@ -750,7 +754,7 @@ class SystemTray implements Menu {
         else if (menu instanceof _AwtTray) {
             ((_AwtTray) menu).setStatus(statusText);
         }
-        else {
+        else if (menu instanceof _SwingTray) {
             ((_SwingTray) menu).setStatus(statusText);
         }
     }

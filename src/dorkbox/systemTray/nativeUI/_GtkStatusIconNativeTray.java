@@ -169,16 +169,16 @@ class _GtkStatusIconNativeTray extends GtkMenu {
     @Override
     public final
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
-
         Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
                 if (visible && !setEnabled) {
                     Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                    visible = false;
                 } else if (!visible && setEnabled) {
                     Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
+                    visible = true;
                 }
             }
         });

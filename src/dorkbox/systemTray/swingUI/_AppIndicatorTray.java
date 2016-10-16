@@ -213,6 +213,7 @@ class _AppIndicatorTray extends SwingMenu {
                 }
             });
 
+            // does not need to be called on the dispatch (it does that)
             Gtk.shutdownGui();
 
             // uses EDT
@@ -230,7 +231,7 @@ class _AppIndicatorTray extends SwingMenu {
     @Override
     public final
     void setImage_(final File imageFile) {
-        dispatch(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -247,6 +248,8 @@ class _AppIndicatorTray extends SwingMenu {
             }
         });
 
+
+        // needs to be on EDT
         dispatch(new Runnable() {
             @Override
             public
@@ -259,8 +262,6 @@ class _AppIndicatorTray extends SwingMenu {
     @Override
     public final
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
-
         Gtk.dispatch(new Runnable() {
             @Override
             public
@@ -268,9 +269,11 @@ class _AppIndicatorTray extends SwingMenu {
                  if (visible && !setEnabled) {
                     // STATUS_PASSIVE hides the indicator
                     AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                    visible = false;
                 }
                 else if (!visible && setEnabled) {
                     AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                    visible = true;
                 }
             }
         });

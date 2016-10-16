@@ -24,8 +24,11 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 
+import dorkbox.util.OS;
+
 /**
- * Class for handling all system tray interaction, via AWT.
+ * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
+ * looks good
  *
  * It doesn't work well on linux. See bugs:
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
@@ -40,6 +43,9 @@ class _AwtTray extends AwtMenu {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
+
+    private final Object keepAliveLock = new Object[0];
+    private Thread keepAliveThread;
 
     // Called in the EDT
     public
@@ -56,7 +62,7 @@ class _AwtTray extends AwtMenu {
 
     public
     void shutdown() {
-        dispatch(new Runnable() {
+        dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -103,7 +109,42 @@ class _AwtTray extends AwtMenu {
     @SuppressWarnings("Duplicates")
     public
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
+        if (OS.isMacOsX()) {
+            if (keepAliveThread != null) {
+                synchronized (keepAliveLock) {
+                    keepAliveLock.notifyAll();
+                }
+            }
+            keepAliveThread = null;
+
+            if (visible && !setEnabled) {
+                // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
+                // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
+                keepAliveThread = new Thread(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        synchronized (keepAliveLock) {
+                            keepAliveLock.notifyAll();
+
+                            try {
+                                keepAliveLock.wait();
+                            } catch (InterruptedException ignored) {
+                            }
+                        }
+                    }
+                }, "KeepAliveThread");
+                keepAliveThread.start();
+            }
+
+            synchronized (keepAliveLock) {
+                try {
+                    keepAliveLock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         dispatch(new Runnable() {
             @Override
@@ -111,10 +152,12 @@ class _AwtTray extends AwtMenu {
             void run() {
                 if (visible && !setEnabled) {
                     tray.remove(trayIcon);
+                    visible = false;
                 }
                 else if (!visible && setEnabled) {
                     try {
                         tray.add(trayIcon);
+                        visible = true;
                     } catch (AWTException e) {
                         dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray");
                     }

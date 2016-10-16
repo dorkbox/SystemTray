@@ -157,8 +157,6 @@ class _AppIndicatorNativeTray extends GtkMenu {
     @Override
     public final
     void setEnabled(final boolean setEnabled) {
-        visible = !setEnabled;
-
         Gtk.dispatch(new Runnable() {
             @Override
             public
@@ -166,9 +164,11 @@ class _AppIndicatorNativeTray extends GtkMenu {
                  if (visible && !setEnabled) {
                     // STATUS_PASSIVE hides the indicator
                     AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                    visible = false;
                 }
                 else if (!visible && setEnabled) {
                     AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                    visible = true;
                 }
             }
         });

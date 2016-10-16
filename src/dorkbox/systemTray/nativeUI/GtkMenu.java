@@ -19,8 +19,6 @@ package dorkbox.systemTray.nativeUI;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.jna.Pointer;
@@ -34,8 +32,6 @@ import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.MenuBase;
 
 class GtkMenu extends MenuBase implements NativeUI {
-    static int TIMEOUT = 2;
-
     // menu entry that this menu is attached to. Will be NULL when it's the system tray
     private final GtkEntryItem menuEntry;
 
@@ -79,35 +75,7 @@ class GtkMenu extends MenuBase implements NativeUI {
      */
     protected
     void dispatchAndWait(final Runnable runnable) {
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                try {
-                    runnable.run();
-                } finally {
-                    countDownLatch.countDown();
-                }
-            }
-        });
-
-        // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
-        // thread occur in REASONABLE time-frames, and alert the user if not.
-        try {
-            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.error("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                            "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-                } else {
-                    throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                               "`SystemTray.TIMEOUT` to a value which better suites your environment.");
-                }
-            }
-        } catch (InterruptedException e) {
-            SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception());
-        }
+        Gtk.dispatchAndWait(runnable);
     }
 
     public
@@ -117,10 +85,11 @@ class GtkMenu extends MenuBase implements NativeUI {
             public
             void run() {
                 obliterateMenu();
-
-                Gtk.shutdownGui();
             }
         });
+
+        // does not need to be called on the dispatch (it does that)
+        Gtk.shutdownGui();
     }
 
     // public here so that Swing/Gtk/AppIndicator can access this
@@ -314,7 +283,7 @@ class GtkMenu extends MenuBase implements NativeUI {
                     // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                     Gtk.gtk_menu_shell_append(this._native, entry._native);
                     Gobject.g_object_ref_sink(entry._native);  // undoes "floating"
-                    Gtk.gtk_widget_show_all(entry._native);
+                    Gtk.gtk_widget_show_all(entry._native);    // necessary to guarantee widget is visible
                 }
                 else if (menuEntry__ instanceof GtkMenu) {
                     GtkMenu subMenu = (GtkMenu) menuEntry__;
@@ -322,7 +291,7 @@ class GtkMenu extends MenuBase implements NativeUI {
                     // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
                     Gtk.gtk_menu_shell_append(this._native, subMenu.menuEntry._native);
                     Gobject.g_object_ref_sink(subMenu.menuEntry._native);  // undoes "floating"
-                    Gtk.gtk_widget_show_all(subMenu.menuEntry._native);
+                    Gtk.gtk_widget_show_all(subMenu.menuEntry._native);    // necessary to guarantee widget is visible
 
                     if (subMenu.getParent() != GtkMenu.this) {
                         // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
@@ -332,7 +301,7 @@ class GtkMenu extends MenuBase implements NativeUI {
             }
 
             onMenuAdded(_native);
-            Gtk.gtk_widget_show_all(_native);
+            Gtk.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
         }
     }
 
