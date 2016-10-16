@@ -28,6 +28,34 @@ import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
 
+
+/*
+ * When DISTRIBUTING the JRE/JDK by Sun/Oracle, the license agreement states that we cannot create/modify specific files.
+ *
+ ************* (when DISTRIBUTING the JRE/JDK...)
+ * C. Java Technology Restrictions. You may not create, modify, or change the behavior of, or authorize your licensees to create, modify,
+ * or change the behavior of, classes, interfaces, or subpackages that are in any way identified as "java", "javax", "sun" or similar
+ * convention as specified by Oracle in any naming convention designation.
+ *************
+ *
+ * Since we are not distributing a modified file, it does not apply to us.
+ *
+ * Again, just to be ABSOLUTELY CLEAR. This is for DISTRIBUTING the runtime.
+ *
+ * ************************************
+ * To follow the license for DISTRIBUTION, these files themselves CANNOT BE MODIFIED in any way,
+ * and if they are modified THEY CANNOT BE DISTRIBUTED.
+ * ************************************
+ *
+ * Important distinction: We are not DISTRIBUTING java, nor modifying the distribution class files.
+ *
+ * What we are doing is modifying what is already present, post-distribution, and it is impossible to distribute what is modified
+ *
+ * To see what files we need to fix...
+ * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
+ * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
+ * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/141beb4d854d/src/macosx/classes/sun/lwawt/macosx/CTrayIcon.java#l216
+ */
 /**
  * Fixes issues with some java runtimes
  */
@@ -65,33 +93,6 @@ class SystemTrayFixes {
         if (isWindowsSwingTrayLoaded) {
             throw new RuntimeException("Unable to initialize the swing tray in windows, it has already been created!");
         }
-
-        /*
-         * When DISTRIBUTING the JRE/JDK by Sun/Oracle, the license agreement states that we cannot create/modify specific files.
-         *
-         ************* (when DISTRIBUTING the JRE/JDK...)
-         * C. Java Technology Restrictions. You may not create, modify, or change the behavior of, or authorize your licensees to create, modify,
-         * or change the behavior of, classes, interfaces, or subpackages that are in any way identified as "java", "javax", "sun" or similar
-         * convention as specified by Oracle in any naming convention designation.
-         *************
-         *
-         * Since we are not distributing a modified file, it does not apply to us.
-         *
-         * Again, just to be ABSOLUTELY CLEAR. This is for DISTRIBUTING the runtime.
-         *
-         * ************************************
-         * To follow the license for DISTRIBUTION, these files themselves CANNOT BE MODIFIED in any way,
-         * and if they are modified THEY CANNOT BE DISTRIBUTED.
-         * ************************************
-         *
-         * Important distinction: We are not DISTRIBUTING java, nor modifying the distribution class files.
-         *
-         * What we are doing is modifying what is already present, post-distribution, and it is impossible to distribute what is modified
-         *
-         * To see what files we need to fix...
-         * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
-         * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
-         */
 
         try {
             // necessary to initialize sun.awt.windows.WObjectPeer native initIDs()
@@ -198,7 +199,7 @@ class SystemTrayFixes {
         }
     }
 
-    // MacOS AWT is hardcoded to respond only to "popup trigger" for menus, where it should be any mouse button
+    // MacOS AWT is hardcoded to respond only to lef-click for menus, where it should be any mouse button
     // https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
     // https://bugs.openjdk.java.net/browse/JDK-7158615
     public static void fixMacOS() {
