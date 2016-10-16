@@ -211,6 +211,13 @@ class SystemTray implements Menu {
 
         systemTray = new SystemTray();
 
+//        if (DEBUG) {
+//            Properties properties = System.getProperties();
+//            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+//                logger.debug(entry.getKey() + " : " + entry.getValue());
+//            }
+//        }
+
         // no tray in a headless environment
         if (GraphicsEnvironment.isHeadless()) {
             logger.error("Cannot use the SystemTray in a headless environment");
@@ -369,11 +376,6 @@ class SystemTray implements Menu {
 
             if (DEBUG) {
                 logger.debug("Currently using the '{}' desktop", XDG);
-
-//                Properties properties = System.getProperties();
-//                for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-//                    logger.debug(entry.getKey() + " : " + entry.getValue());
-//                }
             }
 
             if (trayType == null) {
@@ -483,7 +485,7 @@ class SystemTray implements Menu {
             // windows is funky, and is hardcoded to 16x16. We fix that.
             SystemTrayFixes.fixWindows();
         }
-        else if (OS.isMacOsX()) {
+        else if (OS.isMacOsX() && useNativeMenus) {
             // macos doesn't respond to all buttons (but should)
             SystemTrayFixes.fixMacOS();
         }
