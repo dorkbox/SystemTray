@@ -219,7 +219,7 @@ class SystemTrayFixes {
             m.setAccessible(true);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
 
-            // if we are using swing (in windows only) the icon size is usually incorrect. We cannot fix that if it's already loaded.
+            // if we are using AWT (in MacOS only) the menu trigger is incomplete. We cannot fix that if it's already loaded.
             isMacSwingTrayLoaded = (null != m.invoke(cl, "sun.lwawt.macosx.CTrayIcon")) ||
                                        (null != m.invoke(cl, "java.awt.SystemTray"));
         } catch (Throwable e) {
@@ -229,7 +229,7 @@ class SystemTrayFixes {
         }
 
         if (isMacSwingTrayLoaded) {
-            throw new RuntimeException("Unable to initialize the swing tray in windows, it has already been created!");
+            throw new RuntimeException("Unable to initialize the AWT tray in MacOSx, it has already been created!");
         }
 
         try {
