@@ -248,8 +248,10 @@ class SystemTrayFixes {
             trayClass.setModifiers(trayClass.getModifiers() & javassist.Modifier.PUBLIC);
             trayClass.getConstructors()[0].setModifiers(trayClass.getConstructors()[0].getModifiers() & javassist.Modifier.PUBLIC);
 
-            CtClass robotClass = pool.get("java.awt.Robot");
-            CtField ctField = new CtField(robotClass, "robot", trayClass);
+            CtField ctField = new CtField(CtClass.intType, "lastButton", trayClass);
+            trayClass.addField(ctField);
+
+            ctField = new CtField(pool.get("java.awt.Robot"), "robot", trayClass);
             trayClass.addField(ctField);
 
             CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
@@ -258,6 +260,12 @@ class SystemTrayFixes {
 
                 "sun.awt.SunToolkit toolKit = (sun.awt.SunToolkit)java.awt.Toolkit.getDefaultToolkit();" +
                 "int button = event.getButtonNumber();" +
+
+                // have to intercept to see if it was a button click redirect to preserve what button was used in the event
+                "if (lastButton == 1) {" +
+                    "button = lastButton;" +
+                    "lastButton = -1;" +
+                "}" +
 
                 "if ((button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
                     "int eventType = sun.lwawt.macosx.NSEvent.nsToJavaEventType(event.getType());" +
@@ -296,6 +304,7 @@ class SystemTrayFixes {
                                 "e.printStackTrace();" +
                             "}" +
                         "}" +
+                        "lastButton = 1;" +
                         "robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);" +
                         "return;" +
                     "}" +
