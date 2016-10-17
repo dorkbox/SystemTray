@@ -252,6 +252,12 @@ class SystemTrayFixes {
             CtField ctField = new CtField(CtClass.intType, "lastButton", trayClass);
             trayClass.addField(ctField);
 
+            ctField = new CtField(CtClass.intType, "lastX", trayClass);
+            trayClass.addField(ctField);
+
+            ctField = new CtField(CtClass.intType, "lastY", trayClass);
+            trayClass.addField(ctField);
+
             ctField = new CtField(pool.get("java.awt.Robot"), "robot", trayClass);
             trayClass.addField(ctField);
 
@@ -261,11 +267,16 @@ class SystemTrayFixes {
 
                 "sun.awt.SunToolkit toolKit = (sun.awt.SunToolkit)java.awt.Toolkit.getDefaultToolkit();" +
                 "int button = event.getButtonNumber();" +
+                "int mouseX = event.getAbsX();" +
+                "int mouseY = event.getAbsY();" +
 
                 // have to intercept to see if it was a button click redirect to preserve what button was used in the event
-                "if (lastButton == 1) {" +
+                "if (lastButton == 1 && mouseX == lastX && mouseY == lastY) {" +
+                    "java.lang.System.err.println(\"Redefining button press to \" + lastButton);" +
                     "button = lastButton;" +
                     "lastButton = -1;" +
+                    "lastX = 0;" +
+                    "lastY = 0;" +
                 "}" +
 
                 "if ((button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
@@ -273,12 +284,12 @@ class SystemTrayFixes {
                     "int jButton = 0;" +
                     "int jClickCount = 0;" +
 
-                    // "java.lang.System.err.println(\"Click \" + button + \" event: \" + eventType);" +
-
                     "if (eventType != 503) {" +
                         "jButton = sun.lwawt.macosx.NSEvent.nsToJavaButton(button);" +
                         "jClickCount = event.getClickCount();" +
                     "}" +
+
+                    "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType);" +
 
                     "int mouseMods = sun.lwawt.macosx.NSEvent.nsToJavaMouseModifiers(button, event.getModifierFlags());" +
                     // surprisingly, this is false when the popup is showing
@@ -293,9 +304,10 @@ class SystemTrayFixes {
                         "mouseClickButtons = 0;" +
                     "}" +
 
+
                     // have to swallow + re-dispatch events in specific cases. (right click)
                     "if (eventType == 501 && popupTrigger && button == 1) {" +
-//                        "java.lang.System.err.println(\"HAS POPUP \" + popupTrigger + \" event: \" + eventType);" +
+                        "java.lang.System.err.println(\"Redispatching mouse press. Has popupTrigger \" + popupTrigger + \" event: \" + eventType);" +
                         // we use Robot to click where we clicked, in order to "fool" the native part to show the popup
                         // For what it's worth, this is the only way to get the native bits to behave.
                         "if (robot == null) {" +
@@ -306,13 +318,14 @@ class SystemTrayFixes {
                             "}" +
                         "}" +
                         "lastButton = 1;" +
+                        "lastX = mouseX;" +
+                        "lastY = mouseY;" +
+
                         "robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);" +
                         "return;" +
                     "}" +
 
 
-                    "int mouseX = event.getAbsX();" +
-                    "int mouseY = event.getAbsY();" +
                     "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
 
                     "mEvent.setSource(this.target);" +
