@@ -16,11 +16,11 @@
 package dorkbox.systemTray.swingUI;
 
 import java.awt.Font;
+import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JMenuItem;
 
-import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Status;
 
 class SwingEntryStatus extends SwingEntry implements Status {
@@ -65,7 +65,7 @@ class SwingEntryStatus extends SwingEntry implements Status {
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
 
     }
 }

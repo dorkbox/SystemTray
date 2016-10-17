@@ -17,6 +17,8 @@ package dorkbox.systemTray.jna.linux;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,9 +26,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
-import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.JnaHelper;
 import dorkbox.systemTray.util.JavaFX;
@@ -422,11 +422,11 @@ class Gtk {
      * @param callback will never be null.
      */
     public static
-    void proxyClick(final Menu parent, final Entry menuEntry, final Action callback) {
+    void proxyClick(final Entry menuEntry, final ActionListener callback) {
         Gtk.isDispatch = true;
 
         try {
-            callback.onClick(parent.getSystemTray(), parent, menuEntry);
+            callback.actionPerformed(new ActionEvent(menuEntry, ActionEvent.ACTION_PERFORMED, ""));
         } catch (Throwable throwable) {
             SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
         }
@@ -470,6 +470,9 @@ class Gtk {
 
     // uses '_' to define which key is the mnemonic
     public static native Pointer gtk_image_menu_item_new_with_mnemonic(String label);
+    public static native Pointer gtk_check_menu_item_new_with_mnemonic (String label);
+
+    public static native boolean gtk_check_menu_item_get_active (Pointer check_menu_item);
 
     public static native void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
 

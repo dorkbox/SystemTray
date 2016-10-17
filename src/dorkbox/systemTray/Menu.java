@@ -15,6 +15,7 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.event.ActionListener;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -86,7 +87,7 @@ interface Menu extends Entry {
      * @param menuText string of the text you want to appear
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, Action callback);
+    Entry addEntry(String menuText, ActionListener callback);
 
     /**
      * Adds a menu entry with text + image
@@ -95,7 +96,7 @@ interface Menu extends Entry {
      * @param imagePath the image (full path required) to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, String imagePath, Action callback);
+    Entry addEntry(String menuText, String imagePath, ActionListener callback);
 
     /**
      * Adds a menu entry with text + image
@@ -104,7 +105,7 @@ interface Menu extends Entry {
      * @param imageUrl the URL of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, URL imageUrl, Action callback);
+    Entry addEntry(String menuText, URL imageUrl, ActionListener callback);
 
     /**
      * Adds a menu entry with text + image
@@ -114,7 +115,7 @@ interface Menu extends Entry {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback);
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, ActionListener callback);
 
     /**
      * Adds a menu entry with text + image
@@ -123,8 +124,17 @@ interface Menu extends Entry {
      * @param imageStream the InputStream of the image to use. If null, no image will be used
      * @param callback callback that will be executed when this menu entry is clicked
      */
-    Entry addEntry(String menuText, InputStream imageStream, Action callback);
+    Entry addEntry(String menuText, InputStream imageStream, ActionListener callback);
 
+
+
+    /**
+     * Adds a check-box menu entry with text
+     *
+     * @param menuText string of the text you want to appear
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    Checkbox addCheckbox(String menuText, ActionListener callback);
 
 
 

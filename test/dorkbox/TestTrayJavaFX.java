@@ -16,9 +16,9 @@
 
 package dorkbox;
 
+import java.awt.event.ActionListener;
 import java.net.URL;
 
-import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
@@ -59,8 +59,8 @@ class TestTrayJavaFX extends Application {
     }
 
     private SystemTray systemTray;
-    private Action callbackGreen;
-    private Action callbackGray;
+    private ActionListener callbackGreen;
+    private ActionListener callbackGray;
 
     public
     TestTrayJavaFX() {
@@ -95,10 +95,11 @@ class TestTrayJavaFX extends Application {
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        callbackGreen = new Action() {
+        callbackGreen = new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
+                final Entry entry = (Entry) e.getSource();
                 systemTray.setStatus("Some Mail!");
                 systemTray.setImage(GREEN_TRAIN);
 
@@ -109,10 +110,11 @@ class TestTrayJavaFX extends Application {
             }
         };
 
-        callbackGray = new Action() {
+        callbackGray = new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
+                final Entry entry = (Entry) e.getSource();
                 systemTray.setStatus(null);
                 systemTray.setImage(BLACK_TRAIN);
 
@@ -127,14 +129,18 @@ class TestTrayJavaFX extends Application {
         // case does not matter
         menuEntry.setShortcut('G');
 
+        menuEntry = this.systemTray.addEntry("Euro € Mail", GREEN_MAIL, callbackGreen);
+        // case does not matter
+        menuEntry.setShortcut('€');
+
         this.systemTray.addSeparator();
 
         final Menu submenu = this.systemTray.addMenu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
-        submenu.addEntry("Disable menu", BLACK_BUS, new Action() {
+        submenu.addEntry("Disable menu", BLACK_BUS, new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
                 submenu.setEnabled(false);
             }
         });
@@ -149,25 +155,25 @@ class TestTrayJavaFX extends Application {
 //                systemTray.addWidget(progressBar);
 //            }
 //        });
-        submenu.addEntry("Hide tray", LT_GRAY_BUS, new Action() {
+        submenu.addEntry("Hide tray", LT_GRAY_BUS, new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
                 systemTray.setEnabled(false);
             }
         });
-        submenu.addEntry("Remove menu", BLACK_FIRE, new Action() {
+        submenu.addEntry("Remove menu", BLACK_FIRE, new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
                 submenu.remove();
             }
         });
 
-        systemTray.addEntry("Quit", new Action() {
+        systemTray.addEntry("Quit", new ActionListener() {
             @Override
             public
-            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+            void actionPerformed(final java.awt.event.ActionEvent e) {
                 systemTray.shutdown();
                 Platform.exit();  // necessary to close javaFx
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.

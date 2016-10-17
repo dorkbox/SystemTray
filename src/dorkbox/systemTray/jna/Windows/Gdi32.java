@@ -32,7 +32,6 @@ class Gdi32 {
     }
 
     public static final int LOGPIXELSX = 88;
-    public static final int LOGPIXELSY = 90;
 
 
     /**

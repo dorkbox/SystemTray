@@ -15,7 +15,8 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-import dorkbox.systemTray.Action;
+import java.awt.event.ActionListener;
+
 import dorkbox.systemTray.jna.linux.Gtk;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
@@ -47,7 +48,7 @@ class GtkEntryStatus extends GtkEntryItem {
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 
     @Override

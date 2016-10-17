@@ -19,16 +19,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import dorkbox.systemTray.Action;
+import dorkbox.systemTray.SystemTray;
 
 class AwtEntryItem extends AwtEntry {
 
     private final ActionListener swingCallback;
 
-    private volatile Action callback;
+    private volatile ActionListener callback;
 
     // this is ALWAYS called on the EDT.
-    AwtEntryItem(final AwtMenu parent, final Action callback) {
+    AwtEntryItem(final AwtMenu parent, final ActionListener callback) {
         super(parent, new java.awt.MenuItem());
         this.callback = callback;
 
@@ -53,14 +53,19 @@ class AwtEntryItem extends AwtEntry {
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
         this.callback = callback;
     }
 
     private
     void handle() {
-        if (callback != null) {
-            callback.onClick(getParent().getSystemTray(), getParent(), this);
+        ActionListener cb = this.callback;
+        if (cb != null) {
+            try {
+                cb.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, ""));
+            } catch (Throwable throwable) {
+                SystemTray.logger.error("Error calling menu entry {} click event.", getText(), throwable);
+            }
         }
     }
 

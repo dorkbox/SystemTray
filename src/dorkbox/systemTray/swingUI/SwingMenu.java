@@ -16,6 +16,7 @@
 package dorkbox.systemTray.swingUI;
 
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,7 +24,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
-import dorkbox.systemTray.Action;
+import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.Status;
@@ -100,36 +101,28 @@ class SwingMenu extends MenuBase implements SwingUI {
     }
 
     /**
-     * Will add a new menu entry, or update one if it already exists
+     * Will add a new menu entry
      * NOT ALWAYS CALLED ON EDT
      */
     protected final
-    Entry addEntry_(final String menuText, final File imagePath, final Action callback) {
+    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback) {
         if (menuText == null) {
             throw new NullPointerException("Menu text cannot be null");
         }
 
         final AtomicReference<Entry> value = new AtomicReference<Entry>();
 
+        // must always be called on the EDT
         dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
-                    Entry entry = get(menuText);
+                    Entry entry = new SwingEntryItem(SwingMenu.this, callback);
+                    entry.setText(menuText);
+                    entry.setImage(imagePath);
 
-                    if (entry == null) {
-                        // must always be called on the EDT
-                        entry = new SwingEntryItem(SwingMenu.this, callback);
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-
-                        menuEntries.add(entry);
-                    } else if (entry instanceof SwingEntryItem) {
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                    }
-
+                    menuEntries.add(entry);
                     value.set(entry);
                 }
             }
@@ -139,7 +132,38 @@ class SwingMenu extends MenuBase implements SwingUI {
     }
 
     /**
-     * Will add a new sub-menu entry, or update one if it already exists
+     * Will add a new checkbox menu entry
+     * NOT ALWAYS CALLED ON DISPATCH
+     */
+    @Override
+    protected
+    Checkbox addCheckbox_(final String menuText, final ActionListener callback) {
+        if (menuText == null) {
+            throw new NullPointerException("Menu text cannot be null");
+        }
+
+        final AtomicReference<Checkbox> value = new AtomicReference<Checkbox>();
+
+        // must always be called on the EDT
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    Entry entry  = new SwingEntryCheckbox(SwingMenu.this, callback);
+                    entry.setText(menuText);
+
+                    menuEntries.add(entry);
+                    value.set((Checkbox) entry);
+                }
+            }
+        });
+
+        return value.get();
+    }
+
+    /**
+     * Will add a new sub-menu entry
      * NOT ALWAYS CALLED ON EDT
      */
     protected final
@@ -150,28 +174,20 @@ class SwingMenu extends MenuBase implements SwingUI {
 
         final AtomicReference<Menu> value = new AtomicReference<Menu>();
 
+        // must always be called on the EDT
         dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
                 synchronized (menuEntries) {
-                    Entry entry = get(menuText);
+                    Entry entry = new SwingMenu(getSystemTray(), SwingMenu.this, new AdjustedJMenu());
+                    _native.add(((SwingMenu) entry)._native); // have to add it separately
 
-                    if (entry == null) {
-                        // must always be called on the EDT
-                        entry = new SwingMenu(getSystemTray(), SwingMenu.this, new AdjustedJMenu());
-                        _native.add(((SwingMenu) entry)._native); // have to add it separately
-
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                        value.set((Menu) entry);
-
-                    } else if (entry instanceof SwingMenu) {
-                        entry.setText(menuText);
-                        entry.setImage(imagePath);
-                    }
+                    entry.setText(menuText);
+                    entry.setImage(imagePath);
 
                     menuEntries.add(entry);
+                    value.set((Menu) entry);
                 }
             }
         });

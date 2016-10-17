@@ -21,12 +21,13 @@ import java.io.File;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.util.ImageUtils;
 
-class GtkEntryItem extends GtkEntry implements GCallback {
+class GtkEntryCheckbox extends GtkEntry implements GCallback, Checkbox {
     private static File transparentIcon = null;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
@@ -35,9 +36,6 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     // these have to be volatile, because they can be changed from any thread
     private volatile ActionListener callback;
     private volatile Pointer image;
-
-    // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
-    protected volatile boolean hasLegitIcon = true;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
     // AppIndicators will only show if you use the keyboard to navigate
@@ -48,8 +46,8 @@ class GtkEntryItem extends GtkEntry implements GCallback {
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
-    GtkEntryItem(final GtkMenu parent, final ActionListener callback) {
-        super(parent, Gtk.gtk_image_menu_item_new_with_mnemonic(""));
+    GtkEntryCheckbox(final GtkMenu parent, final ActionListener callback) {
+        super(parent, Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.callback = callback;
 
         // cannot be done in a static initializer, because the tray icon size might not yet have been determined
@@ -81,6 +79,14 @@ class GtkEntryItem extends GtkEntry implements GCallback {
         });
     }
 
+    /**
+     * @return true if this checkbox is selected, false if not
+     */
+    public
+    boolean getState() {
+        return Gtk.gtk_check_menu_item_get_active(_native);
+    }
+
     @Override
     public
     void setCallback(final ActionListener callback) {
@@ -93,7 +99,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     int callback(final Pointer instance, final Pointer data) {
         final ActionListener cb = this.callback;
         if (cb != null) {
-            Gtk.proxyClick(GtkEntryItem.this, cb);
+            Gtk.proxyClick(GtkEntryCheckbox.this, cb);
         }
 
         return Gtk.TRUE;
@@ -102,7 +108,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
     @Override
     public
     boolean hasImage() {
-        return hasLegitIcon;
+        return true;
     }
 
     /**
@@ -112,26 +118,26 @@ class GtkEntryItem extends GtkEntry implements GCallback {
      * called on the DISPATCH thread
      */
     void setSpacerImage(final boolean everyoneElseHasImages) {
-        if (hasLegitIcon) {
-            // we have a legit icon, so there is nothing else we can do.
-            return;
-        }
-
-        if (image != null) {
-            Gtk.gtk_widget_destroy(image);
-            image = null;
-            Gtk.gtk_widget_show_all(_native);
-        }
-
-        if (everyoneElseHasImages) {
-            image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
-            Gtk.gtk_image_menu_item_set_image(_native, image);
-
-            //  must always re-set always-show after setting the image
-            Gtk.gtk_image_menu_item_set_always_show_image(_native, Gtk.TRUE);
-        }
-
-        Gtk.gtk_widget_show_all(_native);
+//        if (true) {
+//            // we have a legit icon, so there is nothing else we can do.
+//            return;
+//        }
+//
+//        if (image != null) {
+//            Gtk.gtk_widget_destroy(image);
+//            image = null;
+//            Gtk.gtk_widget_show_all(_native);
+//        }
+//
+//        if (everyoneElseHasImages) {
+//            image = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
+//            Gtk.gtk_image_menu_item_set_image(_native, image);
+//
+//            //  must always re-set always-show after setting the image
+//            Gtk.gtk_image_menu_item_set_always_show_image(_native, Gtk.TRUE);
+//        }
+//
+//        Gtk.gtk_widget_show_all(_native);
     }
 
     /**
@@ -152,33 +158,7 @@ class GtkEntryItem extends GtkEntry implements GCallback {
         Gtk.gtk_widget_show_all(_native);
     }
 
-    // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
-    // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
-    // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
     void setImage_(final File imageFile) {
-        hasLegitIcon = imageFile != null;
-
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
-                    image = null;
-                    Gtk.gtk_widget_show_all(_native);
-                }
-
-                if (imageFile != null) {
-                    image = Gtk.gtk_image_new_from_file(imageFile.getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(_native, image);
-
-                    //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(_native, Gtk.TRUE);
-                }
-
-                Gtk.gtk_widget_show_all(_native);
-            }
-        });
     }
 
     void removePrivate() {

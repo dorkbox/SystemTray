@@ -19,9 +19,9 @@ import static java.awt.Font.DIALOG;
 
 import java.awt.Font;
 import java.awt.MenuItem;
+import java.awt.event.ActionListener;
 import java.io.File;
 
-import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Status;
 
 class AwtEntryStatus extends AwtEntry implements Status {
@@ -70,6 +70,6 @@ class AwtEntryStatus extends AwtEntry implements Status {
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 }

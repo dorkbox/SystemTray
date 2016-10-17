@@ -16,6 +16,7 @@
 
 package dorkbox.systemTray;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -97,7 +98,7 @@ interface Entry {
      *
      * @param callback the callback to set. If null, the callback is safely removed.
      */
-    void setCallback(Action callback);
+    void setCallback(ActionListener callback);
 
     /**
      * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.

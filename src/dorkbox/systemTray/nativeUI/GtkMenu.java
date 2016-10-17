@@ -16,6 +16,7 @@
 package dorkbox.systemTray.nativeUI;
 
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.Action;
+import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.SystemTray;
@@ -61,6 +62,127 @@ class GtkMenu extends MenuBase implements NativeUI {
     void onMenuAdded(final Pointer menu) {
         // only needed for AppIndicator
     }
+
+    /**
+     * Will add a new menu entry
+     * NOT ALWAYS CALLED ON DISPATCH
+     */
+    protected
+    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback) {
+        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
+        // see: https://bugs.launchpad.net/glipper/+bug/1203888
+
+        if (menuText == null) {
+            throw new NullPointerException("Menu text cannot be null");
+        }
+
+        // have to wait for the value
+        final AtomicReference<Entry> value = new AtomicReference<Entry>();
+
+        // must always be called on DISPATCH
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                    // To work around this issue, we destroy then recreate the menu every time something is changed.
+                    deleteMenu();
+
+                    Entry menuEntry = new GtkEntryItem(GtkMenu.this, callback);
+                    menuEntry.setText(menuText);
+                    menuEntry.setImage(imagePath);
+
+                    menuEntries.add(menuEntry);
+                    value.set(menuEntry);
+
+                    createMenu();
+                }
+            }
+        });
+
+        return value.get();
+    }
+
+    /**
+     * Will add a new checkbox menu entry
+     * NOT ALWAYS CALLED ON DISPATCH
+     */
+    @Override
+    protected
+    Checkbox addCheckbox_(final String menuText, final ActionListener callback) {
+        if (menuText == null) {
+            throw new NullPointerException("Menu text cannot be null");
+        }
+
+        final AtomicReference<Checkbox> value = new AtomicReference<Checkbox>();
+
+        // must always be called on DISPATCH
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                    // To work around this issue, we destroy then recreate the menu every time something is changed.
+                    deleteMenu();
+
+                    Entry entry = new GtkEntryCheckbox(GtkMenu.this, callback);
+                    entry.setText(menuText);
+
+                    menuEntries.add(entry);
+                    value.set((Checkbox) entry);
+
+                    createMenu();
+                }
+            }
+        });
+
+        return value.get();
+    }
+
+
+    /**
+     * Will add a new menu entry
+     * NOT ALWAYS CALLED ON DISPATCH
+     */
+    protected
+    Menu addMenu_(final String menuText, final File imagePath) {
+        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
+        // see: https://bugs.launchpad.net/glipper/+bug/1203888
+
+        if (menuText == null) {
+            throw new NullPointerException("Menu text cannot be null");
+        }
+
+        final AtomicReference<Menu> value = new AtomicReference<Menu>();
+
+        // must always be called on DISPATCH
+        dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (menuEntries) {
+                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                    // To work around this issue, we destroy then recreate the menu every time something is changed.
+                    deleteMenu();
+
+                    GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this);
+                    subMenu.setText(menuText);
+                    subMenu.setImage(imagePath);
+
+                    menuEntries.add(subMenu);
+                    value.set(subMenu);
+
+                    createMenu();
+                }
+            }
+        });
+
+        return value.get();
+    }
+
+
 
     /**
      * Necessary to guarantee all updates occur on the dispatch thread
@@ -135,10 +257,6 @@ class GtkMenu extends MenuBase implements NativeUI {
             }
         });
     }
-
-
-
-
 
     // public here so that Swing/Gtk/AppIndicator can override this
     @Override
@@ -335,98 +453,6 @@ class GtkMenu extends MenuBase implements NativeUI {
         }
     }
 
-
-    /**
-     * Will add a new menu entry, or update one if it already exists
-     */
-    protected
-    Entry addEntry_(final String menuText, final File imagePath, final Action callback) {
-        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
-        // see: https://bugs.launchpad.net/glipper/+bug/1203888
-
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        // have to wait for the value
-        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry menuEntry = get(menuText);
-                    if (menuEntry == null) {
-                        // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                        // To work around this issue, we destroy then recreate the menu every time something is changed.
-                        deleteMenu();
-
-                        menuEntry = new GtkEntryItem(GtkMenu.this, callback);
-                        menuEntry.setText(menuText);
-                        menuEntry.setImage(imagePath);
-                        menuEntries.add(menuEntry);
-
-                        createMenu();
-                    } else if (menuEntry instanceof GtkEntryItem) {
-                        menuEntry.setText(menuText);
-                        menuEntry.setImage(imagePath);
-                    }
-
-                    value.set(menuEntry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-    /**
-     * Will add a new menu entry, or update one if it already exists
-     */
-    protected
-    Menu addMenu_(final String menuText, final File imagePath) {
-        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
-        // see: https://bugs.launchpad.net/glipper/+bug/1203888
-
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Menu> value = new AtomicReference<Menu>();
-
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry menuEntry = get(menuText);
-                    if (menuEntry == null) {
-                        // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                        // To work around this issue, we destroy then recreate the menu every time something is changed.
-                        deleteMenu();
-
-                        GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this);
-                        subMenu.setText(menuText);
-                        subMenu.setImage(imagePath);
-
-                        menuEntries.add(subMenu);
-
-                        value.set(subMenu);
-
-                        createMenu();
-                    } else if (menuEntry instanceof GtkMenu) {
-                        menuEntry.setText(menuText);
-                        menuEntry.setImage(imagePath);
-
-                        value.set(((GtkMenu) menuEntry));
-                    }
-                }
-            }
-        });
-
-        return value.get();
-    }
 
     // a child will always remove itself from the parent.
     @Override

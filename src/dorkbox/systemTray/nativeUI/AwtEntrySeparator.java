@@ -16,9 +16,8 @@
 package dorkbox.systemTray.nativeUI;
 
 import java.awt.MenuItem;
+import java.awt.event.ActionListener;
 import java.io.File;
-
-import dorkbox.systemTray.Action;
 
 class AwtEntrySeparator extends AwtEntry implements dorkbox.systemTray.Separator {
 
@@ -53,6 +52,6 @@ class AwtEntrySeparator extends AwtEntry implements dorkbox.systemTray.Separator
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 }

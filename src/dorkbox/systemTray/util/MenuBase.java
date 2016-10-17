@@ -16,6 +16,7 @@
 package dorkbox.systemTray.util;
 
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import dorkbox.systemTray.Action;
+import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.Separator;
@@ -62,14 +63,21 @@ class MenuBase implements Menu {
 
 
     /**
-     * Will add a new menu entry, or update one if it already exists
+     * Will add a new menu entry
      * NOT ALWAYS CALLED ON DISPATCH
      */
     protected abstract
-    Entry addEntry_(final String menuText, final File imagePath, final Action callback);
+    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback);
 
     /**
-     * Will add a new sub-menu entry, or update one if it already exists
+     * Will add a new checkbox menu entry
+     * NOT ALWAYS CALLED ON DISPATCH
+     */
+    protected abstract
+    Checkbox addCheckbox_(final String menuText, final ActionListener callback);
+
+    /**
+     * Will add a new sub-menu entry
      * NOT ALWAYS CALLED ON DISPATCH
      */
     protected abstract
@@ -225,13 +233,13 @@ class MenuBase implements Menu {
 
     @Override
     public final
-    Entry addEntry(String menuText, Action callback) {
+    Entry addEntry(String menuText, ActionListener callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
     @Override
     public final
-    Entry addEntry(String menuText, String imagePath, Action callback) {
+    Entry addEntry(String menuText, String imagePath, ActionListener callback) {
         if (imagePath == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -242,7 +250,7 @@ class MenuBase implements Menu {
 
     @Override
     public final
-    Entry addEntry(String menuText, URL imageUrl, Action callback) {
+    Entry addEntry(String menuText, URL imageUrl, ActionListener callback) {
         if (imageUrl == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -253,7 +261,7 @@ class MenuBase implements Menu {
 
     @Override
     public final
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback) {
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, ActionListener callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -264,7 +272,7 @@ class MenuBase implements Menu {
 
     @Override
     public final
-    Entry addEntry(String menuText, InputStream imageStream, Action callback) {
+    Entry addEntry(String menuText, InputStream imageStream, ActionListener callback) {
         if (imageStream == null) {
             return addEntry_(menuText, null, callback);
         }
@@ -274,6 +282,11 @@ class MenuBase implements Menu {
     }
 
 
+    @Override
+    public
+    Checkbox addCheckbox(final String menuText, final ActionListener callback) {
+        return addCheckbox_(menuText, callback);
+    }
 
 
 
@@ -386,34 +399,10 @@ class MenuBase implements Menu {
     }
 
 
-
-
-
     @Override
     public final
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     /**
@@ -525,27 +514,6 @@ class MenuBase implements Menu {
             }
         });
     }
-
-
-//    @Override
-//    public final
-//    void remove() {
-//        dispatchAndWait(new Runnable() {
-//            @Override
-//            public
-//            void run() {
-//                _native.setVisible(false);
-//                if (_native instanceof TrayPopup) {
-//                    ((TrayPopup) _native).close();
-//                }
-//
-//                MenuBase parent = (MenuBase) getParent();
-//                if (parent != null) {
-//                    parent._native.remove(_native);
-//                }
-//            }
-//        });
-//    }
 
     @Override
     public final

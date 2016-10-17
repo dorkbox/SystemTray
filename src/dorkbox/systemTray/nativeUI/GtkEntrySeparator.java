@@ -15,9 +15,9 @@
  */
 package dorkbox.systemTray.nativeUI;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 
-import dorkbox.systemTray.Action;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.jna.linux.Gtk;
 
@@ -56,7 +56,7 @@ class GtkEntrySeparator extends GtkEntry implements Separator {
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 
     @Override

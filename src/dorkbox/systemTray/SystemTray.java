@@ -17,6 +17,7 @@ package dorkbox.systemTray;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -924,7 +925,7 @@ class SystemTray implements Menu {
      */
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
         // NO OP.
     }
 
@@ -992,7 +993,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, Action callback) {
+    Entry addEntry(String menuText, ActionListener callback) {
         return addEntry(menuText, (String) null, callback);
     }
 
@@ -1004,7 +1005,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, String imagePath, Action callback) {
+    Entry addEntry(String menuText, String imagePath, ActionListener callback) {
         return systemTrayMenu.addEntry(menuText, imagePath, callback);
     }
 
@@ -1016,7 +1017,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, URL imageUrl, Action callback) {
+    Entry addEntry(String menuText, URL imageUrl, ActionListener callback) {
         return systemTrayMenu.addEntry(menuText, imageUrl, callback);
     }
 
@@ -1029,7 +1030,7 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, Action callback) {
+    Entry addEntry(String menuText, String cacheName, InputStream imageStream, ActionListener callback) {
         return systemTrayMenu.addEntry(menuText, cacheName, imageStream, callback);
     }
 
@@ -1041,11 +1042,22 @@ class SystemTray implements Menu {
      * @param callback callback that will be executed when this menu entry is clicked
      */
     public final
-    Entry addEntry(String menuText, InputStream imageStream, Action callback) {
+    Entry addEntry(String menuText, InputStream imageStream, ActionListener callback) {
         return systemTrayMenu.addEntry(menuText, imageStream, callback);
     }
 
 
+    /**
+     * Adds a check-box menu entry to the tray icon with text
+     *
+     * @param menuText string of the text you want to appear
+     * @param callback callback that will be executed when this menu entry is clicked
+     */
+    @Override
+    public
+    Checkbox addCheckbox(final String menuText, final ActionListener callback) {
+        return systemTrayMenu.addCheckbox(menuText, callback);
+    }
 
 
 

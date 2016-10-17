@@ -15,11 +15,10 @@
  */
 package dorkbox.systemTray.swingUI;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JComponent;
-
-import dorkbox.systemTray.Action;
 
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
 class SwingEntryWidget extends SwingEntry implements dorkbox.systemTray.Separator {
@@ -57,6 +56,6 @@ class SwingEntryWidget extends SwingEntry implements dorkbox.systemTray.Separato
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 }

@@ -17,7 +17,6 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.jna.Windows.Gdi32.GetDeviceCaps;
 import static dorkbox.systemTray.jna.Windows.Gdi32.LOGPIXELSX;
-import static dorkbox.systemTray.jna.Windows.Gdi32.LOGPIXELSY;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -134,8 +133,6 @@ class ImageUtils {
                 } else if (windowsVersion.startsWith("6.3")) {
                     // Windows 8.1
                     // Windows Server 2012	6.3.9200
-
-
                     scalingFactor = 4;
 
                 } else if (windowsVersion.startsWith("6.4")) {
@@ -154,11 +151,9 @@ class ImageUtils {
 
                 Pointer screen = User32.GetDC(null);
                 int dpiX = GetDeviceCaps (screen, LOGPIXELSX);
-                int dpiY = GetDeviceCaps (screen, LOGPIXELSY);
                 User32.ReleaseDC(null, screen);
 
-                System.err.println("DPI : " + dpiX + "," + dpiY);
-
+                System.err.println("DPI : " + dpiX);
 
 
                 if (SystemTray.DEBUG) {

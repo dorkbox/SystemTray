@@ -15,11 +15,10 @@
  */
 package dorkbox.systemTray.swingUI;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JSeparator;
-
-import dorkbox.systemTray.Action;
 
 class SwingEntrySeparator extends SwingEntry implements dorkbox.systemTray.Separator {
 
@@ -54,6 +53,6 @@ class SwingEntrySeparator extends SwingEntry implements dorkbox.systemTray.Separ
 
     @Override
     public
-    void setCallback(final Action callback) {
+    void setCallback(final ActionListener callback) {
     }
 }

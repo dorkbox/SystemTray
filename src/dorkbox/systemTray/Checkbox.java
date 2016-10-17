@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 dorkbox, llc
+ * Copyright 2015 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package dorkbox.systemTray;
 
+/**
+ * This represents a common menu-checkbox entry, that is cross platform in nature
+ */
 public
-interface Action {
+interface Checkbox extends Entry {
     /**
-     * This method will ALWAYS be called in the swing EDT. If there is work conducted in this method, it will slow-down the GUI.
-     *
-     * @param systemTray this is the parent, system tray object
-     * @param parent this is the parent menu of this menu entry
-     * @param entry this is the menu entry that was clicked
+     * @return true if this checkbox is selected, false if not
      */
-    void onClick(SystemTray systemTray, Menu parent, final Entry entry);
+    boolean getState();
 }

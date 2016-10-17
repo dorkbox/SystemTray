@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.nativeUI;
 
+import java.awt.CheckboxMenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
-
+import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.SwingUtil;
 
-class SwingEntryItem extends SwingEntry {
+class AwtEntryCheckbox extends AwtEntry implements Checkbox {
 
     private final ActionListener swingCallback;
 
-    private volatile boolean hasLegitIcon = false;
     private volatile ActionListener callback;
 
     // this is ALWAYS called on the EDT.
-    SwingEntryItem(final SwingMenu parent, final ActionListener callback) {
-        super(parent, new AdjustedJMenuItem());
+    AwtEntryCheckbox(final AwtMenu parent, final ActionListener callback) {
+        super(parent, new java.awt.CheckboxMenuItem());
         this.callback = callback;
-
 
         if (callback != null) {
             _native.setEnabled(true);
@@ -49,11 +45,19 @@ class SwingEntryItem extends SwingEntry {
                 }
             };
 
-            ((JMenuItem) _native).addActionListener(swingCallback);
+            _native.addActionListener(swingCallback);
         } else {
             _native.setEnabled(false);
             swingCallback = null;
         }
+    }
+
+    /**
+     * @return true if this checkbox is selected, false if not
+     */
+    public
+    boolean getState() {
+        return ((CheckboxMenuItem) _native).getState();
     }
 
     @Override
@@ -74,40 +78,27 @@ class SwingEntryItem extends SwingEntry {
         }
     }
 
+    // always called in the EDT
+    @Override
+    void renderText(final String text) {
+        _native.setLabel(text);
+    }
+
+
+    // not supported!
     @Override
     public
     boolean hasImage() {
-        return hasLegitIcon;
+        return false;
+    }
+
+    // not supported!
+    @Override
+    void setImage_(final File imageFile) {
     }
 
     @Override
     void removePrivate() {
-        ((JMenuItem) _native).removeActionListener(swingCallback);
-    }
-
-    // always called in the EDT
-    @Override
-    void renderText(final String text) {
-        ((JMenuItem) _native).setText(text);
-    }
-
-    @SuppressWarnings("Duplicates")
-    @Override
-    void setImage_(final File imageFile) {
-        hasLegitIcon = imageFile != null;
-
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (imageFile != null) {
-                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenuItem) _native).setIcon(origIcon);
-                }
-                else {
-                    ((JMenuItem) _native).setIcon(null);
-                }
-            }
-        });
+        _native.removeActionListener(swingCallback);
     }
 }
