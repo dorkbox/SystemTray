@@ -15,37 +15,22 @@
  */
 package dorkbox.systemTray.swingUI;
 
-import java.awt.event.ActionListener;
-import java.io.File;
-
 import javax.swing.JSeparator;
 
-class SwingEntrySeparator extends SwingEntry implements dorkbox.systemTray.Separator {
+import dorkbox.systemTray.util.EntryHook;
+import dorkbox.util.SwingUtil;
+
+class SwingMenuItemSeparator implements EntryHook {
+
+    private final SwingMenu parent;
+    private final JSeparator _native = new JSeparator(JSeparator.HORIZONTAL);
 
     // this is ALWAYS called on the EDT.
-    SwingEntrySeparator(final SwingMenu parent) {
-        super(parent, new JSeparator(JSeparator.HORIZONTAL));
+    SwingMenuItemSeparator(final SwingMenu parent) {
+        this.parent = parent;
+        parent._native.add(_native);
     }
 
-    // called in the EDT thread
-    @Override
-    void renderText(final String text) {
-    }
-
-    @Override
-    void setImage_(final File imageFile) {
-    }
-
-    @Override
-    void removePrivate() {
-    }
-
-    @Override
-    public
-    void setShortcut(final char key) {
-    }
-
-    @Override
     public
     boolean hasImage() {
         return false;
@@ -53,6 +38,14 @@ class SwingEntrySeparator extends SwingEntry implements dorkbox.systemTray.Separ
 
     @Override
     public
-    void setCallback(final ActionListener callback) {
+    void remove() {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                parent._native.remove(_native);
+                _native.removeAll();
+            }
+        });
     }
 }

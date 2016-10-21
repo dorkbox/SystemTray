@@ -24,6 +24,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +45,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.Windows.User32;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.FileUtil;
+import dorkbox.util.IO;
 import dorkbox.util.LocationResolver;
 import dorkbox.util.OS;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -357,12 +359,16 @@ class ImageUtils {
     }
 
     public static synchronized
-    File resizeAndCache(final int size, final File file) {
-        return resizeAndCache(size, file.getAbsolutePath());
+    File resizeAndCache(final int size, final File file, final boolean cacheResult) {
+        return resizeAndCache(size, file.getAbsolutePath(), cacheResult);
     }
 
     public static synchronized
-    File resizeAndCache(final int size, final String fileName) {
+    File resizeAndCache(final int size, final String fileName, final boolean cacheResult) {
+        if (fileName == null) {
+            return null;
+        }
+
         // check if we already have this file information saved to disk, based on size
         final String cacheName = size + "_" + fileName;
 
@@ -393,7 +399,11 @@ class ImageUtils {
 
     @SuppressWarnings("Duplicates")
     public static synchronized
-    File resizeAndCache(final int size, final URL imageUrl) {
+    File resizeAndCache(final int size, final URL imageUrl, final boolean cacheResult) {
+        if (imageUrl == null) {
+            return null;
+        }
+
         final String cacheName = size + "_" + imageUrl.getPath();
 
         // if we already have this fileName, reuse it
@@ -449,16 +459,90 @@ class ImageUtils {
             }
         }
     }
+    @SuppressWarnings("Duplicates")
+    public static synchronized
+    File resizeAndCache(final int size, final Image image, final boolean cacheResult) {
+        if (image == null) {
+            return null;
+        }
+
+
+//        final String cacheName = size + "_" + imageUrl.getPath();
+//
+//        // if we already have this fileName, reuse it
+//        final File check = getIfCachedOrError(cacheName);
+//        if (check != null) {
+//            return check;
+//        }
+//
+//        // no cached file, so we resize then save the new one.
+//        boolean needsResize = true;
+//        try {
+//            InputStream inputStream = imageUrl.openStream();
+//            Dimension imageSize = getImageSize(inputStream);
+//            //noinspection NumericCastThatLosesPrecision
+//            if (size == ((int) imageSize.getWidth()) && size == ((int) imageSize.getHeight())) {
+//                // we can reuse this URL (it's the correct size).
+//                needsResize = false;
+//            }
+//        } catch (IOException e) {
+//            // have to serve up the error image instead.
+//            SystemTray.logger.error("Error resizing image. Using error icon instead", e);
+//            return getErrorImage(cacheName);
+//        }
+//
+//        if (needsResize) {
+//            // we have to hop through hoops.
+//            try {
+//                File resizedFile = resizeFileNoCheck(size, imageUrl);
+//
+//                // now cache that file
+//                try {
+//                    return CacheUtil.save(cacheName, resizedFile);
+//                } catch (IOException e) {
+//                    // have to serve up the error image instead.
+//                    SystemTray.logger.error("Error caching image. Using error icon instead", e);
+//                    return getErrorImage(cacheName);
+//                }
+//
+//            } catch (IOException e) {
+//                // have to serve up the error image instead.
+//                SystemTray.logger.error("Error resizing image. Using error icon instead", e);
+//                return getErrorImage(cacheName);
+//            }
+//
+//        } else {
+//            // no resize necessary, just cache as is.
+//            try {
+//                return CacheUtil.save(cacheName, imageUrl);
+//            } catch (IOException e) {
+//                // have to serve up the error image instead.
+//                SystemTray.logger.error("Error caching image. Using error icon instead", e);
+//                return getErrorImage(cacheName);
+//            }
+//        }
+        return null;
+    }
 
     @SuppressWarnings("Duplicates")
     public static synchronized
-    File resizeAndCache(final int size, String cacheName, final InputStream imageStream) {
-        if (cacheName == null) {
-            cacheName = CacheUtil.createNameAsHash(imageStream);
+    File resizeAndCache(final int size, InputStream imageStream, final boolean cacheResult) {
+        if (imageStream == null) {
+            return null;
+        }
+
+        // have to make a copy of the inputStream.
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = IO.copyStream(imageStream);
+            imageStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read from inputStream.", e);
         }
 
         // check if we already have this file information saved to disk, based on size
-        cacheName = size + "_" + cacheName;
+        final String cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
+        ((ByteArrayInputStream) imageStream).reset();
+
 
         // if we already have this fileName, reuse it
         final File check = getIfCachedOrError(cacheName);
@@ -512,12 +596,6 @@ class ImageUtils {
             }
         }
     }
-
-    public static
-    File resizeAndCache(final int size, final InputStream imageStream) {
-        return resizeAndCache(size, null, imageStream);
-    }
-
 
     /**
      * Resizes the given URL to the specified size. No checks are performed if it's the correct size to begin with.

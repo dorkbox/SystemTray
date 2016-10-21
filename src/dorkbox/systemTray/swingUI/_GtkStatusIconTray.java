@@ -27,7 +27,9 @@ import javax.swing.JPopupMenu;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.jna.linux.GEventCallback;
 import dorkbox.systemTray.jna.linux.GdkEventButton;
 import dorkbox.systemTray.jna.linux.Gobject;
@@ -41,7 +43,7 @@ import dorkbox.systemTray.jna.linux.Gtk;
  */
 @SuppressWarnings("Duplicates")
 public
-class _GtkStatusIconTray extends SwingMenu {
+class _GtkStatusIconTray extends Tray implements SwingUI {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
@@ -50,20 +52,114 @@ class _GtkStatusIconTray extends SwingMenu {
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
     private final List<Object> gtkCallbacks = new ArrayList<Object>();
 
-    // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
     private volatile boolean isActive = false;
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
+    private volatile File image;
 
     // called on the EDT
     public
     _GtkStatusIconTray(final SystemTray systemTray) {
-        super(systemTray, null, new TrayPopup());
+        super();
 
-        JPopupMenu popupMenu = (JPopupMenu) _native;
+        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+        final SwingMenu swingMenu = new SwingMenu(null) {
+            @Override
+            public
+            void setEnabled(final MenuItem menuItem) {
+                Gtk.dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        boolean enabled = menuItem.getEnabled();
+
+                        if (visible && !enabled) {
+                            Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
+                            visible = false;
+                        }
+                        else if (!visible && enabled) {
+                            Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
+                            visible = true;
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public
+            void setImage(final MenuItem menuItem) {
+                image = menuItem.getImage();
+                if (image == null) {
+                    return;
+                }
+
+                Gtk.dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        Gtk.gtk_status_icon_set_from_file(trayIcon, image.getAbsolutePath());
+
+                        if (!isActive) {
+                            isActive = true;
+                            Gtk.gtk_status_icon_set_visible(trayIcon, true);
+                        }
+                    }
+                });
+
+                // needs to be on EDT
+                dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        ((TrayPopup) _native).setTitleBarImage(image);
+                    }
+                });
+            }
+
+            @Override
+            public
+            void setText(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void setShortcut(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void remove() {
+                // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
+                if (!shuttingDown.getAndSet(true)) {
+                    Gtk.dispatch(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            // this hides the indicator
+                            Gtk.gtk_status_icon_set_visible(trayIcon, false);
+                            Gobject.g_object_unref(trayIcon);
+
+                            // mark for GC
+                            trayIcon = null;
+                            gtkCallbacks.clear();
+                        }
+                    });
+
+                    // does not need to be called on the dispatch (it does that)
+                    Gtk.shutdownGui();
+
+                    super.remove();
+                }
+            }
+        };
+
+
+        JPopupMenu popupMenu = (JPopupMenu) swingMenu._native;
         popupMenu.pack();
         popupMenu.setFocusable(true);
 
@@ -74,14 +170,10 @@ class _GtkStatusIconTray extends SwingMenu {
                 Point point = MouseInfo.getPointerInfo()
                                        .getLocation();
 
-                TrayPopup popupMenu = (TrayPopup) _native;
+                TrayPopup popupMenu = (TrayPopup) swingMenu._native;
                 popupMenu.doShow(point, 0);
             }
         };
-
-        // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-        //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-        // trayIcon.setToolTip("app name");
 
         Gtk.startGui();
 
@@ -100,7 +192,7 @@ class _GtkStatusIconTray extends SwingMenu {
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
                             // show the swing menu on the EDT
-                            dispatch(popupRunnable);
+                            swingMenu.dispatch(popupRunnable);
                         }
                     }
                 };
@@ -140,76 +232,13 @@ class _GtkStatusIconTray extends SwingMenu {
                 }
             }
         });
+
+        bind(swingMenu, null, systemTray);
     }
 
-
-    @SuppressWarnings("FieldRepeatedlyAccessedInMethod")
+    @Override
     public
-    void shutdown() {
-        if (!shuttingDown.getAndSet(true)) {
-
-            Gtk.dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // this hides the indicator
-                    Gtk.gtk_status_icon_set_visible(trayIcon, false);
-                    Gobject.g_object_unref(trayIcon);
-
-                    // mark for GC
-                    trayIcon = null;
-                    gtkCallbacks.clear();
-                }
-            });
-
-            // does not need to be called on the dispatch (it does that)
-            Gtk.shutdownGui();
-
-            // uses EDT
-            removeAll();
-            remove();  // remove ourselves from our parent
-        }
-    }
-
-    public
-    void setImage_(final File iconFile) {
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk.gtk_status_icon_set_from_file(trayIcon, iconFile.getAbsolutePath());
-
-                if (!isActive) {
-                    isActive = true;
-                    Gtk.gtk_status_icon_set_visible(trayIcon, true);
-                }
-            }
-        });
-
-        // needs to be on EDT
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                ((TrayPopup) _native).setTitleBarImage(iconFile);
-            }
-        });
-    }
-
-    public
-    void setEnabled(final boolean setEnabled) {
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (visible && !setEnabled) {
-                    Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
-                    visible = false;
-                } else if (!visible && setEnabled) {
-                    Gtk.gtk_status_icon_set_visible(trayIcon, setEnabled);
-                    visible = true;
-                }
-            }
-        });
+    boolean hasImage() {
+        return image != null;
     }
 }

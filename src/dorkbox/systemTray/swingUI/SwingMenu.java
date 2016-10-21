@@ -16,55 +16,51 @@
 package dorkbox.systemTray.swingUI;
 
 
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.Status;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuBase;
+import dorkbox.systemTray.util.MenuHook;
+import dorkbox.systemTray.util.Status;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
-// this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
+// this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class SwingMenu extends MenuBase implements SwingUI {
+class SwingMenu implements MenuHook {
 
-    // sub-menu = AdjustedJMenu
-    // systemtray = TrayPopup
-    volatile JComponent _native;
+    private final SwingMenu parent;
+    final JComponent _native;
 
-    // this have to be volatile, because they can be changed from any thread
-    private volatile String text;
     private volatile boolean hasLegitIcon = false;
 
-    /**
-     * Called in the EDT
-     *
-     * @param systemTray the system tray (which is the object that sits in the system tray)
-     * @param parent the parent of this menu, null if the parent is the system tray
-     * @param _native the native element that represents this menu
-     */
-    SwingMenu(final SystemTray systemTray, final Menu parent, final JComponent _native) {
-        super(systemTray, parent);
-        this._native = _native;
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    SwingMenu(final SwingMenu parent) {
+        this.parent = parent;
+
+        if (parent == null) {
+            this._native = new TrayPopup();
+        }
+        else {
+            this._native = new AdjustedJMenu();
+            parent._native.add(this._native);
+        }
     }
 
-    @Override
     protected final
     void dispatch(final Runnable runnable) {
         // this will properly check if we are running on the EDT
         SwingUtil.invokeLater(runnable);
     }
 
-    @Override
     protected final
     void dispatchAndWait(final Runnable runnable) {
         // this will properly check if we are running on the EDT
@@ -75,131 +71,16 @@ class SwingMenu extends MenuBase implements SwingUI {
         }
     }
 
-    // always called in the EDT
-    protected final
-    void renderText(final String text) {
-        ((JMenuItem) _native).setText(text);
-    }
-
-    @Override
-    public final
-    String getText() {
-        return text;
-    }
-
-    @Override
-    public final
-    void setText(final String newText) {
-        text = newText;
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                renderText(newText);
-            }
-        });
-    }
-
-    /**
-     * Will add a new menu entry
-     * NOT ALWAYS CALLED ON EDT
-     */
-    protected final
-    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = new SwingEntryItem(SwingMenu.this, callback);
-                    entry.setText(menuText);
-                    entry.setImage(imagePath);
-
-                    menuEntries.add(entry);
-                    value.set(entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-    /**
-     * Will add a new checkbox menu entry
-     * NOT ALWAYS CALLED ON DISPATCH
-     */
-    @Override
-    protected
-    Checkbox addCheckbox_(final String menuText, final ActionListener callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Checkbox> value = new AtomicReference<Checkbox>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry  = new SwingEntryCheckbox(SwingMenu.this, callback);
-                    entry.setText(menuText);
-
-                    menuEntries.add(entry);
-                    value.set((Checkbox) entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-    /**
-     * Will add a new sub-menu entry
-     * NOT ALWAYS CALLED ON EDT
-     */
-    protected final
-    Menu addMenu_(final String menuText, final File imagePath) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Menu> value = new AtomicReference<Menu>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = new SwingMenu(getSystemTray(), SwingMenu.this, new AdjustedJMenu());
-                    _native.add(((SwingMenu) entry)._native); // have to add it separately
-
-                    entry.setText(menuText);
-                    entry.setImage(imagePath);
-
-                    menuEntries.add(entry);
-                    value.set((Menu) entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-
-
-    // public here so that Swing/Gtk/AppIndicator can override this
     public
-    void setImage_(final File imageFile) {
+    boolean hasImage() {
+       return hasLegitIcon;
+    }
+
+    // is overridden in tray impl
+    @Override
+    public
+    void setImage(final MenuItem menuItem) {
+        final File imageFile = menuItem.getImage();
         hasLegitIcon = imageFile != null;
 
         dispatch(new Runnable() {
@@ -208,156 +89,115 @@ class SwingMenu extends MenuBase implements SwingUI {
             void run() {
                 if (imageFile != null) {
                     ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenuItem) _native).setIcon(origIcon);
+                    ((AdjustedJMenu) _native).setIcon(origIcon);
                 }
                 else {
-                    ((JMenuItem) _native).setIcon(null);
+                    ((AdjustedJMenu) _native).setIcon(null);
                 }
             }
         });
     }
 
-
-
-
-
-
-
+    // is overridden in tray impl
     @Override
     public
-    boolean hasImage() {
-        return hasLegitIcon;
-    }
-
-    // public here so that Swing/Gtk/AppIndicator can override this
-    @Override
-    public
-    void setEnabled(final boolean enabled) {
+    void setEnabled(final MenuItem menuItem) {
         dispatch(new Runnable() {
             @Override
             public
             void run() {
-                _native.setEnabled(enabled);
+                _native.setEnabled(menuItem.getEnabled());
             }
         });
     }
 
+
+    // is overridden in tray impl
+    @Override
+    public
+    void setText(final MenuItem menuItem) {
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                ((AdjustedJMenu) _native).setText(menuItem.getText());
+            }
+        });
+    }
+
+    @Override
+    public
+    void setCallback(final MenuItem menuItem) {
+        // can't have a callback for menus!
+    }
+
+    // is overridden in tray impl
+    @Override
+    public
+    void setShortcut(final MenuItem menuItem) {
+        char shortcut = menuItem.getShortcut();
+        // yikes...
+        final int vKey = SystemTrayFixes.getVirtualKey(shortcut);
+
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                ((AdjustedJMenu) _native).setMnemonic(vKey);
+            }
+        });
+    }
+
+    @Override
+    public
+    void add(final Menu parentMenu, final Entry entry, final int index) {
+        // must always be called on the EDT
+        dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (entry instanceof Menu) {
+                    SwingMenu swingMenu = new SwingMenu(SwingMenu.this);
+                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Separator) {
+                    SwingMenuItemSeparator swingEntrySeparator = new SwingMenuItemSeparator(SwingMenu.this);
+                    entry.bind(swingEntrySeparator, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Checkbox) {
+                    SwingMenuItemCheckbox swingEntryCheckbox = new SwingMenuItemCheckbox(SwingMenu.this);
+                    ((Checkbox) entry).bind(swingEntryCheckbox, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Status) {
+                    SwingMenuItemStatus swingEntryStatus = new SwingMenuItemStatus(SwingMenu.this);
+                    ((Status) entry).bind(swingEntryStatus, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof MenuItem) {
+                    SwingMenuItem swingMenuItem = new SwingMenuItem(SwingMenu.this);
+                    ((MenuItem) entry).bind(swingMenuItem, parentMenu, parentMenu.getSystemTray());
+                }
+            }
+        });
+    }
 
     /**
-     * NOT ALWAYS CALLED ON EDT
+     *  This removes all menu entries from this menu AND this menu from it's parent
      */
     @Override
-    public final
-    void addSeparator() {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    synchronized (menuEntries) {
-                        Entry entry = new SwingEntrySeparator(SwingMenu.this);
-                        menuEntries.add(entry);
-                    }
-                }
-            }
-        });
-    }
-
-// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//    public
-//    Entry addWidget(final JComponent widget) {
-//        if (widget == null) {
-//            throw new NullPointerException("Widget cannot be null");
-//        }
-//
-//        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-//
-//        dispatchAndWait(new Runnable() {
-//            @Override
-//            public
-//            void run() {
-//                synchronized (menuEntries) {
-//                    // must always be called on the EDT
-//                    Entry entry = new SwingEntryWidget(SwingMenu.this, widget);
-//                    value.set(entry);
-//                    menuEntries.add(entry);
-//                }
-//            }
-//        });
-//
-//        return value.get();
-//    }
-
-
-    // public here so that Swing/Gtk/AppIndicator can access this
-    public final
-    void setStatus(final String statusText) {
-        final SwingMenu _this = this;
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    SwingEntry menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (SwingEntry) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof Status) {
-                        // set the text or delete...
-
-                        if (statusText == null) {
-                            // delete
-                            remove(menuEntry);
-                        }
-                        else {
-                            // set text
-                            menuEntry.setText(statusText);
-                        }
-
-                    } else {
-                        // create a new one
-                        menuEntry = new SwingEntryStatus(_this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                }
-            }
-        });
-    }
-
-    @Override
-    public final
-    void setShortcut(final char key) {
-        if (_native instanceof JMenuItem) {
-            // yikes...
-            final int vKey = SystemTrayFixes.getVirtualKey(key);
-            dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    ((JMenuItem) _native).setMnemonic(vKey);
-                }
-            });
-        }
-    }
-
-    @Override
-    public final
+    public synchronized
     void remove() {
-        dispatchAndWait(new Runnable() {
+       dispatch(new Runnable() {
             @Override
             public
             void run() {
                 _native.setVisible(false);
-                if (_native instanceof TrayPopup) {
-                    ((TrayPopup) _native).close();
-                }
+                _native.removeAll();
 
-                SwingMenu parent = (SwingMenu) getParent();
                 if (parent != null) {
                     parent._native.remove(_native);
+                } else {
+                    // have to dispose of the tray popup hidden frame, otherwise the app will never close (because this will hold it open)
+                    ((TrayPopup) _native).close();
                 }
             }
         });

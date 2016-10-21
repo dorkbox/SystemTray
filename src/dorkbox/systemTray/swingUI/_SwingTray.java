@@ -26,6 +26,9 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Tray;
+
 /**
  * Class for handling all system tray interaction, via Swing.
  *
@@ -35,8 +38,8 @@ import javax.swing.JPopupMenu;
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
-public
-class _SwingTray extends SwingMenu {
+public final
+class _SwingTray extends Tray implements SwingUI {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;
 
@@ -46,7 +49,7 @@ class _SwingTray extends SwingMenu {
     // Called in the EDT
     public
     _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray, null, new TrayPopup());
+        super();
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
@@ -54,87 +57,124 @@ class _SwingTray extends SwingMenu {
         }
 
         _SwingTray.this.tray = SystemTray.getSystemTray();
-    }
 
-    public
-    void shutdown() {
-        dispatchAndWait(new Runnable() {
+        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+        final SwingMenu swingMenu = new SwingMenu(null) {
             @Override
             public
-            void run() {
-                removeAll();
-                remove();
+            void setEnabled(final MenuItem menuItem) {
+                dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        boolean enabled = menuItem.getEnabled();
 
-                tray.remove(trayIcon);
-            }
-        });
-    }
-
-    public
-    void setImage_(final File iconFile) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                final Image trayImage = new ImageIcon(iconFile.getAbsolutePath()).getImage();
-                trayImage.flush();
-
-                if (trayIcon == null) {
-                    // here we init. everything
-                    trayIcon = new TrayIcon(trayImage);
-
-                    JPopupMenu popupMenu = (JPopupMenu) _native;
-                    popupMenu.pack();
-                    popupMenu.setFocusable(true);
-
-                    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-                    //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                    // trayIcon.setToolTip("app name");
-
-                    trayIcon.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public
-                        void mousePressed(MouseEvent e) {
-                            TrayPopup popupMenu = (TrayPopup) _native;
-                            popupMenu.doShow(e.getPoint(), 0);
+                        if (visible && !enabled) {
+                            tray.remove(trayIcon);
+                            visible = false;
                         }
-                    });
-
-                    try {
-                        tray.add(trayIcon);
-                    } catch (AWTException e) {
-                        dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
+                        else if (!visible && enabled) {
+                            try {
+                                tray.add(trayIcon);
+                                visible = true;
+                            } catch (AWTException e) {
+                                dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
+                            }
+                        }
                     }
-                } else {
-                    trayIcon.setImage(trayImage);
-                }
-
-                ((TrayPopup) _native).setTitleBarImage(iconFile);
+                });
             }
-        });
-    }
 
-    @SuppressWarnings("Duplicates")
-    public
-    void setEnabled(final boolean setEnabled) {
-        dispatch(new Runnable() {
             @Override
             public
-            void run() {
-                if (visible && !setEnabled) {
-                    tray.remove(trayIcon);
-                    visible = false;
+            void setImage(final MenuItem menuItem) {
+                final File image = menuItem.getImage();
+                if (image == null) {
+                    return;
                 }
-                else if (!visible && setEnabled) {
-                    try {
-                        tray.add(trayIcon);
-                        visible = true;
-                    } catch (AWTException e) {
-                        dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
+
+                dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        // stupid java won't scale it right away, so we have to do this twice to get the correct size
+                        final Image trayImage = new ImageIcon(image.getAbsolutePath()).getImage();
+                        trayImage.flush();
+
+                        if (trayIcon == null) {
+                            // here we init. everything
+                            trayIcon = new TrayIcon(trayImage);
+
+                            JPopupMenu popupMenu = (JPopupMenu) _native;
+                            popupMenu.pack();
+                            popupMenu.setFocusable(true);
+
+                            // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
+                            //   they ALSO do not support tooltips, so we cater to the lowest common denominator
+                            // trayIcon.setToolTip("app name");
+
+                            trayIcon.addMouseListener(new MouseAdapter() {
+                                @Override
+                                public
+                                void mousePressed(MouseEvent e) {
+                                    TrayPopup popupMenu = (TrayPopup) _native;
+                                    popupMenu.doShow(e.getPoint(), 0);
+                                }
+                            });
+
+                            try {
+                                tray.add(trayIcon);
+                            } catch (AWTException e) {
+                                dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
+                            }
+                        } else {
+                            trayIcon.setImage(trayImage);
+                        }
+
+                        ((TrayPopup) _native).setTitleBarImage(image);
                     }
-                }
+                });
             }
-        });
+
+            @Override
+            public
+            void setText(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void setShortcut(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void remove() {
+                dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        if (trayIcon != null) {
+                            tray.remove(trayIcon);
+                            trayIcon = null;
+                        }
+
+                        tray = null;
+                    }
+                });
+
+                super.remove();
+            }
+        };
+
+
+        bind(swingMenu, null, systemTray);
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return tray.getTrayIcons().length > 0;
     }
 }
