@@ -16,102 +16,99 @@
 
 package dorkbox.systemTray;
 
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import dorkbox.systemTray.util.EntryHook;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
  */
+@SuppressWarnings({"unused", "SameParameterValue"})
 public
-interface Entry {
+class Entry {
+    private static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger(0);
+    private final int id = Entry.MENU_ID_COUNTER.getAndIncrement();
+
+    private Menu parent;
+    private SystemTray systemTray;
+
+    protected volatile EntryHook hook;
+
+    public
+    Entry() {
+    }
+
+    // methods for hooking into the system tray, menu's, and entries.
+    // called internally when an entry/menu is attached
 
     /**
-     * @return the menu that contains this menu entry
+     * @param hook the platform specific implementation for all actions for this type
+     * @param parent the parent of this menu, null if the parent is the system tray
+     * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    Menu getParent();
+    public synchronized
+    void bind(final EntryHook hook, final Menu parent, final SystemTray systemTray) {
+        this.parent = parent;
+        this.systemTray = systemTray;
+
+        this.hook = hook;
+    }
+
+    // END methods for hooking into the system tray, menu's, and entries.
+
 
     /**
-     * Enables, or disables the entry.
+     * @return the parent menu (of this entry or menu) or null if we are the root menu
      */
-    void setEnabled(final boolean enabled);
+    public final synchronized
+    Menu getParent() {
+        return this.parent;
+    }
 
     /**
-     * @return the text label that the menu entry has assigned
+     * @return the system tray that this menu is ultimately attached to
      */
-    String getText();
-
-    /**
-     * Specifies the new text to set for a menu entry
-     *
-     * @param newText the new text to set
-     */
-    void setText(String newText);
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageFile the file of the image to use or null
-     */
-    void setImage(File imageFile);
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imagePath the full path of the image to use or null
-     */
-    void setImage(String imagePath);
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageUrl the URL of the image to use or null
-     */
-    void setImage(URL imageUrl);
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use
-     */
-    void setImage(String cacheName, InputStream imageStream);
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
-     *
-     * @param imageStream the InputStream of the image to use
-     */
-    void setImage(InputStream imageStream);
-
-    /**
-     * @return true if this menu entry has an image assigned to it, or is just text.
-     */
-    boolean hasImage();
-
-    /**
-     * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry
-     *
-     * @param callback the callback to set. If null, the callback is safely removed.
-     */
-    void setCallback(ActionListener callback);
-
-    /**
-     * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.
-     *
-     * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
-     * of it will be underlined.
-     *
-     * @param key this is the key to set as the mnemonic
-     */
-    void setShortcut(char key);
+    public final synchronized
+    SystemTray getSystemTray() {
+        return this.systemTray;
+    }
 
     /**
      * Removes this menu entry from the menu and releases all system resources associated with this menu entry
      */
-    void remove();
+    public synchronized
+    void remove() {
+        if (hook != null) {
+            hook.remove();
+
+            this.parent = null;
+            this.systemTray = null;
+            hook = null;
+        }
+    }
+
+
+    @Override
+    public final
+    int hashCode() {
+        return id;
+    }
+
+
+    @Override
+    public final
+    boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        Entry other = (Entry) obj;
+        return this.id == other.id;
+    }
 }

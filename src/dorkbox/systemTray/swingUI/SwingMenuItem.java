@@ -33,7 +33,6 @@ class SwingMenuItem implements MenuItemHook {
     private final SwingMenu parent;
     private final JMenuItem _native = new AdjustedJMenuItem();
 
-    private volatile boolean hasLegitIcon = false;
     private volatile ActionListener swingCallback;
 
     // this is ALWAYS called on the EDT.
@@ -42,16 +41,10 @@ class SwingMenuItem implements MenuItemHook {
         parent._native.add(_native);
     }
 
-    public
-    boolean hasImage() {
-        return hasLegitIcon;
-    }
-
     @Override
     public
     void setImage(final MenuItem menuItem) {
         final File imageFile = menuItem.getImage();
-        hasLegitIcon = imageFile != null;
 
         SwingUtil.invokeLater(new Runnable() {
             @Override
@@ -92,6 +85,7 @@ class SwingMenuItem implements MenuItemHook {
         });
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public
     void setCallback(final MenuItem menuItem) {
@@ -100,7 +94,6 @@ class SwingMenuItem implements MenuItemHook {
         }
 
         if (menuItem.getCallback() != null) {
-            _native.setEnabled(true);
             swingCallback = new ActionListener() {
                 @Override
                 public
@@ -120,7 +113,6 @@ class SwingMenuItem implements MenuItemHook {
             _native.addActionListener(swingCallback);
         }
         else {
-            _native.setEnabled(false);
             swingCallback = null;
         }
     }

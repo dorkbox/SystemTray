@@ -20,7 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.jna.linux.Gobject;
@@ -74,7 +76,7 @@ import dorkbox.systemTray.util.ImageUtils;
  */
 @SuppressWarnings("Duplicates")
 public
-class _AppIndicatorNativeTray extends GtkMenu {
+class _AppIndicatorNativeTray extends Tray implements NativeUI {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
 
@@ -83,6 +85,8 @@ class _AppIndicatorNativeTray extends GtkMenu {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
+    private volatile File image;
+
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
@@ -90,9 +94,105 @@ class _AppIndicatorNativeTray extends GtkMenu {
 
     public
     _AppIndicatorNativeTray(final SystemTray systemTray) {
-        super(systemTray, null);
+        super();
 
         Gtk.startGui();
+
+        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+        final GtkMenu gtkMenu = new GtkMenu(null) {
+            /**
+             * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
+             */
+            protected final
+            void onMenuAdded(final Pointer menu) {
+                // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
+                AppIndicator.app_indicator_set_menu(appIndicator, menu);
+            }
+
+            @Override
+            public
+            void setEnabled(final MenuItem menuItem) {
+                Gtk.dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        boolean enabled = menuItem.getEnabled();
+
+                        if (visible && !enabled) {
+                            // STATUS_PASSIVE hides the indicator
+                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                            visible = false;
+                        }
+                        else if (!visible && enabled) {
+                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                            visible = true;
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public
+            void setImage(final MenuItem menuItem) {
+                image = menuItem.getImage();
+                if (image == null) {
+                    return;
+                }
+
+                Gtk.dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        AppIndicator.app_indicator_set_icon(appIndicator, image.getAbsolutePath());
+
+                        if (!isActive) {
+                            isActive = true;
+
+                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public
+            void setText(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void setShortcut(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void remove() {
+                // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
+                if (!shuttingDown.getAndSet(true)) {
+                    // must happen asap, so our hook properly notices we are in shutdown mode
+                    final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
+                    appIndicator = null;
+
+                    Gtk.dispatch(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            // STATUS_PASSIVE hides the indicator
+                            AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
+                            Pointer p = savedAppIndicator.getPointer();
+                            Gobject.g_object_unref(p);
+                        }
+                    });
+
+                    super.remove();
+
+                    // does not need to be called on the dispatch (it does that)
+                    Gtk.shutdownGui();
+                }
+            }
+        };
 
         Gtk.dispatch(new Runnable() {
             @Override
@@ -106,80 +206,13 @@ class _AppIndicatorNativeTray extends GtkMenu {
         });
 
         Gtk.waitForStartup();
-    }
 
-    public final
-    void shutdown() {
-        if (!shuttingDown.getAndSet(true)) {
-            // must happen asap, so our hook properly notices we are in shutdown mode
-            final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
-            appIndicator = null;
-
-            Gtk.dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // STATUS_PASSIVE hides the indicator
-                    AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
-                    Pointer p = savedAppIndicator.getPointer();
-                    Gobject.g_object_unref(p);
-                }
-            });
-
-            super.shutdown();
-        }
+        bind(gtkMenu, null, systemTray);
     }
 
     @Override
     public final
     boolean hasImage() {
-        return true;
-    }
-
-    @Override
-    public final
-    void setImage_(final File imageFile) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                AppIndicator.app_indicator_set_icon(appIndicator, imageFile.getAbsolutePath());
-
-                if (!isActive) {
-                    isActive = true;
-
-                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
-                }
-            }
-        });
-    }
-
-    @Override
-    public final
-    void setEnabled(final boolean setEnabled) {
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                 if (visible && !setEnabled) {
-                    // STATUS_PASSIVE hides the indicator
-                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
-                    visible = false;
-                }
-                else if (!visible && setEnabled) {
-                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
-                    visible = true;
-                }
-            }
-        });
-    }
-
-    /**
-     * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
-     */
-    protected final
-    void onMenuAdded(final Pointer menu) {
-        // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
-        AppIndicator.app_indicator_set_menu(appIndicator, menu);
+        return image != null;
     }
 }

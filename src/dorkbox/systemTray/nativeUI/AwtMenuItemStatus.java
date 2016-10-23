@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.nativeUI;
+
+import static java.awt.Font.DIALOG;
 
 import java.awt.Font;
-
-import javax.swing.JMenuItem;
+import java.awt.MenuItem;
 
 import dorkbox.systemTray.util.MenuStatusHook;
 import dorkbox.systemTray.util.Status;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemStatus implements MenuStatusHook {
+class AwtMenuItemStatus implements MenuStatusHook {
 
-    private final SwingMenu parent;
-    private final JMenuItem _native = new AdjustedJMenuItem();
+    private final AwtMenu parent;
+    private final MenuItem _native = new MenuItem();
 
-    // this is ALWAYS called on the EDT.
-    SwingMenuItemStatus(final SwingMenu parent) {
+    AwtMenuItemStatus(final AwtMenu parent) {
         this.parent = parent;
 
         // status is ALWAYS at 0 index...
-        parent._native.add(_native, 0);
+        parent._native.insert(_native, 0);
     }
 
     @Override
@@ -44,10 +44,15 @@ class SwingMenuItemStatus implements MenuStatusHook {
             public
             void run() {
                 Font font = _native.getFont();
-                Font font1 = font.deriveFont(Font.BOLD);
-                _native.setFont(font1);
+                if (font == null) {
+                    font = new Font(DIALOG, Font.BOLD, 12); // the default font used for dialogs.
+                }
+                else {
+                    font = font.deriveFont(Font.BOLD);
+                }
 
-                _native.setText(menuItem.getText());
+                _native.setFont(font);
+                _native.setLabel(menuItem.getText());
 
                 // this makes sure it can't be selected
                 _native.setEnabled(false);
@@ -63,7 +68,6 @@ class SwingMenuItemStatus implements MenuStatusHook {
             public
             void run() {
                 parent._native.remove(_native);
-                _native.removeAll();
             }
         });
     }

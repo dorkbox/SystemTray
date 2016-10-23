@@ -17,8 +17,27 @@
 package dorkbox.systemTray;
 
 /**
- * This represents a common menu-spacer entry, that is cross platform in nature
+ * This represents a common menu-spacer entry, that is cross platform in nature.
+ * <p>
+ * When menu entries are removed, any menu spacer that ends up at the top/bottom of the menu will also be removed.
+ * <p>
+ * For example:
+ * <pre> {@code
+ * Original     Entry3 deleted     Result
+ *
+ * <Status>         <Status>       <Status>
+ * Entry1           Entry1         Entry1
+ * Entry2      ->   Entry2    ->   Entry2
+ * <Spacer>         (deleted)
+ * Entry3           (deleted)
+ *
+ * }</pre>
  */
 public
-interface Separator {
+class Separator extends Entry {
+
+    public
+    Separator() {
+        super();
+    }
 }

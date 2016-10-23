@@ -86,7 +86,7 @@ public
 class _AppIndicatorTray extends Tray implements SwingUI {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
-    private final Runnable popupRunnable;
+    private volatile Runnable popupRunnable;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
     private AtomicBoolean shuttingDown = new AtomicBoolean();
@@ -113,142 +113,6 @@ class _AppIndicatorTray extends Tray implements SwingUI {
     _AppIndicatorTray(final SystemTray systemTray) {
         super();
 
-        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null) {
-            @Override
-            public
-            void setEnabled(final MenuItem menuItem) {
-                Gtk.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        boolean enabled = menuItem.getEnabled();
-
-                        if (visible && !enabled) {
-                            // STATUS_PASSIVE hides the indicator
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
-                            visible = false;
-                        }
-                        else if (!visible && enabled) {
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
-                            visible = true;
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public
-            void setImage(final MenuItem menuItem) {
-                image = menuItem.getImage();
-                if (image == null) {
-                    return;
-                }
-
-                Gtk.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        AppIndicator.app_indicator_set_icon(appIndicator, image.getAbsolutePath());
-
-                        if (!isActive) {
-                            isActive = true;
-
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
-
-                            // now we have to setup a way for us to catch the "activation" click on this menu. Must be after the menu is set
-                            hookMenuOpen();
-                        }
-                    }
-                });
-
-
-                // needs to be on EDT
-                dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        ((TrayPopup) _native).setTitleBarImage(image);
-                    }
-                });
-            }
-
-            @Override
-            public
-            void setText(final MenuItem menuItem) {
-                // no op
-            }
-
-            @Override
-            public
-            void setShortcut(final MenuItem menuItem) {
-                // no op
-            }
-
-            @Override
-            public
-            void remove() {
-                if (!shuttingDown.getAndSet(true)) {
-                    // must happen asap, so our hook properly notices we are in shutdown mode
-                    final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
-                    appIndicator = null;
-
-                    Gtk.dispatch(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // STATUS_PASSIVE hides the indicator
-                            AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
-                            Pointer p = savedAppIndicator.getPointer();
-                            Gobject.g_object_unref(p);
-                        }
-                    });
-
-                    // does not need to be called on the dispatch (it does that)
-                    Gtk.shutdownGui();
-
-                    super.remove();
-                }
-            }
-        };
-
-
-        TrayPopup popupMenu = (TrayPopup) swingMenu._native;
-        popupMenu.pack();
-        popupMenu.setFocusable(true);
-        popupMenu.setOnHideRunnable(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (appIndicator == null) {
-                    // if we are shutting down, don't hook the menu again
-                    return;
-                }
-
-                // Such ugly hacks to get AppIndicator support properly working. This is so horrible I am ashamed.
-                Gtk.dispatchAndWait(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        createAppIndicatorMenu();
-                        hookMenuOpen();
-                    }
-                });
-            }
-        });
-
-        popupRunnable = new Runnable() {
-            @Override
-            public
-            void run() {
-                Point point = MouseInfo.getPointerInfo()
-                                       .getLocation();
-
-                TrayPopup popupMenu = (TrayPopup) swingMenu._native;
-                popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
-            }
-        };
-
         Gtk.startGui();
 
         Gtk.dispatch(new Runnable() {
@@ -266,7 +130,148 @@ class _AppIndicatorTray extends Tray implements SwingUI {
 
         Gtk.waitForStartup();
 
-        bind(swingMenu, null, systemTray);
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+                final SwingMenu swingMenu = new SwingMenu(null) {
+                    @Override
+                    public
+                    void setEnabled(final MenuItem menuItem) {
+                        Gtk.dispatch(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                boolean enabled = menuItem.getEnabled();
+
+                                if (visible && !enabled) {
+                                    // STATUS_PASSIVE hides the indicator
+                                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                                    visible = false;
+                                }
+                                else if (!visible && enabled) {
+                                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                                    visible = true;
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public
+                    void setImage(final MenuItem menuItem) {
+                        image = menuItem.getImage();
+                        if (image == null) {
+                            return;
+                        }
+
+                        Gtk.dispatch(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                AppIndicator.app_indicator_set_icon(appIndicator, image.getAbsolutePath());
+
+                                if (!isActive) {
+                                    isActive = true;
+
+                                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+
+                                    // now we have to setup a way for us to catch the "activation" click on this menu. Must be after the menu is set
+                                    hookMenuOpen();
+                                }
+                            }
+                        });
+
+
+                        // needs to be on EDT
+                        SwingUtil.invokeLater(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                ((TrayPopup) _native).setTitleBarImage(image);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public
+                    void setText(final MenuItem menuItem) {
+                        // no op
+                    }
+
+                    @Override
+                    public
+                    void setShortcut(final MenuItem menuItem) {
+                        // no op
+                    }
+
+                    @Override
+                    public
+                    void remove() {
+                        if (!shuttingDown.getAndSet(true)) {
+                            // must happen asap, so our hook properly notices we are in shutdown mode
+                            final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
+                            appIndicator = null;
+
+                            Gtk.dispatch(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    // STATUS_PASSIVE hides the indicator
+                                    AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
+                                    Pointer p = savedAppIndicator.getPointer();
+                                    Gobject.g_object_unref(p);
+                                }
+                            });
+
+                            // does not need to be called on the dispatch (it does that)
+                            Gtk.shutdownGui();
+
+                            super.remove();
+                        }
+                    }
+                };
+
+                TrayPopup popupMenu = (TrayPopup) swingMenu._native;
+                popupMenu.pack();
+                popupMenu.setFocusable(true);
+                popupMenu.setOnHideRunnable(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        if (appIndicator == null) {
+                            // if we are shutting down, don't hook the menu again
+                            return;
+                        }
+
+                        // Such ugly hacks to get AppIndicator support properly working. This is so horrible I am ashamed.
+                        Gtk.dispatchAndWait(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                createAppIndicatorMenu();
+                                hookMenuOpen();
+                            }
+                        });
+                    }
+                });
+
+                popupRunnable = new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        Point point = MouseInfo.getPointerInfo()
+                                               .getLocation();
+
+                        TrayPopup popupMenu = (TrayPopup) swingMenu._native;
+                        popupMenu.doShow(point, SystemTray.DEFAULT_TRAY_SIZE);
+                    }
+                };
+
+                bind(swingMenu, null, systemTray);
+            }
+        });
     }
 
     private

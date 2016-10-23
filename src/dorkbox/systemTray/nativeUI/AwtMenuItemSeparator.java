@@ -16,42 +16,30 @@
 package dorkbox.systemTray.nativeUI;
 
 import java.awt.MenuItem;
-import java.awt.event.ActionListener;
-import java.io.File;
 
-class AwtEntrySeparator extends AwtEntry implements dorkbox.systemTray.Separator {
+import dorkbox.systemTray.util.EntryHook;
+import dorkbox.util.SwingUtil;
+
+class AwtMenuItemSeparator implements EntryHook {
+
+    private final AwtMenu parent;
+    private final MenuItem _native = new MenuItem("-");
+
 
     // this is ALWAYS called on the EDT.
-    AwtEntrySeparator(final AwtMenu parent) {
-        super(parent, new MenuItem("-"));
-    }
-
-    // called in the EDT thread
-    @Override
-    void renderText(final String text) {
-    }
-
-    @Override
-    void setImage_(final File imageFile) {
-    }
-
-    @Override
-    void removePrivate() {
+    AwtMenuItemSeparator(final AwtMenu parent) {
+        this.parent = parent;
     }
 
     @Override
     public
-    void setShortcut(final char key) {
-    }
-
-    @Override
-    public
-    boolean hasImage() {
-        return false;
-    }
-
-    @Override
-    public
-    void setCallback(final ActionListener callback) {
+    void remove() {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                parent._native.remove(_native);
+            }
+        });
     }
 }

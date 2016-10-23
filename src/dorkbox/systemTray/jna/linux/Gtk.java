@@ -59,6 +59,8 @@ class Gtk {
 
     private static final int TIMEOUT = 2;
 
+    private static final Object dispatchLock = new Object[0];
+
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
 
@@ -324,9 +326,12 @@ class Gtk {
                         void run() {
                             isDispatch = true;
 
-                            runnable.run();
+                            try {
+                                runnable.run();
+                            } finally {
+                                isDispatch = false;
+                            }
 
-                            isDispatch = false;
                         }
                     });
                 }
@@ -343,24 +348,27 @@ class Gtk {
                     public
                     int callback(final Pointer data) {
                         synchronized (gtkCallbacks) {
-                            gtkCallbacks.removeFirst();// now that we've 'handled' it, we can remove it from our callback list
+                            gtkCallbacks.removeFirst(); // now that we've 'handled' it, we can remove it from our callback list
+
+                            isDispatch = true;
+
+                            try {
+                                runnable.run();
+                            } finally {
+                                isDispatch = false;
+                                return Gtk.FALSE; // don't want to call this again
+                            }
                         }
-
-                        isDispatch = true;
-
-                        runnable.run();
-
-                        isDispatch = false;
-                        return Gtk.FALSE; // don't want to call this again
                     }
                 };
 
                 synchronized (gtkCallbacks) {
                     gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
+
+                    // the correct way to do it. Add with a slightly higher value
+                    gdk_threads_add_idle_full(100, callback, null, null);
                 }
 
-                // the correct way to do it. Add with a slightly higher value
-                gdk_threads_add_idle_full(100, callback, null, null);
             }
         }
     }
@@ -427,11 +435,9 @@ class Gtk {
 
         try {
             callback.actionPerformed(new ActionEvent(menuEntry, ActionEvent.ACTION_PERFORMED, ""));
-        } catch (Throwable throwable) {
-            SystemTray.logger.error("Error calling menu entry {} click event.", menuEntry.getText(), throwable);
+        } finally {
+            Gtk.isDispatch = false;
         }
-
-        Gtk.isDispatch = false;
     }
 
     /**
@@ -472,11 +478,11 @@ class Gtk {
     public static native Pointer gtk_image_menu_item_new_with_mnemonic(String label);
     public static native Pointer gtk_check_menu_item_new_with_mnemonic (String label);
 
-    public static native boolean gtk_check_menu_item_get_active (Pointer check_menu_item);
+    public static native void gtk_check_menu_item_set_active (Pointer check_menu_item, boolean isChecked);
 
     public static native void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
 
-    public static native void gtk_image_menu_item_set_always_show_image(Pointer menu_item, int forceShow);
+    public static native void gtk_image_menu_item_set_always_show_image(Pointer menu_item, boolean forceShow);
 
     public static native Pointer gtk_status_icon_new();
 
@@ -499,7 +505,7 @@ class Gtk {
 
     public static native void gtk_menu_shell_deactivate(Pointer menu_shell, Pointer child);
 
-    public static native void gtk_widget_set_sensitive(Pointer widget, int sensitive);
+    public static native void gtk_widget_set_sensitive(Pointer widget, boolean sensitive);
 
     public static native void gtk_container_remove(Pointer menu, Pointer subItem);
 

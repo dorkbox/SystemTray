@@ -17,7 +17,7 @@ package dorkbox.systemTray;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
-import java.awt.event.ActionListener;
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -58,8 +58,8 @@ import dorkbox.util.process.ShellProcessBuilder;
  * Factory and base-class for system tray implementations.
  */
 @SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
-public
-class SystemTray implements Menu {
+public final
+class SystemTray {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     public enum TrayType {
@@ -111,7 +111,7 @@ class SystemTray implements Menu {
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
+    public static TrayType FORCE_TRAY_TYPE = TrayType.Swing;
 
     @Property
     /**
@@ -130,7 +130,7 @@ class SystemTray implements Menu {
 
 
     private static volatile SystemTray systemTray = null;
-    private static volatile Menu systemTrayMenu = null;
+    private static volatile Tray systemTrayMenu = null;
 
     public final static boolean isJavaFxLoaded;
     public final static boolean isSwtLoaded;
@@ -163,7 +163,7 @@ class SystemTray implements Menu {
     }
 
     private static
-    Class<? extends Menu> selectType(final boolean useNativeMenus, final TrayType trayType) throws Exception {
+    Class<? extends Tray> selectType(final boolean useNativeMenus, final TrayType trayType) throws Exception {
         if (trayType == TrayType.GtkStatusIcon) {
             if (useNativeMenus) {
                 return _GtkStatusIconNativeTray.class;
@@ -192,7 +192,7 @@ class SystemTray implements Menu {
     }
 
     private static
-    Class<? extends Menu> selectTypeQuietly(final boolean useNativeMenus, final TrayType trayType) {
+    Class<? extends Tray> selectTypeQuietly(final boolean useNativeMenus, final TrayType trayType) {
         try {
             return selectType(useNativeMenus, trayType);
         } catch (Throwable t) {
@@ -225,7 +225,7 @@ class SystemTray implements Menu {
             throw new HeadlessException();
         }
 
-        Class<? extends Menu> trayType = null;
+        Class<? extends Tray> trayType = null;
 
         if (DEBUG) {
             logger.debug("OS: {}", System.getProperty("os.name"));
@@ -512,7 +512,7 @@ class SystemTray implements Menu {
             systemTrayMenu = null;
         }
         else {
-            final AtomicReference<Menu> reference = new AtomicReference<Menu>();
+            final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
             /*
              *  appIndicator/gtk require strings (which is the path)
@@ -562,12 +562,17 @@ class SystemTray implements Menu {
                 if (isJavaFxLoaded || isSwtLoaded ||
                     (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType != _AwtTray.class)) {
                     try {
-                        reference.set((Menu) trayType.getConstructors()[0].newInstance(systemTray));
+                        reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
                         logger.info("Successfully Loaded: {}", trayType.getSimpleName());
                     } catch (Exception e) {
                         logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
                     }
                 } else {
+                    if (trayType == _AwtTray.class) {
+                        // ensure awt toolkit is initialized.
+                        java.awt.Toolkit.getDefaultToolkit();
+                    }
+
                     // have to construct swing stuff inside the swing EDT
                     final Class<? extends Menu> finalTrayType = trayType;
                     SwingUtil.invokeAndWait(new Runnable() {
@@ -575,7 +580,7 @@ class SystemTray implements Menu {
                         public
                         void run() {
                             try {
-                                reference.set((Menu) finalTrayType.getConstructors()[0].newInstance(systemTray));
+                                reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(systemTray));
                                 logger.info("Successfully Loaded: {}", finalTrayType.getSimpleName());
                             } catch (Exception e) {
                                 logger.error("Unable to create tray type: '" + finalTrayType.getSimpleName() + "'", e);
@@ -681,25 +686,11 @@ class SystemTray implements Menu {
     public
     void shutdown() {
         // this will call "dispatchAndWait()" behind the scenes, so it is thread-safe
-        final Menu menu = systemTrayMenu;
-        if (menu instanceof _AppIndicatorTray) {
-            ((_AppIndicatorTray) menu).shutdown();
+        final Menu tray = systemTrayMenu;
+        if (tray != null) {
+            tray.remove();
         }
-        else if (menu instanceof _AppIndicatorNativeTray) {
-            ((_AppIndicatorNativeTray) menu).shutdown();
-        }
-        else if (menu instanceof _GtkStatusIconTray) {
-            ((_GtkStatusIconTray) menu).shutdown();
-        }
-        else if (menu instanceof _GtkStatusIconNativeTray) {
-            ((_GtkStatusIconNativeTray) menu).shutdown();
-        }
-        else if (menu instanceof _AwtTray) {
-            ((_AwtTray) menu).shutdown();
-        }
-        else if (menu instanceof _SwingTray) {
-            ((_SwingTray) menu).shutdown();
-        }
+
         systemTrayMenu = null;
     }
 
@@ -708,29 +699,12 @@ class SystemTray implements Menu {
      */
     public
     String getStatus() {
-        final Menu menu = systemTrayMenu;
+        final Tray tray = systemTrayMenu;
+        if (tray != null) {
+            return tray.getStatus();
+        }
 
-        if (menu instanceof _AppIndicatorTray) {
-            return ((_AppIndicatorTray) menu).getStatus();
-        }
-        else if (menu instanceof _AppIndicatorNativeTray) {
-            return ((_AppIndicatorNativeTray) menu).getStatus();
-        }
-        else if (menu instanceof _GtkStatusIconTray) {
-            return ((_GtkStatusIconTray) menu).getStatus();
-        }
-        else if (menu instanceof _GtkStatusIconNativeTray) {
-            return ((_GtkStatusIconNativeTray) menu).getStatus();
-        }
-        else if (menu instanceof _AwtTray) {
-            return ((_AwtTray) menu).getStatus();
-        }
-        else if (menu instanceof _SwingTray) {
-            return ((_SwingTray) menu).getStatus();
-        }
-        else {
-            return "";
-        }
+        return "";
     }
 
     /**
@@ -740,40 +714,10 @@ class SystemTray implements Menu {
      */
     public
     void setStatus(String statusText) {
-        final Menu menu = systemTrayMenu;
-
-        if (menu instanceof _AppIndicatorTray) {
-            ((_AppIndicatorTray) menu).setStatus(statusText);
+        final Tray tray = systemTrayMenu;
+        if (tray != null) {
+            tray.setStatus(statusText);
         }
-        else if (menu instanceof _AppIndicatorNativeTray) {
-            ((_AppIndicatorNativeTray) menu).setStatus(statusText);
-        }
-        else if (menu instanceof _GtkStatusIconTray) {
-            ((_GtkStatusIconTray) menu).setStatus(statusText);
-        }
-        else if (menu instanceof _GtkStatusIconNativeTray) {
-            ((_GtkStatusIconNativeTray) menu).setStatus(statusText);
-        }
-        else if (menu instanceof _AwtTray) {
-            ((_AwtTray) menu).setStatus(statusText);
-        }
-        else if (menu instanceof _SwingTray) {
-            ((_SwingTray) menu).setStatus(statusText);
-        }
-    }
-
-    /**
-     * @return the parent menu (of this menu) or null if we are the root menu
-     */
-    public
-    Menu getParent() {
-        return null;
-    }
-
-    @Override
-    public
-    SystemTray getSystemTray() {
-        return this;
     }
 
     /**
@@ -785,390 +729,165 @@ class SystemTray implements Menu {
     }
 
     /**
-     * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
-     * menu, will also be removed. For example:
-     *
-     * Original     Entry3 deleted     Result
-     *
-     * <Status>         <Status>       <Status>
-     * Entry1           Entry1         Entry1
-     * Entry2      ->   Entry2    ->   Entry2
-     * <Spacer>         (deleted)
-     * Entry3           (deleted)
-     */
-    public
-    void addSeparator() {
-        systemTrayMenu.addSeparator();
-    }
-
-    /**
      * Shows (if hidden), or hides (if showing) the system tray.
      */
-    @Override
     public
     void setEnabled(final boolean enabled) {
-        systemTrayMenu.setEnabled(enabled);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setEnabled(enabled);
+        }
     }
 
     /**
-     * Does nothing. You cannot get the text for the system tray
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageFile the file of the image to use or null
      */
-    @Override
     public
-    String getText() {
-        return "";
-    }
-
-    /**
-     * Does nothing. You cannot set the text for the system tray
-     */
-    @Override
-    public
-    void setText(final String newText) {
-        // NO OP.
+    void setImage(final File imageFile) {
+        setImage(imageFile, true);
     }
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
      *
      * @param imageFile the file of the image to use or null
+     * @param cacheImage true to cache the image (only if the image is resized as necessary)
      */
-    @Override
     public
-    void setImage(final File imageFile) {
+    void setImage(final File imageFile, final boolean cacheImage) {
         if (imageFile == null) {
             throw new NullPointerException("imageFile cannot be null!");
         }
 
-        systemTrayMenu.setImage(imageFile);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(imageFile, cacheImage);
+        }
+    }
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imagePath the full path of the image to use or null
+     */
+    public
+    void setImage(final String imagePath) {
+        setImage(imagePath, true);
     }
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
      *
      * @param imagePath the full path of the image to use or null
+     * @param cacheImage true to cache the image (only if the image is resized as necessary)
      */
-    @Override
     public
-    void setImage(final String imagePath) {
+    void setImage(final String imagePath, final boolean cacheImage) {
         if (imagePath == null) {
             throw new NullPointerException("imagePath cannot be null!");
         }
 
-        systemTrayMenu.setImage(imagePath);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(imagePath, cacheImage);
+        }
+    }
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *<p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageUrl the URL of the image to use or null
+     */
+    public
+    void setImage(final URL imageUrl) {
+        setImage(imageUrl, true);
     }
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
      *
      * @param imageUrl the URL of the image to use or null
+     * @param cacheImage true to cache the image (only if the image is resized as necessary)
      */
-    @Override
     public
-    void setImage(final URL imageUrl) {
+    void setImage(final URL imageUrl, final boolean cacheImage) {
         if (imageUrl == null) {
             throw new NullPointerException("imageUrl cannot be null!");
         }
 
-        systemTrayMenu.setImage(imageUrl);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use
-     */
-    @Override
-    public
-    void setImage(final String cacheName, final InputStream imageStream) {
-        if (cacheName == null) {
-            setImage(imageStream);
-        } else {
-            if (imageStream == null) {
-                throw new NullPointerException("imageStream cannot be null!");
-            }
-
-            systemTrayMenu.setImage(cacheName, imageStream);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(imageUrl);
         }
     }
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * This method **DOES NOT CACHE** the result, so multiple lookups for the same inputStream result in new files every time. This is
-     * also NOT RECOMMENDED, but is provided for simplicity.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
      *
      * @param imageStream the InputStream of the image to use
      */
-    @Override
     public
     void setImage(final InputStream imageStream) {
+        setImage(imageStream, true);
+    }
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     *
+     * @param imageStream the InputStream of the image to use
+     * @param cacheImage true to cache the image (only if the image is resized as necessary)
+     */
+    public
+    void setImage(final InputStream imageStream, final boolean cacheImage) {
         if (imageStream == null) {
             throw new NullPointerException("imageStream cannot be null!");
         }
 
-        systemTrayMenu.setImage(imageStream);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(imageStream);
+        }
     }
 
     /**
-     * By default, we always have an image for the system tray
-     */
-    @Override
-    public
-    boolean hasImage() {
-        return true;
-    }
-
-    /**
-     * Does nothing. The system tray cannot have a callback when opened
-     */
-    @Override
-    public
-    void setCallback(final ActionListener callback) {
-        // NO OP.
-    }
-
-    /**
-     * Does nothing. The system tray cannot be opened via a shortcut key
-     */
-    @Override
-    public
-    void setShortcut(final char key) {
-        // NO OP.
-    }
-
-    /**
-     * Removes the system tray. This is the same as calling `shutdown()`
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param image the image of the image to use
      */
     public
-    void remove() {
-        shutdown();
+    void setImage(final Image image) {
+        setImage(image, true);
     }
 
     /**
-     * Gets the menu entry for a specified text
+     * Specifies the new image to set for a menu entry, NULL to delete the image
      *
-     * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
-     */
-    public final
-    Entry get(final String menuText) {
-        return systemTrayMenu.get(menuText);
-    }
-
-    /**
-     * Gets the first menu entry, ignoring status and spacers
-     */
-    public final
-    Entry getFirst() {
-        return systemTrayMenu.getFirst();
-    }
-
-    /**
-     * Gets the last menu entry, ignoring status and spacers
-     */
-    public final
-    Entry getLast() {
-        return systemTrayMenu.getLast();
-    }
-
-    /**
-     * Gets the menu entry for a specified index (zero-index), ignoring status and spacers
+     * @param image the image of the image to use
+     * @param cacheImage true to cache the image (only if the image is resized as necessary)
      *
-     * @param menuIndex the menu entry index to use to retrieve the menu entry.
-     */
-    public final
-    Entry get(final int menuIndex) {
-        return systemTrayMenu.get(menuIndex);
-    }
-
-
-
-
-
-    /**
-     * Adds a menu entry to the tray icon with text (no image)
-     *
-     * @param menuText string of the text you want to appear
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    public final
-    Entry addEntry(String menuText, ActionListener callback) {
-        return addEntry(menuText, (String) null, callback);
-    }
-
-    /**
-     * Adds a menu entry to the tray icon with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imagePath the image (full path required) to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    public final
-    Entry addEntry(String menuText, String imagePath, ActionListener callback) {
-        return systemTrayMenu.addEntry(menuText, imagePath, callback);
-    }
-
-    /**
-     * Adds a menu entry to the tray icon with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageUrl the URL of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    public final
-    Entry addEntry(String menuText, URL imageUrl, ActionListener callback) {
-        return systemTrayMenu.addEntry(menuText, imageUrl, callback);
-    }
-
-    /**
-     * Adds a menu entry to the tray icon with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
      */
     public
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, ActionListener callback) {
-        return systemTrayMenu.addEntry(menuText, cacheName, imageStream, callback);
-    }
+    void setImage(final Image image, final boolean cacheImage) {
+        if (image == null) {
+            throw new NullPointerException("image cannot be null!");
+        }
 
-    /**
-     * Adds a menu entry to the tray icon with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    public final
-    Entry addEntry(String menuText, InputStream imageStream, ActionListener callback) {
-        return systemTrayMenu.addEntry(menuText, imageStream, callback);
-    }
-
-
-    /**
-     * Adds a check-box menu entry to the tray icon with text
-     *
-     * @param menuText string of the text you want to appear
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    @Override
-    public
-    Checkbox addCheckbox(final String menuText, final ActionListener callback) {
-        return systemTrayMenu.addCheckbox(menuText, callback);
-    }
-
-
-
-    /**
-     * Adds a sub-menu entry with text (no image)
-     *
-     * @param menuText string of the text you want to appear
-     */
-    public
-    Menu addMenu(String menuText) {
-        return addMenu(menuText, (String) null);
-    }
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imagePath the image (full path required) to use. If null, no image will be used
-     */
-    public
-    Menu addMenu(String menuText, String imagePath) {
-        return systemTrayMenu.addMenu(menuText, imagePath);
-    }
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageUrl the URL of the image to use. If null, no image will be used
-     */
-    public
-    Menu addMenu(String menuText, URL imageUrl) {
-        return systemTrayMenu.addMenu(menuText, imageUrl);
-    }
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     */
-    public
-    Menu addMenu(String menuText, String cacheName, InputStream imageStream) {
-        return systemTrayMenu.addMenu(menuText, cacheName, imageStream);
-    }
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     */
-    public
-    Menu addMenu(String menuText, InputStream imageStream) {
-        return systemTrayMenu.addMenu(menuText, imageStream);
-    }
-
-    /**
-     * Adds a swing widget as a menu entry.
-     *
-     * @param widget the JComponent that is to be added as an entry
-     */
-// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//    @Override
-//    public
-//    Entry addWidget(final JComponent widget) {
-//        return systemTrayMenu.addWidget(widget);
-//    }
-
-
-
-
-    /**
-     *  This removes a menu entry from the dropdown menu.
-     *
-     * @param entry This is the menu entry to remove
-     */
-    public final
-    void remove(final Entry entry) {
-        systemTrayMenu.remove(entry);
-    }
-
-    /**
-     *  This removes a sub-menu entry from the dropdown menu.
-     *
-     * @param menu This is the menu entry to remove
-     */
-    @Override
-    public final
-    void remove(final Menu menu) {
-        systemTrayMenu.remove(menu);
-    }
-
-    /**
-     *  This removes al menu entries from this menu
-     */
-    @Override
-    public final
-    void removeAll() {
-        systemTrayMenu.removeAll();
-    }
-
-    /**
-     *  This removes a menu entry (via the text label) from the dropdown menu.
-     *
-     * @param menuText This is the label for the menu entry to remove
-     */
-    public final
-    void remove(final String menuText) {
-        systemTrayMenu.remove(menuText);
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(image, cacheImage);
+        }
     }
 }
 

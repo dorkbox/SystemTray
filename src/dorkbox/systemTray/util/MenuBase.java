@@ -16,11 +16,7 @@
 package dorkbox.systemTray.util;
 
 
-import java.util.Iterator;
-
-import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.SystemTray;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -202,41 +198,7 @@ class MenuBase extends Menu {
 //        }
 //    }
 
-    // NOT ALWAYS CALLED ON EDT
-    protected
-    void remove__(final Object menuEntry) {
-        try {
-            synchronized (menuEntries) {
-                // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
-                // removed themselves from the menuEntries)
-                if (menuEntry != null) {
-                    for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                        final Entry entry = iterator.next();
-                        if (entry == menuEntry) {
-                            iterator.remove();
-                            entry.remove();
-                            break;
-                        }
-                    }
-                }
 
-                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                if (!menuEntries.isEmpty()) {
-                    if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
-                        remove(menuEntries.get(0));
-                    }
-                }
-                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-                if (!menuEntries.isEmpty()) {
-                    if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
-                        remove(menuEntries.get(menuEntries.size() - 1));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            SystemTray.logger.error("Error removing entry from menu.", e);
-        }
-    }
 
 //    /**
 //     *  This removes a menu entry or sub-menu (via the text label) from the dropdown menu.

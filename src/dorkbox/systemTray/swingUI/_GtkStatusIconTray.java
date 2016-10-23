@@ -34,6 +34,7 @@ import dorkbox.systemTray.jna.linux.GEventCallback;
 import dorkbox.systemTray.jna.linux.GdkEventButton;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.util.SwingUtil;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -59,121 +60,12 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File image;
+    private volatile Runnable popupRunnable;
 
     // called on the EDT
     public
     _GtkStatusIconTray(final SystemTray systemTray) {
         super();
-
-        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null) {
-            @Override
-            public
-            void setEnabled(final MenuItem menuItem) {
-                Gtk.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        boolean enabled = menuItem.getEnabled();
-
-                        if (visible && !enabled) {
-                            Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
-                            visible = false;
-                        }
-                        else if (!visible && enabled) {
-                            Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
-                            visible = true;
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public
-            void setImage(final MenuItem menuItem) {
-                image = menuItem.getImage();
-                if (image == null) {
-                    return;
-                }
-
-                Gtk.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        Gtk.gtk_status_icon_set_from_file(trayIcon, image.getAbsolutePath());
-
-                        if (!isActive) {
-                            isActive = true;
-                            Gtk.gtk_status_icon_set_visible(trayIcon, true);
-                        }
-                    }
-                });
-
-                // needs to be on EDT
-                dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        ((TrayPopup) _native).setTitleBarImage(image);
-                    }
-                });
-            }
-
-            @Override
-            public
-            void setText(final MenuItem menuItem) {
-                // no op
-            }
-
-            @Override
-            public
-            void setShortcut(final MenuItem menuItem) {
-                // no op
-            }
-
-            @Override
-            public
-            void remove() {
-                // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
-                if (!shuttingDown.getAndSet(true)) {
-                    Gtk.dispatch(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // this hides the indicator
-                            Gtk.gtk_status_icon_set_visible(trayIcon, false);
-                            Gobject.g_object_unref(trayIcon);
-
-                            // mark for GC
-                            trayIcon = null;
-                            gtkCallbacks.clear();
-                        }
-                    });
-
-                    // does not need to be called on the dispatch (it does that)
-                    Gtk.shutdownGui();
-
-                    super.remove();
-                }
-            }
-        };
-
-
-        JPopupMenu popupMenu = (JPopupMenu) swingMenu._native;
-        popupMenu.pack();
-        popupMenu.setFocusable(true);
-
-        final Runnable popupRunnable = new Runnable() {
-            @Override
-            public
-            void run() {
-                Point point = MouseInfo.getPointerInfo()
-                                       .getLocation();
-
-                TrayPopup popupMenu = (TrayPopup) swingMenu._native;
-                popupMenu.doShow(point, 0);
-            }
-        };
 
         Gtk.startGui();
 
@@ -181,8 +73,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
             @Override
             public
             void run() {
-                final Pointer trayIcon_ = Gtk.gtk_status_icon_new();
-                trayIcon = trayIcon_;
+                trayIcon = Gtk.gtk_status_icon_new();
 
                 final GEventCallback gtkCallback = new GEventCallback() {
                     @Override
@@ -192,7 +83,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                         // BUTTON_PRESS only (any mouse click)
                         if (event.type == 4) {
                             // show the swing menu on the EDT
-                            swingMenu.dispatch(popupRunnable);
+                            SwingUtil.invokeLater(popupRunnable);
                         }
                     }
                 };
@@ -233,7 +124,124 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
             }
         });
 
-        bind(swingMenu, null, systemTray);
+        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                final SwingMenu swingMenu = new SwingMenu(null) {
+                    @Override
+                    public
+                    void setEnabled(final MenuItem menuItem) {
+                        Gtk.dispatch(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                boolean enabled = menuItem.getEnabled();
+
+                                if (visible && !enabled) {
+                                    Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
+                                    visible = false;
+                                }
+                                else if (!visible && enabled) {
+                                    Gtk.gtk_status_icon_set_visible(trayIcon, enabled);
+                                    visible = true;
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public
+                    void setImage(final MenuItem menuItem) {
+                        image = menuItem.getImage();
+                        if (image == null) {
+                            return;
+                        }
+
+                        Gtk.dispatch(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                Gtk.gtk_status_icon_set_from_file(trayIcon, image.getAbsolutePath());
+
+                                if (!isActive) {
+                                    isActive = true;
+                                    Gtk.gtk_status_icon_set_visible(trayIcon, true);
+                                }
+                            }
+                        });
+
+                        // needs to be on EDT
+                        SwingUtil.invokeLater(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                ((TrayPopup) _native).setTitleBarImage(image);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public
+                    void setText(final MenuItem menuItem) {
+                        // no op
+                    }
+
+                    @Override
+                    public
+                    void setShortcut(final MenuItem menuItem) {
+                        // no op
+                    }
+
+                    @Override
+                    public
+                    void remove() {
+                        // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
+                        if (!shuttingDown.getAndSet(true)) {
+                            Gtk.dispatch(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    // this hides the indicator
+                                    Gtk.gtk_status_icon_set_visible(trayIcon, false);
+                                    Gobject.g_object_unref(trayIcon);
+
+                                    // mark for GC
+                                    trayIcon = null;
+                                    gtkCallbacks.clear();
+                                }
+                            });
+
+                            // does not need to be called on the dispatch (it does that)
+                            Gtk.shutdownGui();
+
+                            super.remove();
+                        }
+                    }
+                };
+
+
+                JPopupMenu popupMenu = (JPopupMenu) swingMenu._native;
+                popupMenu.pack();
+                popupMenu.setFocusable(true);
+
+                popupRunnable = new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        Point point = MouseInfo.getPointerInfo()
+                                               .getLocation();
+
+                        TrayPopup popupMenu = (TrayPopup) swingMenu._native;
+                        popupMenu.doShow(point, 0);
+                    }
+                };
+
+
+                bind(swingMenu, null, systemTray);
+            }
+        });
     }
 
     @Override

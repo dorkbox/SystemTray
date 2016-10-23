@@ -16,42 +16,61 @@
 package dorkbox.systemTray.nativeUI;
 
 
-import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.jna.linux.Gobject;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.MenuBase;
+import dorkbox.systemTray.util.MenuHook;
+import dorkbox.systemTray.util.Status;
 
-class GtkMenu extends MenuBase implements NativeUI {
-    // menu entry that this menu is attached to. Will be NULL when it's the system tray
-    private final GtkEntryItem menuEntry;
+class GtkMenu extends GtkMenuBaseItem implements MenuHook {
+    // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
+    private final List<GtkMenuBaseItem> menuEntries = new LinkedList<GtkMenuBaseItem>();
 
-    // must ONLY be created at the end of delete!
-    volatile Pointer _native;
+    private final GtkMenu parent;
+    volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
+
+    private final Pointer _nativeEntry; // is what is added to the parent menu, if we are NOT on the system tray
+    private volatile Pointer image;
+
+    // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
+    // AppIndicators will only show if you use the keyboard to navigate
+    // GtkStatusIconTray will show on mouse+keyboard movement
+    private volatile char mnemonicKey = 0;
 
     // have to make sure no other methods can call obliterate, delete, or create menu once it's already started
-    private boolean obliterateInProgress = false;
+    private volatile boolean obliterateInProgress = false;
 
-    // called on dispatch
-    GtkMenu(final SystemTray systemTray, final GtkMenu parent) {
-        super(systemTray, parent);
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    GtkMenu(final GtkMenu parent) {
+        this.parent = parent;
 
         if (parent != null) {
-            this.menuEntry = new GtkEntryItem(parent, null);
-            // by default, no callback on a menu entry means it's DISABLED. we have to undo that, because we don't have a callback for menus
-            menuEntry.setEnabled(true);
+            _nativeEntry = Gtk.gtk_image_menu_item_new_with_mnemonic(""); // is what is added to the parent menu
         } else {
-            this.menuEntry = null;
+            _nativeEntry = null;
+        }
+    }
+
+    GtkMenu getParent() {
+        return parent;
+    }
+
+    private
+    void add(final GtkMenuBaseItem item, final int index) {
+        if (index > 0) {
+            menuEntries.add(index, item);
+        } else {
+            menuEntries.add(item);
         }
     }
 
@@ -63,323 +82,53 @@ class GtkMenu extends MenuBase implements NativeUI {
         // only needed for AppIndicator
     }
 
-    /**
-     * Will add a new menu entry
-     * NOT ALWAYS CALLED ON DISPATCH
-     */
-    protected
-    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback) {
-        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
-        // see: https://bugs.launchpad.net/glipper/+bug/1203888
-
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        // have to wait for the value
-        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-
-        // must always be called on DISPATCH
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                    // To work around this issue, we destroy then recreate the menu every time something is changed.
-                    deleteMenu();
-
-                    Entry menuEntry = new GtkEntryItem(GtkMenu.this, callback);
-                    menuEntry.setText(menuText);
-                    menuEntry.setImage(imagePath);
-
-                    menuEntries.add(menuEntry);
-                    value.set(menuEntry);
-
-                    createMenu();
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-    /**
-     * Will add a new checkbox menu entry
-     * NOT ALWAYS CALLED ON DISPATCH
-     */
-    @Override
-    protected
-    Checkbox addCheckbox_(final String menuText, final ActionListener callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Checkbox> value = new AtomicReference<Checkbox>();
-
-        // must always be called on DISPATCH
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                    // To work around this issue, we destroy then recreate the menu every time something is changed.
-                    deleteMenu();
-
-                    Entry entry = new GtkEntryCheckbox(GtkMenu.this, callback);
-                    entry.setText(menuText);
-
-                    menuEntries.add(entry);
-                    value.set((Checkbox) entry);
-
-                    createMenu();
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-
-    /**
-     * Will add a new menu entry
-     * NOT ALWAYS CALLED ON DISPATCH
-     */
-    protected
-    Menu addMenu_(final String menuText, final File imagePath) {
-        // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
-        // see: https://bugs.launchpad.net/glipper/+bug/1203888
-
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Menu> value = new AtomicReference<Menu>();
-
-        // must always be called on DISPATCH
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                    // To work around this issue, we destroy then recreate the menu every time something is changed.
-                    deleteMenu();
-
-                    GtkMenu subMenu = new GtkMenu(getSystemTray(), GtkMenu.this);
-                    subMenu.setText(menuText);
-                    subMenu.setImage(imagePath);
-
-                    menuEntries.add(subMenu);
-                    value.set(subMenu);
-
-                    createMenu();
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-
-
-    /**
-     * Necessary to guarantee all updates occur on the dispatch thread
-     */
-    protected
-    void dispatch(final Runnable runnable) {
-        Gtk.dispatch(runnable);
-    }
-
-    /**
-     * Necessary to guarantee all updates occur on the dispatch thread
-     */
-    protected
-    void dispatchAndWait(final Runnable runnable) {
-        Gtk.dispatchAndWait(runnable);
-    }
-
-    public
-    void shutdown() {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                obliterateMenu();
-            }
-        });
-
-        // does not need to be called on the dispatch (it does that)
-        Gtk.shutdownGui();
-    }
-
-    // public here so that Swing/Gtk/AppIndicator can access this
-    public final
-    void setStatus(final String statusText) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                // To work around this issue, we destroy then recreate the menu every time something is changed.
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    GtkEntry menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (GtkEntry) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof GtkEntryStatus) {
-                        // always delete...
-                        remove(menuEntry);
-                    }
-
-                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                    // To work around this issue, we destroy then recreate the menu every time something is changed.
-                    deleteMenu();
-
-                    if (menuEntry == null) {
-                        menuEntry = new GtkEntryStatus(GtkMenu.this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                    else if (menuEntry instanceof GtkEntryStatus) {
-                        // change the text?
-                        if (statusText != null) {
-                            menuEntry = new GtkEntryStatus(GtkMenu.this, statusText);
-                            menuEntries.add(0, menuEntry);
-                        }
-                    }
-
-                    createMenu();
-                }
-            }
-        });
-    }
-
-    // public here so that Swing/Gtk/AppIndicator can override this
-    @Override
-    public
-    boolean hasImage() {
-        return menuEntry.hasImage();
-    }
-
-
-    // public here so that Swing/Gtk/AppIndicator can override this
-    @Override
-    protected
-    void setImage_(final File imageFile) {
-        menuEntry.setImage_(imageFile);
-    }
-
-    // public here so that Swing/Gtk/AppIndicator can override this
-    @Override
-    public
-    void setEnabled(final boolean enabled) {
-        if (enabled) {
-            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.TRUE);
-        } else {
-            Gtk.gtk_widget_set_sensitive(menuEntry._native, Gtk.FALSE);
-        }
-    }
-
-    @Override
-    public
-    String getText() {
-        return menuEntry.getText();
-    }
-
-    @Override
-    public
-    void setText(final String newText) {
-        menuEntry.setText(newText);
-    }
-
-    @Override
-    public final
-    void addSeparator() {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                // To work around this issue, we destroy then recreate the menu every time something is changed.
-                synchronized (menuEntries) {
-                    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                    // To work around this issue, we destroy then recreate the menu every time something is changed.
-                    deleteMenu();
-
-                    GtkEntry menuEntry = new GtkEntrySeparator(GtkMenu.this);
-                    menuEntries.add(menuEntry);
-
-                    createMenu();
-                }
-            }
-        });
-    }
-
-    @Override
-    public final
-    void setShortcut(final char key) {
-        menuEntry.setShortcut(key);
-    }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
     // To work around this issue, we destroy then recreate the menu every time something is changed.
     /**
      * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
      */
+    private
     void deleteMenu() {
         if (obliterateInProgress) {
             return;
         }
 
-        if (_native != null) {
+        if (_nativeMenu != null) {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                    final Entry menuEntry__ = menuEntries.get(i);
-                    if (menuEntry__ instanceof GtkEntry) {
-                        GtkEntry entry = (GtkEntry) menuEntry__;
-
-                        Gobject.g_object_force_floating(entry._native);
-                        Gtk.gtk_container_remove(_native, entry._native);
-                    }
-                    else if (menuEntry__ instanceof GtkMenu) {
-                        GtkMenu subMenu = (GtkMenu) menuEntry__;
-
-                        Gobject.g_object_force_floating(subMenu.menuEntry._native);
-                        Gtk.gtk_container_remove(_native, subMenu.menuEntry._native);
-                    }
+                    final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
+                    menuEntry__.onDeleteMenu(_nativeMenu);
                 }
 
-                Gtk.gtk_widget_destroy(_native);
+                Gtk.gtk_widget_destroy(_nativeMenu);
             }
         }
 
-        if (getParent() != null) {
-            ((GtkMenu) getParent()).deleteMenu();
+        if (parent != null) {
+            parent.deleteMenu();
         }
 
         // makes a new one
-        _native = Gtk.gtk_menu_new();
+        _nativeMenu = Gtk.gtk_menu_new();
 
         // binds sub-menu to entry (if it exists! it does not for the root menu)
-        if (menuEntry != null) {
-            Gtk.gtk_menu_item_set_submenu(menuEntry._native, _native);
+        if (parent != null) {
+            Gtk.gtk_menu_item_set_submenu(_nativeEntry, _nativeMenu);
         }
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
     // To work around this issue, we destroy then recreate the menu every time something is changed.
+    private
     void createMenu() {
         if (obliterateInProgress) {
             return;
         }
 
-        if (getParent() != null) {
-            ((GtkMenu) getParent()).createMenu();
+        if (parent != null) {
+            parent.createMenu();
         }
 
         boolean hasImages = false;
@@ -387,30 +136,17 @@ class GtkMenu extends MenuBase implements NativeUI {
         // now add back other menu entries
         synchronized (menuEntries) {
             for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                final Entry menuEntry__ = menuEntries.get(i);
+                final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
                 hasImages |= menuEntry__.hasImage();
             }
 
             for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                final Entry menuEntry__ = menuEntries.get(i);
                 // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
-                if (menuEntry__ instanceof GtkEntry) {
-                    GtkEntry entry = (GtkEntry) menuEntry__;
-                    entry.setSpacerImage(hasImages);
+                final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
+                menuEntry__.onCreateMenu(_nativeMenu, hasImages);
 
-                    // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-                    Gtk.gtk_menu_shell_append(this._native, entry._native);
-                    Gobject.g_object_ref_sink(entry._native);  // undoes "floating"
-                    Gtk.gtk_widget_show_all(entry._native);    // necessary to guarantee widget is visible
-                }
-                else if (menuEntry__ instanceof GtkMenu) {
+                if (menuEntry__ instanceof GtkMenu) {
                     GtkMenu subMenu = (GtkMenu) menuEntry__;
-
-                    // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-                    Gtk.gtk_menu_shell_append(this._native, subMenu.menuEntry._native);
-                    Gobject.g_object_ref_sink(subMenu.menuEntry._native);  // undoes "floating"
-                    Gtk.gtk_widget_show_all(subMenu.menuEntry._native);    // necessary to guarantee widget is visible
-
                     if (subMenu.getParent() != GtkMenu.this) {
                         // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
                         subMenu.createMenu();
@@ -418,8 +154,8 @@ class GtkMenu extends MenuBase implements NativeUI {
                 }
             }
 
-            onMenuAdded(_native);
-            Gtk.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
+            onMenuAdded(_nativeMenu);
+            Gtk.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
         }
     }
 
@@ -430,60 +166,228 @@ class GtkMenu extends MenuBase implements NativeUI {
      */
     private
     void obliterateMenu() {
-        if (_native != null && !obliterateInProgress) {
+        if (_nativeMenu != null && !obliterateInProgress) {
             obliterateInProgress = true;
 
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
                 // do this, errors will be had because indices don't line up anymore.
-                ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
+                ArrayList<GtkMenuBaseItem> menuEntriesCopy = new ArrayList<GtkMenuBaseItem>(this.menuEntries);
 
                 for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
-                    final Entry menuEntry__ = menuEntriesCopy.get(i);
+                    final GtkMenuBaseItem menuEntry__ = menuEntriesCopy.get(i);
                     menuEntry__.remove();
                 }
                 this.menuEntries.clear();
                 menuEntriesCopy.clear();
 
-                Gtk.gtk_widget_destroy(_native);
+                Gtk.gtk_widget_destroy(_nativeMenu);
+                _nativeMenu = null;
             }
 
             obliterateInProgress = false;
         }
     }
 
+    @Override
+    public
+    void add(final Menu parentMenu, final Entry entry, final int index) {
+        // must always be called on the GTK dispatch. This must be dispatchAndWait
+        Gtk.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+                // To work around this issue, we destroy then recreate the menu every time something is changed.
+                deleteMenu();
+
+                if (entry instanceof Menu) {
+                    // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
+                    // see: https://bugs.launchpad.net/glipper/+bug/1203888
+
+                    GtkMenu item = new GtkMenu(GtkMenu.this);
+                    add(item, index);
+                    ((Menu) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Separator) {
+                    GtkMenuItemSeparator item = new GtkMenuItemSeparator(GtkMenu.this);
+                    add(item, index);
+                    entry.bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Checkbox) {
+                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this);
+                    add(item, index);
+                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Status) {
+                    GtkMenuItemStatus item = new GtkMenuItemStatus(GtkMenu.this);
+                    add(item, index);
+                    ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof MenuItem) {
+                    GtkMenuItem item = new GtkMenuItem(GtkMenu.this);
+                    add(item, index);
+                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+
+                createMenu();
+            }
+        });
+    }
+
+
+    // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
+    // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
+    // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
+    @SuppressWarnings("Duplicates")
+    @Override
+    public
+    void setImage(final MenuItem menuItem) {
+        // is overridden by system tray
+        setLegitImage(menuItem.getImage() != null);
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (image != null) {
+                    Gtk.gtk_widget_destroy(image);
+                    image = null;
+                    Gtk.gtk_widget_show_all(_nativeEntry);
+                }
+
+                if (menuItem.getImage() != null) {
+                    image = Gtk.gtk_image_new_from_file(menuItem.getImage()
+                                                                .getAbsolutePath());
+                    Gtk.gtk_image_menu_item_set_image(_nativeEntry, image);
+
+                    //  must always re-set always-show after setting the image
+                    Gtk.gtk_image_menu_item_set_always_show_image(_nativeEntry, true);
+                }
+
+                Gtk.gtk_widget_show_all(_nativeEntry);
+            }
+        });
+    }
+
+    @Override
+    public
+    void setEnabled(final MenuItem menuItem) {
+        // is overridden by system tray
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                Gtk.gtk_widget_set_sensitive(_nativeEntry, menuItem.getEnabled());
+            }
+        });
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public
+    void setText(final MenuItem menuItem) {
+        // is overridden by system tray
+        final String textWithMnemonic;
+
+        if (mnemonicKey != 0) {
+            String text = menuItem.getText();
+
+            if (text != null) {
+                // they are CASE INSENSITIVE!
+                int i = text.toLowerCase()
+                            .indexOf(mnemonicKey);
+
+                if (i >= 0) {
+                    textWithMnemonic = text.substring(0, i) + "_" + text.substring(i);
+                }
+                else {
+                    textWithMnemonic = menuItem.getText();
+                }
+            } else {
+                textWithMnemonic = null;
+            }
+        }
+        else {
+            textWithMnemonic = menuItem.getText();
+        }
+
+        Gtk.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                Gtk.gtk_menu_item_set_label(_nativeEntry, textWithMnemonic);
+                Gtk.gtk_widget_show_all(_nativeEntry);
+            }
+        });
+    }
+
+    @Override
+    public
+    void setCallback(final MenuItem menuItem) {
+        // can't have a callback for menus!
+    }
+
+    @Override
+    public
+    void setShortcut(final MenuItem menuItem) {
+        this.mnemonicKey = Character.toLowerCase(menuItem.getShortcut());
+
+        setText(menuItem);
+    }
+
+
+    @Override
+    void onDeleteMenu(final Pointer parentNative) {
+        if (parent != null) {
+            onDeleteMenu(parentNative, _nativeEntry);
+        }
+    }
+
+    @Override
+    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
+        if (parent != null) {
+            onCreateMenu(parentNative, _nativeEntry, hasImagesInMenu);
+        }
+    }
+
+    // called when a child removes itself from the parent menu. Does not work for sub-menus
+    public
+    void remove(final GtkMenuBaseItem item) {
+        synchronized (menuEntries) {
+            menuEntries.remove(item);
+        }
+
+        // have to rebuild the menu now...
+        deleteMenu();
+        createMenu();
+    }
 
     // a child will always remove itself from the parent.
     @Override
     public
     void remove() {
-        dispatchAndWait(new Runnable() {
+        Gtk.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
-                GtkMenu parent = (GtkMenu) getParent();
+                GtkMenu parent = getParent();
 
-                // have to remove from the  parent.menuEntries first
-                for (Iterator<Entry> iterator = parent.menuEntries.iterator(); iterator.hasNext(); ) {
-                    final Entry entry = iterator.next();
-                    if (entry == GtkMenu.this) {
-                        iterator.remove();
-                        break;
+                if (parent != null) {
+                    // have to remove from the  parent.menuEntries first
+                    synchronized (parent.menuEntries) {
+                        parent.menuEntries.remove(GtkMenu.this);
                     }
                 }
-
-                // cleans up the menu
-//                parent.remove__(null);
 
                 // delete all of the children of this submenu (must happen before the menuEntry is removed)
                 obliterateMenu();
 
-                // remove the gtk entry item from our parent menu NATIVE components
-                // NOTE: this will rebuild the parent menu
-                if (menuEntry != null) {
-                    menuEntry.remove();
-                } else {
+                if (parent != null) {
+                    // remove the gtk entry item from our menu NATIVE components
+                    Gtk.gtk_menu_item_set_submenu(_nativeEntry, null);
+
                     // have to rebuild the menu now...
                     parent.deleteMenu();
                     parent.createMenu();

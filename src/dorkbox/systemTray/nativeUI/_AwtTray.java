@@ -24,20 +24,25 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Tray;
 import dorkbox.util.OS;
+import dorkbox.util.SwingUtil;
 
 /**
  * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
- * looks good
+ * looks good and works correctly.
  *
  * It doesn't work well on linux. See bugs:
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
+ *
+ * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
-class _AwtTray extends AwtMenu {
+class _AwtTray extends Tray implements NativeUI {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;
 
@@ -50,7 +55,7 @@ class _AwtTray extends AwtMenu {
     // Called in the EDT
     public
     _AwtTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray, null, new PopupMenu());
+        super();
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
@@ -58,111 +63,130 @@ class _AwtTray extends AwtMenu {
         }
 
         _AwtTray.this.tray = SystemTray.getSystemTray();
-    }
 
-    public
-    void shutdown() {
-        dispatchAndWait(new Runnable() {
+        // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
+        final AwtMenu awtMenu = new AwtMenu(null) {
             @Override
             public
-            void run() {
-                removeAll();
-                remove();
-
-                tray.remove(trayIcon);
-            }
-        });
-    }
-
-    public
-    void setImage_(final File iconFile) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                final Image trayImage = new ImageIcon(iconFile.getAbsolutePath()).getImage();
-                trayImage.flush();
-
-                if (trayIcon == null) {
-                    // here we init. everything
-                    trayIcon = new TrayIcon(trayImage);
-
-                    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-                    //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                    // trayIcon.setToolTip("app name");
-
-                    trayIcon.setPopupMenu((PopupMenu) _native);
-
-                    try {
-                        tray.add(trayIcon);
-                    } catch (AWTException e) {
-                        dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
-                    }
-                } else {
-                    trayIcon.setImage(trayImage);
-                }
-            }
-        });
-    }
-
-    @SuppressWarnings("Duplicates")
-    public
-    void setEnabled(final boolean setEnabled) {
-        if (OS.isMacOsX()) {
-            if (keepAliveThread != null) {
-                synchronized (keepAliveLock) {
-                    keepAliveLock.notifyAll();
-                }
-            }
-            keepAliveThread = null;
-
-            if (visible && !setEnabled) {
-                // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
-                // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
-                keepAliveThread = new Thread(new Runnable() {
+            void setEnabled(final MenuItem menuItem) {
+                SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
-                        synchronized (keepAliveLock) {
-                            keepAliveLock.notifyAll();
+                        boolean enabled = menuItem.getEnabled();
 
+                        if (OS.isMacOsX()) {
+                            if (keepAliveThread != null) {
+                                synchronized (keepAliveLock) {
+                                    keepAliveLock.notifyAll();
+                                }
+                            }
+                            keepAliveThread = null;
+
+                            if (visible && !enabled) {
+                                // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
+                                // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
+                                keepAliveThread = new Thread(new Runnable() {
+                                    @Override
+                                    public
+                                    void run() {
+                                        synchronized (keepAliveLock) {
+                                            keepAliveLock.notifyAll();
+
+                                            try {
+                                                keepAliveLock.wait();
+                                            } catch (InterruptedException ignored) {
+                                            }
+                                        }
+                                    }
+                                }, "TrayKeepAliveThread");
+                                keepAliveThread.start();
+                            }
+                        }
+
+                        if (visible && !enabled) {
+                            tray.remove(trayIcon);
+                            visible = false;
+                        }
+                        else if (!visible && enabled) {
                             try {
-                                keepAliveLock.wait();
-                            } catch (InterruptedException ignored) {
+                                tray.add(trayIcon);
+                                visible = true;
+                            } catch (AWTException e) {
+                                dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
                             }
                         }
                     }
-                }, "KeepAliveThread");
-                keepAliveThread.start();
+                });
             }
 
-            synchronized (keepAliveLock) {
-                try {
-                    keepAliveLock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        dispatch(new Runnable() {
             @Override
             public
-            void run() {
-                if (visible && !setEnabled) {
-                    tray.remove(trayIcon);
-                    visible = false;
+            void setImage(final MenuItem menuItem) {
+                final File image = menuItem.getImage();
+                if (image == null) {
+                    return;
                 }
-                else if (!visible && setEnabled) {
-                    try {
-                        tray.add(trayIcon);
-                        visible = true;
-                    } catch (AWTException e) {
-                        dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray");
+
+                SwingUtil.invokeLater(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        // stupid java won't scale it right away, so we have to do this twice to get the correct size
+                        final Image trayImage = new ImageIcon(image.getAbsolutePath()).getImage();
+                        trayImage.flush();
+
+                        if (trayIcon == null) {
+                            // here we init. everything
+                            trayIcon = new TrayIcon(trayImage);
+
+                            trayIcon.setPopupMenu((PopupMenu) _native);
+
+                            try {
+                                tray.add(trayIcon);
+                            } catch (AWTException e) {
+                                dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
+                            }
+                        } else {
+                            trayIcon.setImage(trayImage);
+                        }
                     }
-                }
+                });
             }
-        });
+
+            @Override
+            public
+            void setText(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void setShortcut(final MenuItem menuItem) {
+                // no op
+            }
+
+            @Override
+            public
+            void remove() {
+                SwingUtil.invokeLater(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        if (trayIcon != null) {
+                            trayIcon.setPopupMenu(null);
+                            tray.remove(trayIcon);
+                            trayIcon = null;
+                        }
+
+                        tray = null;
+                    }
+                });
+
+                super.remove();
+            }
+        };
+
+        bind(awtMenu, null, systemTray);
     }
 }

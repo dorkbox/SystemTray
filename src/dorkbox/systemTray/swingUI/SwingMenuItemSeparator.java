@@ -31,11 +31,6 @@ class SwingMenuItemSeparator implements EntryHook {
         parent._native.add(_native);
     }
 
-    public
-    boolean hasImage() {
-        return false;
-    }
-
     @Override
     public
     void remove() {

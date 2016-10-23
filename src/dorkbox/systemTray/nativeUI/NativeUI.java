@@ -15,6 +15,7 @@
  */
 package dorkbox.systemTray.nativeUI;
 
+
 /**
  * Represents a System Tray or menu, that will have it's menu rendered via the native subsystem.
  * <p>

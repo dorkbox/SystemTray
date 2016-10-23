@@ -18,319 +18,133 @@ package dorkbox.systemTray.nativeUI;
 
 import java.awt.MenuShortcut;
 import java.awt.PopupMenu;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.util.concurrent.atomic.AtomicReference;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.Status;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuBase;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Separator;
+import dorkbox.systemTray.util.MenuHook;
+import dorkbox.systemTray.util.Status;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class AwtMenu extends MenuBase implements NativeUI {
+class AwtMenu implements MenuHook {
 
-    // sub-menu = java.awt.Menu
-    // systemtray = java.awt.PopupMenu
     volatile java.awt.Menu _native;
+    private final AwtMenu parent;
 
-    // this have to be volatile, because they can be changed from any thread
-    private volatile String text;
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    AwtMenu(final AwtMenu parent) {
+        this.parent = parent;
 
-    /**
-     * Called in the EDT
-     *
-     * @param systemTray the system tray (which is the object that sits in the system tray)
-     * @param parent the parent of this menu, null if the parent is the system tray
-     * @param _native the native element that represents this menu
-     */
-    AwtMenu(final SystemTray systemTray, final Menu parent, final java.awt.Menu _native) {
-        super(systemTray, parent);
-        this._native = _native;
-    }
-
-    @Override
-    protected final
-    void dispatch(final Runnable runnable) {
-        // this will properly check if we are running on the EDT
-        SwingUtil.invokeLater(runnable);
-    }
-
-    @Override
-    protected final
-    void dispatchAndWait(final Runnable runnable) {
-        // this will properly check if we are running on the EDT
-        try {
-            SwingUtil.invokeAndWait(runnable);
-        } catch (Exception e) {
-            SystemTray.logger.error("Error processing event on the dispatch thread.", e);
+        if (parent == null) {
+            this._native = new PopupMenu();
+        }
+        else {
+            this._native = new java.awt.Menu();
+            parent._native.add(this._native);
         }
     }
 
-    // always called in the EDT
-    protected final
-    void renderText(final String text) {
-        _native.setLabel(text);
-    }
-
-    @Override
-    public final
-    String getText() {
-        return text;
-    }
-
-    @Override
-    public final
-    void setText(final String newText) {
-        text = newText;
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                renderText(newText);
-            }
-        });
-    }
-
-    /**
-     * Will add a new menu entry
-     * NOT ALWAYS CALLED ON EDT
-     */
-    protected final
-    Entry addEntry_(final String menuText, final File imagePath, final ActionListener callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = entry = new AwtEntryItem(AwtMenu.this, callback);
-                    entry.setText(menuText);
-                    entry.setImage(imagePath);
-
-                    menuEntries.add(entry);
-                    value.set(entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-    /**
-     * Will add a new checkbox menu entry
-     * NOT ALWAYS CALLED ON DISPATCH
-     */
-    @Override
-    protected
-    Checkbox addCheckbox_(final String menuText, final ActionListener callback) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Checkbox> value = new AtomicReference<Checkbox>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = new AwtEntryCheckbox(AwtMenu.this, callback);
-                    entry.setText(menuText);
-
-                    menuEntries.add(entry);
-                    value.set((Checkbox) entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-
-    /**
-     * Will add a new sub-menu entry
-     * NOT ALWAYS CALLED ON EDT
-     */
-    protected final
-    Menu addMenu_(final String menuText, final File imagePath) {
-        if (menuText == null) {
-            throw new NullPointerException("Menu text cannot be null");
-        }
-
-        final AtomicReference<Menu> value = new AtomicReference<Menu>();
-
-        // must always be called on the EDT
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    Entry entry = new AwtMenu(getSystemTray(), AwtMenu.this, new java.awt.Menu());
-                    _native.add(((AwtMenu) entry)._native); // have to add it to our native item separately
-
-                    entry.setText(menuText);
-                    entry.setImage(imagePath);
-
-                    menuEntries.add(entry);
-                    value.set((Menu) entry);
-                }
-            }
-        });
-
-        return value.get();
-    }
-
-
-
-    // public here so that Swing/Gtk/AppIndicator can override this
-    public
-    void setImage_(final File imageFile) {
-        // not supported!
-    }
-
-    // not supported!
     @Override
     public
-    boolean hasImage() {
-        return false;
+    void add(final Menu parentMenu, final Entry entry, final int index) {
+        // must always be called on the EDT
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (entry instanceof Menu) {
+                    AwtMenu swingMenu = new AwtMenu(AwtMenu.this);
+                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Separator) {
+                    AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
+                    entry.bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Checkbox) {
+                    AwtMenuItemCheckbox item = new AwtMenuItemCheckbox(AwtMenu.this);
+                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof Status) {
+                    AwtMenuItemStatus item = new AwtMenuItemStatus(AwtMenu.this);
+                    ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+                else if (entry instanceof MenuItem) {
+                    AwtMenuItem item = new AwtMenuItem(AwtMenu.this);
+                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                }
+            }
+        });
     }
 
-    // public here so that Swing/Gtk/AppIndicator can override this
     @Override
     public
-    void setEnabled(final boolean enabled) {
-        dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(enabled);
-            }
-        });
+    void setImage(final MenuItem menuItem) {
+        // no op. You can't have images in an awt menu
     }
 
-
-    /**
-     * NOT ALWAYS CALLED ON EDT
-     */
     @Override
-    public final
-    void addSeparator() {
-        dispatch(new Runnable() {
+    public
+    void setEnabled(final MenuItem menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
-                synchronized (menuEntries) {
-                    synchronized (menuEntries) {
-                        Entry entry = new AwtEntrySeparator(AwtMenu.this);
-                        menuEntries.add(entry);
-                    }
-                }
-            }
-        });
-    }
-
-// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//    public
-//    Entry addWidget(final JComponent widget) {
-//        if (widget == null) {
-//            throw new NullPointerException("Widget cannot be null");
-//        }
-//
-//        final AtomicReference<Entry> value = new AtomicReference<Entry>();
-//
-//        dispatchAndWait(new Runnable() {
-//            @Override
-//            public
-//            void run() {
-//                synchronized (menuEntries) {
-//                    // must always be called on the EDT
-//                    Entry entry = new SwingEntryWidget(SwingMenu.this, widget);
-//                    value.set(entry);
-//                    menuEntries.add(entry);
-//                }
-//            }
-//        });
-//
-//        return value.get();
-//    }
-
-
-    // public here so that Swing/Gtk/AppIndicator can access this
-    public final
-    void setStatus(final String statusText) {
-        final AwtMenu _this = this;
-        dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (menuEntries) {
-                    // status is ALWAYS at 0 index...
-                    AwtEntry menuEntry = null;
-                    if (!menuEntries.isEmpty()) {
-                        menuEntry = (AwtEntry) menuEntries.get(0);
-                    }
-
-                    if (menuEntry instanceof Status) {
-                        // set the text or delete...
-
-                        if (statusText == null) {
-                            // delete
-                            remove(menuEntry);
-                        }
-                        else {
-                            // set text
-                            menuEntry.setText(statusText);
-                        }
-
-                    } else {
-                        // create a new one
-                        menuEntry = new AwtEntryStatus(_this, statusText);
-                        // status is ALWAYS at 0 index...
-                        menuEntries.add(0, menuEntry);
-                    }
-                }
+                _native.setEnabled(menuItem.getEnabled());
             }
         });
     }
 
     @Override
-    public final
-    void setShortcut(final char key) {
-        if (!(_native instanceof PopupMenu)) {
-            // yikes...
-            final int vKey = SystemTrayFixes.getVirtualKey(key);
-
-            dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    _native.setShortcut(new MenuShortcut(vKey));
-                }
-            });
-        }
+    public
+    void setText(final MenuItem menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                _native.setLabel(menuItem.getText());
+            }
+        });
     }
 
     @Override
-    public final
+    public
+    void setCallback(final MenuItem menuItem) {
+        // can't have a callback for menus!
+    }
+
+    @Override
+    public
+    void setShortcut(final MenuItem menuItem) {
+        // yikes...
+        final int vKey = SystemTrayFixes.getVirtualKey(menuItem.getShortcut());
+
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                _native.setShortcut(new MenuShortcut(vKey));
+            }
+        });
+    }
+
+    @Override
+    public
     void remove() {
-        dispatchAndWait(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
-                AwtMenu parent = (AwtMenu) getParent();
+                _native.removeAll();
+                _native.deleteShortcut();
+                _native.setEnabled(false);
+                _native.removeNotify();
+
                 if (parent != null) {
                     parent._native.remove(_native);
                 }

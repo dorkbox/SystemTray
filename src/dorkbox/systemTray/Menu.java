@@ -15,169 +15,106 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.Image;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import dorkbox.systemTray.util.MenuHook;
+import dorkbox.systemTray.util.Status;
 
 /**
  * Represents a cross-platform menu that is displayed by the tray-icon or as a sub-menu
  */
+@SuppressWarnings("unused")
 public
-interface Menu extends Entry {
+class Menu extends MenuItem {
+    protected final List<Entry> menuEntries = new ArrayList<Entry>();
+
+    public
+    Menu() {
+    }
+
+    public
+    Menu(final String text) {
+        super(text);
+    }
+
+    public
+    Menu(final String text, final ActionListener callback) {
+        super(text, callback);
+    }
+
+    public
+    Menu(final String text, final String imagePath) {
+        super(text, imagePath);
+    }
+
+    public
+    Menu(final String text, final File imageFile) {
+        super(text, imageFile);
+    }
+
+    public
+    Menu(final String text, final URL imageUrl) {
+        super(text, imageUrl);
+    }
+
+    public
+    Menu(final String text, final InputStream imageStream) {
+        super(text, imageStream);
+    }
+
+    public
+    Menu(final String text, final Image image) {
+        super(text, image);
+    }
+
+    public
+    Menu(final String text, final String imagePath, final ActionListener callback) {
+        super(text, imagePath, callback);
+    }
+
+    public
+    Menu(final String text, final File imageFile, final ActionListener callback) {
+        super(text, imageFile, callback);
+    }
+
+    public
+    Menu(final String text, final URL imageUrl, final ActionListener callback) {
+        super(text, imageUrl, callback);
+    }
+
+    public
+    Menu(final String text, final InputStream imageStream, final ActionListener callback) {
+        super(text, imageStream, callback);
+    }
+
+    public
+    Menu(final String text, final Image image, final ActionListener callback) {
+        super(text, image, callback);
+    }
 
     /**
-     * @return the parent menu (of this menu) or null if we are the root menu
+     * @param hook the platform specific implementation for all actions for this type
+     * @param parent the parent of this menu, null if the parent is the system tray
+     * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    Menu getParent();
+    public synchronized
+    void bind(final MenuHook hook, final Menu parent, final SystemTray systemTray) {
+        super.bind(hook, parent, systemTray);
 
-    /**
-     * @return the system tray that this menu is ultimately attached to
-     */
-    SystemTray getSystemTray();
-
-    /**
-     * Adds a spacer to the dropdown menu. When menu entries are removed, any menu spacer that ends up at the top/bottom of the drop-down
-     * menu, will also be removed. For example:
-     *
-     * Original     Entry3 deleted     Result
-     *
-     * <Status>         <Status>       <Status>
-     * Entry1           Entry1         Entry1
-     * Entry2      ->   Entry2    ->   Entry2
-     * <Spacer>         (deleted)
-     * Entry3           (deleted)
-     */
-    void addSeparator();
-
-
-    /**
-     *  This removes al menu entries from this menu
-     */
-    void removeAll();
-
-    /**
-     * Gets the menu entry for a specified text
-     *
-     * @param menuText the menu entry text to use to find the menu entry. The first result found is returned
-     */
-    Entry get(final String menuText);
-
-    /**
-     * Gets the first menu entry or sub-menu, ignoring status and separators
-     */
-    Entry getFirst();
-
-    /**
-     * Gets the last menu entry or sub-menu, ignoring status and separators
-     */
-    Entry getLast();
-
-    /**
-     * Gets the menu entry or sub-menu for a specified index (zero-index), ignoring status and separators
-     *
-     * @param menuIndex the menu entry index to use to retrieve the menu entry.
-     */
-    Entry get(final int menuIndex);
-
-
-
-    /**
-     * Adds a menu entry with text (no image)
-     *
-     * @param menuText string of the text you want to appear
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Entry addEntry(String menuText, ActionListener callback);
-
-    /**
-     * Adds a menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imagePath the image (full path required) to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Entry addEntry(String menuText, String imagePath, ActionListener callback);
-
-    /**
-     * Adds a menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageUrl the URL of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Entry addEntry(String menuText, URL imageUrl, ActionListener callback);
-
-    /**
-     * Adds a menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Entry addEntry(String menuText, String cacheName, InputStream imageStream, ActionListener callback);
-
-    /**
-     * Adds a menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Entry addEntry(String menuText, InputStream imageStream, ActionListener callback);
-
-
-
-    /**
-     * Adds a check-box menu entry with text
-     *
-     * @param menuText string of the text you want to appear
-     * @param callback callback that will be executed when this menu entry is clicked
-     */
-    Checkbox addCheckbox(String menuText, ActionListener callback);
-
-
-
-    /**
-     * Adds a sub-menu entry with text (no image)
-     *
-     * @param menuText string of the text you want to appear
-     */
-    Menu addMenu(String menuText);
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imagePath the image (full path required) to use. If null, no image will be used
-     */
-    Menu addMenu(String menuText, String imagePath);
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageUrl the URL of the image to use. If null, no image will be used
-     */
-    Menu addMenu(String menuText, URL imageUrl);
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param cacheName @param cacheName the name to use for lookup in the cache for the imageStream
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     */
-    Menu addMenu(String menuText, String cacheName, InputStream imageStream);
-
-    /**
-     * Adds a sub-menu entry with text + image
-     *
-     * @param menuText string of the text you want to appear
-     * @param imageStream the InputStream of the image to use. If null, no image will be used
-     */
-    Menu addMenu(String menuText, InputStream imageStream);
-
+        synchronized (menuEntries) {
+            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                final Entry menuEntry = menuEntries.get(i);
+                hook.add(this, menuEntry, i);
+            }
+        }
+    }
 
     /**
      * Adds a swing widget as a menu entry.
@@ -185,27 +122,149 @@ interface Menu extends Entry {
      * @param widget the JComponent that is to be added as an entry
      */
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//    Entry addWidget(JComponent widget);
+//    Entry add(JComponent widget);
 
+    /**
+     * Adds a menu entry, separator, or sub-menu to this menu
+     */
+    public final
+    <T extends Entry> T add(final T entry) {
+        return add(entry, -1);
+    }
+
+    /**
+     * Adds a menu entry, separator, or sub-menu to this menu.
+     */
+    public final
+    <T extends Entry> T  add(final T entry, int index) {
+        synchronized (menuEntries) {
+            if (index == -1) {
+                menuEntries.add(entry);
+            } else {
+                if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
+                    // the "status" menu entry is ALWAYS first
+                    index++;
+                }
+                menuEntries.add(index, entry);
+            }
+        }
+
+        if (hook != null) {
+            ((MenuHook) hook).add(this, entry, index);
+        }
+
+        return entry;
+    }
+
+    /**
+     * Gets the first menu entry or sub-menu, ignoring status and separators
+     */
+    public final
+    Entry getFirst() {
+        return get(0);
+    }
+
+    /**
+     * Gets the last menu entry or sub-menu, ignoring status and separators
+     */
+    public final
+    Entry getLast() {
+        // Must be wrapped in a synchronized block for object visibility
+        synchronized (menuEntries) {
+            if (!menuEntries.isEmpty()) {
+                Entry entry;
+                for (int i = menuEntries.size()-1; i >= 0; i--) {
+                    entry = menuEntries.get(i);
+
+                    if (!(entry instanceof Separator || entry instanceof Status)) {
+                        return entry;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the menu entry or sub-menu for a specified index (zero-index), ignoring status and separators
+     *
+     * @param menuIndex the menu entry index to use to retrieve the menu entry.
+     */
+    public final
+    Entry get(final int menuIndex) {
+        if (menuIndex < 0) {
+            return null;
+        }
+
+        // Must be wrapped in a synchronized block for object visibility
+        synchronized (menuEntries) {
+            if (!menuEntries.isEmpty()) {
+                int count = 0;
+                for (Entry entry : menuEntries) {
+                    if (entry instanceof Separator || entry instanceof Status) {
+                        continue;
+                    }
+
+                    if (count == menuIndex) {
+                        return entry;
+                    }
+
+                    count++;
+                }
+            }
+        }
+
+        return null;
+    }
 
     /**
      *  This removes a menu entry from the dropdown menu.
      *
      * @param entry This is the menu entry to remove
      */
-    void remove(final Entry entry);
+    public final
+    void remove(final Entry entry) {
+        // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
+        // removed themselves from the menuEntries)
+        if (entry != null) {
+            synchronized (menuEntries) {
+                for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                    final Entry entry__ = iterator.next();
+                    if (entry__ == entry) {
+                        iterator.remove();
+                        entry.remove();
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     /**
-     *  This removes a sub-menu entry from the dropdown menu.
-     *
-     * @param menu This is the menu entry to remove
+     *  This removes all menu entries from this menu
      */
-    void remove(final Menu menu);
+    public final
+    void removeAll() {
+        synchronized (menuEntries) {
+            // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
+            ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
+            for (Entry entry : menuEntriesCopy) {
+                entry.remove();
+            }
+            menuEntries.clear();
+        }
+    }
+
 
     /**
-     *  This removes a menu entry or sub-menu (via the text label) from the dropdown menu.
-     *
-     * @param menuText This is the label for the menu entry or sub-menu to remove
+     *  This removes all menu entries from this menu AND this menu from it's parent
      */
-    void remove(final String menuText);
+    @Override
+    public synchronized
+    void remove() {
+        removeAll();
+
+        super.remove();
+    }
 }
