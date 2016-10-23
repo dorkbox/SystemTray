@@ -82,12 +82,14 @@ class AwtMenu implements MenuPeer {
         });
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setImage(final MenuItem menuItem) {
         // no op. You can't have images in an awt menu
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
@@ -100,6 +102,7 @@ class AwtMenu implements MenuPeer {
         });
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setText(final MenuItem menuItem) {
@@ -118,6 +121,7 @@ class AwtMenu implements MenuPeer {
         // can't have a callback for menus!
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setShortcut(final MenuItem menuItem) {

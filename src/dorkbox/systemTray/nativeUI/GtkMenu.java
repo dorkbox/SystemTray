@@ -239,6 +239,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
     // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
     // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
+
+    // is overridden in tray impl
     @SuppressWarnings("Duplicates")
     @Override
     public
@@ -270,6 +272,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         });
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
@@ -283,6 +286,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         });
     }
 
+    // is overridden in tray impl
     @SuppressWarnings("Duplicates")
     @Override
     public
@@ -322,12 +326,14 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         });
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setCallback(final MenuItem menuItem) {
         // can't have a callback for menus!
     }
 
+    // is overridden in tray impl
     @Override
     public
     void setShortcut(final MenuItem menuItem) {
