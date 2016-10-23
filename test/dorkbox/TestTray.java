@@ -21,8 +21,9 @@ import java.awt.event.ActionListener;
 import java.net.URL;
 
 import dorkbox.systemTray.Checkbox;
-import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 
 /**
@@ -51,7 +52,6 @@ class TestTray {
     }
 
     private SystemTray systemTray;
-    private ActionListener callbackGreen;
     private ActionListener callbackGray;
 
     public
@@ -61,23 +61,32 @@ class TestTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-//        final JPopupMenu popupMenu = new JPopupMenu();
-//        JMenu submenu2 = new JMenu("SubMenu1");
-//        submenu2.add("asdf");
-//        submenu2.add("asdf");
-//
-//        // Add submenu to popup menu
-//        popupMenu.add(submenu2);
-
-
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        callbackGreen = new ActionListener() {
+        callbackGray = new ActionListener() {
             @Override
             public
             void actionPerformed(final ActionEvent e) {
-                final Entry entry = (Entry) e.getSource();
+                final MenuItem entry = (MenuItem) e.getSource();
+                systemTray.setStatus(null);
+                systemTray.setImage(BLACK_TRAIN);
+
+                entry.setCallback(null);
+//                systemTray.setStatus("Mail Empty");
+                systemTray.getMenu().remove(entry);
+                System.err.println("POW");
+            }
+        };
+
+
+        Menu mainMenu = systemTray.getMenu();
+
+        MenuItem greenEntry = new MenuItem("Green Mail", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                final MenuItem entry = (MenuItem) e.getSource();
                 systemTray.setStatus("Some Mail!");
                 systemTray.setImage(GREEN_TRAIN);
 
@@ -86,76 +95,79 @@ class TestTray {
                 entry.setText("Delete Mail");
 //                systemTray.remove(menuEntry);
             }
-        };
+        });
+        greenEntry.setImage(GREEN_MAIL);
+        // case does not matter
+        greenEntry.setShortcut('G');
+        mainMenu.add(greenEntry);
 
-        callbackGray = new ActionListener() {
+
+        Checkbox checkbox = new Checkbox("Euro € Mail", new ActionListener() {
             @Override
             public
             void actionPerformed(final ActionEvent e) {
-                final Entry entry = (Entry) e.getSource();
-                systemTray.setStatus(null);
-                systemTray.setImage(BLACK_TRAIN);
-
-                entry.setCallback(null);
-//                systemTray.setStatus("Mail Empty");
-                systemTray.remove(entry);
-                System.err.println("POW");
-            }
-        };
-
-        Entry menuEntry = this.systemTray.addEntry("Green Mail", GREEN_MAIL, callbackGreen);
-        // case does not matter
-        menuEntry.setShortcut('G');
-
-        final Checkbox menuCheckbox = this.systemTray.addCheckbox("Euro € Mail", callbackGreen);
-        // case does not matter
-//        menuCheckbox.setShortcut('€');
-
-        this.systemTray.addSeparator();
-
-        final Menu submenu = this.systemTray.addMenu("Options", BLUE_CAMPING);
-        submenu.setShortcut('t');
-        submenu.addEntry("Disable menu", BLACK_BUS, new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                submenu.setEnabled(false);
+                System.err.println("Am i checked? " + ((Checkbox) e.getSource()).getChecked());
             }
         });
+        checkbox.setShortcut('€');
+        mainMenu.add(checkbox);
+
+        mainMenu.add(new Separator());
+
+
+        Menu submenu = new Menu("Options", BLUE_CAMPING);
+        submenu.setShortcut('t');
+        mainMenu.add(submenu);
+
+        MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                MenuItem source = (MenuItem) e.getSource();
+                source.getParent().setEnabled(false);
+            }
+        });
+        submenu.add(disableMenu);
+
+
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//        submenu.addEntry("Add widget", GREEN_BUS, new Action() {
+//        submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, new ActionListener() {
 //            @Override
 //            public
-//            void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
+//            void actionPerformed(final ActionEvent e) {
+//                MenuItem source = (MenuItem) e.getSource();
 //                JProgressBar progressBar = new JProgressBar(0, 100);
 //                progressBar.setValue(new Random().nextInt(101));
 //                progressBar.setStringPainted(true);
-//                systemTray.addWidget(progressBar);
+//                source.getSystemTray().add(progressBar);
 //            }
-//        });
-        submenu.addEntry("Hide tray", LT_GRAY_BUS, new ActionListener() {
+//        }));
+
+
+        submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, new ActionListener() {
             @Override
             public
             void actionPerformed(final ActionEvent e) {
                 systemTray.setEnabled(false);
             }
-        });
-        submenu.addEntry("Remove menu", BLACK_FIRE, new ActionListener() {
+        }));
+        submenu.add(new MenuItem("Remove menu", BLACK_FIRE, new ActionListener() {
             @Override
             public
             void actionPerformed(final ActionEvent e) {
-                submenu.remove();
+                MenuItem source = (MenuItem) e.getSource();
+                source.getParent().remove();
             }
-        });
+        }));
 
 
-        systemTray.addEntry("Quit", new ActionListener() {
+        systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
             @Override
             public
             void actionPerformed(final ActionEvent e) {
                 systemTray.shutdown();
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
-        }).setShortcut('q'); // case does not matter
+        })).setShortcut('q'); // case does not matter
     }
 }

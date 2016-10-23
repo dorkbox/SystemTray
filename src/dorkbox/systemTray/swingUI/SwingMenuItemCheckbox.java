@@ -24,12 +24,12 @@ import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.systemTray.util.MenuCheckboxHook;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemCheckbox implements MenuCheckboxHook {
+class SwingMenuItemCheckbox implements CheckboxPeer {
 
     private final SwingMenu parent;
     private final JMenuItem _native = new AdjustedJMenuItem();

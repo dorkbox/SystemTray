@@ -26,10 +26,10 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.systemTray.util.MenuCheckboxHook;
 
-class GtkMenuItemCheckbox extends GtkMenuBaseItem implements MenuCheckboxHook, GCallback {
+class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
     private static File transparentIcon = null;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})

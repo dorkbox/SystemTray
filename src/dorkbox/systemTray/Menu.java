@@ -24,8 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import dorkbox.systemTray.util.MenuHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.peer.MenuPeer;
 
 /**
  * Represents a cross-platform menu that is displayed by the tray-icon or as a sub-menu
@@ -33,7 +32,7 @@ import dorkbox.systemTray.util.Status;
 @SuppressWarnings("unused")
 public
 class Menu extends MenuItem {
-    protected final List<Entry> menuEntries = new ArrayList<Entry>();
+    final List<Entry> menuEntries = new ArrayList<Entry>();
 
     public
     Menu() {
@@ -100,19 +99,17 @@ class Menu extends MenuItem {
     }
 
     /**
-     * @param hook the platform specific implementation for all actions for this type
+     * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
     public synchronized
-    void bind(final MenuHook hook, final Menu parent, final SystemTray systemTray) {
-        super.bind(hook, parent, systemTray);
+    void bind(final MenuPeer peer, final Menu parent, final SystemTray systemTray) {
+        super.bind(peer, parent, systemTray);
 
-        synchronized (menuEntries) {
-            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                final Entry menuEntry = menuEntries.get(i);
-                hook.add(this, menuEntry, i);
-            }
+        for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+            final Entry menuEntry = menuEntries.get(i);
+            peer.add(this, menuEntry, i);
         }
     }
 
@@ -135,22 +132,20 @@ class Menu extends MenuItem {
     /**
      * Adds a menu entry, separator, or sub-menu to this menu.
      */
-    public final
+    public synchronized
     <T extends Entry> T  add(final T entry, int index) {
-        synchronized (menuEntries) {
-            if (index == -1) {
-                menuEntries.add(entry);
-            } else {
-                if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
-                    // the "status" menu entry is ALWAYS first
-                    index++;
-                }
-                menuEntries.add(index, entry);
+        if (index == -1) {
+            menuEntries.add(entry);
+        } else {
+            if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
+                // the "status" menu entry is ALWAYS first
+                index++;
             }
+            menuEntries.add(index, entry);
         }
 
-        if (hook != null) {
-            ((MenuHook) hook).add(this, entry, index);
+        if (peer != null) {
+            ((MenuPeer) peer).add(this, entry, index);
         }
 
         return entry;
@@ -167,18 +162,16 @@ class Menu extends MenuItem {
     /**
      * Gets the last menu entry or sub-menu, ignoring status and separators
      */
-    public final
+    public synchronized
     Entry getLast() {
         // Must be wrapped in a synchronized block for object visibility
-        synchronized (menuEntries) {
-            if (!menuEntries.isEmpty()) {
-                Entry entry;
-                for (int i = menuEntries.size()-1; i >= 0; i--) {
-                    entry = menuEntries.get(i);
+        if (!menuEntries.isEmpty()) {
+            Entry entry;
+            for (int i = menuEntries.size()-1; i >= 0; i--) {
+                entry = menuEntries.get(i);
 
-                    if (!(entry instanceof Separator || entry instanceof Status)) {
-                        return entry;
-                    }
+                if (!(entry instanceof Separator || entry instanceof Status)) {
+                    return entry;
                 }
             }
         }
@@ -191,27 +184,25 @@ class Menu extends MenuItem {
      *
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
-    public final
+    public synchronized
     Entry get(final int menuIndex) {
         if (menuIndex < 0) {
             return null;
         }
 
         // Must be wrapped in a synchronized block for object visibility
-        synchronized (menuEntries) {
-            if (!menuEntries.isEmpty()) {
-                int count = 0;
-                for (Entry entry : menuEntries) {
-                    if (entry instanceof Separator || entry instanceof Status) {
-                        continue;
-                    }
-
-                    if (count == menuIndex) {
-                        return entry;
-                    }
-
-                    count++;
+        if (!menuEntries.isEmpty()) {
+            int count = 0;
+            for (Entry entry : menuEntries) {
+                if (entry instanceof Separator || entry instanceof Status) {
+                    continue;
                 }
+
+                if (count == menuIndex) {
+                    return entry;
+                }
+
+                count++;
             }
         }
 
@@ -223,19 +214,30 @@ class Menu extends MenuItem {
      *
      * @param entry This is the menu entry to remove
      */
-    public final
+    public synchronized
     void remove(final Entry entry) {
         // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
         // removed themselves from the menuEntries)
         if (entry != null) {
-            synchronized (menuEntries) {
-                for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                    final Entry entry__ = iterator.next();
-                    if (entry__ == entry) {
-                        iterator.remove();
-                        entry.remove();
-                        break;
-                    }
+            for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                final Entry entry__ = iterator.next();
+                if (entry__ == entry) {
+                    iterator.remove();
+                    entry.remove();
+                    break;
+                }
+            }
+
+            // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+            if (!menuEntries.isEmpty()) {
+                if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
+                    remove(menuEntries.get(0));
+                }
+            }
+            // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+            if (!menuEntries.isEmpty()) {
+                if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
+                    remove(menuEntries.get(menuEntries.size() - 1));
                 }
             }
         }
@@ -244,16 +246,14 @@ class Menu extends MenuItem {
     /**
      *  This removes all menu entries from this menu
      */
-    public final
+    public synchronized
     void removeAll() {
-        synchronized (menuEntries) {
-            // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
-            ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
-            for (Entry entry : menuEntriesCopy) {
-                entry.remove();
-            }
-            menuEntries.clear();
+        // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
+        ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
+        for (Entry entry : menuEntriesCopy) {
+            entry.remove();
         }
+        menuEntries.clear();
     }
 
 

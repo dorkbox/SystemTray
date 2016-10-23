@@ -21,17 +21,16 @@ import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuCheckboxHook;
+import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
-class AwtMenuItemCheckbox implements MenuCheckboxHook {
+class AwtMenuItemCheckbox implements CheckboxPeer {
 
     private final AwtMenu parent;
     private final java.awt.CheckboxMenuItem _native = new java.awt.CheckboxMenuItem();
 
     private volatile ActionListener swingCallback;
-
 
     // this is ALWAYS called on the EDT.
     AwtMenuItemCheckbox(final AwtMenu parent) {

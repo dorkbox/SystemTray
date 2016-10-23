@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.systemTray;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import dorkbox.systemTray.util.EntryHook;
+import dorkbox.systemTray.peer.EntryPeer;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -32,7 +31,7 @@ class Entry {
     private Menu parent;
     private SystemTray systemTray;
 
-    protected volatile EntryHook hook;
+    protected volatile EntryPeer peer;
 
     public
     Entry() {
@@ -42,16 +41,16 @@ class Entry {
     // called internally when an entry/menu is attached
 
     /**
-     * @param hook the platform specific implementation for all actions for this type
+     * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
     public synchronized
-    void bind(final EntryHook hook, final Menu parent, final SystemTray systemTray) {
+    void bind(final EntryPeer peer, final Menu parent, final SystemTray systemTray) {
         this.parent = parent;
         this.systemTray = systemTray;
 
-        this.hook = hook;
+        this.peer = peer;
     }
 
     // END methods for hooking into the system tray, menu's, and entries.
@@ -78,12 +77,12 @@ class Entry {
      */
     public synchronized
     void remove() {
-        if (hook != null) {
-            hook.remove();
+        if (peer != null) {
+            peer.remove();
 
             this.parent = null;
             this.systemTray = null;
-            hook = null;
+            peer = null;
         }
     }
 

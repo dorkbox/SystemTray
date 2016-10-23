@@ -24,14 +24,14 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
-import dorkbox.systemTray.util.MenuHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.Status;
+import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class AwtMenu implements MenuHook {
+class AwtMenu implements MenuPeer {
 
     volatile java.awt.Menu _native;
     private final AwtMenu parent;

@@ -41,14 +41,14 @@ import dorkbox.util.SwingUtil;
  * <p/>
  * This is the "old" way to do it, and does not work with some desktop environments. This is a hybrid class, because we want to show the
  * swing menu popup INSTEAD of GTK menu popups. The "golden standard" is our swing menu popup, since we have 100% control over it.
+ *
+ * http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
+ * https://github.com/djdeath/glib/blob/master/gobject/gobject.c
  */
 @SuppressWarnings("Duplicates")
 public
 class _GtkStatusIconTray extends Tray implements SwingUI {
     private volatile Pointer trayIcon;
-
-    // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c
-    // https://github.com/djdeath/glib/blob/master/gobject/gobject.c
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
     private final List<Object> gtkCallbacks = new ArrayList<Object>();

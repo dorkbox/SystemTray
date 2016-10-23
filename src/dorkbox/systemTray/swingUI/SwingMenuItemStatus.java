@@ -19,11 +19,11 @@ import java.awt.Font;
 
 import javax.swing.JMenuItem;
 
-import dorkbox.systemTray.util.MenuStatusHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.Status;
+import dorkbox.systemTray.peer.StatusPeer;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemStatus implements MenuStatusHook {
+class SwingMenuItemStatus implements StatusPeer {
 
     private final SwingMenu parent;
     private final JMenuItem _native = new AdjustedJMenuItem();

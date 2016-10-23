@@ -25,9 +25,9 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.MenuItemHook;
+import dorkbox.systemTray.peer.MenuItemPeer;
 
-class GtkMenuItem extends GtkMenuBaseItem implements MenuItemHook, GCallback {
+class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
 

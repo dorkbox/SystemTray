@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package dorkbox.systemTray;
 
-package dorkbox.systemTray.util;
-
-import dorkbox.systemTray.Entry;
-import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.peer.StatusPeer;
 
 /**
  * This represents a common menu-status entry, that is cross platform in nature
@@ -32,21 +29,21 @@ class Status extends Entry {
     }
 
     /**
-     * @param hook the platform specific implementation for all actions for this type
+     * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
     public synchronized
-    void bind(final MenuStatusHook hook, final Menu parent, final SystemTray systemTray) {
-        super.bind(hook, parent, systemTray);
+    void bind(final StatusPeer peer, final Menu parent, final SystemTray systemTray) {
+        super.bind(peer, parent, systemTray);
 
-        hook.setText(this);
+        peer.setText(this);
     }
 
     /**
      * @return the text label that the menu entry has assigned
      */
-    public final
+    public synchronized
     String getText() {
         return text;
     }
@@ -56,12 +53,12 @@ class Status extends Entry {
      *
      * @param text the new text to set
      */
-    public
+    public synchronized
     void setText(final String text) {
         this.text = text;
 
-        if (hook != null) {
-            ((MenuStatusHook) hook).setText(this);
+        if (peer != null) {
+            ((StatusPeer) peer).setText(this);
         }
     }
 }

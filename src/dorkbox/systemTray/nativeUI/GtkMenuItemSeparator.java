@@ -18,9 +18,9 @@ package dorkbox.systemTray.nativeUI;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.EntryHook;
+import dorkbox.systemTray.peer.EntryPeer;
 
-class GtkMenuItemSeparator extends GtkMenuBaseItem implements EntryHook {
+class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
 
     private final GtkMenu parent;
     private final Pointer _native = Gtk.gtk_separator_menu_item_new();

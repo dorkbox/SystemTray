@@ -17,13 +17,13 @@ package dorkbox.systemTray.nativeUI;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.Status;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.MenuStatusHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.peer.StatusPeer;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
 // where a GtkStatusIconTray + SwingUI will have everything lined up. (with or without icons).  This is to normalize how it looks
-class GtkMenuItemStatus extends GtkMenuBaseItem implements MenuStatusHook {
+class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
 
     private final GtkMenu parent;
     private final Pointer _native = Gtk.gtk_image_menu_item_new_with_mnemonic("");

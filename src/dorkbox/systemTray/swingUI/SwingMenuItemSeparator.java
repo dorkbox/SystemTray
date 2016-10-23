@@ -17,10 +17,10 @@ package dorkbox.systemTray.swingUI;
 
 import javax.swing.JSeparator;
 
-import dorkbox.systemTray.util.EntryHook;
+import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemSeparator implements EntryHook {
+class SwingMenuItemSeparator implements EntryPeer {
 
     private final SwingMenu parent;
     private final JSeparator _native = new JSeparator(JSeparator.HORIZONTAL);

@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.swingUI;
 
-
 import java.io.File;
 
 import javax.swing.ImageIcon;
@@ -26,15 +25,14 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.Status;
+import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class SwingMenu implements MenuHook {
+class SwingMenu implements MenuPeer {
 
     final JComponent _native;
     private final SwingMenu parent;
@@ -89,12 +87,11 @@ class SwingMenu implements MenuHook {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        final File imageFile = menuItem.getImage();
-
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
+                File imageFile = menuItem.getImage();
                 if (imageFile != null) {
                     ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
                     ((AdjustedJMenu) _native).setIcon(origIcon);
@@ -178,42 +175,5 @@ class SwingMenu implements MenuHook {
                 }
             }
         });
-    }
-
-
-    // NOT ALWAYS CALLED ON EDT
-    protected
-    void remove__(final Object menuEntry) {
-        try {
-//            synchronized (menuEntries) {
-//                // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
-//                // removed themselves from the menuEntries)
-//                if (menuEntry != null) {
-//                    for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-//                        final Entry entry = iterator.next();
-//                        if (entry == menuEntry) {
-//                            iterator.remove();
-//                            entry.remove();
-//                            break;
-//                        }
-//                    }
-//                }
-//
-//                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-//                if (!menuEntries.isEmpty()) {
-//                    if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
-//                        remove(menuEntries.get(0));
-//                    }
-//                }
-//                // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-//                if (!menuEntries.isEmpty()) {
-//                    if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
-//                        remove(menuEntries.get(menuEntries.size() - 1));
-//                    }
-//                }
-//            }
-        } catch (Exception e) {
-            SystemTray.logger.error("Error removing entry from menu.", e);
-        }
     }
 }

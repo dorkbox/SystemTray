@@ -34,5 +34,7 @@
     <orderEntry type="module" module-name="JavaLauncher-Util" />
     <orderEntry type="library" name="jna" level="application" />
     <orderEntry type="library" name="SWT" level="project" />
+    <orderEntry type="library" name="asm" level="application" />
+    <orderEntry type="library" name="javassist" level="application" />
   </component>
 </module>

@@ -23,9 +23,8 @@ package dorkbox.systemTray.nativeUI;
  * the system (with the exception of Windows, whose native menu looks absolutely terrible).
  * <p>
  * Noticeable differences that are limitations for the NativeUI only:
- *  - AppIndicator Status entries must be plain text (they are not bold as they are everywhere else).
- *  - MacOS cannot have images in their menu or sub-menu's -- only plain text is possible
+ * - AppIndicator Status entries must be plain text (they are not bold as they are everywhere else).
+ * - MacOS cannot have images in their menu or sub-menu's -- only plain text is possible
  */
 public
-interface NativeUI
-{}
+interface NativeUI {}

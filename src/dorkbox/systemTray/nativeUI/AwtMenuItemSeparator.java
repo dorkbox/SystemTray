@@ -17,10 +17,10 @@ package dorkbox.systemTray.nativeUI;
 
 import java.awt.MenuItem;
 
-import dorkbox.systemTray.util.EntryHook;
+import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.util.SwingUtil;
 
-class AwtMenuItemSeparator implements EntryHook {
+class AwtMenuItemSeparator implements EntryPeer {
 
     private final AwtMenu parent;
     private final MenuItem _native = new MenuItem("-");

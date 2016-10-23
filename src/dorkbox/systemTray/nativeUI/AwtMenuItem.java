@@ -21,11 +21,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuItemHook;
+import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
-class AwtMenuItem implements MenuItemHook {
+class AwtMenuItem implements MenuItemPeer {
 
     private final AwtMenu parent;
     private final MenuItem _native = new java.awt.MenuItem();
@@ -116,6 +116,7 @@ class AwtMenuItem implements MenuItemHook {
         });
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public
     void remove() {

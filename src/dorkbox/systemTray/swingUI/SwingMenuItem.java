@@ -24,11 +24,11 @@ import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.util.MenuItemHook;
+import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItem implements MenuItemHook {
+class SwingMenuItem implements MenuItemPeer {
 
     private final SwingMenu parent;
     private final JMenuItem _native = new AdjustedJMenuItem();
@@ -44,12 +44,11 @@ class SwingMenuItem implements MenuItemHook {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        final File imageFile = menuItem.getImage();
-
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
+                File imageFile = menuItem.getImage();
                 if (imageFile != null) {
                     ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
                     _native.setIcon(origIcon);

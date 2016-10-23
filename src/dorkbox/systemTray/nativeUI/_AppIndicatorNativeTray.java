@@ -157,13 +157,13 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             @Override
             public
             void setText(final MenuItem menuItem) {
-                // no op
+                // no op.
             }
 
             @Override
             public
             void setShortcut(final MenuItem menuItem) {
-                // no op
+                // no op.
             }
 
             @Override

@@ -38,7 +38,7 @@ import dorkbox.util.SwingUtil;
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
  *
- * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open
+ * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open. MacOS does not have this problem.
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public
@@ -157,7 +157,7 @@ class _AwtTray extends Tray implements NativeUI {
             @Override
             public
             void setText(final MenuItem menuItem) {
-                // no op
+                // no op.
             }
 
             @Override

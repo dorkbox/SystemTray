@@ -13,33 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.systemTray;
 
 import java.awt.event.ActionListener;
 
-import dorkbox.systemTray.util.MenuCheckboxHook;
+import dorkbox.systemTray.peer.CheckboxPeer;
 
 /**
  * This represents a common menu-checkbox entry, that is cross platform in nature
  */
+@SuppressWarnings("unused")
 public
 class Checkbox extends Entry {
-    private volatile boolean isChecked = false;
-    private volatile String text;
-    private volatile ActionListener callback;
+    private boolean isChecked = false;
+    private String text;
+    private ActionListener callback;
 
-    private volatile boolean enabled = true;
-    private volatile char mnemonicKey;
+    private boolean enabled = true;
+    private char mnemonicKey;
 
     public
     Checkbox() {
         this(null, null);
-    }
-
-    public
-    Checkbox(final String text) {
-        this(text, null);
     }
 
     public
@@ -48,57 +43,74 @@ class Checkbox extends Entry {
         this.callback = callback;
     }
 
+    public
+    Checkbox(final String text) {
+        this(text, null);
+    }
+
     /**
-     * @param hook the platform specific implementation for all actions for this type
+     * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
     public synchronized
-    void bind(final MenuCheckboxHook hook, final Menu parent, final SystemTray systemTray) {
-        super.bind(hook, parent, systemTray);
+    void bind(final CheckboxPeer peer, final Menu parent, final SystemTray systemTray) {
+        super.bind(peer, parent, systemTray);
 
-        hook.setEnabled(this);
-        hook.setText(this);
-        hook.setCallback(this);
-        hook.setShortcut(this);
-        hook.setChecked(this);
+        peer.setEnabled(this);
+        peer.setText(this);
+        peer.setCallback(this);
+        peer.setShortcut(this);
+        peer.setChecked(this);
     }
 
+    /**
+     * @return true if this checkbox is selected, false if not.
+     */
+    public synchronized
+    boolean getChecked() {
+        return isChecked;
+    }
 
     /**
      * Sets the checked status for this entry
      *
      * @param checked true to show the checkbox, false to hide it
      */
-    public
+    public synchronized
     void setChecked(boolean checked) {
         this.isChecked = checked;
 
-        if (hook != null) {
-            ((MenuCheckboxHook) hook).setChecked(this);
+        if (peer != null) {
+            ((CheckboxPeer) peer).setChecked(this);
         }
-    }
-
-    /**
-     * @return true if this checkbox is selected, false if not.
-     */
-    public final
-    boolean getChecked() {
-        return isChecked;
     }
 
     /**
      * Gets the callback assigned to this menu entry
      */
-    public
+    public synchronized
     ActionListener getCallback() {
         return callback;
     }
 
     /**
+     * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry
+     *
+     * @param callback the callback to set. If null, the callback is safely removed.
+     */
+    public synchronized
+    void setCallback(final ActionListener callback) {
+        this.callback = callback;
+        if (peer != null) {
+            ((CheckboxPeer) peer).setCallback(this);
+        }
+    }
+
+    /**
      * @return true if this item is enabled, or false if it is disabled.
      */
-    public
+    public synchronized
     boolean getEnabled() {
         return this.enabled;
     }
@@ -106,19 +118,19 @@ class Checkbox extends Entry {
     /**
      * Enables, or disables the entry.
      */
-    public
+    public synchronized
     void setEnabled(final boolean enabled) {
         this.enabled = enabled;
 
-        if (hook != null) {
-            ((MenuCheckboxHook) hook).setEnabled(this);
+        if (peer != null) {
+            ((CheckboxPeer) peer).setEnabled(this);
         }
     }
 
     /**
      * @return the text label that the menu entry has assigned
      */
-    public final
+    public synchronized
     String getText() {
         return text;
     }
@@ -128,54 +140,41 @@ class Checkbox extends Entry {
      *
      * @param text the new text to set
      */
-    public
+    public synchronized
     void setText(final String text) {
         this.text = text;
 
-        if (hook != null) {
-            ((MenuCheckboxHook) hook).setText(this);
-        }
-    }
-
-    /**
-     * Sets a callback for a menu entry. This is the action that occurs when one clicks the menu entry
-     *
-     * @param callback the callback to set. If null, the callback is safely removed.
-     */
-    public
-    void setCallback(final ActionListener callback) {
-        this.callback = callback;
-        if (hook != null) {
-            ((MenuCheckboxHook) hook).setCallback(this);
+        if (peer != null) {
+            ((CheckboxPeer) peer).setText(this);
         }
     }
 
     /**
      * Gets the shortcut key for this menu entry (Mnemonic) which is what menu entry uses to be "selected" via the keyboard while the
      * menu is displayed.
-     *
+     * <p>
      * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
      * of it will be underlined.
      */
-    public
+    public synchronized
     char getShortcut() {
         return this.mnemonicKey;
     }
 
     /**
      * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.
-     *
+     * <p>
      * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
      * of it will be underlined.
      *
      * @param key this is the key to set as the mnemonic
      */
-    public
+    public synchronized
     void setShortcut(final char key) {
         this.mnemonicKey = key;
 
-        if (hook != null) {
-            ((MenuCheckboxHook) hook).setShortcut(this);
+        if (peer != null) {
+            ((CheckboxPeer) peer).setShortcut(this);
         }
     }
 }

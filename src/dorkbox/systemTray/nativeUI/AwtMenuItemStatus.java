@@ -20,11 +20,11 @@ import static java.awt.Font.DIALOG;
 import java.awt.Font;
 import java.awt.MenuItem;
 
-import dorkbox.systemTray.util.MenuStatusHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.Status;
+import dorkbox.systemTray.peer.StatusPeer;
 import dorkbox.util.SwingUtil;
 
-class AwtMenuItemStatus implements MenuStatusHook {
+class AwtMenuItemStatus implements StatusPeer {
 
     private final AwtMenu parent;
     private final MenuItem _native = new MenuItem();

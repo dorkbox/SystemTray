@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,13 +26,13 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
+import dorkbox.systemTray.Status;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.MenuHook;
-import dorkbox.systemTray.util.Status;
+import dorkbox.systemTray.peer.MenuPeer;
 
-class GtkMenu extends GtkMenuBaseItem implements MenuHook {
+class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
-    private final List<GtkMenuBaseItem> menuEntries = new LinkedList<GtkMenuBaseItem>();
+    private final List<GtkBaseMenuItem> menuEntries = new LinkedList<GtkBaseMenuItem>();
 
     private final GtkMenu parent;
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
@@ -55,7 +54,7 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
         this.parent = parent;
 
         if (parent != null) {
-            _nativeEntry = Gtk.gtk_image_menu_item_new_with_mnemonic(""); // is what is added to the parent menu
+            _nativeEntry = Gtk.gtk_image_menu_item_new_with_mnemonic(""); // is what is added to the parent menu (so images work)
         } else {
             _nativeEntry = null;
         }
@@ -66,7 +65,7 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
     }
 
     private
-    void add(final GtkMenuBaseItem item, final int index) {
+    void add(final GtkBaseMenuItem item, final int index) {
         if (index > 0) {
             menuEntries.add(index, item);
         } else {
@@ -98,7 +97,7 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
             // have to remove all other menu entries
             synchronized (menuEntries) {
                 for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                    final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
+                    final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
                     menuEntry__.onDeleteMenu(_nativeMenu);
                 }
 
@@ -136,13 +135,13 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
         // now add back other menu entries
         synchronized (menuEntries) {
             for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
+                final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
                 hasImages |= menuEntry__.hasImage();
             }
 
             for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
                 // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
-                final GtkMenuBaseItem menuEntry__ = menuEntries.get(i);
+                final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
                 menuEntry__.onCreateMenu(_nativeMenu, hasImages);
 
                 if (menuEntry__ instanceof GtkMenu) {
@@ -173,10 +172,10 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
             synchronized (menuEntries) {
                 // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
                 // do this, errors will be had because indices don't line up anymore.
-                ArrayList<GtkMenuBaseItem> menuEntriesCopy = new ArrayList<GtkMenuBaseItem>(this.menuEntries);
+                ArrayList<GtkBaseMenuItem> menuEntriesCopy = new ArrayList<GtkBaseMenuItem>(this.menuEntries);
 
                 for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
-                    final GtkMenuBaseItem menuEntry__ = menuEntriesCopy.get(i);
+                    final GtkBaseMenuItem menuEntry__ = menuEntriesCopy.get(i);
                     menuEntry__.remove();
                 }
                 this.menuEntries.clear();
@@ -354,7 +353,7 @@ class GtkMenu extends GtkMenuBaseItem implements MenuHook {
 
     // called when a child removes itself from the parent menu. Does not work for sub-menus
     public
-    void remove(final GtkMenuBaseItem item) {
+    void remove(final GtkBaseMenuItem item) {
         synchronized (menuEntries) {
             menuEntries.remove(item);
         }

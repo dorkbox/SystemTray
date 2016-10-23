@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.systemTray;
 
 import java.awt.Image;
@@ -22,8 +21,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
+import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.systemTray.util.MenuItemHook;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -31,13 +30,13 @@ import dorkbox.systemTray.util.MenuItemHook;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public
 class MenuItem extends Entry {
-    private volatile String text;
-    private volatile File imageFile;
-    private volatile ActionListener callback;
+    private String text;
+    private File imageFile;
+    private ActionListener callback;
 
     // default enabled is always true
-    private volatile boolean enabled = true;
-    private volatile char mnemonicKey;
+    private boolean enabled = true;
+    private char mnemonicKey;
 
     public
     MenuItem() {
@@ -113,27 +112,27 @@ class MenuItem extends Entry {
     }
 
     /**
-     * @param hook the platform specific implementation for all actions for this type
+     * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
     public synchronized
-    void bind(final MenuItemHook hook, final Menu parent, final SystemTray systemTray) {
-        super.bind(hook, parent, systemTray);
+    void bind(final MenuItemPeer peer, final Menu parent, final SystemTray systemTray) {
+        super.bind(peer, parent, systemTray);
 
-        hook.setImage(this);
-        hook.setEnabled(this);
-        hook.setText(this);
-        hook.setCallback(this);
-        hook.setShortcut(this);
+        peer.setImage(this);
+        peer.setEnabled(this);
+        peer.setText(this);
+        peer.setCallback(this);
+        peer.setShortcut(this);
     }
 
-    private
+    private synchronized
     void setImage_(final File imageFile) {
         this.imageFile = imageFile;
 
-        if (hook != null) {
-            ((MenuItemHook) hook).setImage(this);
+        if (peer != null) {
+            ((MenuItemPeer) peer).setImage(this);
         }
     }
 
@@ -142,7 +141,7 @@ class MenuItem extends Entry {
      * <p>
      * This file can also be a cached file, depending on how the image was assigned to this entry.
      */
-    public
+    public synchronized
     File getImage() {
         return imageFile;
     }
@@ -150,7 +149,7 @@ class MenuItem extends Entry {
     /**
      * Gets the callback assigned to this menu entry
      */
-    public
+    public synchronized
     ActionListener getCallback() {
         return callback;
     }
@@ -158,7 +157,7 @@ class MenuItem extends Entry {
     /**
      * @return true if this item is enabled, or false if it is disabled.
      */
-    public
+    public synchronized
     boolean getEnabled() {
         return this.enabled;
     }
@@ -166,19 +165,19 @@ class MenuItem extends Entry {
     /**
      * Enables, or disables the entry.
      */
-    public
+    public synchronized
     void setEnabled(final boolean enabled) {
         this.enabled = enabled;
 
-        if (hook != null) {
-            ((MenuItemHook) hook).setEnabled(this);
+        if (peer != null) {
+            ((MenuItemPeer) peer).setEnabled(this);
         }
     }
 
     /**
      * @return the text label that the menu entry has assigned
      */
-    public final
+    public synchronized
     String getText() {
         return text;
     }
@@ -188,12 +187,12 @@ class MenuItem extends Entry {
      *
      * @param text the new text to set
      */
-    public
+    public synchronized
     void setText(final String text) {
         this.text = text;
 
-        if (hook != null) {
-            ((MenuItemHook) hook).setText(this);
+        if (peer != null) {
+            ((MenuItemPeer) peer).setText(this);
         }
     }
 
@@ -315,7 +314,7 @@ class MenuItem extends Entry {
     /**
      * @return true if this menu entry has an image assigned to it, or is just text.
      */
-    public
+    public synchronized
     boolean hasImage() {return imageFile != null;}
 
     /**
@@ -323,12 +322,12 @@ class MenuItem extends Entry {
      *
      * @param callback the callback to set. If null, the callback is safely removed.
      */
-    public
+    public synchronized
     void setCallback(final ActionListener callback) {
         this.callback = callback;
 
-        if (hook != null) {
-            ((MenuItemHook) hook).setCallback(this);
+        if (peer != null) {
+            ((MenuItemPeer) peer).setCallback(this);
         }
     }
 
@@ -339,7 +338,7 @@ class MenuItem extends Entry {
      * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
      * of it will be underlined.
      */
-    public
+    public synchronized
     char getShortcut() {
         return this.mnemonicKey;
     }
@@ -352,19 +351,19 @@ class MenuItem extends Entry {
      *
      * @param key this is the key to set as the mnemonic
      */
-    public
+    public synchronized
     void setShortcut(final char key) {
         this.mnemonicKey = key;
 
-        if (hook != null) {
-            ((MenuItemHook) hook).setShortcut(this);
+        if (peer != null) {
+            ((MenuItemPeer) peer).setShortcut(this);
         }
     }
 
     @Override
     public synchronized
     void remove() {
-        if (hook != null) {
+        if (peer != null) {
             setImage_(null);
             setText(null);
             setCallback(null);

@@ -21,11 +21,11 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.EntryHook;
+import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.util.ImageUtils;
 
 abstract
-class GtkMenuBaseItem implements EntryHook {
+class GtkBaseMenuItem implements EntryPeer {
     private static File transparentIcon = null;
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private volatile boolean hasLegitImage = true;
@@ -33,7 +33,7 @@ class GtkMenuBaseItem implements EntryHook {
     // these have to be volatile, because they can be changed from any thread
     private volatile Pointer spacerImage;
 
-    GtkMenuBaseItem() {
+    GtkBaseMenuItem() {
         // cannot be done in a static initializer, because the tray icon size might not yet have been determined
         if (transparentIcon == null) {
             transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
@@ -45,7 +45,6 @@ class GtkMenuBaseItem implements EntryHook {
         return hasLegitImage;
     }
 
-    public
     void setLegitImage(boolean isLegit) {
         hasLegitImage = isLegit;
     }

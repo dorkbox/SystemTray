@@ -40,7 +40,7 @@ import dorkbox.util.ScreenUtil;
 /**
  * This custom popup is required if we want to be able to show images on the menu,
  *
- * This is our "golden standard" since we have 100% control over it.
+ * This is our "golden standard" since we have 100% control over it on all platforms
  */
 class TrayPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
