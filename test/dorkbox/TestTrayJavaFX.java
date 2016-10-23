@@ -61,7 +61,6 @@ class TestTrayJavaFX extends Application {
     }
 
     private SystemTray systemTray;
-    private ActionListener callbackGreen;
     private ActionListener callbackGray;
 
     public
@@ -90,6 +89,7 @@ class TestTrayJavaFX extends Application {
 
 
         this.systemTray = SystemTray.get();
+        // this.systemTray = SystemTray.getNative();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
