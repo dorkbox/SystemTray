@@ -27,6 +27,7 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
@@ -748,24 +749,13 @@ class SystemTray {
      */
     public
     void setImage(final File imageFile) {
-        setImage(imageFile, true);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageFile the file of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final File imageFile, final boolean cacheImage) {
         if (imageFile == null) {
             throw new NullPointerException("imageFile cannot be null!");
         }
 
         final Menu menu = systemTrayMenu;
         if (menu != null) {
-            menu.setImage(imageFile, cacheImage);
+            menu.setImage(imageFile);
         }
     }
 
@@ -778,24 +768,13 @@ class SystemTray {
      */
     public
     void setImage(final String imagePath) {
-        setImage(imagePath, true);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imagePath the full path of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final String imagePath, final boolean cacheImage) {
         if (imagePath == null) {
             throw new NullPointerException("imagePath cannot be null!");
         }
 
         final Menu menu = systemTrayMenu;
         if (menu != null) {
-            menu.setImage(imagePath, cacheImage);
+            menu.setImage(imagePath);
         }
     }
 
@@ -808,17 +787,6 @@ class SystemTray {
      */
     public
     void setImage(final URL imageUrl) {
-        setImage(imageUrl, true);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageUrl the URL of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final URL imageUrl, final boolean cacheImage) {
         if (imageUrl == null) {
             throw new NullPointerException("imageUrl cannot be null!");
         }
@@ -838,17 +806,6 @@ class SystemTray {
      */
     public
     void setImage(final InputStream imageStream) {
-        setImage(imageStream, true);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageStream the InputStream of the image to use
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final InputStream imageStream, final boolean cacheImage) {
         if (imageStream == null) {
             throw new NullPointerException("imageStream cannot be null!");
         }
@@ -868,25 +825,32 @@ class SystemTray {
      */
     public
     void setImage(final Image image) {
-        setImage(image, true);
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param image the image of the image to use
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     *
-     */
-    public
-    void setImage(final Image image, final boolean cacheImage) {
         if (image == null) {
             throw new NullPointerException("image cannot be null!");
         }
 
         final Menu menu = systemTrayMenu;
         if (menu != null) {
-            menu.setImage(image, cacheImage);
+            menu.setImage(image);
+        }
+    }
+
+    /**
+     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     *@param imageStream the ImageInputStream of the image to use
+     */
+    public
+    void setImage(final ImageInputStream imageStream) {
+        if (imageStream == null) {
+            throw new NullPointerException("image cannot be null!");
+        }
+
+        final Menu menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage(imageStream);
         }
     }
 }

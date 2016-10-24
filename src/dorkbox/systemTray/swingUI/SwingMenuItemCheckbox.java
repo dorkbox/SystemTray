@@ -48,7 +48,7 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
 
         if (checkedIcon == null) {
             // from Brankic1979, public domain
-            File checkedFile = ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, ImageUtils.class.getResource("checked_32.png"), true);
+            File checkedFile = ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, ImageUtils.class.getResource("checked_32.png"));
             checkedIcon = new ImageIcon(checkedFile.getAbsolutePath());
 
             File uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);

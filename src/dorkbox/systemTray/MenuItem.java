@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
+import javax.imageio.stream.ImageInputStream;
+
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageUtils;
 
@@ -80,27 +82,32 @@ class MenuItem extends Entry {
 
     public
     MenuItem(final String text, final String imagePath, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath, true), callback, false);
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback, false);
     }
 
     public
     MenuItem(final String text, final File imageFile, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile, true), callback, false);
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile), callback, false);
     }
 
     public
     MenuItem(final String text, final URL imageUrl, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl, true), callback, false);
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback, false);
     }
 
     public
     MenuItem(final String text, final InputStream imageStream, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream, true), callback, false);
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback, false);
     }
 
     public
     MenuItem(final String text, final Image image, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image, true), callback, false);
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image), callback, false);
+    }
+
+    public
+    MenuItem(final String text, final ImageInputStream imageStream, final ActionListener callback) {
+        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback, false);
     }
 
     // the last parameter (unused) is there so the signature is different
@@ -205,18 +212,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final File imageFile) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile, true));
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image.
-     *
-     * @param imageFile the file of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final File imageFile, final boolean cacheImage) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile, cacheImage));
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile));
     }
 
     /**
@@ -228,18 +224,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final String imagePath) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath, true));
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imagePath the full path of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final String imagePath, final boolean cacheImage) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath, cacheImage));
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
     }
 
     /**
@@ -251,18 +236,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final URL imageUrl) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl, true));
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageUrl the URL of the image to use or null
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final URL imageUrl, final boolean cacheImage) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl, cacheImage));
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
     }
 
     /**
@@ -274,18 +248,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final InputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream, true));
-    }
-
-    /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *
-     * @param imageStream the InputStream of the image to use
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
-     */
-    public
-    void setImage(final InputStream imageStream, final boolean cacheImage) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream, cacheImage));
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
     }
 
     /**
@@ -297,19 +260,21 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final Image image) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image, true));
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image));
     }
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
      *
-     * @param image the image of the image to use
-     * @param cacheImage true to cache the image (only if the image is resized as necessary)
+     * @param imageStream the ImageInputStream of the image to use
      */
     public
-    void setImage(final Image image, final boolean cacheImage) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image, cacheImage));
+    void setImage(final ImageInputStream imageStream) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
     }
+
 
     /**
      * @return true if this menu entry has an image assigned to it, or is just text.

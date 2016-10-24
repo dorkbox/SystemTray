@@ -63,7 +63,8 @@ class ImageUtils {
 
     public static
     void determineIconSize() {
-        int scalingFactor = 0;
+        int trayScalingFactor = 0;
+        int menuScalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -109,57 +110,71 @@ class ImageUtils {
 
                 if (windowsVersion.startsWith("5.1")) {
                     // Windows XP	5.1.2600
-                    scalingFactor = 1;
+                    trayScalingFactor = 1;
 
                 } else if (windowsVersion.startsWith("5.1")) {
                     // Windows Server 2003	5.2.3790.1218
-                    scalingFactor = 1;
+                    trayScalingFactor = 1;
 
                 } else if (windowsVersion.startsWith("6.0")) {
                     // Windows Vista	        6.0.6000
                     // Windows Server 2008 SP1	6.0.6001
                     // Windows Server 2008 SP2	6.0.6002
-                    scalingFactor = 1;
+                    trayScalingFactor = 1;
 
                 } else if (windowsVersion.startsWith("6.1")) {
                     // Windows 7
                     // Windows Server 2008 R2       6.1.7600
                     // Windows Server 2008 R2 SP1   6.1.7601
-                    scalingFactor = 2;
+                    trayScalingFactor = 2;
 
                 } else if (windowsVersion.startsWith("6.2")) {
                     // Windows 8
                     // Windows Server 2012	6.2.9200
-                    scalingFactor = 2;
+                    trayScalingFactor = 2;
 
                 } else if (windowsVersion.startsWith("6.3")) {
                     // Windows 8.1
                     // Windows Server 2012	6.3.9200
-                    scalingFactor = 4;
+                    trayScalingFactor = 4;
 
                 } else if (windowsVersion.startsWith("6.4")) {
                     // Windows 10 Technical Preview 1	6.4.9841
-                    scalingFactor = 4;
+                    trayScalingFactor = 4;
 
                 } else if (windowsVersion.startsWith("10.0")) {
                     // Windows 10 Technical Preview 4	10.0.9926
                     // Windows 10 Insider Preview	    10.0.14915
-                    scalingFactor = 4;
+                    trayScalingFactor = 4;
 
                 } else {
                     // dunnno, but i'm going to assume HiDPI for this...
-                    scalingFactor = 8;
+                    trayScalingFactor = 8;
                 }
 
                 Pointer screen = User32.GetDC(null);
                 int dpiX = GetDeviceCaps (screen, LOGPIXELSX);
                 User32.ReleaseDC(null, screen);
 
-                System.err.println("DPI : " + dpiX);
+                // 96 DPI = 100% scaling
+                // 120 DPI = 125% scaling
+                // 144 DPI = 150% scaling
+                // 192 DPI = 200% scaling
+
+                // just a note on scaling...
+                // We want to scale the image as best we can beforehand, so there is an attempt to have it look good
+                if (dpiX != 96) {
+                    // so there are additional scaling settings...
+                    // casting around for rounding/math stuff
+                    // *2 because we want a 2x scale to be 64, not 32.
+                    trayScalingFactor = (int) (((double) dpiX) / ((double) 96)) * 2;
+                    menuScalingFactor = trayScalingFactor;
+                }
 
 
                 if (SystemTray.DEBUG) {
                     SystemTray.logger.debug("Windows version (partial): '{}'", windowsVersion);
+                    SystemTray.logger.debug("Windows DPI settings: '{}'", dpiX);
                 }
             } else if (OS.isLinux()) {
                 // GtkStatusIcon will USUALLY automatically scale the icon
@@ -197,12 +212,12 @@ class ImageUtils {
                                 // 4 = 64
                                 // 8 = 128
                                 if (value.startsWith("4")) {
-                                    scalingFactor = 2;
+                                    trayScalingFactor = 2;
                                 } else if (value.startsWith("5")) {
-                                    scalingFactor = 8; // it is insane how large the icon is
+                                    trayScalingFactor = 8; // it is insane how large the icon is
                                 } else {
                                     // assume very low version of plasmashell, default 32
-                                    scalingFactor = 2;
+                                    trayScalingFactor = 2;
                                 }
                             }
                         }
@@ -237,7 +252,7 @@ class ImageUtils {
                             // should be: uint32 0  or something
                             if (output.contains("uint32")) {
                                 String value = output.substring(output.indexOf("uint")+7, output.length()-1);
-                                scalingFactor = Integer.parseInt(value);
+                                trayScalingFactor = Integer.parseInt(value);
 
                                 // 0 is disabled (no scaling)
                                 // 1 is enabled (default scale)
@@ -265,16 +280,16 @@ class ImageUtils {
 
                 if (height < 32) {
                     // lock in at 32
-                    scalingFactor = 2;
+                    trayScalingFactor = 2;
                 }
                 else if ((height & (height - 1)) == 0) {
                     // is this a power of 2 number? If so, we can use it
-                    scalingFactor = height/SystemTray.DEFAULT_TRAY_SIZE;
+                    trayScalingFactor = height/SystemTray.DEFAULT_TRAY_SIZE;
                 }
                 else {
                     // don't know how exactly to determine this, but we are going to assume very high "HiDPI" for this...
                     // the OS should go up/down as needed.
-                    scalingFactor = 8;
+                    trayScalingFactor = 8;
                 }
             }
         }
@@ -284,16 +299,20 @@ class ImageUtils {
         // we want to make sure our "scaled" size is appropriate for the OS.
 
         // the DEFAULT scale is 16
-        if (scalingFactor > 1) {
-            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * scalingFactor;
-            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
-
-            if (SystemTray.DEBUG) {
-                SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", scalingFactor, TRAY_SIZE);
-            }
+        if (trayScalingFactor > 1) {
+            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor;
         } else {
             TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE;
-            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
+        }
+
+        if (menuScalingFactor > 1) {
+            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor;
+        }
+        ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", trayScalingFactor, TRAY_SIZE);
+            SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", menuScalingFactor, ENTRY_SIZE);
         }
     }
 
@@ -359,189 +378,112 @@ class ImageUtils {
     }
 
     public static synchronized
-    File resizeAndCache(final int size, final File file, final boolean cacheResult) {
-        return resizeAndCache(size, file.getAbsolutePath(), cacheResult);
+    File resizeAndCache(final int size, final File file) {
+        return resizeAndCache(size, file.getAbsolutePath());
     }
 
     public static synchronized
-    File resizeAndCache(final int size, final String fileName, final boolean cacheResult) {
+    File resizeAndCache(final int size, final String fileName) {
         if (fileName == null) {
             return null;
         }
 
-        // check if we already have this file information saved to disk, based on size
-        final String cacheName = size + "_" + fileName;
-
-        // if we already have this fileName, reuse it
-        File check = getIfCachedOrError(cacheName);
-        if (check != null) {
-            return check;
-        }
-
-        // no cached file, so we resize then save the new one.
-        String newFileOnDisk;
         try {
-            newFileOnDisk = resizeFile(size, fileName);
+            FileInputStream fileInputStream = new FileInputStream(fileName);
+            File file = resizeAndCache(size, fileInputStream);
+            fileInputStream.close();
+
+            return file;
         } catch (IOException e) {
             // have to serve up the error image instead.
-            SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-            return getErrorImage(cacheName);
-        }
-
-        try {
-            return CacheUtil.save(cacheName, newFileOnDisk);
-        } catch (IOException e) {
-            // have to serve up the error image instead.
-            SystemTray.logger.error("Error caching image. Using error icon instead", e);
-            return getErrorImage(cacheName);
+            SystemTray.logger.error("Error reading image. Using error icon instead", e);
+            return getErrorImage(size + "default");
         }
     }
 
     @SuppressWarnings("Duplicates")
     public static synchronized
-    File resizeAndCache(final int size, final URL imageUrl, final boolean cacheResult) {
+    File resizeAndCache(final int size, final URL imageUrl) {
         if (imageUrl == null) {
             return null;
         }
 
-        final String cacheName = size + "_" + imageUrl.getPath();
-
-        // if we already have this fileName, reuse it
-        final File check = getIfCachedOrError(cacheName);
-        if (check != null) {
-            return check;
-        }
-
-        // no cached file, so we resize then save the new one.
-        boolean needsResize = true;
         try {
             InputStream inputStream = imageUrl.openStream();
-            Dimension imageSize = getImageSize(inputStream);
-            //noinspection NumericCastThatLosesPrecision
-            if (size == ((int) imageSize.getWidth()) && size == ((int) imageSize.getHeight())) {
-                // we can reuse this URL (it's the correct size).
-                needsResize = false;
-            }
+            File file = resizeAndCache(size, inputStream);
+            inputStream.close();
+
+            return file;
         } catch (IOException e) {
             // have to serve up the error image instead.
-            SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-            return getErrorImage(cacheName);
-        }
-
-        if (needsResize) {
-            // we have to hop through hoops.
-            try {
-                File resizedFile = resizeFileNoCheck(size, imageUrl);
-
-                // now cache that file
-                try {
-                    return CacheUtil.save(cacheName, resizedFile);
-                } catch (IOException e) {
-                    // have to serve up the error image instead.
-                    SystemTray.logger.error("Error caching image. Using error icon instead", e);
-                    return getErrorImage(cacheName);
-                }
-
-            } catch (IOException e) {
-                // have to serve up the error image instead.
-                SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-                return getErrorImage(cacheName);
-            }
-
-        } else {
-            // no resize necessary, just cache as is.
-            try {
-                return CacheUtil.save(cacheName, imageUrl);
-            } catch (IOException e) {
-                // have to serve up the error image instead.
-                SystemTray.logger.error("Error caching image. Using error icon instead", e);
-                return getErrorImage(cacheName);
-            }
+            SystemTray.logger.error("Error reading image. Using error icon instead", e);
+            return getErrorImage(size + "default");
         }
     }
     @SuppressWarnings("Duplicates")
     public static synchronized
-    File resizeAndCache(final int size, final Image image, final boolean cacheResult) {
+    File resizeAndCache(final int size, final Image image) {
         if (image == null) {
             return null;
         }
 
+        // stupid java won't scale it right away, so we have to do this twice to get the correct size
+        final Image trayImage = new ImageIcon(image).getImage();
+        trayImage.flush();
 
-//        final String cacheName = size + "_" + imageUrl.getPath();
-//
-//        // if we already have this fileName, reuse it
-//        final File check = getIfCachedOrError(cacheName);
-//        if (check != null) {
-//            return check;
-//        }
-//
-//        // no cached file, so we resize then save the new one.
-//        boolean needsResize = true;
-//        try {
-//            InputStream inputStream = imageUrl.openStream();
-//            Dimension imageSize = getImageSize(inputStream);
-//            //noinspection NumericCastThatLosesPrecision
-//            if (size == ((int) imageSize.getWidth()) && size == ((int) imageSize.getHeight())) {
-//                // we can reuse this URL (it's the correct size).
-//                needsResize = false;
-//            }
-//        } catch (IOException e) {
-//            // have to serve up the error image instead.
-//            SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-//            return getErrorImage(cacheName);
-//        }
-//
-//        if (needsResize) {
-//            // we have to hop through hoops.
-//            try {
-//                File resizedFile = resizeFileNoCheck(size, imageUrl);
-//
-//                // now cache that file
-//                try {
-//                    return CacheUtil.save(cacheName, resizedFile);
-//                } catch (IOException e) {
-//                    // have to serve up the error image instead.
-//                    SystemTray.logger.error("Error caching image. Using error icon instead", e);
-//                    return getErrorImage(cacheName);
-//                }
-//
-//            } catch (IOException e) {
-//                // have to serve up the error image instead.
-//                SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-//                return getErrorImage(cacheName);
-//            }
-//
-//        } else {
-//            // no resize necessary, just cache as is.
-//            try {
-//                return CacheUtil.save(cacheName, imageUrl);
-//            } catch (IOException e) {
-//                // have to serve up the error image instead.
-//                SystemTray.logger.error("Error caching image. Using error icon instead", e);
-//                return getErrorImage(cacheName);
-//            }
-//        }
-        return null;
+        try {
+            ImageInputStream imageInputStream = ImageIO.createImageInputStream(image);
+            File file = resizeAndCache(size, imageInputStream);
+            imageInputStream.close();
+
+            return file;
+        } catch (IOException e) {
+            // have to serve up the error image instead.
+            SystemTray.logger.error("Error reading image. Using error icon instead", e);
+            return getErrorImage(size + "default");
+        }
     }
 
     @SuppressWarnings("Duplicates")
     public static synchronized
-    File resizeAndCache(final int size, InputStream imageStream, final boolean cacheResult) {
+    File resizeAndCache(final int size, final ImageInputStream imageStream) {
         if (imageStream == null) {
             return null;
         }
 
-        // have to make a copy of the inputStream.
         try {
             ByteArrayOutputStream byteArrayOutputStream = IO.copyStream(imageStream);
-            imageStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            return resizeAndCache(size, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
         } catch (IOException e) {
-            throw new RuntimeException("Unable to read from inputStream.", e);
+            // have to serve up the error image instead.
+            SystemTray.logger.error("Error reading image. Using error icon instead", e);
+            return getErrorImage(size + "default");
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public static synchronized
+    File resizeAndCache(final int size, InputStream imageStream) {
+        if (imageStream == null) {
+            return null;
         }
 
-        // check if we already have this file information saved to disk, based on size
+        if (!(imageStream instanceof ByteArrayInputStream)) {
+            // have to make a copy of the inputStream, but only if necessary
+            try {
+                ByteArrayOutputStream byteArrayOutputStream = IO.copyStream(imageStream);
+                imageStream.close();
+
+                imageStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read from inputStream.", e);
+            }
+        }
+        imageStream.mark(0);
+
+        // check if we already have this file information saved to disk, based on size + hash of data
         final String cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
-        ((ByteArrayInputStream) imageStream).reset();
+        ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 
         // if we already have this fileName, reuse it
@@ -553,6 +495,7 @@ class ImageUtils {
         // no cached file, so we resize then save the new one.
         boolean needsResize = true;
         try {
+            imageStream.mark(0);
             Dimension imageSize = getImageSize(imageStream);
             //noinspection NumericCastThatLosesPrecision
             if (size == ((int) imageSize.getWidth()) && size == ((int) imageSize.getHeight())) {
@@ -563,6 +506,8 @@ class ImageUtils {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error resizing image. Using error icon instead", e);
             return getErrorImage(cacheName);
+        } finally {
+            ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
         }
 
         if (needsResize) {
@@ -641,7 +586,7 @@ class ImageUtils {
     }
 
     /**
-     * Resizes the given URL to the specified size. No checks are performed if it's the correct size to begin with.
+     * Resizes the given InputStream to the specified size. No checks are performed if it's the correct size to begin with.
      *
      * @return the file on disk that is the resized icon
      */
