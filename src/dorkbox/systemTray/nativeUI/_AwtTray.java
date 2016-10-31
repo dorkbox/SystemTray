@@ -48,6 +48,7 @@ class _AwtTray extends Tray implements NativeUI {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
+    private volatile File imageFile;
 
     private final Object keepAliveLock = new Object[0];
     private Thread keepAliveThread;
@@ -123,8 +124,8 @@ class _AwtTray extends Tray implements NativeUI {
             @Override
             public
             void setImage(final MenuItem menuItem) {
-                final File image = menuItem.getImage();
-                if (image == null) {
+                imageFile = menuItem.getImage();
+                if (imageFile == null) {
                     return;
                 }
 
@@ -133,7 +134,7 @@ class _AwtTray extends Tray implements NativeUI {
                     public
                     void run() {
                         // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                        final Image trayImage = new ImageIcon(image.getAbsolutePath()).getImage();
+                        final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
                         trayImage.flush();
 
                         if (trayIcon == null) {
@@ -188,5 +189,11 @@ class _AwtTray extends Tray implements NativeUI {
         };
 
         bind(awtMenu, null, systemTray);
+    }
+
+    @Override
+    public
+    boolean hasImage() {
+        return imageFile != null;
     }
 }

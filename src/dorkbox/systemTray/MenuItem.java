@@ -25,6 +25,7 @@ import javax.imageio.stream.ImageInputStream;
 
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.util.SwingUtil;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -319,6 +320,23 @@ class MenuItem extends Entry {
     public synchronized
     void setShortcut(final char key) {
         this.mnemonicKey = key;
+
+        if (peer != null) {
+            ((MenuItemPeer) peer).setShortcut(this);
+        }
+    }
+
+    /**
+     * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.
+     *
+     * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
+     * of it will be underlined.
+     *
+     * @param key this is the VK key to set as the mnemonic
+     */
+    public synchronized
+    void setShortcut(final int key) {
+        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
 
         if (peer != null) {
             ((MenuItemPeer) peer).setShortcut(this);

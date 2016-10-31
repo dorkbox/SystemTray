@@ -59,7 +59,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
-    private volatile File image;
+    private volatile File imageFile;
     private volatile Runnable popupRunnable;
 
     // called on the EDT
@@ -154,8 +154,8 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                     @Override
                     public
                     void setImage(final MenuItem menuItem) {
-                        image = menuItem.getImage();
-                        if (image == null) {
+                        imageFile = menuItem.getImage();
+                        if (imageFile == null) {
                             return;
                         }
 
@@ -163,7 +163,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                             @Override
                             public
                             void run() {
-                                Gtk.gtk_status_icon_set_from_file(trayIcon, image.getAbsolutePath());
+                                Gtk.gtk_status_icon_set_from_file(trayIcon, imageFile.getAbsolutePath());
 
                                 if (!isActive) {
                                     isActive = true;
@@ -177,7 +177,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                             @Override
                             public
                             void run() {
-                                ((TrayPopup) _native).setTitleBarImage(image);
+                                ((TrayPopup) _native).setTitleBarImage(imageFile);
                             }
                         });
                     }
@@ -247,6 +247,6 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
     @Override
     public
     boolean hasImage() {
-        return image != null;
+        return imageFile != null;
     }
 }

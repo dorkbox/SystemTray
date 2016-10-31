@@ -46,6 +46,7 @@ class _SwingTray extends Tray implements SwingUI {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
+    private volatile File imageFile;
 
     // Called in the EDT
     public
@@ -89,8 +90,8 @@ class _SwingTray extends Tray implements SwingUI {
             @Override
             public
             void setImage(final MenuItem menuItem) {
-                final File image = menuItem.getImage();
-                if (image == null) {
+                imageFile = menuItem.getImage();
+                if (imageFile == null) {
                     return;
                 }
 
@@ -99,7 +100,7 @@ class _SwingTray extends Tray implements SwingUI {
                     public
                     void run() {
                         // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                        final Image trayImage = new ImageIcon(image.getAbsolutePath()).getImage();
+                        final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
                         trayImage.flush();
 
                         if (trayIcon == null) {
@@ -132,7 +133,7 @@ class _SwingTray extends Tray implements SwingUI {
                             trayIcon.setImage(trayImage);
                         }
 
-                        ((TrayPopup) _native).setTitleBarImage(image);
+                        ((TrayPopup) _native).setTitleBarImage(imageFile);
                     }
                 });
             }
@@ -175,6 +176,6 @@ class _SwingTray extends Tray implements SwingUI {
     @Override
     public
     boolean hasImage() {
-        return tray.getTrayIcons().length > 0;
+        return imageFile != null;
     }
 }

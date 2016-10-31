@@ -15,9 +15,11 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.Component;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -28,6 +30,11 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.stream.ImageInputStream;
+import javax.swing.Icon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
@@ -728,6 +735,43 @@ class SystemTray {
     Menu getMenu() {
         return systemTrayMenu;
     }
+
+    /**
+     * Converts the specified JMenu into a compatible SystemTray menu, using the JMenu icon as the image for the SystemTray. The currently
+     * supported menu items are `JMenu`, `JCheckBoxMenuItem`, `JMenuItem`, and `JSeparator`. Because this is a conversion, the JMenu
+     * is no longer valid after this action.
+     *
+     * @return the attached menu to this system tray based on the specified JMenu
+     */
+    public
+    Menu setMenu(final JMenu jMenu) {
+        Icon icon = jMenu.getIcon();
+        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        setImage(bimage);
+
+        Menu menu = getMenu();
+
+        Component[] menuComponents = jMenu.getMenuComponents();
+        for (int i = 0, menuComponentsLength = menuComponents.length; i < menuComponentsLength; i++) {
+            final Component c = menuComponents[i];
+
+            if (c instanceof JMenu) {
+                menu.add((JMenu) c);
+            }
+            else if (c instanceof JCheckBoxMenuItem) {
+                menu.add((JCheckBoxMenuItem) c);
+            }
+            else if (c instanceof JMenuItem) {
+                menu.add((JMenuItem) c);
+            }
+            else if (c instanceof JSeparator) {
+                menu.add((JSeparator) c);
+            }
+        }
+
+        return menu;
+    }
+
 
     /**
      * Shows (if hidden), or hides (if showing) the system tray.

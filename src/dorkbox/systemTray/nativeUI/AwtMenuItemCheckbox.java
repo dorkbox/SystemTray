@@ -22,7 +22,6 @@ import java.awt.event.ActionListener;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 class AwtMenuItemCheckbox implements CheckboxPeer {
@@ -98,7 +97,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     void setShortcut(final Checkbox menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SystemTrayFixes.getVirtualKey(shortcut);
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
         SwingUtil.invokeLater(new Runnable() {
             @Override

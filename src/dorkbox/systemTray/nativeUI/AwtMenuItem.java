@@ -22,7 +22,6 @@ import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
-import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 class AwtMenuItem implements MenuItemPeer {
@@ -105,7 +104,7 @@ class AwtMenuItem implements MenuItemPeer {
     void setShortcut(final dorkbox.systemTray.MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SystemTrayFixes.getVirtualKey(shortcut);
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
         SwingUtil.invokeLater(new Runnable() {
             @Override

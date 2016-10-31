@@ -26,7 +26,6 @@ import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.ImageUtils;
-import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItemCheckbox implements CheckboxPeer {
@@ -92,7 +91,7 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
             public
             void actionPerformed(ActionEvent e) {
                 // this will run on the EDT, since we are calling it from the EDT
-                menuItem.setChecked(!isChecked);
+                menuItem.setState(!isChecked);
 
                 // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
                 ActionListener cb = menuItem.getCallback();
@@ -114,7 +113,7 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
     void setShortcut(final Checkbox menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SystemTrayFixes.getVirtualKey(shortcut);
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
         SwingUtil.invokeLater(new Runnable() {
             @Override

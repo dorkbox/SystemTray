@@ -26,7 +26,6 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
@@ -126,7 +125,7 @@ class AwtMenu implements MenuPeer {
     public
     void setShortcut(final MenuItem menuItem) {
         // yikes...
-        final int vKey = SystemTrayFixes.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
         SwingUtil.invokeLater(new Runnable() {
             @Override

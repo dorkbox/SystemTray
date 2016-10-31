@@ -15,14 +15,23 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.Component;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.swing.Icon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 
 import dorkbox.systemTray.peer.MenuPeer;
 
@@ -113,11 +122,11 @@ class Menu extends MenuItem {
         }
     }
 
-    /**
-     * Adds a swing widget as a menu entry.
-     *
-     * @param widget the JComponent that is to be added as an entry
-     */
+//    /**
+//     * Adds a swing widget as a menu entry.
+//     *
+//     * @param widget the JComponent that is to be added as an entry
+//     */
 // TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
 //    Entry add(JComponent widget);
 
@@ -127,6 +136,130 @@ class Menu extends MenuItem {
     public final
     <T extends Entry> T add(final T entry) {
         return add(entry, -1);
+    }
+
+    /**
+     * Adds a JMenu sub-menu to this menu. Because this is a conversion, the JMenu is no longer valid after this action.
+     */
+    @SuppressWarnings("Duplicates")
+    public final
+    Menu add(final JMenu entry) {
+
+        Menu menu = new Menu();
+        menu.setEnabled(entry.isEnabled());
+
+        Icon icon = entry.getIcon();
+        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        menu.setImage(bimage);
+
+        menu.setText(entry.getText());
+        menu.setShortcut(entry.getMnemonic());
+
+        Component[] menuComponents = entry.getMenuComponents();
+        for (int i = 0, menuComponentsLength = menuComponents.length; i < menuComponentsLength; i++) {
+            final Component c = menuComponents[i];
+
+            if (c instanceof JMenu) {
+                menu.add((JMenu) c);
+            }
+            else if (c instanceof JCheckBoxMenuItem) {
+                menu.add((JCheckBoxMenuItem) c);
+            }
+            else if (c instanceof JMenuItem) {
+                menu.add((JMenuItem) c);
+            }
+            else if (c instanceof JSeparator) {
+                menu.add((JSeparator) c);
+            }
+        }
+
+        add(menu);
+        return this;
+    }
+
+    /**
+     * Adds a JCheckBoxMenuItem entry to this menu. Because this is a conversion, the JCheckBoxMenuItem is no longer valid after this action.
+     */
+    public final
+    Menu add(final JCheckBoxMenuItem entry) {
+        Checkbox checkbox = new Checkbox();
+
+        final ActionListener[] actionListeners = entry.getActionListeners();
+        //noinspection Duplicates
+        if (actionListeners != null) {
+            if (actionListeners.length == 1) {
+                checkbox.setCallback(actionListeners[0]);
+            } else {
+                ActionListener actionListener = new ActionListener() {
+                    @Override
+                    public
+                    void actionPerformed(final ActionEvent e) {
+                        for (ActionListener actionListener : actionListeners) {
+                            actionListener.actionPerformed(e);
+                        }
+                    }
+                };
+                checkbox.setCallback(actionListener);
+            }
+        }
+
+        checkbox.setEnabled(entry.isEnabled());
+        checkbox.setState(entry.getState());
+        checkbox.setShortcut(entry.getMnemonic());
+        checkbox.setText(entry.getText());
+
+        add(checkbox);
+        return this;
+    }
+
+    /**
+     * Adds a JMenuItem entry to this menu. Because this is a conversion, the JMenuItem is no longer valid after this action.
+     */
+    public final
+    Menu add(final JMenuItem entry) {
+        MenuItem item = new MenuItem();
+
+        final ActionListener[] actionListeners = entry.getActionListeners();
+        //noinspection Duplicates
+        if (actionListeners != null) {
+            if (actionListeners.length == 1) {
+                item.setCallback(actionListeners[0]);
+            } else {
+                ActionListener actionListener = new ActionListener() {
+                    @Override
+                    public
+                    void actionPerformed(final ActionEvent e) {
+                        for (ActionListener actionListener : actionListeners) {
+                            actionListener.actionPerformed(e);
+                        }
+                    }
+                };
+                item.setCallback(actionListener);
+            }
+        }
+
+        item.setEnabled(entry.isEnabled());
+
+        Icon icon = entry.getIcon();
+        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        item.setImage(bimage);
+
+        item.setShortcut(entry.getMnemonic());
+        item.setText(entry.getText());
+
+        add(item);
+        return this;
+    }
+
+    /**
+     * Adds a JSeparator entry to this menu. Because this is a conversion, the JSeparator is no longer valid after this action.
+     */
+    public final
+    Menu add(final JSeparator entry) {
+        Separator separator = new Separator();
+
+        add(separator);
+        return this;
     }
 
     /**
@@ -247,7 +380,7 @@ class Menu extends MenuItem {
      *  This removes all menu entries from this menu
      */
     public synchronized
-    void removeAll() {
+    void clear() {
         // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
         ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
         for (Entry entry : menuEntriesCopy) {
@@ -263,7 +396,7 @@ class Menu extends MenuItem {
     @Override
     public synchronized
     void remove() {
-        removeAll();
+        clear();
 
         super.remove();
     }

@@ -18,6 +18,7 @@ package dorkbox.systemTray;
 import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.peer.CheckboxPeer;
+import dorkbox.util.SwingUtil;
 
 /**
  * This represents a common menu-checkbox entry, that is cross platform in nature
@@ -73,13 +74,13 @@ class Checkbox extends Entry {
     }
 
     /**
-     * Sets the checked status for this entry
+     * Sets the checked on/off status for this entry
      *
-     * @param checked true to show the checkbox, false to hide it
+     * @param isChecked true to show the checkbox, false to hide it
      */
     public synchronized
-    void setChecked(boolean checked) {
-        this.isChecked = checked;
+    void setState(boolean isChecked) {
+        this.isChecked = isChecked;
 
         if (peer != null) {
             ((CheckboxPeer) peer).setChecked(this);
@@ -172,6 +173,23 @@ class Checkbox extends Entry {
     public synchronized
     void setShortcut(final char key) {
         this.mnemonicKey = key;
+
+        if (peer != null) {
+            ((CheckboxPeer) peer).setShortcut(this);
+        }
+    }
+
+    /**
+     * Sets a menu entry shortcut key (Mnemonic) so that menu entry can be "selected" via the keyboard while the menu is displayed.
+     *
+     * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
+     * of it will be underlined.
+     *
+     * @param key this is the VK key to set as the mnemonic
+     */
+    public synchronized
+    void setShortcut(final int key) {
+        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
 
         if (peer != null) {
             ((CheckboxPeer) peer).setShortcut(this);

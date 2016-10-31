@@ -85,7 +85,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
-    private volatile File image;
+    private volatile File imageFile;
 
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
@@ -134,8 +134,8 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             @Override
             public
             void setImage(final MenuItem menuItem) {
-                image = menuItem.getImage();
-                if (image == null) {
+                imageFile = menuItem.getImage();
+                if (imageFile == null) {
                     return;
                 }
 
@@ -143,7 +143,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
                     @Override
                     public
                     void run() {
-                        AppIndicator.app_indicator_set_icon(appIndicator, image.getAbsolutePath());
+                        AppIndicator.app_indicator_set_icon(appIndicator, imageFile.getAbsolutePath());
 
                         if (!isActive) {
                             isActive = true;
@@ -213,6 +213,6 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
     @Override
     public final
     boolean hasImage() {
-        return image != null;
+        return imageFile != null;
     }
 }
