@@ -63,7 +63,17 @@ import dorkbox.util.process.ShellProcessBuilder;
 
 
 /**
- * Factory and base-class for system tray implementations.
+ * Professional, cross-platform **SystemTray**, **AWT**, **GtkStatusIcon**, and **AppIndicator** support for java applications.
+ * <p>
+ * This library provides **OS native** menus and **Swing** menus.
+ * <ul>
+ *     <li> Swing menus are the default prefered type becuase they offer more features (images attached to menu entries, text styling, etc) and
+ * a consistent look & feel across all platforms.
+ *     </li>
+ *     <li> Native menus, should one want them, follow the specified look and feel of that OS, and thus are limited by what is supported on the
+ * OS and consequently not consistent across all platforms.
+ *     </li>
+ * </ul>
  */
 @SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
 public final
