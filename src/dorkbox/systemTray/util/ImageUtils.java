@@ -33,11 +33,13 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
+import javax.swing.SwingUtilities;
 
 import com.sun.jna.Pointer;
 
@@ -48,6 +50,7 @@ import dorkbox.util.FileUtil;
 import dorkbox.util.IO;
 import dorkbox.util.LocationResolver;
 import dorkbox.util.OS;
+import dorkbox.util.SwingUtil;
 import dorkbox.util.process.ShellProcessBuilder;
 
 public
@@ -274,9 +277,26 @@ class ImageUtils {
                 }
             } else if (OS.isMacOsX()) {
                 // let's hope this wasn't just hardcoded like windows...
-                int height = (int) java.awt.SystemTray.getSystemTray()
-                                                   .getTrayIconSize()
-                                                   .getHeight();
+                int height;
+
+                if (!SwingUtilities.isEventDispatchThread()) {
+                    // MacOS must execute this on the EDT... It is very strict compared to win/linux
+                    final AtomicInteger h = new AtomicInteger(0);
+                    SwingUtil.invokeAndWaitQuietly(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            h.set((int) java.awt.SystemTray.getSystemTray()
+                                                           .getTrayIconSize()
+                                                           .getHeight());
+                        }
+                    });
+                    height = h.get();
+                } else {
+                    height = (int) java.awt.SystemTray.getSystemTray()
+                                                      .getTrayIconSize()
+                                                      .getHeight();
+                }
 
                 if (height < 32) {
                     // lock in at 32
