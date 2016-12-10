@@ -19,6 +19,7 @@ package dorkbox.systemTray.util;
 import java.lang.reflect.Method;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.OS;
 
 /**
  * Utility methods for JavaFX.
@@ -31,17 +32,34 @@ class JavaFX {
     // Methods are cached for performance
     private static final Method dispatchMethod;
     private static final Method isEventThreadMethod;
+    private static final Object isEventThreadObject;
 
     static {
         Method _isEventThreadMethod = null;
         Method _dispatchMethod = null;
+        Object _isEventThreadObject = null;
 
         try {
             Class<?> clazz = Class.forName("javafx.application.Platform");
             _dispatchMethod = clazz.getMethod("runLater", Runnable.class);
 
-            clazz = Class.forName("javafx.application.Platform");
-            _isEventThreadMethod = clazz.getMethod("isFxApplicationThread");
+            // JAVA 7
+            // javafx.application.Platform.isFxApplicationThread();
+
+            // JAVA 8
+            // com.sun.javafx.tk.Toolkit.getToolkit().isFxUserThread();
+            if (OS.javaVersion <= 7) {
+                clazz = Class.forName("javafx.application.Platform");
+                _isEventThreadMethod = clazz.getMethod("isFxApplicationThread");
+                _isEventThreadObject = null;
+            } else {
+                clazz = Class.forName("com.sun.javafx.tk.Toolkit");
+                _isEventThreadMethod = clazz.getMethod("getToolkit");
+
+                _isEventThreadObject = _isEventThreadMethod.invoke(null);
+                _isEventThreadMethod = _isEventThreadObject.getClass()
+                            .getMethod("isFxUserThread", null);
+            }
         } catch (Throwable e) {
             if (SystemTray.DEBUG) {
                 SystemTray.logger.error("Cannot initialize JavaFX", e);
@@ -50,6 +68,7 @@ class JavaFX {
 
         dispatchMethod = _dispatchMethod;
         isEventThreadMethod = _isEventThreadMethod;
+        isEventThreadObject = _isEventThreadObject;
     }
 
     public static
@@ -77,10 +96,18 @@ class JavaFX {
 
     public static
     boolean isEventThread() {
+        // JAVA 7
         // javafx.application.Platform.isFxApplicationThread();
 
+        // JAVA 8
+        // com.sun.javafx.tk.Toolkit.getToolkit().isFxUserThread();
+
         try {
-            return (Boolean) isEventThreadMethod.invoke(null);
+            if (OS.javaVersion <= 7) {
+                return (Boolean) isEventThreadMethod.invoke(null);
+            } else {
+                return (Boolean) isEventThreadMethod.invoke(isEventThreadObject, null);
+            }
         } catch (Throwable e) {
             SystemTray.logger.error("Unable to check if JavaFX is in the event thread. Please create an issue with your OS and Java " +
                                     "version so we may further investigate this issue.");
