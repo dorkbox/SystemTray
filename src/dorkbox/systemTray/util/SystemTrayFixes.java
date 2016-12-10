@@ -211,7 +211,7 @@ class SystemTrayFixes {
         }
 
 
-        boolean isMacSwingTrayLoaded = false;
+        boolean isMacTrayLoaded = false;
 
         try {
             // this is important to use reflection, because if JavaFX is not being used, calling getToolkit() will initialize it...
@@ -220,15 +220,15 @@ class SystemTrayFixes {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
 
             // if we are using AWT (in MacOS only) the menu trigger is incomplete. We cannot fix that if it's already loaded.
-            isMacSwingTrayLoaded = (null != m.invoke(cl, "sun.lwawt.macosx.CTrayIcon")) ||
-                                       (null != m.invoke(cl, "java.awt.SystemTray"));
+            isMacTrayLoaded = (null != m.invoke(cl, "sun.lwawt.macosx.CTrayIcon")) ||
+                              (null != m.invoke(cl, "java.awt.SystemTray"));
         } catch (Throwable e) {
             if (SystemTray.DEBUG) {
                 logger.debug("Error detecting if the MacOS SystemTray is loaded", e);
             }
         }
 
-        if (isMacSwingTrayLoaded) {
+        if (isMacTrayLoaded) {
             throw new RuntimeException("Unable to initialize the AWT tray in MacOSx, it has already been created!");
         }
 
