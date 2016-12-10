@@ -223,7 +223,7 @@ class SystemTray {
     }
 
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
-    private static void init(final boolean useNativeMenus) {
+    private static void init(boolean useNativeMenus) {
         if (systemTray != null) {
             return;
         }
@@ -237,22 +237,29 @@ class SystemTray {
 //            }
 //        }
 
-        // cannot mix AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
-        // https://bugs.openjdk.java.net/browse/JDK-8116017
-        if (OS.isMacOsX() && isJavaFxLoaded && OS.javaVersion <= 7 &&
-            !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
+        if (OS.isMacOsX()) {
+            // cannot mix AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
+            // https://bugs.openjdk.java.net/browse/JDK-8116017
+            if (isJavaFxLoaded && OS.javaVersion <= 7 && !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
 
-            logger.error("MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See issue: " +
-                         "'https://bugs.openjdk.java.net/browse/JDK-8116017'  \n" +
-                         "To fix this do one of the following, \n" +
-                         " - Upgrade to Java 8\n" +
-                         " - Add : '-Djavafx.macosx.embedded=true' as a JVM parameter\n" +
-                         " - Set the system property via 'System.setProperty(\"javafx.macosx.embedded\", \"true\");'  before JavaFX is" +
-                         "initialized, used, or accessed. NOTE: You may need to change the class (that your main method is in) so it does" +
-                         " NOT extend the JavaFX 'Application' class.");
-            throw new RuntimeException();
+                logger.error("MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See issue: " +
+                             "'https://bugs.openjdk.java.net/browse/JDK-8116017'  \n" + "To fix this do one of the following, \n" +
+                             " - Upgrade to Java 8\n" + " - Add : '-Djavafx.macosx.embedded=true' as a JVM parameter\n" +
+                             " - Set the system property via 'System.setProperty(\"javafx.macosx.embedded\", \"true\");'  before JavaFX is" +
+                             "initialized, used, or accessed. NOTE: You may need to change the class (that your main method is in) so it does" +
+                             " NOT extend the JavaFX 'Application' class.");
+                throw new RuntimeException();
+            }
+
+            // cannot mix Swing and SWT on MacOSX (for all version sof java) -- so we force native menus instead, which work just fine
+            // with SWT
+            // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
+            if (isSwtLoaded) {
+                useNativeMenus = true;
+
+                logger.info("MacOSX does not support SWT + Swing at the same time. Forcing Native Menus instead.");
+            }
         }
-
 
         // no tray in a headless environment
         if (GraphicsEnvironment.isHeadless()) {
