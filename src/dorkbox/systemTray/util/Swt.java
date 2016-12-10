@@ -36,7 +36,6 @@ class Swt {
         currentDisplayThread = currentDisplay.getThread();
     }
 
-
     public static
     void init() {
         // empty method to initialize class
@@ -58,12 +57,29 @@ class Swt {
 
     public static
     void onShutdown(final Runnable runnable) {
-        currentDisplay.getShells()[0].addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
-            @Override
-            public
-            void handleEvent(final org.eclipse.swt.widgets.Event event) {
-                runnable.run();
-            }
-        });
+        // currentDisplay.getShells() can only happen inside the event thread!
+        if (isEventThread()) {
+            currentDisplay.getShells()[0].addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
+                @Override
+                public
+                void handleEvent(final org.eclipse.swt.widgets.Event event) {
+                    runnable.run();
+                }
+            });
+        } else {
+            dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    currentDisplay.getShells()[0].addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
+                        @Override
+                        public
+                        void handleEvent(final org.eclipse.swt.widgets.Event event) {
+                            runnable.run();
+                        }
+                    });
+                }
+            });
+        }
     }
 }
