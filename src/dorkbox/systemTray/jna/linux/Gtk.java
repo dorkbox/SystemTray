@@ -234,7 +234,6 @@ class Gtk {
             }
         });
 
-
         if (SystemTray.isJavaFxLoaded) {
             if (!JavaFX.isEventThread()) {
                 try {
@@ -255,10 +254,7 @@ class Gtk {
                 }
             }
         } else if (SystemTray.isSwtLoaded) {
-            if (SystemTray.FORCE_TRAY_TYPE != SystemTray.TrayType.GtkStatusIcon) {
-                // GTK system tray has threading issues if we block here (because it is likely in the event thread)
-                // AppIndicator version doesn't have this problem
-
+            if (!Swt.isEventThread()) {
                 // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
                 try {
                     while (true) {
@@ -277,7 +273,6 @@ class Gtk {
                 }
             }
         } else {
-
             try {
                 // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
                 while (true) {
@@ -302,11 +297,9 @@ class Gtk {
      */
     public static
     void dispatch(final Runnable runnable) {
-        // FIXME: on mac, check -XstartOnFirstThread.. there are issues with javaFX (possibly SWT as well)
-
         if (alreadyRunningGTK) {
-            // SWT/JavaFX
             if (SystemTray.isJavaFxLoaded) {
+                // JavaFX only
                 if (JavaFX.isEventThread()) {
                     // Run directly on the JavaFX event thread
                     runnable.run();
@@ -314,61 +307,50 @@ class Gtk {
                 else {
                     JavaFX.dispatch(runnable);
                 }
+
+                return;
             }
-            else if (SystemTray.isSwtLoaded) {
-                if (isDispatch) {
-                    // Run directly on the dispatch thread
+
+            if (SystemTray.isSwtLoaded) {
+                if (Swt.isEventThread()) {
+                    // Run directly on the SWT event thread. If it's not on the dispatch thread, we can use raw GTK to put it there
                     runnable.run();
-                } else {
-                    Swt.dispatch(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            isDispatch = true;
 
-                            try {
-                                runnable.run();
-                            } finally {
-                                isDispatch = false;
-                            }
-
-                        }
-                    });
+                    return;
                 }
             }
         }
-        else {
-            // not swt/javafx
-            if (isDispatch) {
-                // Run directly on the dispatch thread
-                runnable.run();
-            } else {
-                final FuncCallback callback = new FuncCallback() {
-                    @Override
-                    public
-                    int callback(final Pointer data) {
-                        synchronized (gtkCallbacks) {
-                            gtkCallbacks.removeFirst(); // now that we've 'handled' it, we can remove it from our callback list
 
-                            isDispatch = true;
+        // not javafx
+        // gtk/swt are **mostly** the same in how events are dispatched, so we can use "raw" gtk methods for SWT
+        if (isDispatch) {
+            // Run directly on the dispatch thread
+            runnable.run();
+        } else {
+            final FuncCallback callback = new FuncCallback() {
+                @Override
+                public
+                int callback(final Pointer data) {
+                    synchronized (gtkCallbacks) {
+                        gtkCallbacks.removeFirst(); // now that we've 'handled' it, we can remove it from our callback list
 
-                            try {
-                                runnable.run();
-                            } finally {
-                                isDispatch = false;
-                                return Gtk.FALSE; // don't want to call this again
-                            }
+                        isDispatch = true;
+
+                        try {
+                            runnable.run();
+                        } finally {
+                            isDispatch = false;
+                            return Gtk.FALSE; // don't want to call this again
                         }
                     }
-                };
-
-                synchronized (gtkCallbacks) {
-                    gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
-
-                    // the correct way to do it. Add with a slightly higher value
-                    gdk_threads_add_idle_full(100, callback, null, null);
                 }
+            };
 
+            synchronized (gtkCallbacks) {
+                gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
+
+                // the correct way to do it. Add with a slightly higher value
+                gdk_threads_add_idle_full(100, callback, null, null);
             }
         }
     }

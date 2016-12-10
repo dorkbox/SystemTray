@@ -27,10 +27,13 @@ import org.eclipse.swt.widgets.Display;
 public
 class Swt {
     private static final Display currentDisplay;
+    private static final Thread currentDisplayThread;
 
     static {
-        // we have to save this, otherwise it is "null" when methods are run from the swing EDT.
+        // we MUST save this, otherwise it is "null" when methods are run from the swing EDT.
         currentDisplay = Display.getCurrent();
+
+        currentDisplayThread = currentDisplay.getThread();
     }
 
 
@@ -46,6 +49,11 @@ class Swt {
     public static
     void dispatch(final Runnable runnable) {
         currentDisplay.syncExec(runnable);
+    }
+
+    public static
+    boolean isEventThread() {
+        return Thread.currentThread() == currentDisplayThread;
     }
 
     public static
