@@ -40,7 +40,7 @@ class Swt {
         if (currentDisplay == null) {
             logger.error("Unable to get the current display for SWT. Please create an issue with your OS and Java " +
                          "version so we may further investigate this issue.");
-        };
+        }
     }
 
     public static
