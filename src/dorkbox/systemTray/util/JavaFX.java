@@ -61,9 +61,7 @@ class JavaFX {
                             .getMethod("isFxUserThread", null);
             }
         } catch (Throwable e) {
-            if (SystemTray.DEBUG) {
-                SystemTray.logger.error("Cannot initialize JavaFX", e);
-            }
+            SystemTray.logger.error("Cannot initialize JavaFX", e);
         }
 
         dispatchMethod = _dispatchMethod;
