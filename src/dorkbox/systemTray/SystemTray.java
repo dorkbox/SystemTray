@@ -237,6 +237,23 @@ class SystemTray {
 //            }
 //        }
 
+        // cannot mix AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
+        // https://bugs.openjdk.java.net/browse/JDK-8116017
+        if (OS.isMacOsX() && isJavaFxLoaded && OS.javaVersion <= 7 &&
+            !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
+
+            logger.error("MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See issue: " +
+                         "'https://bugs.openjdk.java.net/browse/JDK-8116017'  \n" +
+                         "To fix this do one of the following, \n" +
+                         " - Upgrade to Java 8\n" +
+                         " - Add : '-Djavafx.macosx.embedded=true' as a JVM parameter\n" +
+                         " - Set the system property via 'System.setProperty(\"javafx.macosx.embedded\", \"true\");'  before JavaFX is" +
+                         "initialized, used, or accessed. NOTE: You may need to change the class (that your main method is in) so it does" +
+                         " NOT extend the JavaFX 'Application' class.");
+            throw new RuntimeException();
+        }
+
+
         // no tray in a headless environment
         if (GraphicsEnvironment.isHeadless()) {
             logger.error("Cannot use the SystemTray in a headless environment");
@@ -248,6 +265,13 @@ class SystemTray {
         if (DEBUG) {
             logger.debug("OS: {}", System.getProperty("os.name"));
             logger.debug("Arch: {}", System.getProperty("os.arch"));
+
+            String jvmName = System.getProperty("java.vm.name", "");
+            String jvmVersion = System.getProperty("java.version", "");
+            String jvmVendor = System.getProperty("java.vm.specification.vendor", "");
+            logger.debug("{} {} {}", jvmVendor, jvmName, jvmVersion);
+
+
 
             logger.debug("is AutoTraySize? {}", AUTO_TRAY_SIZE);
             logger.debug("is JavaFX detected? {}", isJavaFxLoaded);
