@@ -262,7 +262,7 @@ class SystemTrayFixes {
 
             CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
             ctMethodGet.setBody("{" +
-                "sun.lwawt.macosx.NSEvent event = $1;" +
+                "sun.lwawt.macosx.event.NSEvent event = $1;" +
 
                 "sun.awt.SunToolkit toolKit = (sun.awt.SunToolkit)java.awt.Toolkit.getDefaultToolkit();" +
                 "int button = event.getButtonNumber();" +
@@ -279,20 +279,20 @@ class SystemTrayFixes {
                 "}" +
 
                 "if ((button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
-                    "int eventType = sun.lwawt.macosx.NSEvent.nsToJavaEventType(event.getType());" +
+                    "int eventType = sun.lwawt.macosx.event.NSEvent.nsToJavaEventType(event.getType());" +
                     "int jButton = 0;" +
                     "int jClickCount = 0;" +
 
                     "if (eventType != 503) {" +
-                        "jButton = sun.lwawt.macosx.NSEvent.nsToJavaButton(button);" +
+                        "jButton = sun.lwawt.macosx.event.NSEvent.nsToJavaButton(button);" +
                         "jClickCount = event.getClickCount();" +
                     "}" +
 
                     "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType);" +
 
-                    "int mouseMods = sun.lwawt.macosx.NSEvent.nsToJavaMouseModifiers(button, event.getModifierFlags());" +
+                    "int mouseMods = sun.lwawt.macosx.event.NSEvent.nsToJavaMouseModifiers(button, event.getModifierFlags());" +
                     // surprisingly, this is false when the popup is showing
-                    "boolean popupTrigger = sun.lwawt.macosx.NSEvent.isPopupTrigger(mouseMods);" +
+                    "boolean popupTrigger = sun.lwawt.macosx.event.NSEvent.isPopupTrigger(mouseMods);" +
 
                     "int mouseMask = jButton > 0 ? java.awt.event.MouseEvent.getMaskForButton(jButton) : 0;" +
                     "long event0 = System.currentTimeMillis();" +
