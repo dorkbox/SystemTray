@@ -22,6 +22,7 @@ import java.util.Locale;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.BootStrapClassLoader;
+import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -261,8 +262,18 @@ class SystemTrayFixes {
             trayClass.addField(ctField);
 
             CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
+
+            String nsEventFQND;
+            if (OS.javaVersion <= 7) {
+                nsEventFQND = "sun.lwawt.macosx.event.NSEvent";
+            }
+            else {
+                nsEventFQND = "sun.lwawt.macosx.NSEvent";
+            }
+
+
             ctMethodGet.setBody("{" +
-                "sun.lwawt.macosx.event.NSEvent event = $1;" +
+                nsEventFQND + " event = $1;" +
 
                 "sun.awt.SunToolkit toolKit = (sun.awt.SunToolkit)java.awt.Toolkit.getDefaultToolkit();" +
                 "int button = event.getButtonNumber();" +
@@ -271,28 +282,29 @@ class SystemTrayFixes {
 
                 // have to intercept to see if it was a button click redirect to preserve what button was used in the event
                 "if (lastButton == 1 && mouseX == lastX && mouseY == lastY) {" +
-                    "java.lang.System.err.println(\"Redefining button press to \" + lastButton);" +
-                    "button = lastButton;" +
+                    // "java.lang.System.err.println(\"Redefining button press to 1\");" +
+
+                    "button = 1;" +
                     "lastButton = -1;" +
                     "lastX = 0;" +
                     "lastY = 0;" +
                 "}" +
 
                 "if ((button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
-                    "int eventType = sun.lwawt.macosx.event.NSEvent.nsToJavaEventType(event.getType());" +
+                    "int eventType = " + nsEventFQND + ".nsToJavaEventType(event.getType());" +
                     "int jButton = 0;" +
                     "int jClickCount = 0;" +
 
                     "if (eventType != 503) {" +
-                        "jButton = sun.lwawt.macosx.event.NSEvent.nsToJavaButton(button);" +
+                        "jButton = " + nsEventFQND + ".nsToJavaButton(button);" +
                         "jClickCount = event.getClickCount();" +
                     "}" +
 
-                    "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType);" +
+                    // "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType);" +
 
-                    "int mouseMods = sun.lwawt.macosx.event.NSEvent.nsToJavaMouseModifiers(button, event.getModifierFlags());" +
+                    "int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());" +
                     // surprisingly, this is false when the popup is showing
-                    "boolean popupTrigger = sun.lwawt.macosx.event.NSEvent.isPopupTrigger(mouseMods);" +
+                    "boolean popupTrigger = " + nsEventFQND + ".isPopupTrigger(mouseMods);" +
 
                     "int mouseMask = jButton > 0 ? java.awt.event.MouseEvent.getMaskForButton(jButton) : 0;" +
                     "long event0 = System.currentTimeMillis();" +
@@ -306,21 +318,31 @@ class SystemTrayFixes {
 
                     // have to swallow + re-dispatch events in specific cases. (right click)
                     "if (eventType == 501 && popupTrigger && button == 1) {" +
-                        "java.lang.System.err.println(\"Redispatching mouse press. Has popupTrigger \" + popupTrigger + \" event: \" + eventType);" +
-                        // we use Robot to click where we clicked, in order to "fool" the native part to show the popup
+                        // "java.lang.System.err.println(\"Redispatching mouse press. Has popupTrigger \" + " + "popupTrigger + \" event: \" + " + "eventType);" +
+
+                        // we use Robot to left click where we right clicked, in order to "fool" the native part to show the popup
                         // For what it's worth, this is the only way to get the native bits to behave.
                         "if (robot == null) {" +
                             "try {" +
                                 "robot = new java.awt.Robot();" +
+                                "robot.setAutoDelay(40);" +
+                                "robot.setAutoWaitForIdle(true);" +
                             "} catch (java.awt.AWTException e) {" +
                                 "e.printStackTrace();" +
                             "}" +
                         "}" +
+
                         "lastButton = 1;" +
                         "lastX = mouseX;" +
                         "lastY = mouseY;" +
 
-                        "robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);" +
+                        // the delay is necessary for this to work correctly (as is the mouseRelease)
+                        "int maskButton1 = java.awt.event.InputEvent.getMaskForButton(java.awt.event.MouseEvent.BUTTON1);" +
+                        "robot.mousePress(maskButton1);" +
+                        "robot.delay(200);" +
+                        "robot.mouseRelease(maskButton1);" +
+                        "robot.delay(200);" +
+
                         "return;" +
                     "}" +
 
@@ -344,12 +366,12 @@ class SystemTrayFixes {
                         "if ((mouseClickButtons & mouseMask) != 0) {" +
                             "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
 
-                        "event7.setSource(this.target);" +
-                        "this.postEvent(event7);" +
-                    "}" +
+                            "event7.setSource(this.target);" +
+                            "this.postEvent(event7);" +
+                        "}" +
 
-                    "mouseClickButtons &= ~mouseMask;" +
-                "}" +
+                        "mouseClickButtons &= ~mouseMask;" +
+                    "}" +
                 "}" +
             "}");
 
@@ -359,10 +381,10 @@ class SystemTrayFixes {
             BootStrapClassLoader.defineClass(mouseEventBytes);
 
             if (SystemTray.DEBUG) {
-                logger.debug("Successfully changed mouse trigger");
+                logger.debug("Successfully changed mouse trigger for MacOSX");
             }
         } catch (Exception e) {
-            logger.error("Error changing SystemTray mouse trigger.", e);
+            logger.error("Error changing SystemTray mouse trigger for MacOSX.", e);
         }
     }
 
