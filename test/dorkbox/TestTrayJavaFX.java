@@ -24,6 +24,8 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.util.JavaFX;
+import dorkbox.util.OS;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -36,10 +38,11 @@ import javafx.stage.Stage;
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
  *
- * Needs JavaFX to run
+ * Needs JavaFX to run. NOTE: JavaFX on Mac (Java7) has many bugs when also used with AWT. This class does NOT extend 'Application'
+ * (javafx) class on purpose, so that we can work around those issues
  */
 public
-class TestTrayJavaFX extends Application {
+class TestTrayJavaFX {
 
     public static final URL BLUE_CAMPING = TestTray.class.getResource("accommodation_camping.glow.0092DA.32.png");
     public static final URL BLACK_FIRE = TestTray.class.getResource("amenity_firestation.p.000000.32.png");
@@ -54,10 +57,34 @@ class TestTrayJavaFX extends Application {
     public static final URL GREEN_TRAIN = TestTray.class.getResource("transport_train_station.p.39AC39.32.png");
     public static final URL LT_GRAY_TRAIN = TestTray.class.getResource("transport_train_station.p.666666.32.png");
 
+    private static TestTrayJavaFX testTrayJavaFX;
+
+    public static
+    class MyApplication extends Application {
+        public
+        MyApplication() {
+        }
+
+        @Override
+        public
+        void start(final Stage stage) throws Exception {
+            testTrayJavaFX.doJavaFxStuff(stage);
+        }
+    }
+
     public static
     void main(String[] args) {
+        if (OS.isMacOsX() && OS.javaVersion <= 7) {
+            System.setProperty("javafx.macosx.embedded", "true");
+            java.awt.Toolkit.getDefaultToolkit();
+        }
+
+        testTrayJavaFX = new TestTrayJavaFX();
+
+        Application application = new MyApplication();
+
         // make sure JNA jar is on the classpath!
-        launch(TestTrayJavaFX.class);
+        application.launch(MyApplication.class);
     }
 
     private SystemTray systemTray;
@@ -68,9 +95,8 @@ class TestTrayJavaFX extends Application {
 
     }
 
-    @Override
     public
-    void start(final Stage primaryStage) throws Exception {
+    void doJavaFxStuff(final Stage primaryStage) throws Exception {
         primaryStage.setTitle("Hello World!");
         Button btn = new Button();
         btn.setText("Say 'Hello World'");
@@ -199,7 +225,21 @@ class TestTrayJavaFX extends Application {
             public
             void actionPerformed(final java.awt.event.ActionEvent e) {
                 systemTray.shutdown();
-                Platform.exit();  // necessary to close javaFx
+
+                if (!JavaFX.isEventThread()) {
+                    JavaFX.dispatch(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            primaryStage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
+                            Platform.exit();  // necessary to close javaFx
+                        }
+                    });
+                } else {
+                    primaryStage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
+                    Platform.exit();  // necessary to close javaFx
+                }
+
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         })).setShortcut('q'); // case does not matter
