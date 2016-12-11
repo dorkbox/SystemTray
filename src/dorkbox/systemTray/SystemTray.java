@@ -395,11 +395,14 @@ class SystemTray {
 
             // if we are running as ROOT, we *** WILL NOT *** have access to  'XDG_CURRENT_DESKTOP'
             //   *unless env's are preserved, but they are not guaranteed to be
+            // see:  http://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
             String XDG = System.getenv("XDG_CURRENT_DESKTOP");
             if (XDG == null) {
                 // maybe we are running as root???
                 XDG = "unknown"; // try to autodetect if we should use app indicator or gtkstatusicon
             }
+
+
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
