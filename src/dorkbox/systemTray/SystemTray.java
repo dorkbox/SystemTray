@@ -392,8 +392,14 @@ class SystemTray {
 
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
 
+            // if we are running as ROOT, we *** WILL NOT *** have access to  'XDG_CURRENT_DESKTOP'
+            //   *unless env's are preserved, but they are not guaranteed to be
+            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+            if (XDG == null) {
+                // maybe we are running as root???
+                XDG = "unknown"; // try to autodetect if we should use app indicator or gtkstatusicon
+            }
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
@@ -429,6 +435,7 @@ class SystemTray {
             }
 
             if (trayType == null) {
+                // Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                 if ("unity".equalsIgnoreCase(XDG)) {
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                 }
@@ -524,8 +531,13 @@ class SystemTray {
             // fallback...
             if (trayType == null) {
                 trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
-                logger.error("Unable to load the system tray native library. Please write an issue and include your OS type and " +
-                             "configuration");
+                logger.info("Unable to determine the system window manager type.Falling back to GtkStatusIcon.");
+            }
+
+            // this is bad...
+            if (trayType == null) {
+                logger.error("Unable to load the system tray native libraries. Please write an issue and include your OS type and configuration");
+                throw new RuntimeException("SystemTray initialization failed. Something is seriously wrong.");
             }
         }
 
@@ -601,7 +613,7 @@ class SystemTray {
 
                 if ((isJavaFxLoaded || isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
                     // oh boy! This WILL NOT WORK. Let the dev know
-                    throw new RuntimeException("SystemTray initialization can not occur on the swing Event Dispatch Thread (EDT)");
+                    throw new RuntimeException("SystemTray initialization can not occur on the Swing Event Dispatch Thread (EDT)");
                 }
 
                 // javaFX and SWT should not start on the EDT!!

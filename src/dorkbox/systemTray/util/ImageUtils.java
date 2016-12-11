@@ -184,8 +184,36 @@ class ImageUtils {
                 // AppIndicator MIGHT scale the icon (depends on the OS)
 
 
-                // KDE is bonkers.
-                if ("kde".equalsIgnoreCase(System.getenv("XDG_CURRENT_DESKTOP"))) {
+                // KDE is bonkers. Gnome is "ok"
+                String XDG = System.getenv("XDG_CURRENT_DESKTOP");
+                if (XDG == null) {
+                    // we might be root. Check if plasmashell is running, if it is -- then we are most likely KDE
+
+                    try {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                        // ps a | grep [g]nome-shell
+                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                        shell.setExecutable("ps");
+                        shell.addArgument("a");
+                        shell.start();
+
+
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                        if (output.contains("plasmashell")) {
+                            XDG = "kde";
+                        }
+                    } catch (Throwable e) {
+                        // assume we are not KDE. Maybe not the best assumption, but if we get here, something is wrong.
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Unable to check if plasmashell is running.", e);
+                        }
+                    }
+                }
+
+
+                if ("kde".equalsIgnoreCase(XDG)) {
                     try {
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
                         PrintStream outputStream = new PrintStream(byteArrayOutputStream);
