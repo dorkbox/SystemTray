@@ -48,7 +48,8 @@ class AppIndicator {
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator3.so.1 | grep foo
 
         // NOTE:
-        //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
+        //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTK2, appindicator3 -> GTK3.
+        //     appindiactor1 is GKT2 only (can't use GTK3 bindings with it)
         //     appindicator3 doesn't support menu icons via GTK2!!
 
         if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.GtkStatusIcon) {
@@ -63,21 +64,23 @@ class AppIndicator {
             // if specified, try loading appindicator1 first, maybe it's there?
             // note: we can have GTK2 + appindicator3, but NOT ALWAYS.
             try {
-                final NativeLibrary library = JnaHelper.register("appindicator1", AppIndicator.class);
+                // deliberately without the "1" at the end.
+                final NativeLibrary library = JnaHelper.register("appindicator", AppIndicator.class);
                 if (library != null) {
                     isLoaded = true;
                 }
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
-                    logger.debug("Error loading GTK2 explicit appindicator1. {}", e.getMessage());
+                    logger.debug("Error loading GTK2 explicit appindicator. {}", e.getMessage());
                 }
             }
         }
 
         String nameToCheck1;
         String nameToCheck2;
+
         if (Gtk.isGtk2) {
-            nameToCheck1 = "appindicator";
+            nameToCheck1 = "appindicator"; // deliberately without the "1" at the end.
         }
         else {
             nameToCheck1 = "appindicator3";
