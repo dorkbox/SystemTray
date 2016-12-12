@@ -236,7 +236,7 @@ class ImageUtils {
                             // should be: plasmashell 5.6.5   or something
                             String s = "plasmashell ";
                             if (output.contains(s)) {
-                                String value = output.substring(output.indexOf(s) + s.length(), output.length() - 1);
+                                String value = output.substring(output.indexOf(s) + s.length(), output.length());
 
                                 // 1 = 16
                                 // 2 = 32
@@ -282,7 +282,7 @@ class ImageUtils {
                             // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
                             // should be: uint32 0  or something
                             if (output.contains("uint32")) {
-                                String value = output.substring(output.indexOf("uint")+7, output.length()-1);
+                                String value = output.substring(output.indexOf("uint")+7, output.length());
                                 trayScalingFactor = Integer.parseInt(value);
 
                                 // 0 is disabled (no scaling)
