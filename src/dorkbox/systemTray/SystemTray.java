@@ -379,7 +379,7 @@ class SystemTray {
             // appindicator3 doesn't support menu icons via GTK2!!
             if (Gtk.isGtk2 || AppIndicator.isVersion3) {
                 if (DEBUG) {
-                    logger.debug("Loading libraries");
+                    logger.debug("Done loading libraries");
                 }
             }
 
@@ -541,6 +541,41 @@ class SystemTray {
             if (trayType == null) {
                 logger.error("Unable to load the system tray native libraries. Please write an issue and include your OS type and configuration");
                 throw new RuntimeException("SystemTray initialization failed. Something is seriously wrong.");
+            }
+
+            if (trayType == _AppIndicatorNativeTray.class || trayType == _AppIndicatorTray.class) {
+                // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
+
+                // this means we are running as sudo
+                String sudoUser = System.getenv("SUDO_USER");
+                if (sudoUser != null) {
+                    // running as a "sudo" user
+                    logger.error("Attempting to load the SystemTray as the 'root' user. This will likely not work because of dbus " +
+                                 "restrictions.");
+                } else {
+                    // running as root (also can be "sudo" user). A bit slower that checking a sys env, but this is guaranteed to work
+                    try {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                        // id -u
+                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                        shell.setExecutable("id");
+                        shell.addArgument("-u");
+                        shell.start();
+
+
+                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                        if ("0".equals(output)) {
+                            logger.error("Attempting to load the SystemTray as the 'root' user. This will likely not work because of dbus " +
+                                         "restrictions.");
+                        }
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            logger.error("Cannot get id for root", e);
+                        }
+                    }
+                }
             }
         }
 
