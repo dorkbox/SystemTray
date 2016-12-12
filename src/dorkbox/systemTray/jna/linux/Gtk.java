@@ -187,7 +187,7 @@ class Gtk {
             if (!alreadyRunningGTK ) {
                 // If JavaFX/SWT is used, this is UNNECESSARY (we can detect if the GTK main_loop is running)
                 if (SystemTray.DEBUG) {
-                    logger.error("Running GTK Native Event Loop");
+                    logger.debug("Running GTK Native Event Loop");
                 }
 
                 gtkUpdateThread = new Thread() {
