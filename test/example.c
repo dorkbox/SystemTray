@@ -3,7 +3,11 @@
 #include <libappindicator/app-indicator.h>
 
 
-//  gcc example.c `pkg-config --cflags gtk+-2.0` -I/usr/include/libappindicator-0.1/  -o example `pkg-config --libs gtk+-2.0` -L/usr/lib -lappindicator
+//  gcc example.c `pkg-config --cflags --libs gtk+-2.0 appindicator-0.1` -I/usr/include/libappindicator-0.1/ -o example
+
+// apt libgtk-3-dev install libappindicator3-dev
+// NOTE: there will be warnings, but the file will build and run. NOTE: this will not run as root on ubuntu (no dbus connection back to the normal user)
+//  gcc example.c `pkg-config --cflags --libs gtk+-3.0 appindicator3-0.1` -I/usr/include/libappindicator3-0.1/ -o example
 
 
 static void activate_action (GtkAction *action);
@@ -262,12 +266,12 @@ int main (int argc, char **argv)
 
   /* Indicator */
   indicator = app_indicator_new ("example-simple-client",
-                                 "/home/user/SystemTray/test/dorkbox/mail.39AC39.24.png",
+                                 "/home/user/SystemTray/test/transport_train_station.p.39AC39.32.png",
                                  APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
 
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
 //  app_indicator_set_attention_icon_full(indicator, "/home/user/SystemTray/test/dorkbox/mail.000000.24.png", "1 ATTN");
-    app_indicator_set_icon(indicator, "/home/user/SystemTray/test/dorkbox/mail.999999.24.png");
+    app_indicator_set_icon(indicator, "/home/user/SystemTray/test/dorkbox/transport_train_station.p.39AC39.32.png");
 
 
    indicator_menu = gtk_menu_new();
@@ -293,7 +297,7 @@ int main (int argc, char **argv)
 //                        NULL,
 //                        indicator_menu);
 //
-//    gtk_widget_show_all(indicator_menu);
+    gtk_widget_show_all(indicator_menu);
 
 
   gtk_main ();
