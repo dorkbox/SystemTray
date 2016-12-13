@@ -240,11 +240,14 @@ class SystemTray {
         if (OS.isMacOsX()) {
             // cannot mix AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
             // https://bugs.openjdk.java.net/browse/JDK-8116017
+            // https://bugs.openjdk.java.net/browse/JDK-8118714
             if (isJavaFxLoaded && OS.javaVersion <= 7 && !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
 
                 logger.error("MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See issue: " +
-                             "'https://bugs.openjdk.java.net/browse/JDK-8116017'  \n" + "To fix this do one of the following, \n" +
-                             " - Upgrade to Java 8\n" + " - Add : '-Djavafx.macosx.embedded=true' as a JVM parameter\n" +
+                             "'https://bugs.openjdk.java.net/browse/JDK-8116017'  and 'https://bugs.openjdk.java.net/browse/JDK-8118714'\n" +
+                             "To fix this do one of the following: \n" +
+                             " - Upgrade to Java 8\n" +
+                             " - Add : '-Djavafx.macosx.embedded=true' as a JVM parameter\n" +
                              " - Set the system property via 'System.setProperty(\"javafx.macosx.embedded\", \"true\");'  before JavaFX is" +
                              "initialized, used, or accessed. NOTE: You may need to change the class (that your main method is in) so it does" +
                              " NOT extend the JavaFX 'Application' class.");
