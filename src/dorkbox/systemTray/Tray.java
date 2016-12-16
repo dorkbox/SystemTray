@@ -20,7 +20,6 @@ class Tray extends Menu {
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-    // trayIcon.setToolTip("app name");
 
     private volatile String statusText;
 
@@ -32,7 +31,7 @@ class Tray extends Menu {
     /**
      * Gets the 'status' string assigned to the system tray
      */
-    public synchronized
+    public
     String getStatus() {
         return statusText;
     }
@@ -42,14 +41,18 @@ class Tray extends Menu {
      *
      * @param statusText the text you want displayed, null if you want to remove the 'status' string
      */
-    public synchronized
+    public
     void setStatus(final String statusText) {
         this.statusText = statusText;
 
         // status is ALWAYS at 0 index...
         Entry menuEntry = null;
-        if (!menuEntries.isEmpty()) {
-            menuEntry = menuEntries.get(0);
+
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            if (!menuEntries.isEmpty()) {
+                menuEntry = menuEntries.get(0);
+            }
         }
 
         if (menuEntry instanceof Status) {

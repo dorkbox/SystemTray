@@ -41,6 +41,7 @@ import dorkbox.systemTray.peer.MenuPeer;
 @SuppressWarnings("unused")
 public
 class Menu extends MenuItem {
+    // access on this object must be synchronized for object visibility
     final List<Entry> menuEntries = new ArrayList<Entry>();
 
     public
@@ -112,12 +113,20 @@ class Menu extends MenuItem {
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    public synchronized
+    public
     void bind(final MenuPeer peer, final Menu parent, final SystemTray systemTray) {
         super.bind(peer, parent, systemTray);
 
-        for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-            final Entry menuEntry = menuEntries.get(i);
+        List<Entry> copy;
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            // a copy is made to prevent deadlocks from occurring when operating in different threads
+            copy = new ArrayList<Entry>(menuEntries);
+        }
+
+
+        for (int i = 0, menuEntriesSize = copy.size(); i < menuEntriesSize; i++) {
+            final Entry menuEntry = copy.get(i);
             peer.add(this, menuEntry, i);
         }
     }
@@ -204,7 +213,7 @@ class Menu extends MenuItem {
         }
 
         checkbox.setEnabled(entry.isEnabled());
-        checkbox.setState(entry.getState());
+        checkbox.setChecked(entry.getState());
         checkbox.setShortcut(entry.getMnemonic());
         checkbox.setText(entry.getText());
 
@@ -265,16 +274,19 @@ class Menu extends MenuItem {
     /**
      * Adds a menu entry, separator, or sub-menu to this menu.
      */
-    public synchronized
+    public
     <T extends Entry> T  add(final T entry, int index) {
-        if (index == -1) {
-            menuEntries.add(entry);
-        } else {
-            if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
-                // the "status" menu entry is ALWAYS first
-                index++;
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            if (index == -1) {
+                menuEntries.add(entry);
+            } else {
+                if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
+                    // the "status" menu entry is ALWAYS first
+                    index++;
+                }
+                menuEntries.add(index, entry);
             }
-            menuEntries.add(index, entry);
         }
 
         if (peer != null) {
@@ -295,16 +307,18 @@ class Menu extends MenuItem {
     /**
      * Gets the last menu entry or sub-menu, ignoring status and separators
      */
-    public synchronized
+    public
     Entry getLast() {
-        // Must be wrapped in a synchronized block for object visibility
-        if (!menuEntries.isEmpty()) {
-            Entry entry;
-            for (int i = menuEntries.size()-1; i >= 0; i--) {
-                entry = menuEntries.get(i);
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            if (!menuEntries.isEmpty()) {
+                Entry entry;
+                for (int i = menuEntries.size() - 1; i >= 0; i--) {
+                    entry = menuEntries.get(i);
 
-                if (!(entry instanceof Separator || entry instanceof Status)) {
-                    return entry;
+                    if (!(entry instanceof Separator || entry instanceof Status)) {
+                        return entry;
+                    }
                 }
             }
         }
@@ -317,25 +331,27 @@ class Menu extends MenuItem {
      *
      * @param menuIndex the menu entry index to use to retrieve the menu entry.
      */
-    public synchronized
+    public
     Entry get(final int menuIndex) {
         if (menuIndex < 0) {
             return null;
         }
 
-        // Must be wrapped in a synchronized block for object visibility
-        if (!menuEntries.isEmpty()) {
-            int count = 0;
-            for (Entry entry : menuEntries) {
-                if (entry instanceof Separator || entry instanceof Status) {
-                    continue;
-                }
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            if (!menuEntries.isEmpty()) {
+                int count = 0;
+                for (Entry entry : menuEntries) {
+                    if (entry instanceof Separator || entry instanceof Status) {
+                        continue;
+                    }
 
-                if (count == menuIndex) {
-                    return entry;
-                }
+                    if (count == menuIndex) {
+                        return entry;
+                    }
 
-                count++;
+                    count++;
+                }
             }
         }
 
@@ -347,31 +363,56 @@ class Menu extends MenuItem {
      *
      * @param entry This is the menu entry to remove
      */
-    public synchronized
+    public
     void remove(final Entry entry) {
         // null is passed in when a sub-menu is removing itself from us (because they have already called "remove" and have also
         // removed themselves from the menuEntries)
         if (entry != null) {
-            for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
-                final Entry entry__ = iterator.next();
-                if (entry__ == entry) {
-                    iterator.remove();
-                    entry.remove();
-                    break;
+            Entry toRemove = null;
+
+            synchronized (menuEntries) {
+                // access on this object must be synchronized for object visibility
+                for (Iterator<Entry> iterator = menuEntries.iterator(); iterator.hasNext(); ) {
+                    final Entry entry__ = iterator.next();
+                    if (entry__ == entry) {
+                        iterator.remove();
+                        toRemove = entry__;
+                        break;
+                    }
                 }
+            }
+            if (toRemove != null) {
+                toRemove.remove();
+                toRemove = null;
             }
 
+
             // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-            if (!menuEntries.isEmpty()) {
-                if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
-                    remove(menuEntries.get(0));
+            synchronized (menuEntries) {
+                // access on this object must be synchronized for object visibility
+                if (!menuEntries.isEmpty()) {
+                    if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
+                        toRemove = menuEntries.get(0);
+                    }
                 }
             }
+            if (toRemove != null) {
+                remove(toRemove);
+                toRemove = null;
+            }
+
+
             // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
-            if (!menuEntries.isEmpty()) {
-                if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
-                    remove(menuEntries.get(menuEntries.size() - 1));
+            synchronized (menuEntries) {
+                // access on this object must be synchronized for object visibility
+                if (!menuEntries.isEmpty()) {
+                    if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
+                        toRemove = menuEntries.get(menuEntries.size() - 1);
+                    }
                 }
+            }
+            if (toRemove != null) {
+                remove(toRemove);
             }
         }
     }
@@ -379,14 +420,20 @@ class Menu extends MenuItem {
     /**
      *  This removes all menu entries from this menu
      */
-    public synchronized
+    public
     void clear() {
-        // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
-        ArrayList<Entry> menuEntriesCopy = new ArrayList<Entry>(this.menuEntries);
-        for (Entry entry : menuEntriesCopy) {
+        List<Entry> copy;
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            // a copy is made to prevent deadlocks from occurring when operating in different threads
+            // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
+            copy = new ArrayList<Entry>(menuEntries);
+            menuEntries.clear();
+        }
+
+        for (Entry entry : copy) {
             entry.remove();
         }
-        menuEntries.clear();
     }
 
 
@@ -394,7 +441,7 @@ class Menu extends MenuItem {
      *  This removes all menu entries from this menu AND this menu from it's parent
      */
     @Override
-    public synchronized
+    public
     void remove() {
         clear();
 

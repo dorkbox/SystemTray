@@ -33,13 +33,13 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public
 class MenuItem extends Entry {
-    private String text;
-    private File imageFile;
-    private ActionListener callback;
+    private volatile String text;
+    private volatile File imageFile;
+    private volatile ActionListener callback;
 
     // default enabled is always true
-    private boolean enabled = true;
-    private char mnemonicKey;
+    private volatile boolean enabled = true;
+    private volatile char mnemonicKey;
 
     public
     MenuItem() {
@@ -124,7 +124,7 @@ class MenuItem extends Entry {
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    public synchronized
+    public
     void bind(final MenuItemPeer peer, final Menu parent, final SystemTray systemTray) {
         super.bind(peer, parent, systemTray);
 
@@ -135,7 +135,7 @@ class MenuItem extends Entry {
         peer.setShortcut(this);
     }
 
-    private synchronized
+    private
     void setImage_(final File imageFile) {
         this.imageFile = imageFile;
 
@@ -149,7 +149,7 @@ class MenuItem extends Entry {
      * <p>
      * This file can also be a cached file, depending on how the image was assigned to this entry.
      */
-    public synchronized
+    public
     File getImage() {
         return imageFile;
     }
@@ -157,7 +157,7 @@ class MenuItem extends Entry {
     /**
      * Gets the callback assigned to this menu entry
      */
-    public synchronized
+    public
     ActionListener getCallback() {
         return callback;
     }
@@ -165,7 +165,7 @@ class MenuItem extends Entry {
     /**
      * @return true if this item is enabled, or false if it is disabled.
      */
-    public synchronized
+    public
     boolean getEnabled() {
         return this.enabled;
     }
@@ -173,7 +173,7 @@ class MenuItem extends Entry {
     /**
      * Enables, or disables the entry.
      */
-    public synchronized
+    public
     void setEnabled(final boolean enabled) {
         this.enabled = enabled;
 
@@ -185,7 +185,7 @@ class MenuItem extends Entry {
     /**
      * @return the text label that the menu entry has assigned
      */
-    public synchronized
+    public
     String getText() {
         return text;
     }
@@ -195,7 +195,7 @@ class MenuItem extends Entry {
      *
      * @param text the new text to set
      */
-    public synchronized
+    public
     void setText(final String text) {
         this.text = text;
 
@@ -280,7 +280,7 @@ class MenuItem extends Entry {
     /**
      * @return true if this menu entry has an image assigned to it, or is just text.
      */
-    public synchronized
+    public
     boolean hasImage() {return imageFile != null;}
 
     /**
@@ -288,7 +288,7 @@ class MenuItem extends Entry {
      *
      * @param callback the callback to set. If null, the callback is safely removed.
      */
-    public synchronized
+    public
     void setCallback(final ActionListener callback) {
         this.callback = callback;
 
@@ -304,7 +304,7 @@ class MenuItem extends Entry {
      * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
      * of it will be underlined.
      */
-    public synchronized
+    public
     char getShortcut() {
         return this.mnemonicKey;
     }
@@ -317,7 +317,7 @@ class MenuItem extends Entry {
      *
      * @param key this is the key to set as the mnemonic
      */
-    public synchronized
+    public
     void setShortcut(final char key) {
         this.mnemonicKey = key;
 
@@ -334,7 +334,7 @@ class MenuItem extends Entry {
      *
      * @param key this is the VK key to set as the mnemonic
      */
-    public synchronized
+    public
     void setShortcut(final int key) {
         this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
 
@@ -344,7 +344,7 @@ class MenuItem extends Entry {
     }
 
     @Override
-    public synchronized
+    public
     void remove() {
         if (peer != null) {
             setImage_(null);

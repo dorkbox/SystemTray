@@ -26,12 +26,12 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings("unused")
 public
 class Checkbox extends Entry {
-    private boolean isChecked = false;
-    private String text;
-    private ActionListener callback;
+    private volatile boolean isChecked = false;
+    private volatile String text;
+    private volatile ActionListener callback;
 
-    private boolean enabled = true;
-    private char mnemonicKey;
+    private volatile boolean enabled = true;
+    private volatile char mnemonicKey;
 
     public
     Checkbox() {
@@ -54,7 +54,7 @@ class Checkbox extends Entry {
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    public synchronized
+    public
     void bind(final CheckboxPeer peer, final Menu parent, final SystemTray systemTray) {
         super.bind(peer, parent, systemTray);
 
@@ -68,7 +68,7 @@ class Checkbox extends Entry {
     /**
      * @return true if this checkbox is selected, false if not.
      */
-    public synchronized
+    public
     boolean getChecked() {
         return isChecked;
     }
@@ -78,8 +78,8 @@ class Checkbox extends Entry {
      *
      * @param isChecked true to show the checkbox, false to hide it
      */
-    public synchronized
-    void setState(boolean isChecked) {
+    public
+    void setChecked(boolean isChecked) {
         this.isChecked = isChecked;
 
         if (peer != null) {
@@ -90,7 +90,7 @@ class Checkbox extends Entry {
     /**
      * Gets the callback assigned to this menu entry
      */
-    public synchronized
+    public
     ActionListener getCallback() {
         return callback;
     }
@@ -100,7 +100,7 @@ class Checkbox extends Entry {
      *
      * @param callback the callback to set. If null, the callback is safely removed.
      */
-    public synchronized
+    public
     void setCallback(final ActionListener callback) {
         this.callback = callback;
         if (peer != null) {
@@ -111,7 +111,7 @@ class Checkbox extends Entry {
     /**
      * @return true if this item is enabled, or false if it is disabled.
      */
-    public synchronized
+    public
     boolean getEnabled() {
         return this.enabled;
     }
@@ -119,7 +119,7 @@ class Checkbox extends Entry {
     /**
      * Enables, or disables the entry.
      */
-    public synchronized
+    public
     void setEnabled(final boolean enabled) {
         this.enabled = enabled;
 
@@ -131,7 +131,7 @@ class Checkbox extends Entry {
     /**
      * @return the text label that the menu entry has assigned
      */
-    public synchronized
+    public
     String getText() {
         return text;
     }
@@ -141,7 +141,7 @@ class Checkbox extends Entry {
      *
      * @param text the new text to set
      */
-    public synchronized
+    public
     void setText(final String text) {
         this.text = text;
 
@@ -157,7 +157,7 @@ class Checkbox extends Entry {
      * Mnemonics are case-insensitive, and if the character defined by the mnemonic is found within the text, the first occurrence
      * of it will be underlined.
      */
-    public synchronized
+    public
     char getShortcut() {
         return this.mnemonicKey;
     }
@@ -170,7 +170,7 @@ class Checkbox extends Entry {
      *
      * @param key this is the key to set as the mnemonic
      */
-    public synchronized
+    public
     void setShortcut(final char key) {
         this.mnemonicKey = key;
 
@@ -187,7 +187,7 @@ class Checkbox extends Entry {
      *
      * @param key this is the VK key to set as the mnemonic
      */
-    public synchronized
+    public
     void setShortcut(final int key) {
         this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
 

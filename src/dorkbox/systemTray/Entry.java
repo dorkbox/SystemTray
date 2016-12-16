@@ -28,8 +28,8 @@ class Entry {
     private static final AtomicInteger MENU_ID_COUNTER = new AtomicInteger(0);
     private final int id = Entry.MENU_ID_COUNTER.getAndIncrement();
 
-    private Menu parent;
-    private SystemTray systemTray;
+    private volatile Menu parent;
+    private volatile SystemTray systemTray;
 
     protected volatile EntryPeer peer;
 
@@ -45,7 +45,7 @@ class Entry {
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    public synchronized
+    public
     void bind(final EntryPeer peer, final Menu parent, final SystemTray systemTray) {
         this.parent = parent;
         this.systemTray = systemTray;
@@ -59,7 +59,7 @@ class Entry {
     /**
      * @return the parent menu (of this entry or menu) or null if we are the root menu
      */
-    public final synchronized
+    public final
     Menu getParent() {
         return this.parent;
     }
@@ -67,7 +67,7 @@ class Entry {
     /**
      * @return the system tray that this menu is ultimately attached to
      */
-    public final synchronized
+    public final
     SystemTray getSystemTray() {
         return this.systemTray;
     }
@@ -75,7 +75,7 @@ class Entry {
     /**
      * Removes this menu entry from the menu and releases all system resources associated with this menu entry
      */
-    public synchronized
+    public
     void remove() {
         if (peer != null) {
             peer.remove();

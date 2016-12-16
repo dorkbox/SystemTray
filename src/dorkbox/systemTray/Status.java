@@ -33,7 +33,7 @@ class Status extends Entry {
      * @param parent the parent of this menu, null if the parent is the system tray
      * @param systemTray the system tray (which is the object that sits in the system tray)
      */
-    public synchronized
+    public
     void bind(final StatusPeer peer, final Menu parent, final SystemTray systemTray) {
         super.bind(peer, parent, systemTray);
 
@@ -43,7 +43,7 @@ class Status extends Entry {
     /**
      * @return the text label that the menu entry has assigned
      */
-    public synchronized
+    public
     String getText() {
         return text;
     }
@@ -53,7 +53,7 @@ class Status extends Entry {
      *
      * @param text the new text to set
      */
-    public synchronized
+    public
     void setText(final String text) {
         this.text = text;
 

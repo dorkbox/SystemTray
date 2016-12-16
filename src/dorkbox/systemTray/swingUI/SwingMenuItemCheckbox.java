@@ -91,7 +91,7 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
             public
             void actionPerformed(ActionEvent e) {
                 // this will run on the EDT, since we are calling it from the EDT
-                menuItem.setState(!isChecked);
+                menuItem.setChecked(!isChecked);
 
                 // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
                 ActionListener cb = menuItem.getCallback();
