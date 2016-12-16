@@ -460,6 +460,11 @@ class SystemTray {
                     // kde (at least, plasma 5.5.6) requires appindicator
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                 }
+                else if ("pantheon".equalsIgnoreCase(XDG)) {
+                    // elementaryOS. It only supports appindicator (not gtkstatusicon)
+                    // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
+                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                }
                 else if ("gnome".equalsIgnoreCase(XDG)) {
                     // check other DE
                     String GDM = System.getenv("GDMSESSION");
