@@ -248,7 +248,12 @@ class Gtk {
                         }
                     }
 
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                    new RuntimeException());
+                        }
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -267,7 +272,12 @@ class Gtk {
                         }
                     }
 
-                    blockUntilStarted.await(10, TimeUnit.SECONDS);
+                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                    new RuntimeException());
+                        }
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -285,7 +295,12 @@ class Gtk {
                     }
                 }
 
-                blockUntilStarted.await(10, TimeUnit.SECONDS);
+                if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                new RuntimeException());
+                    }
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -377,11 +392,12 @@ class Gtk {
         try {
             if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
                 if (SystemTray.DEBUG) {
-                    SystemTray.logger.error("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                            "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                    SystemTray.logger.error("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
+                                            "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.",
+                                            new RuntimeException());
                 } else {
-                    throw new RuntimeException("Event dispatch queue took longer than " + TIMEOUT + " seconds to complete. Please adjust " +
-                                               "`SystemTray.TIMEOUT` to a value which better suites your environment.");
+                    throw new RuntimeException("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
+                                               "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.");
                 }
             }
         } catch (InterruptedException e) {
