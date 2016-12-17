@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
@@ -36,6 +37,8 @@ import dorkbox.systemTray.util.Swt;
  * bindings for gtk 2 or 3
  *
  * note: gtk2/3 loading is SENSITIVE, and which AppIndicator symbols are loaded depends on this being loaded first
+ *       Additionally, gtk3 has deprecated some methods -- which, fortunately for us, means it will be another 25 years before they are
+ *       removed; forcing us to have separate gtk2/3 bindings (we can then only have gtk3 bindings)
  *
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
@@ -54,12 +57,9 @@ class Gtk {
     private static boolean alreadyRunningGTK = false;
     private static boolean isLoaded = false;
 
-    // there is ONLY a single thread EVER setting this value!!
-    private static volatile boolean isDispatch = false;
+    private static AtomicBoolean isDispatch = new AtomicBoolean(false);
 
     private static final int TIMEOUT = 2;
-
-    private static final Object dispatchLock = new Object[0];
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
@@ -171,6 +171,7 @@ class Gtk {
     @SuppressWarnings("FieldCanBeLocal")
     private static Thread gtkUpdateThread = null;
 
+    @SuppressWarnings("WeakerAccess")
     public static final int FALSE = 0;
     public static final int TRUE = 1;
 
@@ -251,7 +252,7 @@ class Gtk {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new RuntimeException());
+                                                    new Exception());
                         }
                     }
                 } catch (InterruptedException e) {
@@ -275,7 +276,7 @@ class Gtk {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new RuntimeException());
+                                                    new Exception());
                         }
                     }
                 } catch (InterruptedException e) {
@@ -298,7 +299,7 @@ class Gtk {
                 if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                     if (SystemTray.DEBUG) {
                         SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                new RuntimeException());
+                                                new Exception());
                     }
                 }
             } catch (InterruptedException e) {
@@ -338,7 +339,7 @@ class Gtk {
 
         // not javafx
         // gtk/swt are **mostly** the same in how events are dispatched, so we can use "raw" gtk methods for SWT
-        if (isDispatch) {
+        if (isDispatch.get()) {
             // Run directly on the dispatch thread
             runnable.run();
         } else {
@@ -348,25 +349,26 @@ class Gtk {
                 int callback(final Pointer data) {
                     synchronized (gtkCallbacks) {
                         gtkCallbacks.removeFirst(); // now that we've 'handled' it, we can remove it from our callback list
-
-                        isDispatch = true;
-
-                        try {
-                            runnable.run();
-                        } finally {
-                            isDispatch = false;
-                            return Gtk.FALSE; // don't want to call this again
-                        }
                     }
+
+                    isDispatch.set(true);
+
+                    try {
+                        runnable.run();
+                    } finally {
+                        isDispatch.set(false);
+                    }
+
+                    return Gtk.FALSE; // don't want to call this again
                 }
             };
 
             synchronized (gtkCallbacks) {
                 gtkCallbacks.offer(callback); // prevent GC from collecting this object before it can be called
-
-                // the correct way to do it. Add with a slightly higher value
-                gdk_threads_add_idle_full(100, callback, null, null);
             }
+
+            // the correct way to do it. Add with a slightly higher value
+            gdk_threads_add_idle_full(100, callback, null, null);
         }
     }
 
@@ -394,7 +396,7 @@ class Gtk {
                 if (SystemTray.DEBUG) {
                     SystemTray.logger.error("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
                                             "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.",
-                                            new RuntimeException());
+                                            new Exception());
                 } else {
                     throw new RuntimeException("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
                                                "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.");
@@ -403,7 +405,6 @@ class Gtk {
         } catch (InterruptedException e) {
             SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception());
         }
-
     }
 
     public static
@@ -429,12 +430,12 @@ class Gtk {
      */
     public static
     void proxyClick(final Entry menuEntry, final ActionListener callback) {
-        Gtk.isDispatch = true;
+        Gtk.isDispatch.set(true);
 
         try {
             callback.actionPerformed(new ActionEvent(menuEntry, ActionEvent.ACTION_PERFORMED, ""));
         } finally {
-            Gtk.isDispatch = false;
+            Gtk.isDispatch.set(false);
         }
     }
 
