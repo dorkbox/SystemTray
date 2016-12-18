@@ -214,6 +214,7 @@ class Gtk {
                         // gdk_threads_leave();  would be needed for g_idle_add()
                     }
                 };
+                gtkUpdateThread.setDaemon(false); // explicitly NOT daemon so that this will hold the JVM open as necessary
                 gtkUpdateThread.setName("GTK Native Event Loop");
                 gtkUpdateThread.start();
             }
@@ -252,7 +253,7 @@ class Gtk {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new Exception());
+                                                    new Exception(""));
                         }
                     }
                 } catch (InterruptedException e) {
@@ -276,7 +277,7 @@ class Gtk {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new Exception());
+                                                    new Exception(""));
                         }
                     }
                 } catch (InterruptedException e) {
@@ -299,7 +300,7 @@ class Gtk {
                 if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                     if (SystemTray.DEBUG) {
                         SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                new Exception());
+                                                new Exception(""));
                     }
                 }
             } catch (InterruptedException e) {
@@ -374,36 +375,40 @@ class Gtk {
 
     public static
     void dispatchAndWait(final Runnable runnable) {
+        if (isDispatch.get()) {
+            // Run directly on the dispatch thread (should not "redispatch" this again)
+            runnable.run();
+        } else {
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                try {
-                    runnable.run();
-                } finally {
-                    countDownLatch.countDown();
+            Gtk.dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    try {
+                        runnable.run();
+                    } finally {
+                        countDownLatch.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
-        // thread occur in REASONABLE time-frames, and alert the user if not.
-        try {
-            if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.error("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
-                                            "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.",
-                                            new Exception());
-                } else {
-                    throw new RuntimeException("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
-                                               "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.");
+            // this is slightly different than how swing does it. We have a timeout here so that we can make sure that updates on the GUI
+            // thread occur in REASONABLE time-frames, and alert the user if not.
+            try {
+                if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
+                                                "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.",
+                                                new Exception(""));
+                    } else {
+                        throw new RuntimeException("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
+                                                   "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.");
+                    }
                 }
+            } catch (InterruptedException e) {
+                SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception(""));
             }
-        } catch (InterruptedException e) {
-            SystemTray.logger.error("Error waiting for dispatch to complete.", new Exception());
         }
     }
 
