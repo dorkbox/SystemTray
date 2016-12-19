@@ -102,6 +102,8 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
         final GtkMenu gtkMenu = new GtkMenu(null) {
             /**
              * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
+             *
+             * ALWAYS CALLED ON THE EDT
              */
             protected final
             void onMenuAdded(final Pointer menu) {

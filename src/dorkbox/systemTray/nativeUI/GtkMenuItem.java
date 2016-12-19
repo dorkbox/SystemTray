@@ -53,7 +53,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     }
 
 
-    // called by native code
+    // called by native code, always on the GTK event dispatch thread
     @Override
     public
     int callback(final Pointer instance, final Pointer data) {
