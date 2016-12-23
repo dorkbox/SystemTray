@@ -28,6 +28,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -136,7 +137,7 @@ class Extension {
 
         // strip off UP-TO plus the leading  [
         extensionIndex = output.indexOf("[");
-        if (extensionIndex > 0) {
+        if (extensionIndex >= 0) {
             stringBuilder.delete(0, extensionIndex+1);
         }
 
@@ -152,19 +153,23 @@ class Extension {
         // now just split the extensions into a list so it is easier to manage
 
         String[] split = installedExtensions
-                                      .split(",");
+                                      .split(", ");
         for (int i = 0; i < split.length; i++) {
             final String s = split[i];
 
             int i1 = s.indexOf("'");
             int i2 = s.lastIndexOf("'");
 
-            if (i1 == 1 && i2 == s.length() - 1) {
-                split[i] = s.substring(1, s.length() - 2);
+            if (i1 == 0 && i2 == s.length() - 1) {
+                split[i] = s.substring(1, s.length() - 1);
+            }
+
+            if (SystemTray.DEBUG) {
+                logger.debug("   Cleaning extension: `{}`", split[i]);
             }
         }
 
-        return Arrays.asList(split);
+        return new ArrayList<String>(Arrays.asList(split));
     }
 
     public static
@@ -173,6 +178,7 @@ class Extension {
         PrintStream outputStream = new PrintStream(byteArrayOutputStream);
 
         StringBuilder stringBuilder = new StringBuilder("[");
+
         for (int i = 0, extensionsSize = extensions.size(), limit = extensionsSize-1; i < extensionsSize; i++) {
             final String extension = extensions.get(i);
             stringBuilder.append("'")
@@ -180,17 +186,18 @@ class Extension {
                          .append("'");
 
             if (i < limit) {
-                stringBuilder.append(", ");
+                stringBuilder.append(",");
             }
         }
         stringBuilder.append("]");
 
 
         if (SystemTray.DEBUG) {
-            logger.debug("Setting installed extensions are: {}", stringBuilder.toString());
+            logger.debug("Setting installed extensions to: {}", stringBuilder.toString());
         }
 
         // gsettings set org.gnome.shell enabled-extensions "['SystemTray@dorkbox']"
+        // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@dorkbox']"
         final ShellProcessBuilder setGsettings = new ShellProcessBuilder(outputStream);
         setGsettings.setExecutable("gsettings");
@@ -248,6 +255,10 @@ class Extension {
             return;
         }
 
+        // always install the extension, because it might have been updated
+        // set a property so that GTK (if necessary) can set the name
+        System.setProperty("SystemTray_GTK_SET_NAME", "true");
+
         // have to copy the extension over and enable it.
         String userHome = System.getProperty("user.home");
 
@@ -267,10 +278,16 @@ class Extension {
             gnomeVersion = gnomeVersion.substring(0, nextIndexOf);  // will be 3.14 (without the trailing '.1'), for example
         }
 
-        String metadata = "{\n" + "  \"description\": \"Shows a java tray icon on the top notification tray\",\n" +
-                          "  \"name\": \"Dorkbox SystemTray\",\n" + "  \"shell-version\": [\n" + "    \"" + gnomeVersion + "\"\n" +
-                          "  ],\n" + "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" + "  \"uuid\": \"" + UID + "\",\n" +
-                          "  \"version\": " + SystemTray.getVersion() + "\n" + "}\n";
+        String metadata = "{\n" +
+                          "  \"description\": \"Shows a java tray icon on the top notification tray\",\n" +
+                          "  \"name\": \"Dorkbox SystemTray\",\n" +
+                          "  \"shell-version\": [\n" +
+                          "    \"" + gnomeVersion + "\"\n" +
+                          "  ],\n" +
+                          "  \"url\": \"https://github.com/dorkbox/SystemTray\",\n" +
+                          "  \"uuid\": \"" + UID + "\",\n" +
+                          "  \"version\": " + SystemTray.getVersion() + "\n" +
+                          "}\n";
 
 
         logger.debug("Installing gnome-shell extension");
@@ -302,8 +319,11 @@ class Extension {
             if (metadata.equals(builder.toString())) {
                 // this means that our version info, etc. is the same - there is no need to update anything
                 if (!SystemTray.DEBUG) {
-                    // if we are DEBUG, then we ALWAYS want to copy over our extension. We will have to manually restart the shell to see it
                     return;
+                } else {
+                    // if we are DEBUG, then we ALWAYS want to copy over our extension. We will have to manually restart the shell to see it
+                    logger.debug("Always upgrading extension in DEBUG mode");
+                    hasSystemTray = false;
                 }
             }
             else {
@@ -322,7 +342,7 @@ class Extension {
             if (!mkdirs) {
                 final String msg = "Unable to create extension location: " + file;
                 logger.error(msg);
-                throw new RuntimeException(msg);
+                return;
             }
         }
 
@@ -351,7 +371,8 @@ class Extension {
                 fileOutputStream = new FileOutputStream(extensionFile);
 
                 if (reader == null) {
-                    throw new RuntimeException("The GnomeShell extension.js file cannot be found. Something is severely wrong.");
+                    logger.error("The GnomeShell extension.js file cannot be found. Something is severely wrong.");
+                    return;
                 }
 
                 IO.copyStream(reader, fileOutputStream);
