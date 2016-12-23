@@ -114,11 +114,11 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                 // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
                 // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
 
-                // ... so, bizzaro things going on here. These errors DO NOT happen if JavaFX is dispatching the events.
-                //     BUT   this is REQUIRED when running JavaFX. For unknown reasons, the title isn't pushed to GTK, so our
+                // ... so, bizzaro things going on here. These errors DO NOT happen if JavaFX or Gnome is dispatching the events.
+                //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
                 //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
                 //           we appear broken.
-                if (SystemTray.isJavaFxLoaded) {
+                if (System.getProperty("SystemTray_GTK_SET_NAME", "false").equals("true")) {
                     Gtk.gtk_status_icon_set_name(trayIcon, "SystemTray");
                 }
             }

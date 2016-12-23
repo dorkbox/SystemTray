@@ -39,6 +39,7 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.nativeUI.NativeUI;
@@ -189,6 +190,16 @@ class SystemTray {
 
         isJavaFxLoaded = isJavaFxLoaded_;
         isSwtLoaded = isSwtLoaded_;
+    }
+
+    private static
+    boolean isTrayType(final Class<? extends Tray> tray, final TrayType trayType) {
+        switch (trayType) {
+            case GtkStatusIcon: return (tray == _GtkStatusIconTray.class || tray == _GtkStatusIconNativeTray.class);
+            case AppIndicator: return (tray == _AppIndicatorTray.class || tray == _AppIndicatorNativeTray.class);
+            case Swing: return (tray == _SwingTray.class || tray == _AwtTray.class);
+        }
+        return false;
     }
 
     private static
@@ -410,17 +421,6 @@ class SystemTray {
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
             // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
-            // load up our libraries
-            // NOTE:
-            //  ALSO WHAT VERSION OF GTK to use? appindiactor1 -> GTk2, appindicator3 -> GTK3.
-            // appindicator3 doesn't support menu icons via GTK2!!
-            if (Gtk.isGtk2 || AppIndicator.isVersion3) {
-                if (DEBUG) {
-                    logger.debug("Done loading libraries");
-                }
-            }
-
-
             // this can never be swing
             // don't check for SWING type at this spot, it is done elsewhere.
             if (SystemTray.FORCE_TRAY_TYPE != TrayType.AutoDetect) {
@@ -443,26 +443,7 @@ class SystemTray {
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
-            boolean isReallyGnome = false;
-            try {
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                // ps a | grep [g]nome-shell
-                final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                shell.setExecutable("ps");
-                shell.addArgument("a");
-                shell.start();
-
-
-                String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                isReallyGnome = output.contains("gnome-shell");
-            } catch (Throwable e) {
-                if (DEBUG) {
-                    logger.error("Cannot detect if gnome-shell is running", e);
-                }
-            }
-
+            boolean isReallyGnome = Extension.isReallyGnome();
             if (isReallyGnome) {
                 if (DEBUG) {
                     logger.error("Auto-detected that gnome-shell is running");
@@ -515,7 +496,58 @@ class SystemTray {
                         logger.debug("Currently using the '{}' session type", GDM);
                     }
 
-                    if ("cinnamon".equalsIgnoreCase(GDM)) {
+                    // are we fedora? If so, what version?
+                    String fedoraCheckOutput = "";
+                    try {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                        // cat /etc/os-release
+                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
+                        shell.setExecutable("cat");
+                        shell.addArgument("/etc/os-release");
+                        shell.start();
+
+                        fedoraCheckOutput = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+                    } catch (Throwable e) {
+                        if (DEBUG) {
+                            logger.error("Cannot check what version of Fedora is running", e);
+                        }
+                    }
+
+                    if ("gnome".equalsIgnoreCase(GDM)) {
+                        if (fedoraCheckOutput.contains("ID=fedora")) {
+                            // now, what VERSION of fedora? 23/24 don't have AppIndicator installed, so we have to use GtkStatusIcon
+                            int fedoraVersion = 0;
+
+                            try {
+                                // should be: VERSION_ID=23\n  or something
+                                int beginIndex = fedoraCheckOutput.indexOf("VERSION_ID=") + 11;
+                                String fedoraVersion_ = fedoraCheckOutput.substring(beginIndex, fedoraCheckOutput.indexOf(OS.LINE_SEPARATOR_UNIX, beginIndex));
+                                fedoraVersion = Integer.parseInt(fedoraVersion_);
+
+                                if (DEBUG) {
+                                    logger.debug("Running Fedora version: '{}'", fedoraVersion_);
+                                }
+                            } catch (Throwable e) {
+                                logger.error("Cannot detect what version of Fedora is running. Falling back to GtkStatusIcon", e);
+                                trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                            }
+
+                            if (trayType == null) {
+                                if (fedoraVersion <= 24) {
+                                    // 23 is gtk, 24 is ?
+                                    Extension.install();
+                                    trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                                } else {
+                                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                                }
+                            }
+                        } else {
+                            trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                        }
+                    }
+                    else if ("cinnamon".equalsIgnoreCase(GDM)) {
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
@@ -596,7 +628,7 @@ class SystemTray {
                 return;
             }
 
-            if (trayType == _AppIndicatorNativeTray.class || trayType == _AppIndicatorTray.class) {
+            if (isTrayType(trayType, TrayType.AppIndicator)) {
                 // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
 
                 // this means we are running as sudo
@@ -664,30 +696,49 @@ class SystemTray {
         CacheUtil.tempDir = "SysTray";
 
         try {
-            if (OS.isLinux() &&
-                trayType == _AppIndicatorTray.class &&
-                Gtk.isGtk2 &&
-                AppIndicator.isVersion3) {
-
-                try {
-                    trayType = selectType(useNativeMenus, TrayType.GtkStatusIcon);
-                    logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
-                                "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
-                } catch (Throwable e) {
-                    if (DEBUG) {
-                        logger.error("Cannot initialize _GtkStatusIconTray", e);
-                    }
-                    logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
-                                 "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
-                                 "the menu icons WILL NOT be visible." +
-                                 " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
-
+            if (OS.isLinux()) {
+                // load up our libraries   NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
+                // appindicator3 doesn't support menu icons via GTK2!!
+                if (!Gtk.isLoaded) {
+                    logger.error("Unable to initialize GTK! Something is severely wrong!");
                     systemTrayMenu = null;
                     return;
+                }
+
+                if (isTrayType(trayType, TrayType.AppIndicator)) {
+                    if (Gtk.isGtk2 && AppIndicator.isVersion3) {
+                        try {
+                            trayType = selectType(useNativeMenus, TrayType.GtkStatusIcon);
+                            logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
+                                        "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
+                        } catch (Throwable e) {
+                            if (DEBUG) {
+                                logger.error("Cannot initialize _GtkStatusIconTray", e);
+                            }
+                            logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
+                                         "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
+                                         "the menu icons WILL NOT be visible." +
+                                         " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
+
+                            systemTrayMenu = null;
+                            return;
+                        }
+                    }
+
+                    if (!AppIndicator.isLoaded) {
+                        // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
+                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        logger.warn("Unable to initialize the AppIndicator correctly, falling back to GtkStatusIcon.");
+                    }
                 }
             }
 
             if (isJavaFxLoaded) {
+                if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
+                    // set a property so that GTK (if necessary) can set the name
+                    System.setProperty("SystemTray_GTK_SET_NAME", "true");
+                }
+
                 // This will initialize javaFX dispatch methods
                 JavaFX.init();
             }
@@ -789,7 +840,6 @@ class SystemTray {
             }
         }
     }
-
 
     /**
      * Gets the version number.
