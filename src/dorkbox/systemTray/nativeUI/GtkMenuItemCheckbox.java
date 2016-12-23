@@ -28,6 +28,7 @@ import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.CheckboxPeer;
 
+// ElementaryOS shows the checkbox on the right, everyone else is on the left. With eOS, we CANNOT show the spacer image. It does not work
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
