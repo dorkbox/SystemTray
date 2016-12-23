@@ -33,17 +33,18 @@ import dorkbox.systemTray.jna.JnaHelper;
 public
 class AppIndicator {
     public static boolean isVersion3 = false;
-    private static boolean isLoaded = false;
 
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
-     * standard library naming convention or features/API set is. We just try until we find one that work, and are able to map the
+     * standard library naming convention or features/API set is. We just try until we find one that works, and are able to map the
      * symbols we need. There are bash commands that will tell us the linked library name, however - I'd rather not run bash commands
      * to determine this.
      *
      * This is so hacky it makes me sick.
      */
     static {
+        boolean isLoaded = false;
+
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator.so.1 | grep foo
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator3.so.1 | grep foo
 

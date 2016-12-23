@@ -96,7 +96,7 @@ class Gtk {
                 isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
-                // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
+                // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
 
@@ -118,7 +118,7 @@ class Gtk {
                 JnaHelper.register(gtk3LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk3LibName, "gtk_status_icon_position_menu");
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
-                // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
+                // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
 
@@ -140,7 +140,7 @@ class Gtk {
                 isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
-                // when it's '1', it means that someone else has stared GTK -- so we DO NOT NEED TO.
+                // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
                 alreadyRunningGTK = gtk_main_level() != 0;
                 isLoaded = true;
 
