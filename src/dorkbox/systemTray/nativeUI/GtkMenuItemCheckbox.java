@@ -36,11 +36,9 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     private final NativeLong nativeLong;
 
     private final GtkMenu parent;
-    private final Pointer _native = Gtk.gtk_check_menu_item_new_with_mnemonic("");
-
 
     // these have to be volatile, because they can be changed from any thread
-    private volatile Checkbox menuItem;
+    private volatile Checkbox checkbox;
     private volatile Pointer image;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
@@ -53,6 +51,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItemCheckbox(final GtkMenu parent) {
+        super(Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
         // cannot be done in a static initializer, because the tray icon size might not yet have been determined
@@ -67,13 +66,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     int callback(final Pointer instance, final Pointer data) {
-        if (menuItem != null) {
-            final ActionListener cb = menuItem.getCallback();
+        if (checkbox != null) {
+            final ActionListener cb = checkbox.getCallback();
             if (cb != null) {
                 try {
-                    Gtk.proxyClick(menuItem, cb);
+                    Gtk.proxyClick(checkbox, cb);
                 } catch (Exception e) {
-                    SystemTray.logger.error("Error calling menu entry checkbox {} click event.", menuItem.getText(), e);
+                    SystemTray.logger.error("Error calling menu entry checkbox {} click event.", checkbox.getText(), e);
                 }
             }
         }
@@ -87,7 +86,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     }
 
     public
-    void setSpacerImage(final Pointer _native, final boolean everyoneElseHasImages) {
+    void setSpacerImage(final boolean everyoneElseHasImages) {
         // no op
     }
 
@@ -138,8 +137,8 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
     @Override
     public
-    void setCallback(final Checkbox menuItem) {
-        this.menuItem = menuItem;
+    void setCallback(final Checkbox checkbox) {
+        this.checkbox = checkbox;
     }
 
     @Override
@@ -162,16 +161,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         setText(menuItem);
     }
 
-    @Override
-    void onDeleteMenu(final Pointer parentNative) {
-        onDeleteMenu(parentNative, _native);
-    }
-
-    @Override
-    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
-        onCreateMenu(parentNative, _native, hasImagesInMenu);
-    }
-
     @SuppressWarnings("Duplicates")
     @Override
     public
@@ -180,18 +169,15 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);
-                Gtk.gtk_menu_shell_deactivate(parent._nativeMenu, _native);
+                Gtk.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
                 GtkMenuItemCheckbox.super.remove();
 
-                menuItem = null;
                 if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
+                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
                 }
-
-                Gtk.gtk_widget_destroy(_native);
+                checkbox = null;
 
                 parent.remove(GtkMenuItemCheckbox.this);
             }

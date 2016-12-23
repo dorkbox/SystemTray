@@ -33,7 +33,12 @@ class GtkBaseMenuItem implements EntryPeer {
     // these have to be volatile, because they can be changed from any thread
     private volatile Pointer spacerImage;
 
-    GtkBaseMenuItem() {
+    // the native GTK component
+    protected final Pointer _native;
+
+    GtkBaseMenuItem(final Pointer _native) {
+        this._native = _native;
+
         // cannot be done in a static initializer, because the tray icon size might not yet have been determined
         if (transparentIcon == null) {
             transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
@@ -56,14 +61,14 @@ class GtkBaseMenuItem implements EntryPeer {
      * called on the DISPATCH thread
      */
     public
-    void setSpacerImage(final Pointer _native, final boolean everyoneElseHasImages) {
+    void setSpacerImage(final boolean everyoneElseHasImages) {
         if (hasLegitImage) {
             // we have a legit icon, so there is nothing else we can do.
             return;
         }
 
         if (spacerImage != null) {
-            Gtk.gtk_widget_destroy(spacerImage);
+            Gtk.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
             spacerImage = null;
             Gtk.gtk_widget_show_all(_native);
         }
@@ -81,18 +86,17 @@ class GtkBaseMenuItem implements EntryPeer {
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
     // To work around this issue, we destroy then recreate the menu every time something is changed.
-    abstract void onDeleteMenu(final Pointer parentNative);
-    abstract void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu);
-
-    // always on dispatch
-    void onDeleteMenu(final Pointer parentNative, final Pointer _native) {
+    // always on EDT
+    void onDeleteMenu(final Pointer parentNative) {
         Gobject.g_object_force_floating(_native);  // makes it a floating reference
         Gtk.gtk_container_remove(parentNative, _native);
     }
 
-    // always on dispatch
-    void onCreateMenu(final Pointer parentNative, final Pointer _native, final boolean hasImagesInMenu) {
-        setSpacerImage(_native, hasImagesInMenu);
+    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+    // To work around this issue, we destroy then recreate the menu every time something is changed.
+    // always on EDT
+    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
+        setSpacerImage(hasImagesInMenu);
 
         // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
         Gtk.gtk_menu_shell_append(parentNative, _native);
@@ -108,7 +112,7 @@ class GtkBaseMenuItem implements EntryPeer {
             public
             void run() {
                 if (spacerImage != null) {
-                    Gtk.gtk_widget_destroy(spacerImage);
+                    Gtk.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
                     spacerImage = null;
                 }
             }

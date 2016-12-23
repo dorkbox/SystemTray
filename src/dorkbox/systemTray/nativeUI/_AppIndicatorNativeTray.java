@@ -99,7 +99,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
         Gtk.startGui();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final GtkMenu gtkMenu = new GtkMenu(null) {
+        final GtkMenu gtkMenu = new GtkMenu() {
             /**
              * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
              *

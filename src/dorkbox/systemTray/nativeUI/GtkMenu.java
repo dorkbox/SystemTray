@@ -18,6 +18,7 @@ package dorkbox.systemTray.nativeUI;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
@@ -37,7 +38,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     private final GtkMenu parent;
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
 
-    private final Pointer _nativeEntry; // is what is added to the parent menu, if we are NOT on the system tray
     private volatile Pointer image;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
@@ -46,24 +46,30 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     private volatile char mnemonicKey = 0;
 
     // have to make sure no other methods can call obliterate, delete, or create menu once it's already started
-    private volatile boolean obliterateInProgress = false;
+    private AtomicBoolean obliterateInProgress = new AtomicBoolean(false);
+
+    // called by the system tray constructors
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    GtkMenu() {
+        super(null);
+        this.parent = null;
+    }
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
     GtkMenu(final GtkMenu parent) {
+        super(Gtk.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
         this.parent = parent;
-
-        if (parent != null) {
-            _nativeEntry = Gtk.gtk_image_menu_item_new_with_mnemonic(""); // is what is added to the parent menu (so images work)
-        } else {
-            _nativeEntry = null;
-        }
     }
 
     GtkMenu getParent() {
         return parent;
     }
 
+    /**
+     * ALWAYS CALLED ON THE EDT
+     */
     private
     void add(final GtkBaseMenuItem item, final int index) {
         if (index > 0) {
@@ -75,6 +81,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
     /**
      * Called inside the gdk_threads block
+     *
+     * ALWAYS CALLED ON THE EDT
      */
     protected
     void onMenuAdded(final Pointer menu) {
@@ -82,27 +90,28 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     }
 
 
-    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-    // To work around this issue, we destroy then recreate the menu every time something is changed.
     /**
      * Deletes the menu, and unreferences everything in it. ALSO recreates ONLY the menu object.
+     *
+     * some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+     * To work around this issue, we destroy then recreate the menu every time something is changed.
+     *
+     * ALWAYS CALLED ON EDT
      */
     private
     void deleteMenu() {
-        if (obliterateInProgress) {
+        if (obliterateInProgress.get()) {
             return;
         }
 
         if (_nativeMenu != null) {
             // have to remove all other menu entries
-            synchronized (menuEntries) {
-                for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                    final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
-                    menuEntry__.onDeleteMenu(_nativeMenu);
-                }
-
-                Gtk.gtk_widget_destroy(_nativeMenu);
+            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+                final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
+                menuEntry__.onDeleteMenu(_nativeMenu);
             }
+
+            Gtk.gtk_widget_destroy(_nativeMenu);
         }
 
         if (parent != null) {
@@ -114,15 +123,20 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
         // binds sub-menu to entry (if it exists! it does not for the root menu)
         if (parent != null) {
-            Gtk.gtk_menu_item_set_submenu(_nativeEntry, _nativeMenu);
+            Gtk.gtk_menu_item_set_submenu(_native, _nativeMenu);
         }
     }
 
-    // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-    // To work around this issue, we destroy then recreate the menu every time something is changed.
+    /**
+     * some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+     *
+     * To work around this issue, we destroy then recreate the menu every time something is changed.
+     *
+     * ALWAYS CALLED ON THE EDT
+     */
     private
     void createMenu() {
-        if (obliterateInProgress) {
+        if (obliterateInProgress.get()) {
             return;
         }
 
@@ -130,62 +144,59 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             parent.createMenu();
         }
 
+        // now add back other menu entries
         boolean hasImages = false;
 
-        // now add back other menu entries
-        synchronized (menuEntries) {
-            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
-                hasImages |= menuEntry__.hasImage();
-            }
+        for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+            final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
+            hasImages |= menuEntry__.hasImage();
+        }
 
-            for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
-                // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
-                final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
-                menuEntry__.onCreateMenu(_nativeMenu, hasImages);
+        for (int i = 0, menuEntriesSize = menuEntries.size(); i < menuEntriesSize; i++) {
+            // the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images
+            final GtkBaseMenuItem menuEntry__ = menuEntries.get(i);
+            menuEntry__.onCreateMenu(_nativeMenu, hasImages);
 
-                if (menuEntry__ instanceof GtkMenu) {
-                    GtkMenu subMenu = (GtkMenu) menuEntry__;
-                    if (subMenu.getParent() != GtkMenu.this) {
-                        // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
-                        subMenu.createMenu();
-                    }
+            if (menuEntry__ instanceof GtkMenu) {
+                GtkMenu subMenu = (GtkMenu) menuEntry__;
+                if (subMenu.getParent() != GtkMenu.this) {
+                    // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
+                    subMenu.createMenu();
                 }
             }
-
-            onMenuAdded(_nativeMenu);
-            Gtk.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
         }
+
+        Gtk.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
+        onMenuAdded(_nativeMenu);
     }
 
     /**
-     * must be called on the dispatch thread
-     *
      * Completely obliterates the menu, no possible way to reconstruct it.
+     *
+     * ALWAYS CALLED ON THE EDT
      */
     private
     void obliterateMenu() {
-        if (_nativeMenu != null && !obliterateInProgress) {
-            obliterateInProgress = true;
+        if (_nativeMenu != null && !obliterateInProgress.get()) {
+            obliterateInProgress.set(true);
 
             // have to remove all other menu entries
-            synchronized (menuEntries) {
-                // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
-                // do this, errors will be had because indices don't line up anymore.
-                ArrayList<GtkBaseMenuItem> menuEntriesCopy = new ArrayList<GtkBaseMenuItem>(this.menuEntries);
 
-                for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
-                    final GtkBaseMenuItem menuEntry__ = menuEntriesCopy.get(i);
-                    menuEntry__.remove();
-                }
-                this.menuEntries.clear();
-                menuEntriesCopy.clear();
+            // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
+            // do this, errors will be had because indices don't line up anymore.
+            ArrayList<GtkBaseMenuItem> menuEntriesCopy = new ArrayList<GtkBaseMenuItem>(menuEntries);
+            menuEntries.clear();
 
-                Gtk.gtk_widget_destroy(_nativeMenu);
-                _nativeMenu = null;
+            for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
+                final GtkBaseMenuItem menuEntry__ = menuEntriesCopy.get(i);
+                menuEntry__.remove();
             }
+            menuEntriesCopy.clear();
 
-            obliterateInProgress = false;
+            Gtk.gtk_widget_destroy(_nativeMenu);
+            _nativeMenu = null;
+
+            obliterateInProgress.set(false);
         }
     }
 
@@ -253,21 +264,21 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             public
             void run() {
                 if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
+                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
-                    Gtk.gtk_widget_show_all(_nativeEntry);
+                    Gtk.gtk_widget_show_all(_native);
                 }
 
                 if (menuItem.getImage() != null) {
                     image = Gtk.gtk_image_new_from_file(menuItem.getImage()
                                                                 .getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(_nativeEntry, image);
+                    Gtk.gtk_image_menu_item_set_image(_native, image);
 
                     //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(_nativeEntry, true);
+                    Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
                 }
 
-                Gtk.gtk_widget_show_all(_nativeEntry);
+                Gtk.gtk_widget_show_all(_native);
             }
         });
     }
@@ -281,7 +292,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_widget_set_sensitive(_nativeEntry, menuItem.getEnabled());
+                Gtk.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
             }
         });
     }
@@ -320,8 +331,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_menu_item_set_label(_nativeEntry, textWithMnemonic);
-                Gtk.gtk_widget_show_all(_nativeEntry);
+                Gtk.gtk_menu_item_set_label(_native, textWithMnemonic);
+                Gtk.gtk_widget_show_all(_native);
             }
         });
     }
@@ -342,38 +353,25 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         setText(menuItem);
     }
 
-
-    @Override
-    void onDeleteMenu(final Pointer parentNative) {
-        if (parent != null) {
-            onDeleteMenu(parentNative, _nativeEntry);
-        }
-    }
-
-    @Override
-    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
-        if (parent != null) {
-            onCreateMenu(parentNative, _nativeEntry, hasImagesInMenu);
-        }
-    }
-
-    // called when a child removes itself from the parent menu. Does not work for sub-menus
+    /**
+     * called when a child removes itself from the parent menu. Does not work for sub-menus
+     *
+     * ALWAYS CALLED ON THE EDT
+     */
     public
     void remove(final GtkBaseMenuItem item) {
-        synchronized (menuEntries) {
-            menuEntries.remove(item);
-        }
+        menuEntries.remove(item);
 
         // have to rebuild the menu now...
-        deleteMenu();
-        createMenu();
+        deleteMenu();  // must be on EDT
+        createMenu();  // must be on EDT
     }
 
     // a child will always remove itself from the parent.
     @Override
     public
     void remove() {
-        Gtk.dispatchAndWait(new Runnable() {
+        Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -381,21 +379,19 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
                 if (parent != null) {
                     // have to remove from the  parent.menuEntries first
-                    synchronized (parent.menuEntries) {
-                        parent.menuEntries.remove(GtkMenu.this);
-                    }
+                    parent.menuEntries.remove(GtkMenu.this);
                 }
 
                 // delete all of the children of this submenu (must happen before the menuEntry is removed)
-                obliterateMenu();
+                obliterateMenu(); // must be on EDT
 
                 if (parent != null) {
                     // remove the gtk entry item from our menu NATIVE components
-                    Gtk.gtk_menu_item_set_submenu(_nativeEntry, null);
+                    Gtk.gtk_menu_item_set_submenu(_native, null);
 
                     // have to rebuild the menu now...
-                    parent.deleteMenu();
-                    parent.createMenu();
+                    parent.deleteMenu();  // must be on EDT
+                    parent.createMenu();  // must be on EDT
                 }
             }
         });

@@ -22,7 +22,6 @@ import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
@@ -57,9 +56,16 @@ class Gtk {
     private static boolean alreadyRunningGTK = false;
     private static boolean isLoaded = false;
 
-    private static AtomicBoolean isDispatch = new AtomicBoolean(false);
+    // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
+    private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
+        @Override
+        protected
+        Boolean initialValue() {
+            return false;
+        }
+    };
 
-    private static final int TIMEOUT = 2;
+    private static final int TIMEOUT = 2000000;
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
@@ -399,11 +405,11 @@ class Gtk {
                 if (!countDownLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
                     if (SystemTray.DEBUG) {
                         SystemTray.logger.error("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
-                                                "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.",
+                                                "to complete.",
                                                 new Exception(""));
                     } else {
                         throw new RuntimeException("Something is very wrong. The Event Dispatch Queue took longer than " + TIMEOUT + " seconds " +
-                                                   "to complete. Please adjust  `SystemTray.TIMEOUT` to a value which better suites your environment.");
+                                                   "to complete.");
                     }
                 }
             } catch (InterruptedException e) {
@@ -507,14 +513,18 @@ class Gtk {
 
     public static native void gtk_menu_shell_append(Pointer menu_shell, Pointer child);
 
-    public static native void gtk_menu_shell_deactivate(Pointer menu_shell, Pointer child);
+    // Typically this results in the menu shell being erased from the screen
+    public static native void gtk_menu_shell_deactivate(Pointer menuShell);
 
     public static native void gtk_widget_set_sensitive(Pointer widget, boolean sensitive);
 
-    public static native void gtk_container_remove(Pointer menu, Pointer subItem);
-
     public static native void gtk_widget_show_all(Pointer widget);
 
+    // will automatically get destroyed if no other references to it
+    public static native void gtk_container_remove(Pointer parentWidget, Pointer widget);
+
+    // from: https://developer.gnome.org/gtk3/stable/GtkWidget.html#gtk-widget-destroy
+    // You should typically call this function on top level widgets, and rarely on child widgets.
     public static native void gtk_widget_destroy(Pointer widget);
 
 

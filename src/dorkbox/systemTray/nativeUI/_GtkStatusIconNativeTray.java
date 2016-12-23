@@ -64,7 +64,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
         Gtk.startGui();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final GtkMenu gtkMenu = new GtkMenu(null) {
+        final GtkMenu gtkMenu = new GtkMenu() {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {

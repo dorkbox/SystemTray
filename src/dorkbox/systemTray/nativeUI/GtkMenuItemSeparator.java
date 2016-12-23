@@ -15,22 +15,19 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-import com.sun.jna.Pointer;
-
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.EntryPeer;
 
 class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
 
     private final GtkMenu parent;
-    private final Pointer _native = Gtk.gtk_separator_menu_item_new();
-
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItemSeparator(final GtkMenu parent) {
+        super(Gtk.gtk_separator_menu_item_new());
         this.parent = parent;
     }
 
@@ -42,10 +39,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);
-                Gtk.gtk_menu_shell_deactivate(parent._nativeMenu, _native);
-
-                Gtk.gtk_widget_destroy(_native);
+                Gtk.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
                 parent.remove(GtkMenuItemSeparator.this);
             }
@@ -58,17 +52,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
     }
 
     public
-    void setSpacerImage(final Pointer _native, final boolean everyoneElseHasImages) {
+    void setSpacerImage(final boolean everyoneElseHasImages) {
         // no op
-    }
-
-    @Override
-    void onDeleteMenu(final Pointer parentNative) {
-        onDeleteMenu(parentNative, _native);
-    }
-
-    @Override
-    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
-        onCreateMenu(parentNative, _native, hasImagesInMenu);
     }
 }

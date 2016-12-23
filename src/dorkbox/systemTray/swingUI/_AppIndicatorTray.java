@@ -287,7 +287,7 @@ class _AppIndicatorTray extends Tray implements SwingUI {
             @Override
             public
             void callback(Pointer notUsed, final GdkEventButton event) {
-                Gtk.gtk_widget_destroy(dummyMenu); // destroy the menu, so it will disappear (and we then have focus on our swing menu)
+                Gtk.gtk_menu_shell_deactivate(dummyMenu);
                 SwingUtil.invokeLater(popupRunnable);
             }
         };

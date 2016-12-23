@@ -32,7 +32,6 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     private final NativeLong nativeLong;
 
     private final GtkMenu parent;
-    protected final Pointer _native = Gtk.gtk_image_menu_item_new_with_mnemonic("");
 
     // these have to be volatile, because they can be changed from any thread
     private volatile MenuItem menuItemForActionCallback;
@@ -48,6 +47,8 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItem(final GtkMenu parent) {
+        super(Gtk.gtk_image_menu_item_new_with_mnemonic(""));
+
         this.parent = parent;
         nativeLong = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
@@ -85,7 +86,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             public
             void run() {
                 if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
+                    Gtk.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
                     image = null;
                     Gtk.gtk_widget_show_all(_native);
                 }
@@ -168,16 +169,6 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
         setText(menuItem);
     }
 
-    @Override
-    void onDeleteMenu(final Pointer parentNative) {
-        onDeleteMenu(parentNative, _native);
-    }
-
-    @Override
-    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
-        onCreateMenu(parentNative, _native, hasImagesInMenu);
-    }
-
     @SuppressWarnings("Duplicates")
     @Override
     public
@@ -186,18 +177,15 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);
-                Gtk.gtk_menu_shell_deactivate(parent._nativeMenu, _native);
+                Gtk.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 GtkMenuItem.super.remove();
 
                 menuItemForActionCallback = null;
                 if (image != null) {
-                    Gtk.gtk_widget_destroy(image);
+                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
                 }
-
-                Gtk.gtk_widget_destroy(_native);
 
                 parent.remove(GtkMenuItem.this);
             }

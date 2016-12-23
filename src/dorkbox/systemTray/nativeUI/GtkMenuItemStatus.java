@@ -15,8 +15,6 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-import com.sun.jna.Pointer;
-
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.StatusPeer;
@@ -26,14 +24,13 @@ import dorkbox.systemTray.peer.StatusPeer;
 class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
 
     private final GtkMenu parent;
-    private final Pointer _native = Gtk.gtk_image_menu_item_new_with_mnemonic("");
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItemStatus(final GtkMenu parent) {
-        super();
+        super(Gtk.gtk_image_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
         // need that extra space so it matches windows/mac
@@ -66,25 +63,12 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);
-                Gtk.gtk_menu_shell_deactivate(parent._nativeMenu, _native);
+                Gtk.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 GtkMenuItemStatus.super.remove();
-
-                Gtk.gtk_widget_destroy(_native);
 
                 parent.remove(GtkMenuItemStatus.this);
             }
         });
-    }
-
-    @Override
-    void onDeleteMenu(final Pointer parentNative) {
-        onDeleteMenu(parentNative, _native);
-    }
-
-    @Override
-    void onCreateMenu(final Pointer parentNative, final boolean hasImagesInMenu) {
-        onCreateMenu(parentNative, _native, hasImagesInMenu);
     }
 }
