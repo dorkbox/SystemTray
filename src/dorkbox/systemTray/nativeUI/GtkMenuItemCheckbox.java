@@ -15,8 +15,8 @@
  */
 package dorkbox.systemTray.nativeUI;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -27,18 +27,16 @@ import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.systemTray.util.ImageUtils;
 
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
-    private static File transparentIcon = null;
-
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final NativeLong nativeLong;
 
     private final GtkMenu parent;
 
     // these have to be volatile, because they can be changed from any thread
-    private volatile Checkbox checkbox;
+    private volatile ActionListener callback;
+    private volatile boolean isChecked = false;
     private volatile Pointer image;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
@@ -54,11 +52,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         super(Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
-        // cannot be done in a static initializer, because the tray icon size might not yet have been determined
-        if (transparentIcon == null) {
-            transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
-        }
-
         nativeLong = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
@@ -66,15 +59,9 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     int callback(final Pointer instance, final Pointer data) {
-        if (checkbox != null) {
-            final ActionListener cb = checkbox.getCallback();
-            if (cb != null) {
-                try {
-                    Gtk.proxyClick(checkbox, cb);
-                } catch (Exception e) {
-                    SystemTray.logger.error("Error calling menu entry checkbox {} click event.", checkbox.getText(), e);
-                }
-            }
+        if (callback != null) {
+            // this will redispatch to our created callback via `setCallback`
+            Gtk.proxyClick(null, callback);
         }
 
         return Gtk.TRUE;
@@ -135,30 +122,54 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         });
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public
-    void setCallback(final Checkbox checkbox) {
-        this.checkbox = checkbox;
+    void setCallback(final Checkbox menuItem) {
+        callback = menuItem.getCallback();  // can be set to null
+
+        if (callback != null) {
+            callback = new ActionListener() {
+                @Override
+                public
+                void actionPerformed(ActionEvent e) {
+                    // this will run on the EDT, since we are calling it from the EDT
+                    menuItem.setChecked(!isChecked);
+
+                    // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
+                    ActionListener cb = menuItem.getCallback();
+                    if (cb != null) {
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
+                        }
+                    }
+                }
+            };
+        }
     }
 
     @Override
     public
     void setChecked(final Checkbox checkbox) {
+        this.isChecked = checkbox.getChecked();
+        
         Gtk.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                Gtk.gtk_check_menu_item_set_active(_native, checkbox.getChecked());
+                Gtk.gtk_check_menu_item_set_active(_native, isChecked);
             }
         });
     }
 
     @Override
     public
-    void setShortcut(final Checkbox menuItem) {
-        this.mnemonicKey = Character.toLowerCase(menuItem.getShortcut());
+    void setShortcut(final Checkbox checkbox) {
+        this.mnemonicKey = Character.toLowerCase(checkbox.getShortcut());
 
-        setText(menuItem);
+        setText(checkbox);
     }
 
     @SuppressWarnings("Duplicates")
@@ -177,7 +188,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                     Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
                 }
-                checkbox = null;
 
                 parent.remove(GtkMenuItemCheckbox.this);
             }

@@ -26,8 +26,8 @@ import dorkbox.systemTray.util.ImageUtils;
 
 abstract
 class GtkBaseMenuItem implements EntryPeer {
-    private static File transparentIcon = null;
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
+    private static File transparentIcon = null;
     private volatile boolean hasLegitImage = true;
 
     // these have to be volatile, because they can be changed from any thread

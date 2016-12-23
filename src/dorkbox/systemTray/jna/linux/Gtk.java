@@ -444,7 +444,13 @@ class Gtk {
         Gtk.isDispatch.set(true);
 
         try {
-            callback.actionPerformed(new ActionEvent(menuEntry, ActionEvent.ACTION_PERFORMED, ""));
+            if (menuEntry != null) {
+                callback.actionPerformed(new ActionEvent(menuEntry, ActionEvent.ACTION_PERFORMED, ""));
+            } else {
+                // checkbox entries will not pass the menuEntry in, because they redispatch the click event so that the checkbox state is
+                // toggled
+                callback.actionPerformed(null);
+            }
         } finally {
             Gtk.isDispatch.set(false);
         }

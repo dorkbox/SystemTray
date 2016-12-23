@@ -29,7 +29,9 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     private final AwtMenu parent;
     private final java.awt.CheckboxMenuItem _native = new java.awt.CheckboxMenuItem();
 
-    private volatile ActionListener swingCallback;
+    // these have to be volatile, because they can be changed from any thread
+    private volatile ActionListener callback;
+    private volatile boolean isChecked = false;
 
     // this is ALWAYS called on the EDT.
     AwtMenuItemCheckbox(final AwtMenu parent) {
@@ -64,15 +66,20 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setCallback(final Checkbox menuItem) {
-        if (swingCallback != null) {
-            _native.removeActionListener(swingCallback);
+        if (callback != null) {
+            _native.removeActionListener(callback);
         }
 
-        if (menuItem.getCallback() != null) {
-            swingCallback = new ActionListener() {
+        callback = menuItem.getCallback();  // can be set to null
+
+        if (callback != null) {
+            callback = new ActionListener() {
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
+                    // this will run on the EDT, since we are calling it from the EDT
+                    menuItem.setChecked(!isChecked);
+
                     // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
                     ActionListener cb = menuItem.getCallback();
                     if (cb != null) {
@@ -85,10 +92,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
                 }
             };
 
-            _native.addActionListener(swingCallback);
-        }
-        else {
-            swingCallback = null;
+            _native.addActionListener(callback);
         }
     }
 
@@ -110,12 +114,14 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
 
     @Override
     public
-    void setChecked(final Checkbox checkbox) {
+    void setChecked(final Checkbox menuItem) {
+        this.isChecked = menuItem.getChecked();
+
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
-                _native.setState(checkbox.getChecked());
+                _native.setState(isChecked);
             }
         });
     }
@@ -131,9 +137,9 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
                 _native.deleteShortcut();
                 _native.setEnabled(false);
 
-                if (swingCallback != null) {
-                    _native.removeActionListener(swingCallback);
-                    swingCallback = null;
+                if (callback != null) {
+                    _native.removeActionListener(callback);
+                    callback = null;
                 }
                 parent._native.remove(_native);
 
