@@ -241,6 +241,7 @@ class SystemTrayFixes {
 
         ClassPool pool = ClassPool.getDefault();
         byte[] mouseEventBytes;
+        int mouseDelay = 75;
 
         try {
             CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
@@ -336,12 +337,11 @@ class SystemTrayFixes {
                         "lastX = mouseX;" +
                         "lastY = mouseY;" +
 
-                        // the delay is necessary for this to work correctly (as is the mouseRelease)
+                        // the delay is necessary for this to work correctly. Mouse release is not necessary.
+                        // this simulates *just enough* of the default behavior so that right click behaves the same as left click.
                         "int maskButton1 = java.awt.event.InputEvent.getMaskForButton(java.awt.event.MouseEvent.BUTTON1);" +
                         "robot.mousePress(maskButton1);" +
-                        "robot.delay(200);" +
-                        "robot.mouseRelease(maskButton1);" +
-                        "robot.delay(200);" +
+                        "robot.delay(" + mouseDelay + ");" +
 
                         "return;" +
                     "}" +
