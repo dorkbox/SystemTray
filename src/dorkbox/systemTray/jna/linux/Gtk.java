@@ -65,7 +65,7 @@ class Gtk {
         }
     };
 
-    private static final int TIMEOUT = 2000000;
+    private static final int TIMEOUT = 2;
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
