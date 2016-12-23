@@ -33,6 +33,7 @@ import dorkbox.systemTray.jna.JnaHelper;
 public
 class AppIndicator {
     public static boolean isVersion3 = false;
+    public static boolean isLoaded = false;
 
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
@@ -43,8 +44,6 @@ class AppIndicator {
      * This is so hacky it makes me sick.
      */
     static {
-        boolean isLoaded = false;
-
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator.so.1 | grep foo
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator3.so.1 | grep foo
 
@@ -174,8 +173,6 @@ class AppIndicator {
                     }
                 }
             }
-
-
         }
 
         // If we are GTK2, change the order we check and load libraries

@@ -49,12 +49,12 @@ class Gtk {
 
     // NOTE: AppIndicator uses this info to figure out WHAT VERSION OF appindicator to use: GTK2 -> appindicator1, GTK3 -> appindicator3
     public static volatile boolean isGtk2 = false;
+    public static boolean isLoaded = false;
 
 
     public static Function gtk_status_icon_position_menu = null;
 
     private static boolean alreadyRunningGTK = false;
-    private static boolean isLoaded = false;
 
     // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
     private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
@@ -193,14 +193,15 @@ class Gtk {
 
             if (!alreadyRunningGTK ) {
                 // If JavaFX/SWT is used, this is UNNECESSARY (we can detect if the GTK main_loop is running)
-                if (SystemTray.DEBUG) {
-                    logger.debug("Running GTK Native Event Loop");
-                }
 
                 gtkUpdateThread = new Thread() {
                     @Override
                     public
                     void run() {
+                        if (SystemTray.DEBUG) {
+                            logger.debug("Running GTK Native Event Loop");
+                        }
+
                         // prep for the event loop.
                         // GThread.g_thread_init(null);  would be needed for g_idle_add()
 

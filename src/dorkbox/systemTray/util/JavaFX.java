@@ -71,8 +71,6 @@ class JavaFX {
 
     public static
     void init() {
-        // empty method to initialize class
-
         if (dispatchMethod == null || isEventThreadMethod == null) {
             SystemTray.logger.error("Unable to initialize JavaFX! Please create an issue with your OS and Java " +
                                     "version so we may further investigate this issue.");
