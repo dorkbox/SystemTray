@@ -440,10 +440,10 @@ class SystemTray {
             }
 
 
-
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
-            boolean isReallyGnome = Extension.isReallyGnome();
+            boolean isReallyGnome = OS.isGnome();
+
             if (isReallyGnome) {
                 if (DEBUG) {
                     logger.error("Auto-detected that gnome-shell is running");
@@ -472,8 +472,15 @@ class SystemTray {
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                 }
                 else if ("kde".equalsIgnoreCase(XDG)) {
+                    if (OS.getFedoraVersion() > 0) {
+                        // Fedora KDE requires GtkStatusIcon
+                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                    } else {
                     // kde (at least, plasma 5.5.6) requires appindicator
-                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                        trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                    }
+
+                    // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
                 }
                 else if ("pantheon".equalsIgnoreCase(XDG)) {
                     // elementaryOS. It only supports appindicator (not gtkstatusicon)
@@ -496,56 +503,21 @@ class SystemTray {
                         logger.debug("Currently using the '{}' session type", GDM);
                     }
 
-                    // are we fedora? If so, what version?
-                    String fedoraCheckOutput = "";
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // cat /etc/os-release
-                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                        shell.setExecutable("cat");
-                        shell.addArgument("/etc/os-release");
-                        shell.start();
-
-                        fedoraCheckOutput = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot check what version of Fedora is running", e);
-                        }
-                    }
-
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        if (fedoraCheckOutput.contains("ID=fedora")) {
-                            // now, what VERSION of fedora? 23/24 don't have AppIndicator installed, so we have to use GtkStatusIcon
-                            int fedoraVersion = 0;
-
-                            try {
-                                // should be: VERSION_ID=23\n  or something
-                                int beginIndex = fedoraCheckOutput.indexOf("VERSION_ID=") + 11;
-                                String fedoraVersion_ = fedoraCheckOutput.substring(beginIndex, fedoraCheckOutput.indexOf(OS.LINE_SEPARATOR_UNIX, beginIndex));
-                                fedoraVersion = Integer.parseInt(fedoraVersion_);
-
-                                if (DEBUG) {
-                                    logger.debug("Running Fedora version: '{}'", fedoraVersion_);
-                                }
-                            } catch (Throwable e) {
-                                logger.error("Cannot detect what version of Fedora is running. Falling back to GtkStatusIcon", e);
-                                trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        // are we fedora? If so, what version?
+                        // now, what VERSION of fedora? 23/24/25 don't have AppIndicator installed, so we have to use GtkStatusIcon
+                        int fedoraVersion = OS.getFedoraVersion();
+                        if (fedoraVersion > 0) {
+                            if (DEBUG) {
+                                logger.debug("Running Fedora version: '{}'", fedoraVersion);
                             }
 
-                            if (trayType == null) {
-                                // set a property so that Image Resize can adjust
-                                System.setProperty("SystemTray_IS_FEDORA_ADJUST_SIZE", Integer.toString(fedoraVersion));
+                            // set a property so that Image Resize can adjust. It will check the version info to determine scaling value
+                            System.setProperty("SystemTray_IS_FEDORA_GNOME_ADJUST_SIZE", Integer.toString(fedoraVersion));
 
-                                if (fedoraVersion <= 24) {
-                                    // 23 is gtk, 24 is gtk (but wrong size unless we adjust it)
-                                    Extension.install();
-                                    trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
-                                } else {
-                                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
-                                }
-                            }
+                            // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it)
+                            Extension.install();
+                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                         } else {
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                         }

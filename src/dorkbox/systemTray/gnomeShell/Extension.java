@@ -34,6 +34,7 @@ import java.util.List;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
+import dorkbox.util.OS;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
 
@@ -49,56 +50,6 @@ class Extension {
     @Property
     /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
     public static String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
-
-
-    public static
-    boolean isReallyGnome() {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-            PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-            // ps a | grep [g]nome-shell
-            final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-            shell.setExecutable("ps");
-            shell.addArgument("a");
-            shell.start();
-
-            String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-            return output.contains("gnome-shell");
-        } catch (Throwable ignored) {
-        }
-
-        return false;
-    }
-
-    public static
-    String getGnomeVersion() {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-            PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-            // gnome-shell --version
-            final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-            shellVersion.setExecutable("gnome-shell");
-            shellVersion.addArgument("--version");
-            shellVersion.start();
-
-            String versionString = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-            if (!versionString.isEmpty()) {
-                // GNOME Shell 3.14.1
-                String version = versionString.replaceAll("[^\\d.]", "");
-                if (version.length() > 0 && version.indexOf('.') > 0) {
-                    // should just be 3.14.1 or 3.20 or similar
-                    return version;
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return null;
-    }
-
 
     public static
     List<String> getEnabledExtensions() {
@@ -233,7 +184,7 @@ class Extension {
 
     public static
     void install() {
-        if (!isReallyGnome()) {
+        if (!OS.isGnome()) {
             return;
         }
 
@@ -241,7 +192,7 @@ class Extension {
         boolean hasSystemTray;
 
         // should just be 3.14.1 or 3.20 or similar
-        String gnomeVersion = getGnomeVersion();
+        String gnomeVersion = OS.getGnomeVersion();
         if (gnomeVersion == null) {
             return;
         }
@@ -397,7 +348,7 @@ class Extension {
 
     public static
     void unInstall() {
-        if (!isReallyGnome()) {
+        if (!OS.isGnome()) {
             return;
         }
 

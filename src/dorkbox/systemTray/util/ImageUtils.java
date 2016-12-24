@@ -66,8 +66,8 @@ class ImageUtils {
 
     public static
     void determineIconSize() {
-        double trayScalingFactor = 0;
-        double menuScalingFactor = 0;
+        int trayScalingFactor = 0;
+        int menuScalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -188,74 +188,24 @@ class ImageUtils {
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
                 if (XDG == null) {
                     // Check if plasmashell is running, if it is -- then we are most likely KDE
-
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // ps a | grep [g]nome-shell
-                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                        shell.setExecutable("ps");
-                        shell.addArgument("a");
-                        shell.start();
-
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                        if (output.contains("plasmashell")) {
-                            XDG = "kde";
-                        }
-                    } catch (Throwable e) {
-                        // assume we are not KDE. Maybe not the best assumption, but if we get here, something is wrong.
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Unable to check if plasmashell is running.", e);
-                        }
+                    double plasmaVersion = OS.getPlasmaVersion();
+                    if (plasmaVersion > 0) {
+                        XDG = "kde";
                     }
                 }
 
-
                 if ("kde".equalsIgnoreCase(XDG)) {
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+                    double plasmaVersion = OS.getPlasmaVersion();
 
-                        // plasma-desktop -v
-                        // plasmashell --version
-                        final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                        shellVersion.setExecutable("plasmashell");
-                        shellVersion.addArgument("--version");
-                        shellVersion.start();
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                        if (!output.isEmpty()) {
-                            if (SystemTray.DEBUG) {
-                                SystemTray.logger.debug("Checking plasma KDE environment, should start with 'plasmashell', value: '{}'", output);
-                            }
-
-                            // DEFAULT icon size is 16. KDE is bananas on what they did with tray icon scale
-                            // should be: plasmashell 5.6.5   or something
-                            String s = "plasmashell ";
-                            if (output.contains(s)) {
-                                String value = output.substring(output.indexOf(s) + s.length(), output.length());
-
-                                // 1 = 16
-                                // 2 = 32
-                                // 4 = 64
-                                // 8 = 128
-                                if (value.startsWith("4")) {
-                                    trayScalingFactor = 2;
-                                } else if (value.startsWith("5")) {
-                                    trayScalingFactor = 8; // it is insane how large the icon is
-                                } else {
-                                    // assume very low version of plasmashell, default 32
-                                    trayScalingFactor = 2;
-                                }
-                            }
-                        }
-                    } catch (Throwable e) {
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Cannot check plasmashell version", e);
-                        }
+                    // 1 = 16
+                    // 2 = 32
+                    // 4 = 64
+                    // 8 = 128
+                    if (plasmaVersion > 0) {
+                        trayScalingFactor = 2;
+//                        menuScalingFactor = 1.4;
+                    } else if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Cannot check plasmashell version");
                     }
                 } else {
                     // it's likely a Gnome environment
@@ -303,14 +253,14 @@ class ImageUtils {
                         }
                     }
 
-                    // fedora 24 has a wonky size for the indicator (NOT default 16px)
-                    int fedoraVersion = Integer.parseInt(System.getProperty("SystemTray_IS_FEDORA_ADJUST_SIZE", "0"));
+                    // fedora 24+ has a different size for the indicator (NOT default 16px)
+                    int fedoraVersion = Integer.parseInt(System.getProperty("SystemTray_IS_FEDORA_GNOME_ADJUST_SIZE", "0"));
                     if (trayScalingFactor == 0 && fedoraVersion >= 23) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.debug("Adjusting tray/menu scaling for FEDORA " + fedoraVersion);
                         }
+
                         trayScalingFactor = 2;
-                        menuScalingFactor = 1.5;
                     }
                 }
             } else if (OS.isMacOsX()) {
@@ -358,13 +308,13 @@ class ImageUtils {
 
         // the DEFAULT scale is 16
         if (trayScalingFactor > 1) {
-            TRAY_SIZE = (int) (SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor);
+            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor;
         } else {
             TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE;
         }
 
         if (menuScalingFactor > 1) {
-            ENTRY_SIZE = (int) (SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor);
+            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor;
         } else {
             ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
         }
