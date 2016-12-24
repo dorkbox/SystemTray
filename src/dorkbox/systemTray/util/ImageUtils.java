@@ -66,8 +66,8 @@ class ImageUtils {
 
     public static
     void determineIconSize() {
-        int trayScalingFactor = 0;
-        int menuScalingFactor = 0;
+        double trayScalingFactor = 0;
+        double menuScalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -187,7 +187,7 @@ class ImageUtils {
                 // KDE is bonkers. Gnome is "ok"
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
                 if (XDG == null) {
-                    // we might be root. Check if plasmashell is running, if it is -- then we are most likely KDE
+                    // Check if plasmashell is running, if it is -- then we are most likely KDE
 
                     try {
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
@@ -302,6 +302,16 @@ class ImageUtils {
                             SystemTray.logger.error("Cannot check scaling factor", e);
                         }
                     }
+
+                    // fedora 24 has a wonky size for the indicator (NOT default 16px)
+                    int fedoraVersion = Integer.parseInt(System.getProperty("SystemTray_IS_FEDORA_ADJUST_SIZE", "0"));
+                    if (trayScalingFactor == 0 && fedoraVersion >= 23) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.debug("Adjusting tray/menu scaling for FEDORA " + fedoraVersion);
+                        }
+                        trayScalingFactor = 2;
+                        menuScalingFactor = 1.5;
+                    }
                 }
             } else if (OS.isMacOsX()) {
                 // let's hope this wasn't just hardcoded like windows...
@@ -348,19 +358,20 @@ class ImageUtils {
 
         // the DEFAULT scale is 16
         if (trayScalingFactor > 1) {
-            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor;
+            TRAY_SIZE = (int) (SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor);
         } else {
             TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE;
         }
 
         if (menuScalingFactor > 1) {
-            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor;
+            ENTRY_SIZE = (int) (SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor);
+        } else {
+            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
         }
-        ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
 
         if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", trayScalingFactor, TRAY_SIZE);
-            SystemTray.logger.debug("Scaling Factor factor is '{}', tray size is '{}'.", menuScalingFactor, ENTRY_SIZE);
+            SystemTray.logger.debug("Scaling Factor factor is '{}', tray icon size is '{}'.", trayScalingFactor, TRAY_SIZE);
+            SystemTray.logger.debug("Scaling Factor factor is '{}', tray menu size is '{}'.", menuScalingFactor, ENTRY_SIZE);
         }
     }
 

@@ -535,8 +535,11 @@ class SystemTray {
                             }
 
                             if (trayType == null) {
+                                // set a property so that Image Resize can adjust
+                                System.setProperty("SystemTray_IS_FEDORA_ADJUST_SIZE", Integer.toString(fedoraVersion));
+
                                 if (fedoraVersion <= 24) {
-                                    // 23 is gtk, 24 is ?
+                                    // 23 is gtk, 24 is gtk (but wrong size unless we adjust it)
                                     Extension.install();
                                     trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                                 } else {
