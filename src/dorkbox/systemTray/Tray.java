@@ -15,6 +15,15 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.Image;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+
+import javax.imageio.stream.ImageInputStream;
+
+import dorkbox.systemTray.util.ImageUtils;
+
 public
 class Tray extends Menu {
 
@@ -75,5 +84,77 @@ class Tray extends Menu {
             // also calls the hook to add it, so we don't need anything special
             add(status, 0);
         }
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageFile the file of the image to use
+     */
+    public
+    void setImage(final File imageFile) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageFile));
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imagePath the full path of the image to use
+     */
+    public
+    void setImage(final String imagePath) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageUrl the URL of the image to use
+     */
+    public
+    void setImage(final URL imageUrl) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageStream the InputStream of the image to use
+     */
+    public
+    void setImage(final InputStream imageStream) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param image the image of the image to use
+     */
+    public
+    void setImage(final Image image) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, image));
+    }
+
+    /**
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * This method will cache the image if it needs to be resized to fit.
+     *
+     * @param imageStream the ImageInputStream of the image to use
+     */
+    public
+    void setImage(final ImageInputStream imageStream) {
+        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
     }
 }

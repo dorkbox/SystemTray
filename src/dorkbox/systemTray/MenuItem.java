@@ -135,7 +135,7 @@ class MenuItem extends Entry {
         peer.setShortcut(this);
     }
 
-    private
+    protected
     void setImage_(final File imageFile) {
         this.imageFile = imageFile;
 
