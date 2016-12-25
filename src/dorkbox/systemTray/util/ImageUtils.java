@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,37 +72,43 @@ class ImageUtils {
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
+                int[] version = OS.getWindowsVersion();
+
+                // Version info at release.
+                //
+                // https://en.wikipedia.org/wiki/Comparison_of_Microsoft_Windows_versions
+                //
+                // Windows XP               5.1.2600  (2001-10-25)
+                // Windows Server 2003      5.2.3790  (2003-04-24)
+                //
+                // Windows Home Server		5.2.3790  (2007-06-16)
+                //
+                // Windows Vista	        6.0.6000  (2006-11-08)
+                // Windows Server 2008 SP1	6.0.6001  (2008-02-27)
+                // Windows Server 2008 SP2	6.0.6002  (2009-04-28)
+                //
+                //
+                // Windows 7                    6.1.7600  (2009-10-22)
+                // Windows Server 2008 R2       6.1.7600  (2009-10-22)
+                // Windows Server 2008 R2 SP1   6.1.7601  (?)
+                //
+                // Windows Home Server 2011		6.1.8400  (2011-04-05)
+                //
+                // Windows 8                    6.2.9200  (2012-10-26)
+                // Windows Server 2012	        6.2.9200  (2012-09-04)
+                //
+                // Windows 8.1                  6.3.9600  (2013-10-18)
+                // Windows Server 2012 R2       6.3.9600  (2013-10-18)
+                //
+                // Windows 10	                10.0.10240  (2015-07-29)
+                // Windows 10	                10.0.10586  (2015-11-12)
+                // Windows 10	                10.0.14393  (2016-07-18)
+                //
+                // Windows Server 2016          10.0.14393  (2016-10-12)
+                //
+
+
                 // if windows 8.1/10 - default size is x2
-                String windowsVersion = "";
-                try {
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                    PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                    // cmd.exe /c ver
-                    final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
-                    shellVersion.setExecutable("cmd.exe");
-                    shellVersion.addArgument("/c");
-                    shellVersion.addArgument("ver");
-                    shellVersion.start();
-
-                    String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-
-                    if (!output.isEmpty()) {
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.debug("Checking windows version, value: '{}'", output);
-                        }
-
-                        // should be: Microsoft Windows [Version 10.0.10586]   or something
-                        if (output.contains("ersion ")) {
-                            int beginIndex = output.indexOf("ersion ") + 7;
-                            windowsVersion = output.substring(beginIndex, beginIndex+6);
-                        }
-                    }
-                } catch (Throwable e) {
-                    if (SystemTray.DEBUG) {
-                        SystemTray.logger.error("Cannot check windows version factor", e);
-                    }
-                }
 
                 // vista - 8.0 - only global DPI settings
                 // 8.1 - 10 - global + per-monitor DPI settings
@@ -111,47 +118,40 @@ class ImageUtils {
                 // 4 = 64
                 // 8 = 128
 
-                if (windowsVersion.startsWith("5.1")) {
-                    // Windows XP	5.1.2600
+                // scaling 1
+                if (version[0] <= 5) {
+                    // Windows XP               5.1.2600  (2001-10-25)
+                    // Windows Server 2003      5.2.3790  (2003-04-24)
+                    // Windows Home Server		5.2.3790  (2007-06-16)
+                    trayScalingFactor = 1;
+                } else if (version[0] == 6 && version[1] == 0) {
+                    // Windows Vista	        6.0.6000  (2006-11-08)
+                    // Windows Server 2008 SP1	6.0.6001  (2008-02-27)
+                    // Windows Server 2008 SP2	6.0.6002  (2009-04-28)
                     trayScalingFactor = 1;
 
-                } else if (windowsVersion.startsWith("5.1")) {
-                    // Windows Server 2003	5.2.3790.1218
-                    trayScalingFactor = 1;
-
-                } else if (windowsVersion.startsWith("6.0")) {
-                    // Windows Vista	        6.0.6000
-                    // Windows Server 2008 SP1	6.0.6001
-                    // Windows Server 2008 SP2	6.0.6002
-                    trayScalingFactor = 1;
-
-                } else if (windowsVersion.startsWith("6.1")) {
-                    // Windows 7
-                    // Windows Server 2008 R2       6.1.7600
-                    // Windows Server 2008 R2 SP1   6.1.7601
+                } else if (version[0] == 6 && version[1] <= 2) {
+                    // Windows 7                    6.1.7600  (2009-10-22)
+                    // Windows Server 2008 R2       6.1.7600  (2009-10-22)
+                    // Windows Server 2008 R2 SP1   6.1.7601  (?)
+                    //
+                    // Windows Home Server 2011		6.1.8400  (2011-04-05)
+                    //
+                    // Windows 8                    6.2.9200  (2012-10-26)
+                    // Windows Server 2012	        6.2.9200  (2012-09-04)
                     trayScalingFactor = 2;
-
-                } else if (windowsVersion.startsWith("6.2")) {
-                    // Windows 8
-                    // Windows Server 2012	6.2.9200
-                    trayScalingFactor = 2;
-
-                } else if (windowsVersion.startsWith("6.3")) {
-                    // Windows 8.1
-                    // Windows Server 2012	6.3.9200
+                } else if (version[0] == 6 || (version[0] == 10 && version[1] == 0)) {
+                    // Windows 8.1                  6.3.9600  (2013-10-18)
+                    // Windows Server 2012 R2       6.3.9600  (2013-10-18)
+                    //
+                    // Windows 10	                10.0.10240  (2015-07-29)
+                    // Windows 10	                10.0.10586  (2015-11-12)
+                    // Windows 10	                10.0.14393  (2016-07-18)
+                    //
+                    // Windows Server 2016          10.0.14393  (2016-10-12)
                     trayScalingFactor = 4;
-
-                } else if (windowsVersion.startsWith("6.4")) {
-                    // Windows 10 Technical Preview 1	6.4.9841
-                    trayScalingFactor = 4;
-
-                } else if (windowsVersion.startsWith("10.0")) {
-                    // Windows 10 Technical Preview 4	10.0.9926
-                    // Windows 10 Insider Preview	    10.0.14915
-                    trayScalingFactor = 4;
-
                 } else {
-                    // dunnno, but i'm going to assume HiDPI for this...
+                    // dunnno, but i'm going to assume really HiDPI for this...
                     trayScalingFactor = 8;
                 }
 
@@ -176,7 +176,7 @@ class ImageUtils {
 
 
                 if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Windows version (partial): '{}'", windowsVersion);
+                    SystemTray.logger.debug("Windows version: '{}'", Arrays.toString(version));
                     SystemTray.logger.debug("Windows DPI settings: '{}'", dpiX);
                 }
             } else if (OS.isLinux()) {
