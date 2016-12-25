@@ -175,6 +175,18 @@ class AppIndicator {
             }
         }
 
+        // maybe it's really GTK2 version? who knows...
+        if (!isLoaded) {
+            try {
+                JnaHelper.register("appindicator", AppIndicator.class);
+                isLoaded = true;
+            } catch (Throwable e) {
+                if (SystemTray.DEBUG) {
+                    logger.debug("Error loading library: '{}'. \n{}", "appindicator", e.getMessage());
+                }
+            }
+        }
+
         // If we are GTK2, change the order we check and load libraries
 
         if (Gtk.isGtk2) {
