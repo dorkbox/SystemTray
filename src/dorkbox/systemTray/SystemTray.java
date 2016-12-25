@@ -486,8 +486,7 @@ class SystemTray {
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
                     if (!useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                        if (OS.isElementaryOSInstalled()) {
-                            logger.warn("Cannot use non-native menus with pantheon (elementaryOS). Forcing native menus.");
+                        if (OS.isElementaryOS()) {
                         } else {
                             logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
                         }
@@ -507,7 +506,7 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        if (OS.isArchInstalled()) {
+                        if (OS.isArch()) {
                             if (DEBUG) {
                                 logger.debug("Running Arch Linux.");
                             }
@@ -697,7 +696,7 @@ class SystemTray {
                 }
 
 
-                if (OS.isArchInstalled()) {
+                if (OS.isArch()) {
                     // arch linux is fun!
 
                     if (isTrayType(trayType, TrayType.AppIndicator)) {
