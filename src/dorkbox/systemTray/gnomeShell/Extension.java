@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import dorkbox.systemTray.SystemTray;
@@ -42,6 +43,12 @@ import dorkbox.util.process.ShellProcessBuilder;
 public
 class Extension {
     private static final String UID = "SystemTray@Dorkbox";
+
+    @Property
+    /** Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome places the icon in the
+     * "notification drawer", which is a collapsible menu at (usually) bottom left corner of the screen.
+     */
+    public static boolean ENABLE_EXTENSION_INSTALL = true;
 
     @Property
     /** Permit the gnome-shell to be restarted when the extension is installed. */
@@ -114,13 +121,18 @@ class Extension {
             if (i1 == 0 && i2 == s.length() - 1) {
                 split[i] = s.substring(1, s.length() - 1);
             }
+        }
 
-            if (SystemTray.DEBUG) {
-                logger.debug("   Cleaning extension: `{}`", split[i]);
+        ArrayList<String> strings = new ArrayList<String>(Arrays.asList(split));
+        for (Iterator<String> iterator = strings.iterator(); iterator.hasNext(); ) {
+            final String string = iterator.next();
+            if (string.trim()
+                      .isEmpty()) {
+                iterator.remove();
             }
         }
 
-        return new ArrayList<String>(Arrays.asList(split));
+        return strings;
     }
 
     public static
@@ -132,6 +144,10 @@ class Extension {
 
         for (int i = 0, extensionsSize = extensions.size(), limit = extensionsSize-1; i < extensionsSize; i++) {
             final String extension = extensions.get(i);
+            if (extension.isEmpty()) {
+                continue;
+            }
+
             stringBuilder.append("'")
                          .append(extension)
                          .append("'");
@@ -184,7 +200,7 @@ class Extension {
 
     public static
     void install() {
-        if (!OS.isGnome()) {
+        if (!ENABLE_EXTENSION_INSTALL || !OS.isGnome()) {
             return;
         }
 
@@ -348,7 +364,7 @@ class Extension {
 
     public static
     void unInstall() {
-        if (!OS.isGnome()) {
+        if (!ENABLE_EXTENSION_INSTALL || !OS.isGnome()) {
             return;
         }
 
