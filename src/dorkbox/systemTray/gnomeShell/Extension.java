@@ -73,7 +73,6 @@ class Extension {
         gsettings.start();
 
         String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-//        String output = "'background-logo@fedorahosted.org', 'zyx', 'abs'";
 
         // now we have to enable us if we aren't already enabled
 
@@ -104,10 +103,6 @@ class Extension {
 
         String installedExtensions = stringBuilder.toString();
 
-        if (SystemTray.DEBUG) {
-            logger.debug("Installed extensions are: {}", installedExtensions);
-        }
-
         // now just split the extensions into a list so it is easier to manage
 
         String[] split = installedExtensions
@@ -130,6 +125,10 @@ class Extension {
                       .isEmpty()) {
                 iterator.remove();
             }
+        }
+
+        if (SystemTray.DEBUG) {
+            logger.debug("Installed extensions are: {}", strings);
         }
 
         return strings;
@@ -163,9 +162,9 @@ class Extension {
             logger.debug("Setting installed extensions to: {}", stringBuilder.toString());
         }
 
-        // gsettings set org.gnome.shell enabled-extensions "['SystemTray@dorkbox']"
+        // gsettings set org.gnome.shell enabled-extensions "['SystemTray@Dorkbox']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
-        // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@dorkbox']"
+        // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@Dorkbox']"
         final ShellProcessBuilder setGsettings = new ShellProcessBuilder(outputStream);
         setGsettings.setExecutable("gsettings");
         setGsettings.addArgument("set");
@@ -204,9 +203,9 @@ class Extension {
      * @return true if that extension is installed
      */
     public static
-    boolean isTopIconsInstalled() {
+    boolean isInstalled() {
         List<String> enabledExtensions = getEnabledExtensions();
-        return enabledExtensions.contains("topIcons@adel.gadllah@gmail.com");
+        return enabledExtensions.contains("topIcons@adel.gadllah@gmail.com") || enabledExtensions.contains(UID);
     }
 
 
@@ -372,7 +371,9 @@ class Extension {
             logger.debug("Enabling extension in gnome-shell");
 
 
-            enabledExtensions.add(UID);
+            if (!enabledExtensions.contains(UID)) {
+                enabledExtensions.add(UID);
+            }
             setEnabledExtensions(enabledExtensions);
 
             restartShell();
