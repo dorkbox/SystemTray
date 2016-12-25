@@ -94,11 +94,10 @@ class SystemTray {
     @Property
     /** Enables auto-detection for the system tray. This should be mostly successful.
      * <p>
-     * Auto-detection will use DEFAULT_WINDOWS_SIZE or DEFAULT_LINUX_SIZE as a 'base-line' for determining what size to use. On Linux,
-     * `gsettings get org.gnome.desktop.interface scaling-factor` is used to determine the scale factor (for HiDPI configurations).
+     * Auto-detection will use DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE as a 'base-line' for determining what size to use.
      * <p>
-     * If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_WINDOWS_SIZE or
-     * DEFAULT_LINUX_SIZE to use them instead
+     * If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_TRAY_SIZE or
+     * DEFAULT_MENU_SIZE instead
      */
     public static boolean AUTO_TRAY_SIZE = true;
 
@@ -476,7 +475,7 @@ class SystemTray {
                         // Fedora KDE requires GtkStatusIcon
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     } else {
-                    // kde (at least, plasma 5.5.6) requires appindicator
+                        // kde (at least, plasma 5.5.6) requires appindicator
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                     }
 
@@ -487,7 +486,11 @@ class SystemTray {
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
                     if (!useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                        logger.warn("Cannot use non-native menus with pantheon (elementaryOS). Forcing native menus.");
+                        if (OS.isElementaryOSInstalled()) {
+                            logger.warn("Cannot use non-native menus with pantheon (elementaryOS). Forcing native menus.");
+                        } else {
+                            logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
+                        }
                         useNativeMenus = true;
                     }
 
@@ -504,6 +507,21 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
+                        if (OS.isArchInstalled()) {
+                            if (DEBUG) {
+                                logger.debug("Running Arch Linux.");
+                            }
+                            if (!Extension.isInstalled()) {
+                                logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
+                                            "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
+                                            "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
+                                            "of the screen to the menu panel next to the clock.");
+                            }
+                        } else {
+                            // Automatically install the extension for everyone except Arch. It's bonkers.
+                            Extension.install();
+                        }
+
                         // are we fedora? If so, what version?
                         // now, what VERSION of fedora? 23/24/25 don't have AppIndicator installed, so we have to use GtkStatusIcon
                         int fedoraVersion = OS.getFedoraVersion();
@@ -516,9 +534,9 @@ class SystemTray {
                             System.setProperty("SystemTray_IS_FEDORA_GNOME_ADJUST_SIZE", Integer.toString(fedoraVersion));
 
                             // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it)
-                            Extension.install();
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                         } else {
+                            // arch likely will have problems unless the correct/appropriate libraries are installed.
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                         }
                     }
@@ -664,21 +682,46 @@ class SystemTray {
 
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
-        /*
-         *  appIndicator/gtk require strings (which is the path)
-         *  swing version loads as an image (which can be stream or path, we use path)
-         */
+        // - appIndicator/gtk require strings (which is the path)
+        // - swing version loads as an image (which can be stream or path, we use path)
         CacheUtil.tempDir = "SysTray";
 
         try {
             if (OS.isLinux()) {
-                // load up our libraries   NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
+                // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
                 // appindicator3 doesn't support menu icons via GTK2!!
                 if (!Gtk.isLoaded) {
                     logger.error("Unable to initialize GTK! Something is severely wrong!");
                     systemTrayMenu = null;
                     return;
                 }
+
+
+                if (OS.isArchInstalled()) {
+                    // arch linux is fun!
+
+                    if (isTrayType(trayType, TrayType.AppIndicator)) {
+                        // appindicators
+
+                        // requires the install of libappindicator which is GTK2 (as of 25DEC2016)
+                        // requires the install of libappindicator3 which is GTK3 (as of 25DEC2016)
+
+                        if (!AppIndicator.isLoaded) {
+                            if (Gtk.isGtk2) {
+                                logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
+                                             "Please install libappindicator, for example: 'sudo pacman -S libappindicator'");
+                                systemTrayMenu = null;
+                                return;
+                            } else {
+                                logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
+                                             "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'"); // GTK3
+                                systemTrayMenu = null;
+                                return;
+                            }
+                        }
+                    }
+                }
+
 
                 if (isTrayType(trayType, TrayType.AppIndicator)) {
                     if (Gtk.isGtk2 && AppIndicator.isVersion3) {
@@ -708,9 +751,12 @@ class SystemTray {
                 }
             }
 
+
+
+
             if (isJavaFxLoaded) {
                 if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
-                    // set a property so that GTK (if necessary) can set the name
+                    // set a property so that GTK (if necessary) can set the name of the system tray icon
                     System.setProperty("SystemTray_GTK_SET_NAME", "true");
                 }
 
@@ -722,6 +768,8 @@ class SystemTray {
                 Swt.init();
             }
 
+
+
             if ((isJavaFxLoaded || isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
                 // oh boy! This WILL NOT WORK. Let the dev know
                 logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
@@ -732,6 +780,8 @@ class SystemTray {
             }
 
             // javaFX and SWT should not start on the EDT!!
+
+
 
             // if it's linux + native menus must not start on the EDT!
             // _AwtTray must be constructed on the EDT however...
@@ -769,6 +819,8 @@ class SystemTray {
         }
 
         systemTrayMenu = reference.get();
+
+
 
         // verify that we have what we are expecting.
         if (OS.isWindows() && systemTrayMenu instanceof SwingUI) {
@@ -922,9 +974,7 @@ class SystemTray {
             setImage(bimage);
 
             Component[] menuComponents = jMenu.getMenuComponents();
-            for (int i = 0, menuComponentsLength = menuComponents.length; i < menuComponentsLength; i++) {
-                final Component c = menuComponents[i];
-
+            for (Component c : menuComponents) {
                 if (c instanceof JMenu) {
                     menu.add((JMenu) c);
                 }
