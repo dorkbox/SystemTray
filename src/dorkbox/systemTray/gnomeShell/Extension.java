@@ -198,6 +198,21 @@ class Extension {
     }
 
 
+    /**
+     * topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
+     *
+     * @return true if that extension is installed
+     */
+    public static
+    boolean isTopIconsInstalled() {
+        List<String> enabledExtensions = getEnabledExtensions();
+        return enabledExtensions.contains("topIcons@adel.gadllah@gmail.com");
+    }
+
+
+    /**
+     * Only install a version that specifically moves only our icon next to the clock
+     */
     public static
     void install() {
         if (!ENABLE_EXTENSION_INSTALL || !OS.isGnome()) {
@@ -222,7 +237,6 @@ class Extension {
             return;
         }
 
-        // always install the extension, because it might have been updated
         // set a property so that GTK (if necessary) can set the name
         System.setProperty("SystemTray_GTK_SET_NAME", "true");
 
@@ -258,7 +272,7 @@ class Extension {
                           "}\n";
 
 
-        logger.debug("Installing gnome-shell extension");
+        logger.debug("Checking the gnome-shell extension");
 
         if (hasSystemTray) {
             if (SystemTray.DEBUG) {
@@ -303,6 +317,8 @@ class Extension {
 
 
         // we get here if we are NOT installed, or if we are installed and our metadata is NOT THE SAME.  (so we need to reinstall)
+        logger.debug("Installing gnome-shell extension");
+
 
         // need to make the extension location
         if (!file.isDirectory()) {
