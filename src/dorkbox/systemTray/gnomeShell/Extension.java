@@ -246,7 +246,8 @@ class Extension {
         }
 
         String metadata = "{\n" +
-                          "  \"description\": \"Shows a java tray icon on the top notification tray\",\n" +
+                          "  \"description\": \"Moves the java SystemTray icon from inside the notification drawer to alongside the " +
+                                                "clock.\",\n" +
                           "  \"name\": \"Dorkbox SystemTray\",\n" +
                           "  \"shell-version\": [\n" +
                           "    \"" + gnomeVersion + "\"\n" +
