@@ -74,40 +74,6 @@ class ImageUtils {
             if (OS.isWindows()) {
                 int[] version = OS.getWindowsVersion();
 
-                // Version info at release.
-                //
-                // https://en.wikipedia.org/wiki/Comparison_of_Microsoft_Windows_versions
-                //
-                // Windows XP               5.1.2600  (2001-10-25)
-                // Windows Server 2003      5.2.3790  (2003-04-24)
-                //
-                // Windows Home Server		5.2.3790  (2007-06-16)
-                //
-                // Windows Vista	        6.0.6000  (2006-11-08)
-                // Windows Server 2008 SP1	6.0.6001  (2008-02-27)
-                // Windows Server 2008 SP2	6.0.6002  (2009-04-28)
-                //
-                //
-                // Windows 7                    6.1.7600  (2009-10-22)
-                // Windows Server 2008 R2       6.1.7600  (2009-10-22)
-                // Windows Server 2008 R2 SP1   6.1.7601  (?)
-                //
-                // Windows Home Server 2011		6.1.8400  (2011-04-05)
-                //
-                // Windows 8                    6.2.9200  (2012-10-26)
-                // Windows Server 2012	        6.2.9200  (2012-09-04)
-                //
-                // Windows 8.1                  6.3.9600  (2013-10-18)
-                // Windows Server 2012 R2       6.3.9600  (2013-10-18)
-                //
-                // Windows 10	                10.0.10240  (2015-07-29)
-                // Windows 10	                10.0.10586  (2015-11-12)
-                // Windows 10	                10.0.14393  (2016-07-18)
-                //
-                // Windows Server 2016          10.0.14393  (2016-10-12)
-                //
-
-
                 // if windows 8.1/10 - default size is x2
 
                 // vista - 8.0 - only global DPI settings
@@ -208,7 +174,7 @@ class ImageUtils {
                         SystemTray.logger.error("Cannot check plasmashell version");
                     }
                 } else {
-                    // it's likely a Gnome environment
+                    // it's likely a Gnome/unity environment
 
                     try {
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
@@ -234,6 +200,7 @@ class ImageUtils {
                             if (output.contains("uint32")) {
                                 String value = output.substring(output.indexOf("uint")+7, output.length());
                                 trayScalingFactor = Integer.parseInt(value);
+                                menuScalingFactor = Integer.parseInt(value);
 
                                 // 0 is disabled (no scaling)
                                 // 1 is enabled (default scale)
