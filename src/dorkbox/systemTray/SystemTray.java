@@ -57,6 +57,7 @@ import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.OS;
+import dorkbox.util.OsUtil;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -445,7 +446,7 @@ class SystemTray {
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
-            boolean isReallyGnome = OS.isGnome();
+            boolean isReallyGnome = OsUtil.Linux.DesktopEnv.isGnome();
 
             if (isReallyGnome) {
                 if (DEBUG) {
@@ -475,7 +476,7 @@ class SystemTray {
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                 }
                 else if ("kde".equalsIgnoreCase(XDG)) {
-                    if (OS.getFedoraVersion() > 0) {
+                    if (OsUtil.Linux.isFedora()) {
                         // Fedora KDE requires GtkStatusIcon
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     } else {
@@ -490,7 +491,7 @@ class SystemTray {
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
                     if (!useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                        if (OS.isElementaryOS()) {
+                        if (OsUtil.Linux.isElementaryOS()) {
                         } else {
                             logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
                         }
@@ -510,7 +511,7 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        if (OS.isArch()) {
+                        if (OsUtil.Linux.isArch()) {
                             if (DEBUG) {
                                 logger.debug("Running Arch Linux.");
                             }
@@ -526,15 +527,11 @@ class SystemTray {
                         }
 
                         // are we fedora? If so, what version?
-                        // now, what VERSION of fedora? 23/24/25 don't have AppIndicator installed, so we have to use GtkStatusIcon
-                        int fedoraVersion = OS.getFedoraVersion();
-                        if (fedoraVersion > 0) {
+                        // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
+                        if (OsUtil.Linux.isFedora()) {
                             if (DEBUG) {
-                                logger.debug("Running Fedora version: '{}'", fedoraVersion);
+                                logger.debug("Running Fedora");
                             }
-
-                            // set a property so that Image Resize can adjust. It will check the version info to determine scaling value
-                            System.setProperty("SystemTray_IS_FEDORA_GNOME_ADJUST_SIZE", Integer.toString(fedoraVersion));
 
                             // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it)
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
@@ -703,7 +700,7 @@ class SystemTray {
                 }
 
 
-                if (OS.isArch()) {
+                if (OsUtil.Linux.isArch()) {
                     // arch linux is fun!
 
                     if (isTrayType(trayType, TrayType.AppIndicator)) {
