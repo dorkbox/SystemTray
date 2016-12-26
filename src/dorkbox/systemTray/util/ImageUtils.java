@@ -528,7 +528,7 @@ class ImageUtils {
     private static
     File resizeFileNoCheck(final int size, final URL imageUrl) throws IOException {
         String extension = FileUtil.getExtension(imageUrl.getPath());
-        if (extension.equals("")) {
+        if (extension.isEmpty()) {
             extension = "png"; // made up
         }
 
@@ -620,7 +620,7 @@ class ImageUtils {
         // have to resize the file (and return the new path)
 
         String extension = FileUtil.getExtension(fileName);
-        if (extension.equals("")) {
+        if (extension.isEmpty()) {
             extension = "png"; // made up
         }
 
