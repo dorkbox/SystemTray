@@ -273,6 +273,7 @@ class SystemTray {
                              " NOT extend the JavaFX 'Application' class.");
 
                 systemTrayMenu = null;
+                systemTray = null;
                 return;
             }
 
@@ -289,6 +290,7 @@ class SystemTray {
             logger.error("Cannot use the SystemTray in a headless environment");
 
             systemTrayMenu = null;
+            systemTray = null;
             return;
         }
 
@@ -342,6 +344,7 @@ class SystemTray {
                                      "initialized, or set `SystemTray.FORCE_GTK2=false;`");
 
                         systemTrayMenu = null;
+                        systemTray = null;
                         return;
                     } else if (!isSwt_GTK3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                         // we must use GTK2, because SWT is GTK2
@@ -369,6 +372,7 @@ class SystemTray {
                                          "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
 
                             systemTrayMenu = null;
+                            systemTray = null;
                             return;
                         }
                     } else if (!isJFX_GTK3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
@@ -617,6 +621,7 @@ class SystemTray {
                              "and include your OS type and configuration");
 
                 systemTrayMenu = null;
+                systemTray = null;
                 return;
             }
 
@@ -674,6 +679,7 @@ class SystemTray {
             logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Something is seriously wrong.");
 
             systemTrayMenu = null;
+            systemTray = null;
             return;
         }
 
@@ -692,6 +698,7 @@ class SystemTray {
                 if (!Gtk.isLoaded) {
                     logger.error("Unable to initialize GTK! Something is severely wrong!");
                     systemTrayMenu = null;
+                    systemTray = null;
                     return;
                 }
 
@@ -710,11 +717,13 @@ class SystemTray {
                                 logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
                                              "Please install libappindicator, for example: 'sudo pacman -S libappindicator'");
                                 systemTrayMenu = null;
+                                systemTray = null;
                                 return;
                             } else {
                                 logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
                                              "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'"); // GTK3
                                 systemTrayMenu = null;
+                                systemTray = null;
                                 return;
                             }
                         }
@@ -738,6 +747,7 @@ class SystemTray {
                                          " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
 
                             systemTrayMenu = null;
+                            systemTray = null;
                             return;
                         }
                     }
@@ -775,6 +785,7 @@ class SystemTray {
                              "(EDT). Something is seriously wrong.");
 
                 systemTrayMenu = null;
+                systemTray = null;
                 return;
             }
 
@@ -832,6 +843,7 @@ class SystemTray {
             logger.error("Unable to correctly initialize the System Tray. Please write an issue and include your " +
                                        "OS type and configuration");
             systemTrayMenu = null;
+            systemTray = null;
             return;
         }
 
