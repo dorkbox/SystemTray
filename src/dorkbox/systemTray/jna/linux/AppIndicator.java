@@ -239,6 +239,7 @@ class AppIndicator {
 
     public static native AppIndicatorInstanceStruct app_indicator_new(String id, String icon_name, int category);
 
+    public static native void app_indicator_set_title(AppIndicatorInstanceStruct self, String title);
     public static native void app_indicator_set_status(AppIndicatorInstanceStruct self, int status);
     public static native void app_indicator_set_menu(AppIndicatorInstanceStruct self, Pointer menu);
     public static native void app_indicator_set_icon(AppIndicatorInstanceStruct self, String icon_name);

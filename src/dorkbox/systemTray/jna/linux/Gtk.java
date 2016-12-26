@@ -246,6 +246,13 @@ class Gtk {
         if (SystemTray.isJavaFxLoaded) {
             if (!JavaFX.isEventThread()) {
                 try {
+                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                    new Exception(""));
+                        }
+                    }
+
                     // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
                     while (true) {
                         Thread.sleep(100);
@@ -256,13 +263,6 @@ class Gtk {
                             }
                         }
                     }
-
-                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new Exception(""));
-                        }
-                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -271,6 +271,13 @@ class Gtk {
             if (!Swt.isEventThread()) {
                 // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
                 try {
+                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                        if (SystemTray.DEBUG) {
+                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                    new Exception(""));
+                        }
+                    }
+
                     while (true) {
                         Thread.sleep(100);
 
@@ -280,19 +287,19 @@ class Gtk {
                             }
                         }
                     }
-
-                    if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
-                        if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                    new Exception(""));
-                        }
-                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         } else {
             try {
+                if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                                                new Exception(""));
+                    }
+                }
+
                 // we have to WAIT until all events are done processing, OTHERWISE we have initialization issues
                 while (true) {
                     Thread.sleep(100);
@@ -301,13 +308,6 @@ class Gtk {
                         if (gtkCallbacks.isEmpty()) {
                             break;
                         }
-                    }
-                }
-
-                if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
-                    if (SystemTray.DEBUG) {
-                        SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
-                                                new Exception(""));
                     }
                 }
             } catch (InterruptedException e) {

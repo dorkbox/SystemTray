@@ -237,7 +237,7 @@ class Extension {
         }
 
         // set a property so that GTK (if necessary) can set the name
-        System.setProperty("SystemTray_GTK_SET_NAME", "true");
+        System.setProperty("SystemTray_SET_NAME", "true");
 
         // have to copy the extension over and enable it.
         String userHome = System.getProperty("user.home");

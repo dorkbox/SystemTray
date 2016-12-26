@@ -756,7 +756,7 @@ class SystemTray {
             if (isJavaFxLoaded) {
                 if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
                     // set a property so that GTK (if necessary) can set the name of the system tray icon
-                    System.setProperty("SystemTray_GTK_SET_NAME", "true");
+                    System.setProperty("SystemTray_SET_NAME", "true");
                 }
 
                 // This will initialize javaFX dispatch methods
