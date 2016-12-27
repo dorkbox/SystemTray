@@ -309,8 +309,8 @@ class ImageUtils {
         try {
             final BufferedImage image = getTransparentImageAsImage(size);
             ImageIO.write(image, "png", newFile);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            SystemTray.logger.error("Error creating transparent image for size: {}", size, e);
         }
 
         return newFile;
@@ -335,7 +335,8 @@ class ImageUtils {
             // since it's the error file, we want to delete it on exit!
             save.deleteOnExit();
             return save;
-        } catch (IOException e) {
+        } catch (Exception e) {
+            // this must be thrown
             throw new RuntimeException("Serious problems! Unable to extract error image, this should NEVER happen!", e);
         }
     }
@@ -347,7 +348,7 @@ class ImageUtils {
             if (check != null) {
                 return check;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             SystemTray.logger.error("Error checking cache for information. Using error icon instead", e);
             return getErrorImage(cacheName);
         }
@@ -371,7 +372,7 @@ class ImageUtils {
             fileInputStream.close();
 
             return file;
-        } catch (IOException e) {
+        } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
             return getErrorImage(size + "default");
@@ -391,7 +392,7 @@ class ImageUtils {
             inputStream.close();
 
             return file;
-        } catch (IOException e) {
+        } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
             return getErrorImage(size + "default");
@@ -409,12 +410,17 @@ class ImageUtils {
         trayImage.flush();
 
         try {
-            ImageInputStream imageInputStream = ImageIO.createImageInputStream(image);
+            BufferedImage bufferedImage = getBufferedImage(trayImage);
+
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            ImageIO.write(bufferedImage, "png", os);
+            InputStream imageInputStream = new ByteArrayInputStream(os.toByteArray());
+
             File file = resizeAndCache(size, imageInputStream);
-            imageInputStream.close();
+            imageInputStream.close(); // BAOS doesn't do anything, but here for completeness + documentation
 
             return file;
-        } catch (IOException e) {
+        } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
             return getErrorImage(size + "default");
@@ -431,7 +437,7 @@ class ImageUtils {
         try {
             ByteArrayOutputStream byteArrayOutputStream = IO.copyStream(imageStream);
             return resizeAndCache(size, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
-        } catch (IOException e) {
+        } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
             return getErrorImage(size + "default");
@@ -452,7 +458,8 @@ class ImageUtils {
                 imageStream.close();
 
                 imageStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-            } catch (IOException e) {
+            } catch (Exception e) {
+                // this must be thrown
                 throw new RuntimeException("Unable to read from inputStream.", e);
             }
         }
@@ -479,7 +486,7 @@ class ImageUtils {
                 // we can reuse this URL (it's the correct size).
                 needsResize = false;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error resizing image. Using error icon instead", e);
             return getErrorImage(cacheName);
@@ -495,13 +502,13 @@ class ImageUtils {
                 // now cache that file
                 try {
                     return CacheUtil.save(cacheName, resizedFile);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     // have to serve up the error image instead.
                     SystemTray.logger.error("Error caching image. Using error icon instead", e);
                     return getErrorImage(cacheName);
                 }
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error resizing image. Using error icon instead", e);
                 return getErrorImage(cacheName);
@@ -511,7 +518,7 @@ class ImageUtils {
             // no resize necessary, just cache as is.
             try {
                 return CacheUtil.save(cacheName, imageStream);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error caching image. Using error icon instead", e);
                 return getErrorImage(cacheName);
@@ -695,6 +702,7 @@ class ImageUtils {
         ImageInputStream in = null;
         ImageReader reader = null;
         try {
+            // This will ONLY work for File, InputStream, and RandomAccessFile
             in = ImageIO.createImageInputStream(fileStream);
 
             final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
