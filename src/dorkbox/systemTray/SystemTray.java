@@ -491,10 +491,7 @@ class SystemTray {
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
                     if (!useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                        if (OsUtil.Linux.isElementaryOS()) {
-                        } else {
-                            logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
-                        }
+                        logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
                         useNativeMenus = true;
                     }
 
@@ -533,7 +530,11 @@ class SystemTray {
                                 logger.debug("Running Fedora");
                             }
 
-                            // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it)
+                            // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
+                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        }
+                        else if (OsUtil.Linux.isUbuntu()) {
+                            // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                         } else {
                             // arch likely will have problems unless the correct/appropriate libraries are installed.
