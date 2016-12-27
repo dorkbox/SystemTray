@@ -87,6 +87,9 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
     private volatile boolean visible = true;
     private volatile File imageFile;
 
+    // has the name already been set for the indicator?
+    private volatile boolean setName = false;
+
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
     //   they ALSO do not support tooltips, so we cater to the lowest common denominator
@@ -109,6 +112,23 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             void onMenuAdded(final Pointer menu) {
                 // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
                 AppIndicator.app_indicator_set_menu(appIndicator, menu);
+
+                if (!setName) {
+                    setName = true;
+
+                    // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
+                    // If you change "SystemTray" to something else, make sure to change it in extension.js as well
+
+                    // can cause (potentially)
+                    // GLib-GIO-CRITICAL **: g_dbus_connection_emit_signal: assertion 'object_path != NULL && g_variant_is_object_path (object_path)' failed
+                    // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+
+                    // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
+                    //  in extension.js, so don't change it
+
+                    // additionally, this is required to be set HERE (not somewhere else)
+                    AppIndicator.app_indicator_set_title(appIndicator, "SystemTray");
+                }
             }
 
             @Override
@@ -208,29 +228,6 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
         });
 
         Gtk.waitForStartup();
-
-
-        if (System.getProperty("SystemTray_SET_NAME", "false").equals("true")) {
-            Gtk.dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
-                    // If you change "SystemTray" to something else, make sure to change it in extension.js as well
-
-                    // default is to show the indicator
-                    AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
-
-                    // can cause
-                    // GLib-GIO-CRITICAL **: g_dbus_connection_emit_signal: assertion 'object_path != NULL && g_variant_is_object_path (object_path)' failed
-                    // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
-
-                    // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
-                    //  in extension.js, so don't change it
-                    AppIndicator.app_indicator_set_title(appIndicator, "SystemTray");
-                }
-            });
-        }
 
         bind(gtkMenu, null, systemTray);
     }
