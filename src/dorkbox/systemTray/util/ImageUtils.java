@@ -51,7 +51,7 @@ import dorkbox.util.FileUtil;
 import dorkbox.util.IO;
 import dorkbox.util.LocationResolver;
 import dorkbox.util.OS;
-import dorkbox.util.OsUtil;
+import dorkbox.util.OSUtil;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.process.ShellProcessBuilder;
 
@@ -73,7 +73,7 @@ class ImageUtils {
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
-                int[] version = OsUtil.Windows.getVersion();
+                int[] version = OSUtil.Windows.getVersion();
 
                 // if windows 8.1/10 - default size is x2
 
@@ -155,14 +155,14 @@ class ImageUtils {
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
                 if (XDG == null) {
                     // Check if plasmashell is running, if it is -- then we are most likely KDE
-                    double plasmaVersion = OsUtil.Linux.DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OSUtil.Linux.DesktopEnv.getPlasmaVersion();
                     if (plasmaVersion > 0) {
                         XDG = "kde";
                     }
                 }
 
                 if ("kde".equalsIgnoreCase(XDG)) {
-                    double plasmaVersion = OsUtil.Linux.DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OSUtil.Linux.DesktopEnv.getPlasmaVersion();
 
                     // 1 = 16
                     // 2 = 32
@@ -222,7 +222,7 @@ class ImageUtils {
                     }
 
                     // fedora 23+ has a different size for the indicator (NOT default 16px)
-                    int fedoraVersion = OsUtil.Linux.getFedoraVersion();
+                    int fedoraVersion = OSUtil.Linux.getFedoraVersion();
                     if (trayScalingFactor == 0 && fedoraVersion >= 23) {
                         if (SystemTray.DEBUG) {
                             SystemTray.logger.debug("Adjusting tray/menu scaling for FEDORA " + fedoraVersion);

@@ -57,7 +57,7 @@ import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.OS;
-import dorkbox.util.OsUtil;
+import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.process.ShellProcessBuilder;
@@ -446,7 +446,7 @@ class SystemTray {
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
-            boolean isReallyGnome = OsUtil.Linux.DesktopEnv.isGnome();
+            boolean isReallyGnome = OSUtil.Linux.DesktopEnv.isGnome();
 
             if (isReallyGnome) {
                 if (DEBUG) {
@@ -476,7 +476,7 @@ class SystemTray {
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                 }
                 else if ("kde".equalsIgnoreCase(XDG)) {
-                    if (OsUtil.Linux.isFedora()) {
+                    if (OSUtil.Linux.isFedora()) {
                         // Fedora KDE requires GtkStatusIcon
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     } else {
@@ -508,7 +508,7 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        if (OsUtil.Linux.isArch()) {
+                        if (OSUtil.Linux.isArch()) {
                             if (DEBUG) {
                                 logger.debug("Running Arch Linux.");
                             }
@@ -525,7 +525,7 @@ class SystemTray {
 
                         // are we fedora? If so, what version?
                         // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
-                        if (OsUtil.Linux.isFedora()) {
+                        if (OSUtil.Linux.isFedora()) {
                             if (DEBUG) {
                                 logger.debug("Running Fedora");
                             }
@@ -533,7 +533,7 @@ class SystemTray {
                             // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                         }
-                        else if (OsUtil.Linux.isUbuntu()) {
+                        else if (OSUtil.Linux.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                         } else {
@@ -701,7 +701,7 @@ class SystemTray {
                 }
 
 
-                if (OsUtil.Linux.isArch()) {
+                if (OSUtil.Linux.isArch()) {
                     // arch linux is fun!
 
                     if (isTrayType(trayType, TrayType.AppIndicator)) {

@@ -35,7 +35,7 @@ import java.util.List;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
-import dorkbox.util.OsUtil;
+import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
 import dorkbox.util.process.ShellProcessBuilder;
 
@@ -214,7 +214,7 @@ class Extension {
      */
     public static
     void install() {
-        if (!ENABLE_EXTENSION_INSTALL || !OsUtil.Linux.DesktopEnv.isGnome()) {
+        if (!ENABLE_EXTENSION_INSTALL || !OSUtil.Linux.DesktopEnv.isGnome()) {
             return;
         }
 
@@ -222,7 +222,7 @@ class Extension {
         boolean hasSystemTray;
 
         // should just be 3.14.1 or 3.20 or similar
-        String gnomeVersion = OsUtil.Linux.DesktopEnv.getGnomeVersion();
+        String gnomeVersion = OSUtil.Linux.DesktopEnv.getGnomeVersion();
         if (gnomeVersion == null) {
             return;
         }
@@ -382,7 +382,7 @@ class Extension {
 
     public static
     void unInstall() {
-        if (!ENABLE_EXTENSION_INSTALL || !OsUtil.Linux.DesktopEnv.isGnome()) {
+        if (!ENABLE_EXTENSION_INSTALL || !OSUtil.Linux.DesktopEnv.isGnome()) {
             return;
         }
 
