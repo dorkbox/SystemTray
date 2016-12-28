@@ -84,7 +84,8 @@ class Gtk {
         boolean _isLoaded = false;
         boolean _alreadyRunningGTK = false;
 
-        if (!OS.isLinux()) {
+        boolean shouldLoadGtk = !(OS.isWindows() || OS.isMacOsX());
+        if (!shouldLoadGtk) {
             _isLoaded = true;
         }
 
@@ -186,7 +187,7 @@ class Gtk {
             isGtk3 = false;
         }
 
-        if (OS.isLinux() && !_isLoaded) {
+        if (shouldLoadGtk && !_isLoaded) {
             throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
                                        "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
         }

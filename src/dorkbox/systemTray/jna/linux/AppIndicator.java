@@ -48,7 +48,8 @@ class AppIndicator {
         boolean _isVersion3 = false;
         boolean _isLoaded = false;
 
-        if (!OS.isLinux()) {
+        boolean shouldLoadAppIndicator = !(OS.isWindows() || OS.isMacOsX());
+        if (!shouldLoadAppIndicator) {
             _isLoaded = true;
         }
 
@@ -230,7 +231,7 @@ class AppIndicator {
             }
         }
 
-        if (OS.isLinux()) {
+        if (shouldLoadAppIndicator) {
             isLoaded = _isLoaded;
             isVersion3 = _isVersion3;
         } else {
