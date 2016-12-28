@@ -231,8 +231,8 @@ class AppIndicator {
             }
         }
 
-        if (shouldLoadAppIndicator) {
-            isLoaded = _isLoaded;
+        if (shouldLoadAppIndicator && _isLoaded) {
+            isLoaded = true;
             isVersion3 = _isVersion3;
         } else {
             isLoaded = false;

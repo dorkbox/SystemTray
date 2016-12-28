@@ -167,9 +167,9 @@ class Gtk {
             }
         }
 
-        isLoaded = _isLoaded;
+        if (shouldLoadGtk && _isLoaded) {
+            isLoaded = true;
 
-        if (_isLoaded) {
             // depending on how the system is initialized, SWT may, or may not, have the gtk_main loop running. It will EVENTUALLY run, so we
             // do not want to run our own GTK event loop.
             _alreadyRunningGTK |= SystemTray.isSwtLoaded;
@@ -182,6 +182,8 @@ class Gtk {
             isGtk2 = _isGtk2;
             isGtk3 = !_isGtk2;
         } else {
+            isLoaded = false;
+
             alreadyRunningGTK = false;
             isGtk2 = false;
             isGtk3 = false;
