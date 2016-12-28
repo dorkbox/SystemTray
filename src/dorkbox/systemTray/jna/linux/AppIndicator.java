@@ -23,6 +23,7 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.JnaHelper;
+import dorkbox.util.OS;
 
 /**
  * bindings for libappindicator
@@ -32,8 +33,8 @@ import dorkbox.systemTray.jna.JnaHelper;
 @SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc"})
 public
 class AppIndicator {
-    public static boolean isVersion3 = false;
-    public static boolean isLoaded = false;
+    public static final boolean isVersion3;
+    public static final boolean isLoaded;
 
     /**
      * Loader for AppIndicator, because it is absolutely mindboggling how those whom maintain the standard, can't agree to what that
@@ -44,6 +45,13 @@ class AppIndicator {
      * This is so hacky it makes me sick.
      */
     static {
+        boolean _isVersion3 = false;
+        boolean _isLoaded = false;
+
+        if (!OS.isLinux()) {
+            _isLoaded = true;
+        }
+
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator.so.1 | grep foo
         // objdump -T /usr/lib/x86_64-linux-gnu/libappindicator3.so.1 | grep foo
 
@@ -52,22 +60,22 @@ class AppIndicator {
         //     appindiactor1 is GKT2 only (can't use GTK3 bindings with it)
         //     appindicator3 doesn't support menu icons via GTK2!!
 
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.GtkStatusIcon) {
+        if (!_isLoaded && SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.GtkStatusIcon) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             if (SystemTray.DEBUG) {
                 logger.debug("Forcing GTK tray, not using appindicator");
             }
-            isLoaded = true;
+            _isLoaded = true;
         }
 
-        if (!isLoaded && SystemTray.FORCE_GTK2) {
+        if (!_isLoaded && SystemTray.FORCE_GTK2) {
             // if specified, try loading appindicator1 first, maybe it's there?
             // note: we can have GTK2 + appindicator3, but NOT ALWAYS.
             try {
                 // deliberately without the "1" at the end.
                 final NativeLibrary library = JnaHelper.register("appindicator", AppIndicator.class);
                 if (library != null) {
-                    isLoaded = true;
+                    _isLoaded = true;
                 }
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
@@ -87,7 +95,7 @@ class AppIndicator {
         }
 
         // start with base version using whatever the OS specifies as the proper symbolic link
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 final NativeLibrary library = JnaHelper.register(nameToCheck1, AppIndicator.class);
                 String s = library.getFile().getName();
@@ -97,10 +105,10 @@ class AppIndicator {
                 }
 
                 if (s.contains("appindicator3")) {
-                    isVersion3 = true;
+                    _isVersion3 = true;
                 }
 
-                isLoaded = true;
+                _isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
                     logger.debug("Error loading library: '{}'. \n{}", nameToCheck1, e.getMessage());
@@ -110,7 +118,7 @@ class AppIndicator {
 
         // whoops. Symbolic links are bugged out. Look manually for it...
         // Super hacky way to do this.
-        if (!isLoaded) {
+        if (!_isLoaded) {
             if (Gtk.isGtk2) {
                 if (SystemTray.DEBUG) {
                     logger.debug("Checking GTK2 first for appIndicator");
@@ -118,7 +126,7 @@ class AppIndicator {
 
                 // have to check gtk2 first
                 for (int i = 0; i <= 10; i++) {
-                    if (!isLoaded) {
+                    if (!_isLoaded) {
                         try {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
                             String s = library.getFile().getName();
@@ -129,14 +137,14 @@ class AppIndicator {
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
-                                isVersion3 = true;
+                                _isVersion3 = true;
                                 if (SystemTray.DEBUG) {
                                     logger.debug("Unloading library: '{}'", s);
                                 }
                                 Native.unregister(AppIndicator.class);
                             }
 
-                            isLoaded = true;
+                            _isLoaded = true;
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
@@ -149,7 +157,7 @@ class AppIndicator {
             } else {
                 // have to check gtk3 first (maybe it's there?)
                 for (int i = 10; i >= 0; i--) {
-                    if (!isLoaded) {
+                    if (!_isLoaded) {
                         try {
                             final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
                             String s = library.getFile().getName();
@@ -160,10 +168,10 @@ class AppIndicator {
 
                             // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
                             if (i == 3 || s.contains("appindicator3")) {
-                                isVersion3 = true;
+                                _isVersion3 = true;
                             }
 
-                            isLoaded = true;
+                            _isLoaded = true;
                             break;
                         } catch (Throwable e) {
                             if (SystemTray.DEBUG) {
@@ -176,10 +184,10 @@ class AppIndicator {
         }
 
         // maybe it's really GTK2 version? who knows...
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 JnaHelper.register("appindicator", AppIndicator.class);
-                isLoaded = true;
+                _isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
                     logger.debug("Error loading library: '{}'. \n{}", "appindicator", e.getMessage());
@@ -199,10 +207,10 @@ class AppIndicator {
         }
 
         // another type. who knows...
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 JnaHelper.register(nameToCheck1, AppIndicator.class);
-                isLoaded = true;
+                _isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
                     logger.debug("Error loading library: '{}'. \n{}", nameToCheck1, e.getMessage());
@@ -211,15 +219,23 @@ class AppIndicator {
         }
 
         // this is HORRID. such a PITA
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 JnaHelper.register(nameToCheck2, AppIndicator.class);
-                isLoaded = true;
+                _isLoaded = true;
             } catch (Throwable e) {
                 if (SystemTray.DEBUG) {
                     logger.debug("Error loading library: '{}'. \n{}", nameToCheck2, e.getMessage());
                 }
             }
+        }
+
+        if (OS.isLinux()) {
+            isLoaded = _isLoaded;
+            isVersion3 = _isVersion3;
+        } else {
+            isLoaded = false;
+            isVersion3 = false;
         }
     }
 

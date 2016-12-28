@@ -31,6 +31,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.JnaHelper;
 import dorkbox.systemTray.util.JavaFX;
 import dorkbox.systemTray.util.Swt;
+import dorkbox.util.OS;
 
 /**
  * bindings for gtk 2 or 3
@@ -48,13 +49,13 @@ class Gtk {
     // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
     // NOTE: AppIndicator uses this info to figure out WHAT VERSION OF appindicator to use: GTK2 -> appindicator1, GTK3 -> appindicator3
-    public static volatile boolean isGtk2 = false;
-    public static boolean isLoaded = false;
-
+    public static final boolean isGtk2;
+    public static final boolean isGtk3;
+    public static final boolean isLoaded;
 
     public static Function gtk_status_icon_position_menu = null;
 
-    private static boolean alreadyRunningGTK = false;
+    private static final boolean alreadyRunningGTK;
 
     // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
     private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
@@ -79,26 +80,37 @@ class Gtk {
      */
     static {
         boolean shouldUseGtk2 = SystemTray.FORCE_GTK2;
+        boolean _isGtk2 = false;
+        boolean _isLoaded = false;
+        boolean _alreadyRunningGTK = false;
+
+        if (!OS.isLinux()) {
+            _isLoaded = true;
+        }
+
+        // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
+        if (!_isLoaded && SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing) {
+            if (SystemTray.DEBUG) {
+                logger.debug("Forcing Swing tray, not using GTK");
+            }
+            _isLoaded = true;
+        }
 
         // in some cases, we ALWAYS want to try GTK2 first
         String gtk2LibName = "gtk-x11-2.0";
         String gtk3LibName = "libgtk-3.so.0";
 
-        // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
-        if (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing) {
-            isLoaded = true;
-        }
 
-        if (!isLoaded && shouldUseGtk2) {
+        if (!_isLoaded && shouldUseGtk2) {
             try {
                 JnaHelper.register(gtk2LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
-                isGtk2 = true;
+                _isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                alreadyRunningGTK = gtk_main_level() != 0;
-                isLoaded = true;
+                _alreadyRunningGTK = gtk_main_level() != 0;
+                _isLoaded = true;
 
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk2LibName);
@@ -113,14 +125,14 @@ class Gtk {
         // now for the defaults...
 
         // start with version 3
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 JnaHelper.register(gtk3LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk3LibName, "gtk_status_icon_position_menu");
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                alreadyRunningGTK = gtk_main_level() != 0;
-                isLoaded = true;
+                _alreadyRunningGTK = gtk_main_level() != 0;
+                _isLoaded = true;
 
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk3LibName);
@@ -133,16 +145,16 @@ class Gtk {
         }
 
         // now version 2
-        if (!isLoaded) {
+        if (!_isLoaded) {
             try {
                 JnaHelper.register(gtk2LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
-                isGtk2 = true;
+                _isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                alreadyRunningGTK = gtk_main_level() != 0;
-                isLoaded = true;
+                _alreadyRunningGTK = gtk_main_level() != 0;
+                _isLoaded = true;
 
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk2LibName);
@@ -154,15 +166,27 @@ class Gtk {
             }
         }
 
-        // depending on how the system is initialized, SWT may, or may not, have the gtk_main loop running. It will EVENTUALLY run, so we
-        // do not want to run our own GTK event loop.
-        alreadyRunningGTK |= SystemTray.isSwtLoaded;
+        isLoaded = _isLoaded;
 
-        if (SystemTray.DEBUG) {
-            logger.debug("Is the system already running GTK? {}", alreadyRunningGTK);
+        if (_isLoaded) {
+            // depending on how the system is initialized, SWT may, or may not, have the gtk_main loop running. It will EVENTUALLY run, so we
+            // do not want to run our own GTK event loop.
+            _alreadyRunningGTK |= SystemTray.isSwtLoaded;
+
+            if (SystemTray.DEBUG) {
+                logger.debug("Is the system already running GTK? {}", _alreadyRunningGTK);
+            }
+
+            alreadyRunningGTK = _alreadyRunningGTK;
+            isGtk2 = _isGtk2;
+            isGtk3 = !_isGtk2;
+        } else {
+            alreadyRunningGTK = false;
+            isGtk2 = false;
+            isGtk3 = false;
         }
 
-        if (!isLoaded) {
+        if (OS.isLinux() && !_isLoaded) {
             throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
                                        "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
         }
