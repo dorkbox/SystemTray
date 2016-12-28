@@ -15,8 +15,8 @@
  */
 package dorkbox.systemTray.util;
 
-import static dorkbox.systemTray.jna.Windows.Gdi32.GetDeviceCaps;
-import static dorkbox.systemTray.jna.Windows.Gdi32.LOGPIXELSX;
+import static dorkbox.systemTray.jna.windows.Gdi32.GetDeviceCaps;
+import static dorkbox.systemTray.jna.windows.Gdi32.LOGPIXELSX;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.jna.Windows.User32;
+import dorkbox.systemTray.jna.windows.User32;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.IO;
