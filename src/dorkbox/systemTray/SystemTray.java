@@ -323,7 +323,7 @@ class SystemTray {
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
             }
         }
-        else if (OS.isLinux()) {
+        else if (OS.isLinux() || OS.isUnix()) {
             // kablooie if SWT/JavaFX is not configured in a way that works with us.
             if (FORCE_TRAY_TYPE != TrayType.Swing) {
                 if (isSwtLoaded) {
@@ -419,7 +419,7 @@ class SystemTray {
             // macosx doesn't respond to all buttons (but should)
             SystemTrayFixes.fixMacOS();
         }
-        else if (OS.isLinux() && FORCE_TRAY_TYPE != TrayType.Swing) {
+        else if ((OS.isLinux() || OS.isUnix()) && FORCE_TRAY_TYPE != TrayType.Swing) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
@@ -446,7 +446,7 @@ class SystemTray {
 
             // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
             // we must ALWAYS do this check!!
-            boolean isReallyGnome = OSUtil.Linux.DesktopEnv.isGnome();
+            boolean isReallyGnome = OSUtil.DesktopEnv.isGnome();
 
             if (isReallyGnome) {
                 if (DEBUG) {
@@ -536,7 +536,11 @@ class SystemTray {
                         else if (OSUtil.Linux.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
-                        } else {
+                        }
+                        else if (OSUtil.Unix.isFreeBSD()) {
+                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        }
+                        else {
                             // arch likely will have problems unless the correct/appropriate libraries are installed.
                             trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                         }
@@ -690,7 +694,7 @@ class SystemTray {
         CacheUtil.tempDir = "SysTray";
 
         try {
-            if (OS.isLinux()) {
+            if (OS.isLinux() || OS.isUnix()) {
                 // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
                 // appindicator3 doesn't support menu icons via GTK2!!
                 if (!Gtk.isLoaded) {
@@ -752,8 +756,8 @@ class SystemTray {
 
                     if (!AppIndicator.isLoaded) {
                         // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
+                        logger.warn("Unable to initialize the AppIndicator correctly, falling back to GtkStatusIcon type");
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
-                        logger.warn("Unable to initialize the AppIndicator correctly, falling back to GtkStatusIcon.");
                     }
                 }
             }
@@ -794,7 +798,7 @@ class SystemTray {
             // if it's linux + native menus must not start on the EDT!
             // _AwtTray must be constructed on the EDT however...
             if (isJavaFxLoaded || isSwtLoaded ||
-                (OS.isLinux() && NativeUI.class.isAssignableFrom(trayType) && trayType != _AwtTray.class)) {
+                ((OS.isLinux() || OS.isUnix()) && NativeUI.class.isAssignableFrom(trayType) && trayType != _AwtTray.class)) {
                 try {
                     reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
                     logger.info("Successfully Loaded: {}", trayType.getSimpleName());

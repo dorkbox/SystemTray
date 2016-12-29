@@ -16,11 +16,8 @@
 package dorkbox.systemTray.nativeUI;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.MenuItem;
@@ -45,7 +42,8 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     // https://github.com/djdeath/glib/blob/master/gobject/gobject.c
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
-    private final List<Object> gtkCallbacks = new ArrayList<Object>();
+    // see: https://github.com/java-native-access/jna/blob/master/www/CallbacksAndClosures.md
+    private GEventCallback gtkCallback = null;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
     private AtomicBoolean shuttingDown = new AtomicBoolean();
@@ -135,7 +133,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
 
                             // mark for GC
                             trayIcon = null;
-                            gtkCallbacks.clear();
+                            gtkCallback = null;
                         }
                     });
 
@@ -153,7 +151,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
             void run() {
                 trayIcon = Gtk.gtk_status_icon_new();
 
-                final GEventCallback gtkCallback = new GEventCallback() {
+                gtkCallback = new GEventCallback() {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
@@ -165,12 +163,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
                         }
                     }
                 };
-                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event",
-                                                                                      gtkCallback, null, 0);
-
-                // have to do this to prevent GC on these objects
-                gtkCallbacks.add(gtkCallback);
-                gtkCallbacks.add(button_press_event);
+                Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
             }
         });
 

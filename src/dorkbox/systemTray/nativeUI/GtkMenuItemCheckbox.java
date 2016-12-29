@@ -18,7 +18,6 @@ package dorkbox.systemTray.nativeUI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Checkbox;
@@ -30,9 +29,6 @@ import dorkbox.systemTray.peer.CheckboxPeer;
 
 // ElementaryOS shows the checkbox on the right, everyone else is on the left. With eOS, we CANNOT show the spacer image. It does not work
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final NativeLong nativeLong;
-
     private final GtkMenu parent;
 
     // these have to be volatile, because they can be changed from any thread
@@ -53,7 +49,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         super(Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
-        nativeLong = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+        Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
     // called by native code

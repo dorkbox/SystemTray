@@ -17,7 +17,6 @@ package dorkbox.systemTray.nativeUI;
 
 import java.awt.event.ActionListener;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.MenuItem;
@@ -28,9 +27,6 @@ import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.MenuItemPeer;
 
 class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final NativeLong nativeLong;
-
     private final GtkMenu parent;
 
     // these have to be volatile, because they can be changed from any thread
@@ -50,7 +46,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
         super(Gtk.gtk_image_menu_item_new_with_mnemonic(""));
 
         this.parent = parent;
-        nativeLong = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+        Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
 

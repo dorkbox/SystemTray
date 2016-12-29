@@ -15,8 +15,10 @@
  */
 package dorkbox.systemTray.jna.linux;
 
+import static dorkbox.systemTray.SystemTray.logger;
+
 import com.sun.jna.Callback;
-import com.sun.jna.NativeLong;
+import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
@@ -31,7 +33,14 @@ public
 class Gobject {
 
     static {
-        JnaHelper.register("gobject-2.0", Gobject.class);
+        try {
+            NativeLibrary library = JnaHelper.register("gobject-2.0", Gobject.class);
+            if (library == null) {
+                logger.error("Error loading GObject library, it failed to load.");
+            }
+        } catch (Throwable e) {
+            logger.error("Error loading GObject library, it failed to load {}", e.getMessage());
+        }
     }
 
 
@@ -42,5 +51,5 @@ class Gobject {
     public static native void g_object_force_floating(Pointer object);
     public static native void g_object_ref_sink(Pointer object);
 
-    public static native NativeLong g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
+    public static native void g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
 }

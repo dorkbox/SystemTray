@@ -18,13 +18,10 @@ package dorkbox.systemTray.swingUI;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JPopupMenu;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.MenuItem;
@@ -51,7 +48,8 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
     private volatile Pointer trayIcon;
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
-    private final List<Object> gtkCallbacks = new ArrayList<Object>();
+    // see: https://github.com/java-native-access/jna/blob/master/www/CallbacksAndClosures.md
+    private GEventCallback gtkCallback = null;
 
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
@@ -75,7 +73,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
             void run() {
                 trayIcon = Gtk.gtk_status_icon_new();
 
-                final GEventCallback gtkCallback = new GEventCallback() {
+                gtkCallback = new GEventCallback() {
                     @Override
                     public
                     void callback(Pointer notUsed, final GdkEventButton event) {
@@ -87,12 +85,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
                         }
                     }
                 };
-                final NativeLong button_press_event = Gobject.g_signal_connect_object(trayIcon, "button_press_event",
-                                                                                      gtkCallback, null, 0);
-
-                // have to do this to prevent GC on these objects
-                gtkCallbacks.add(gtkCallback);
-                gtkCallbacks.add(button_press_event);
+                Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
             }
         });
 
@@ -209,7 +202,6 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
 
                                     // mark for GC
                                     trayIcon = null;
-                                    gtkCallbacks.clear();
                                 }
                             });
 

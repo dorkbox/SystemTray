@@ -20,7 +20,6 @@ import java.awt.Point;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
@@ -92,8 +91,6 @@ class _AppIndicatorTray extends Tray implements SwingUI {
     private AtomicBoolean shuttingDown = new AtomicBoolean();
 
     // necessary to prevent GC on these objects
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private NativeLong nativeLong;
     @SuppressWarnings("FieldCanBeLocal")
     private GEventCallback gtkCallback;
 
@@ -295,7 +292,7 @@ class _AppIndicatorTray extends Tray implements SwingUI {
             }
         };
 
-        nativeLong = Gobject.g_signal_connect_object(rootMenuItem.getValue(), "about-to-show", gtkCallback, null, 0);
+        Gobject.g_signal_connect_object(rootMenuItem.getValue(), "about-to-show", gtkCallback, null, 0);
     }
 
     private
