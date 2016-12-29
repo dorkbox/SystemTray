@@ -71,6 +71,8 @@ class Gtk {
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
 
+    // objdump -T /usr/local/lib/libgtk-3.so.0 | grep gtk
+
     /**
      * We can have GTK v3 or v2.
      *
