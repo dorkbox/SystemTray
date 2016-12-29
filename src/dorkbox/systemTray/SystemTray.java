@@ -496,7 +496,7 @@ class SystemTray {
                     }
 
                     // ElementaryOS shows the checkbox on the right, everyone else is on the left.
-                    // With eOS, we CANNOT show the spacer image. It does not work
+                    // With eOS, we CANNOT show the spacer image. It does not work.
                     trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
                 }
                 else if ("gnome".equalsIgnoreCase(XDG)) {
