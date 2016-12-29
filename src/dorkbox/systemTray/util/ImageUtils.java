@@ -146,7 +146,7 @@ class ImageUtils {
                     SystemTray.logger.debug("Windows version: '{}'", Arrays.toString(version));
                     SystemTray.logger.debug("Windows DPI settings: '{}'", dpiX);
                 }
-            } else if (OS.isLinux()) {
+            } else if (OS.isLinux() || OS.isUnix()) {
                 // GtkStatusIcon will USUALLY automatically scale the icon
                 // AppIndicator MIGHT scale the icon (depends on the OS)
 
@@ -155,14 +155,14 @@ class ImageUtils {
                 String XDG = System.getenv("XDG_CURRENT_DESKTOP");
                 if (XDG == null) {
                     // Check if plasmashell is running, if it is -- then we are most likely KDE
-                    double plasmaVersion = OSUtil.Linux.DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OSUtil.DesktopEnv.getPlasmaVersion();
                     if (plasmaVersion > 0) {
                         XDG = "kde";
                     }
                 }
 
                 if ("kde".equalsIgnoreCase(XDG)) {
-                    double plasmaVersion = OSUtil.Linux.DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OSUtil.DesktopEnv.getPlasmaVersion();
 
                     // 1 = 16
                     // 2 = 32
