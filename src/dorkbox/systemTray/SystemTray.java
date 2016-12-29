@@ -548,6 +548,16 @@ class SystemTray {
                     else if ("cinnamon".equalsIgnoreCase(GDM)) {
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     }
+                    else if ("default".equalsIgnoreCase(GDM)) {
+                        // this can be gnome3 on debian
+
+                        if (OSUtil.Linux.isDebian()) {
+                            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
+                            logger.warn("Debian with Gnome detected. SystemTray support is not known to work.");
+                        }
+
+                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                    }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                         trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
                     }

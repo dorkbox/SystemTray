@@ -214,7 +214,9 @@ class Extension {
      */
     public static
     void install() {
-        if (!ENABLE_EXTENSION_INSTALL || !OSUtil.DesktopEnv.isGnome()) {
+        boolean isGnome = OSUtil.DesktopEnv.isGnome();
+        if (!ENABLE_EXTENSION_INSTALL || !isGnome || (isGnome && OSUtil.Linux.isDebian())) {
+            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
             return;
         }
 
