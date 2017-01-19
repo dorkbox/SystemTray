@@ -132,19 +132,25 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setChecked(final Checkbox menuItem) {
-        this.isChecked = menuItem.getChecked();
+        boolean checked = menuItem.getChecked();
 
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (isChecked) {
-                    _native.setIcon(checkedIcon);
-                } else {
-                    _native.setIcon(uncheckedIcon);
+        // only dispatch if it's actually different
+        if (checked != this.isChecked) {
+            this.isChecked = checked;
+
+            SwingUtil.invokeLater(new Runnable() {
+                @Override
+                public
+                void run() {
+                    if (isChecked) {
+                        _native.setIcon(checkedIcon);
+                    }
+                    else {
+                        _native.setIcon(uncheckedIcon);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override

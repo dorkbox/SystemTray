@@ -115,15 +115,20 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setChecked(final Checkbox menuItem) {
-        this.isChecked = menuItem.getChecked();
+        boolean checked = menuItem.getChecked();
 
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setState(isChecked);
-            }
-        });
+        // only dispatch if it's actually different
+        if (checked != this.isChecked) {
+            this.isChecked = checked;
+
+            SwingUtil.invokeLater(new Runnable() {
+                @Override
+                public
+                void run() {
+                    _native.setState(isChecked);
+                }
+            });
+        }
     }
 
     @SuppressWarnings("Duplicates")

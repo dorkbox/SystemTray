@@ -17,6 +17,7 @@ package dorkbox.systemTray.nativeUI;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
@@ -52,7 +53,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
-    // called by native code
+    // called by native code ONLY
     @Override
     public
     int callback(final Pointer instance, final Pointer data) {
@@ -119,7 +120,11 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         });
     }
 
-    @SuppressWarnings("Duplicates")
+    AtomicBoolean triggeredSetChecked = new AtomicBoolean(false);
+
+
+
+    @SuppressWarnings({"Duplicates", "StatementWithEmptyBody"})
     @Override
     public
     void setCallback(final Checkbox menuItem) {
@@ -130,6 +135,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
+                    if (triggeredSetChecked.getAndSet(false)) {
+                        // note: changing the state of the checkbox will trigger "activate", which will then trigger the callback. We don't want that.
+                        // we assume this is consistent across ALL versions and variants of GTK
+                        // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
+                        return;
+                    }
+
                     // this will run on the EDT, since we are calling it from the EDT
                     menuItem.setChecked(!isChecked);
 
@@ -144,21 +156,38 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                     }
                 }
             };
+
         }
     }
 
     @Override
     public
-    void setChecked(final Checkbox checkbox) {
-        this.isChecked = checkbox.getChecked();
-        
-        Gtk.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk.gtk_check_menu_item_set_active(_native, isChecked);
-            }
-        });
+    void setChecked(final Checkbox menuItem) {
+        boolean checked = menuItem.getChecked();
+
+        // only dispatch if it's actually different
+        if (checked != this.isChecked) {
+            this.isChecked = checked;
+
+            Gtk.dispatch(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // note: this will trigger "activate", which will then trigger the callback.  We don't want to do that, so we hack around it.
+                    // BECAUSE we are on the GTK thread, the "set_active" call is QUEUED... so we check the callback state AFTER this.
+                    // we assume this is consistent across ALL versions and variants of GTK
+                    // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
+                    Gtk.gtk_check_menu_item_set_active(_native, isChecked);
+
+
+                    if (callback != null) {
+                        // only need to worry about this if we have a callback specified.
+                        // This is because of how GTK handles setting the checkbox state + callbacks
+                        triggeredSetChecked.set(true);
+                    }
+                }
+            });
+        }
     }
 
     @Override
