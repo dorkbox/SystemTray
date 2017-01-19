@@ -66,7 +66,7 @@ class Checkbox extends Entry {
     }
 
     /**
-     * @return true if this checkbox is selected, false if not.
+     * @return true if this checkbox is selected, false if not. A checkbox's state is set BEFORE the callback is triggered.
      */
     public
     boolean getChecked() {
