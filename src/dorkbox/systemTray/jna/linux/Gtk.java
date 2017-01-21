@@ -57,6 +57,9 @@ class Gtk {
 
     private static final boolean alreadyRunningGTK;
 
+    // when debugging the EDT, we need a longer timeout.
+    private static final boolean debugEDT = false;
+
     // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
     private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
         @Override
@@ -66,7 +69,8 @@ class Gtk {
         }
     };
 
-    private static final int TIMEOUT = 2;
+    // timeout is in seconds
+    private static final int TIMEOUT = debugEDT ? 10000000 : 2;
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
