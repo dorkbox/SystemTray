@@ -1,136 +1,220 @@
 SystemTray
 ==========
 
-Cross-platform **SystemTray** and **AppIndicator** support for java applications.
 
-This libraries only purpose is to show *reasonably* decent system-tray icons and app-indicators with a simple popup-menu.
+    Currently in Release Candidate phase. Please see notes below.
 
-There are a number of problems on Linux with the Swing (and SWT) system-tray icons, namely that:
 
-1. Swing system-tray icons on linux **do not** support transparent backgrounds (they have a white background)
-2. Swing/SWT **do not** support app-indicators, which are necessary on more recent versions of gnu/linux distros.
-3. Swing popup menus look like crap
-    - swing-based system-tray uses a JMenuPopup, which looks nicer than the java 'regular' one.
-    - app-indicators use native popups.
-    - gtk-indicators use native popups.
+The [Release Candidate 3.0 downloads](https://files2.dorkbox.com) are released as a "all-in-one" jar, for a variety of different tray types and configurations.  Please note that SWT testing will require you to download the SWT native library and add it to the classpath when you launch the jar. If you use SWT, you should be familiar with this, otherwise don't worry about it.
+
+
+---
+
+Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications.  
+
+
+This library provides **OS-native** menus and **Swing** menus. 
+ - *Swing menus* are the default preferred type, offering more features (images attached to menu entries, text styling, etc) and a consistent look & feel across all platforms. 
+ - *Native* menus, should one want them, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms.
+
+The following unique problems are also solved by this library:  
+1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds
+2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux
+3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**
+4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
+5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do
+6. MacOS and Windows *native* menus **do not** support images attached to menu entries
+7. Gnu/Linux AppIndicator *native* menus **do not** support text styling
 
 
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
 
-
-We also cater to the *lowest-common-denominator* when it comes to system-tray/indicator functionality, and there are some features that we don't support. 
-Specifically: **tooltips**. Rather a stupid decision, IMHO, but for more information why, ask Mark Shuttleworth. 
-See: https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
+&nbsp;  
+&nbsp;  
 
 
+We also cater to the *lowest-common-denominator* when it comes to system-tray functionality, and there are some features that we don't support.  
+````
+Specifically:   mouse-over tooltips
+````
+ Rather a stupid decision, IMHO, but for more information why, [ask Mark Shuttleworth](https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12). Also, some linux systems only support right-click to display the menu, and it is not possible to change that behavior. 
 
-Please be aware if you run into problems: 
- - **JavaFX** uses **GTK2**. We try to autodetect this, but there might be *some* situations where it doesn't work. Please set `SystemTray.COMPATIBILITY_MODE=true;` to solve this.
- - **SWT** can use GTK2 or GTK3, and if it happens to use GTK3, there will be all sorts of problems (it is incompatible). You must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized. Also, if there are problems with the autodetection, you can also set `SystemTray.COMPATIBILITY_MODE=true;`.
+  
+&nbsp;  
+
+
+Problems and Restrictions
+---------
+ - **JavaFX** uses *GTK2* for Java <8, and *GTK2* or *GTK3* for Java 9+. We try to autodetect this, and are mostly successful. In *some* situations where it doesn't work. Please set `SystemTray.FORCE_GTK2=true;`, or to change JavaFX (9+), use `-Djdk.gtk.version=3` to solve this.
  
+ - **SWT** can use *GTK2* or *GTK3*. If you want to use *GTK2* you must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized and only if there are problems with the autodetection, you can also set `SystemTray.FORCE_GTK2=true;`.
+ 
+ - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager -- and this cannot happen between different user accounts. **There is no workaround.**
+ 
+ - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together (see the `Notes` below for the details.)
+ 
+ - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
 
+Compatibility Matrix
+------------------
+`✓`=supported, `-`= not supported, `+`= see notes     
+
+OS | Swing | JavaFX | SWT
+--- | --- | --- | --- |
+XUbuntu 16.04 | ✓ | ✓ | ✓ |
+Ubuntu 16.04 | ✓ | + | ✓ |
+UbuntuGnome 16.04 | ✓ | + | ✓ |
+Fedora 23 | ✓ | ✓ | ✓ |
+Fedora 24 | ✓ | ✓ | ✓ |
+Fedora 25 | ✓ | ✓ | ✓ |
+Fedora 25 KDE | ✓ | ✓ | ✓ |
+LinuxMint 18 | ✓ | ✓ | ✓ |
+Elementary OS 0.3.2 | - | ✓ | ✓ |
+Elementary OS 0.4 | - | ✓ | ✓ |
+Arch Linux + Gnome3 | ✓ | ✓ | ✓ |
+FreeBSD 11 + Gnome3 | ✓ | ✓ | + |
+Debian 8.5 + Gnome3 | - | - | - |
+Debian 8.6 + Gnome3 | - | - | - |
+MacOSx  | ✓ | + | + |
+Win XP  | ✓ | ✓ | ✓ |
+Win 7   | ✓ | ✓ | ✓ |
+Win 8.1 | ✓ | ✓ | ✓ |
+Win 10  | ✓ | ✓ | ✓ |
+
+Notes:
+-------
+- Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532).  
+
+ - MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See [issue details](https://bugs.openjdk.java.net/browse/JDK-8116017).
+     - To fix this do one of the following
+        - Upgrade to Java 8
+        - Add : `-Djavafx.macosx.embedded=true` as a JVM parameter
+        - Set the system property via `System.setProperty("javafx.macosx.embedded", "true");`  before JavaFX is initialized, used, or accessed. *NOTE*: You may need to change the class (that your main method is in) so it does NOT extend the JavaFX `Application` class.
+
+  - MacOSX SWT + Swing menus are **incompatible** with each other by (Apple's) design for all versions of Java. What will happen in this combination is that the Swing EDT hangs. The only solution is to use `native` menus in this specific combination; which is automatically handled during SystemTray initialization.
+  
+  - SWT for FreeBSD builds do not exist.
+  
+  - ElementaryOS does some really bizzare things when it comes to System Tray icons/menus, and as such - the `Swing` menu implementation is not supported on that OS. The library will auto-switch to a native menu in this situation.
+  
+&nbsp;  
+&nbsp;  
 
 ```
 Customization parameters:
 
-SystemTrayMenuPopup.POPUP_HIDE_DELAY   (type long, default value '1000L')
- - Customize the delay (for hiding the popup) when the cursor is "moused out" of the popup menu (Windows/fallback mode only)
+SystemTray.AUTO_TRAY_SIZE   (type boolean, default value 'true')
+ - Enables auto-detection for the system tray. This should be mostly successful.
+   Auto-detection will use DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE as a 'base-line' for determining what size to use. 
+   
+   If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE instead
 
 
-SystemTrayMenuPopup.MOVEMENT_DELTA   (type int, default value '20')
- - Customize the minimum amount of movement needed to cause the popup-delay to hide the popup (Windows/fallback mode only)
+SystemTray.DEFAULT_TRAY_SIZE   (type int, default value '16')
+ - Size of the tray, so that the icon can be properly scaled based on OS.
+   This value can be automatically scaled based on the the platform and scaling-factor.
+   - Windows will automatically scale up/down.
+   - GtkStatusIcon will usually automatically scale up/down
+   - AppIndicators will not always automatically scale (it will sometimes display whatever is specified here)
+   You will experience WEIRD graphical glitches if this is NOT a power of 2.
 
 
-GnomeShellExtension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
- - Permit the gnome-shell to be restarted when the extension is installed.
+SystemTray.DEFAULT_MENU_SIZE   (type int, default value '16')
+ - Size of the menu entries, so that the icon can be properly scaled based on OS.
+ You will experience WEIRD graphical glitches if this is NOT a power of 2.
 
-
-GnomeShellExtension.SHELL_RESTART_TIMEOUT_MILLIS   (type long, default value '5000L')
- - Default timeout to wait for the gnome-shell to completely restart. This is a best-guess estimate.
-
-
-GnomeShellExtension.SHELL_RESTART_COMMAND   (type String, default value 'gnome-shell --replace &')
- - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
-
-
-SystemTray.TIMEOUT   (type int, default value '2')
- - How long to wait when updating menu entries before the request times-out
- 
- 
-SystemTray.TRAY_SIZE   (type int, default value '22')
- - Size of the tray, so that the icon can properly scale based on OS. (if it's not exact)
- 
  
 SystemTray.FORCE_GTK2    (type boolean, default value 'false')
  - Forces the system tray to always choose GTK2 (even when GTK3 might be available).
  
 
-SystemTray.FORCE_LINUX_TYPE   (type int, default value '0')
- - If != 0, forces the system tray in linux to be GTK (1) or AppIndicator (2). This is an advanced feature.
+SystemTray.FORCE_TRAY_TYPE   (type SystemTray.TrayType, default value 'AutoDetect')
+ - Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, or Swing.
+   This is an advanced feature, and it is recommended to leave it at AutoDetect.
 
  
-SystemTray.COMPATIBILITY_MODE    (type boolean, default value 'false')
- -  Forces the system to enter into JavaFX/SWT compatibility mode, where it will use GTK2 AND will not start/stop the GTK main loop.
-    This is only necessary if autodetection fails.
-    
- 
 SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
- -  When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
-    This property is available to disable this functionality in situations where you don't want this to happen.
+ -  When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that 
+    the SystemTray is also closed.  This property is available to disable this functionality in situations 
+    where you don't want this to happen. This is an advanced feature, and it is recommended to leave as true.
+ 
+ 
+SystemTray.AUTO_FIX_INCONSISTENCIES    (type boolean, default value 'true')
+   -  Allows the SystemTray logic to resolve various OS inconsistencies for the SystemTray in different combinations
  
  
 SystemTray.DEBUG    (type boolean, default value 'false')
-     -  This property is provided for debugging any errors in the logic used to determine the system-tray type.
+  -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
+  
+  
+Extension.ENABLE_EXTENSION_INSTALL    (type boolean, default value 'true')
+  - Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome 
+    places the icon in the "notification drawer", which is a collapsible menu (usually) at the bottom left corner 
+    of the screen.  This should be set to false if you want to preserve the default Desktop Environment UI preferences.
+    Additionally, Arch Linux is the only exception to this rule where it does not install the extension, so TopIcons is
+    necessary for placing the icon near the clock.
+  
+  
+Extension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
+  - Permit the gnome-shell to be restarted when the extension is installed.
+  
+  
+Extension.SHELL_RESTART_COMMAND    (type String, default value 'nome-shell --replace &')
+  - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
+  
+  
 ```
    
    
    
 The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
 ```
-   this.systemTray = SystemTray.getSystemTray();
+   this.systemTray = SystemTray.getNative();
    if (systemTray == null) {
        throw new RuntimeException("Unable to load SystemTray!");
    }
 
    try {
-       this.systemTray.setIcon("grey_icon.png");
+       this.systemTray.setImage("grey_icon.png");
    } catch (IOException e) {
        e.printStackTrace();
    }
 
    this.systemTray.setStatus("Not Running");
    
-   this.systemTray.addMenuEntry("Quit", new SystemTrayMenuAction() {
+   this.systemTray.addEntry("Quit", new SystemTrayMenuAction() {
         @Override
         public
-        void onClick(final SystemTray systemTray, final MenuEntry menuEntry) {
+        void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
             System.exit(0);
         }
     });
 ```
-
+&nbsp;  
+&nbsp;  
 
 ``` 
-Note: This project was heavily influenced by the excellent Lantern project,
+Note: This project was heavily influenced by the excellent Lantern project (when it was Java based),
       *Many* thanks to them for figuring out AppIndicators via JNA.
       https://github.com/getlantern/lantern
 ```
 ```
-Note: Gnome-shell users will experience an extension install to support this
-      functionality. Additionally, a shell restart is necessary for the extension
-      to be registered by the shell. You can disable the restart behavior if you 
-      like, and the 'system tray' functionality will be picked up on log out/in,
-      or a system restart.
-   
-      Also, screw you gnome-project leads, for making it such a pain-in-the-ass
-      to do something so incredibly simple and basic.
+Note: Gnome-shell users can install an extension to support placing the tray icon next to all 
+      of other OS tray icons. By default, all tray icons go to a "Notification drawer" which 
+      is initially hidden. 
+````
+````
+Note: AppIndicator environments (mostly, just Ubuntu) might notice the menu 
+      getting constructed (it starts out small, then fills the space). Sometimes 
+      even the small menu will get stuck, and be slightly visible behind the 
+      larger menu.  
+        If this happens to you, please let us know in an issue, with detailed 
+        system info, please!
       
-Note: Some desktop environments might use a dated version of libappindicator3, when 
-      icon support in menus was removed, then put back.
-      This library will try to load a GTK indicator instead when it can, or will 
-      try to load libappindicator1 first. Thank you RedHat for putting it back.
-      
-      
+````
+&nbsp;  
+&nbsp;  
+````      
 ISSUES:
       'Trying to remove a child that doesn't believe we're it's parent.'
       
@@ -147,8 +231,9 @@ ISSUES:
       *worked around*, so the menus should still show correctly.
          See: https://askubuntu.com/questions/364594/has-the-appindicator-or-gtkmenu-api-changed-in-saucy
   
-```
-
+````
+&nbsp; 
+&nbsp; 
 
 <h4>We now release to maven!</h4> 
 
@@ -163,15 +248,16 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 </dependency>
 ```
 
-Or if you don't want to use Maven, you can access the files directly here:  
+
+TODO::: add dorkbox UTILs to github (need to add copyright/license/notes to everything first)
+
+
+Or if you don't want to use Maven, you can access the files and source-code directly from here:  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray-Dorkbox-Util/  
 
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
-https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
-
-
 https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
 
 
