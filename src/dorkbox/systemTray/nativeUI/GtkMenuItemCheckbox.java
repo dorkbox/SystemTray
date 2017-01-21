@@ -17,7 +17,6 @@ package dorkbox.systemTray.nativeUI;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
@@ -41,6 +40,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     // AppIndicators will only show if you use the keyboard to navigate
     // GtkStatusIconTray will show on mouse+keyboard movement
     private volatile char mnemonicKey = 0;
+    private final long handlerId;
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
@@ -50,7 +50,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         super(Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
-        Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+        handlerId = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
     // called by native code ONLY
@@ -120,10 +120,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         });
     }
 
-    AtomicBoolean triggeredSetChecked = new AtomicBoolean(false);
-
-
-
     @SuppressWarnings({"Duplicates", "StatementWithEmptyBody"})
     @Override
     public
@@ -135,14 +131,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
-                    if (triggeredSetChecked.getAndSet(false)) {
-                        // note: changing the state of the checkbox will trigger "activate", which will then trigger the callback. We don't want that.
-                        // we assume this is consistent across ALL versions and variants of GTK
-                        // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
-                        return;
-                    }
-
-                    // this will run on the EDT, since we are calling it from the EDT
+                    // this will run on the EDT, since we are calling it from the EDT. This can ALSO recursively call the callback
                     menuItem.setChecked(!isChecked);
 
                     // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
@@ -156,7 +145,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                     }
                 }
             };
-
         }
     }
 
@@ -173,18 +161,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 @Override
                 public
                 void run() {
-                    // note: this will trigger "activate", which will then trigger the callback.  We don't want to do that, so we hack around it.
-                    // BECAUSE we are on the GTK thread, the "set_active" call is QUEUED... so we check the callback state AFTER this.
+                    // note: this will trigger "activate", which will then trigger the callback.
                     // we assume this is consistent across ALL versions and variants of GTK
                     // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
+                    // this disables the signal handler, then enables it
+                    Gobject.g_signal_handler_block(_native, handlerId);
                     Gtk.gtk_check_menu_item_set_active(_native, isChecked);
-
-
-                    if (callback != null) {
-                        // only need to worry about this if we have a callback specified.
-                        // This is because of how GTK handles setting the checkbox state + callbacks
-                        triggeredSetChecked.set(true);
-                    }
+                    Gobject.g_signal_handler_unblock(_native, handlerId);
                 }
             });
         }

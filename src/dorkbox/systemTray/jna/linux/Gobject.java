@@ -43,6 +43,7 @@ class Gobject {
         }
     }
 
+    // objdump -T /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 | grep block
 
     public static native void g_object_get(Pointer object, String objectName, PointerByReference objectVal, Pointer nullValue);
 
@@ -51,5 +52,9 @@ class Gobject {
     public static native void g_object_force_floating(Pointer object);
     public static native void g_object_ref_sink(Pointer object);
 
-    public static native void g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
+    // note: the return type here MUST be long to avoid issues on freeBSD. NativeLong (previously used) worked on everything except BSD.
+    public static native long g_signal_connect_object(Pointer instance, String detailed_signal, Callback c_handler, Pointer object, int connect_flags);
+
+    public static native void g_signal_handler_block(Pointer instance, long handlerId);
+    public static native void g_signal_handler_unblock(Pointer instance, long handlerId);
 }
