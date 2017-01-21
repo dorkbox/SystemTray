@@ -910,7 +910,7 @@ class SystemTray {
      * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
      */
     public static
-    SystemTray get() {
+    SystemTray getSwing() {
         init(false);
         return systemTray;
     }

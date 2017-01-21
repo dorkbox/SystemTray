@@ -73,7 +73,7 @@ class TestTraySwt {
         helloWorldTest.pack();
 
 
-        this.systemTray = SystemTray.get();
+        this.systemTray = SystemTray.getSwing();
         // this.systemTray = SystemTray.getNative();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
