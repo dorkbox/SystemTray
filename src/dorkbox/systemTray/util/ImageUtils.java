@@ -68,8 +68,8 @@ class ImageUtils {
 
     public static
     void determineIconSize() {
-        int trayScalingFactor = 0;
-        int menuScalingFactor = 0;
+        double trayScalingFactor = 0;
+        double menuScalingFactor = 0;
 
         if (SystemTray.AUTO_TRAY_SIZE) {
             if (OS.isWindows()) {
@@ -138,7 +138,7 @@ class ImageUtils {
                     // casting around for rounding/math stuff
                     // *2 because we want a 2x scale to be 64, not 32.
                     trayScalingFactor = (int) (((double) dpiX) / ((double) 96)) * 2;
-                    menuScalingFactor = trayScalingFactor;
+                    menuScalingFactor =  (int) (((double) dpiX) / ((double) 96));
                 }
 
 
@@ -276,13 +276,13 @@ class ImageUtils {
 
         // the DEFAULT scale is 16
         if (trayScalingFactor > 1) {
-            TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor;
+            TRAY_SIZE = (int) (SystemTray.DEFAULT_TRAY_SIZE * trayScalingFactor);
         } else {
             TRAY_SIZE = SystemTray.DEFAULT_TRAY_SIZE;
         }
 
         if (menuScalingFactor > 1) {
-            ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor;
+            ENTRY_SIZE = (int) (SystemTray.DEFAULT_MENU_SIZE * menuScalingFactor);
         } else {
             ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
         }
