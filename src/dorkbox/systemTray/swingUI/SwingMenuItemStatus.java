@@ -34,6 +34,13 @@ class SwingMenuItemStatus implements StatusPeer {
 
         // status is ALWAYS at 0 index...
         parent._native.add(_native, 0);
+
+        Font font = _native.getFont();
+        Font font1 = font.deriveFont(Font.BOLD);
+        _native.setFont(font1);
+
+        // this makes sure it can't be selected
+        _native.setEnabled(false);
     }
 
     @Override
@@ -43,14 +50,7 @@ class SwingMenuItemStatus implements StatusPeer {
             @Override
             public
             void run() {
-                Font font = _native.getFont();
-                Font font1 = font.deriveFont(Font.BOLD);
-                _native.setFont(font1);
-
                 _native.setText(menuItem.getText());
-
-                // this makes sure it can't be selected
-                _native.setEnabled(false);
             }
         });
     }
