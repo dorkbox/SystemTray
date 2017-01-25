@@ -138,7 +138,7 @@ class ImageUtils {
                     // casting around for rounding/math stuff
                     // *2 because we want a 2x scale to be 64, not 32.
                     trayScalingFactor = (int) (((double) dpiX) / ((double) 96)) * 2;
-                    menuScalingFactor =  (int) (((double) dpiX) / ((double) 96));
+                    menuScalingFactor =  (((double) dpiX) / ((double) 96));
                 }
 
 
@@ -307,7 +307,7 @@ class ImageUtils {
         newFile.getParentFile().mkdirs();
 
         try {
-            final BufferedImage image = getTransparentImageAsImage(size);
+            final BufferedImage image = getTransparentImageAsBufferedImage(size);
             ImageIO.write(image, "png", newFile);
         } catch (Exception e) {
             SystemTray.logger.error("Error creating transparent image for size: {}", size, e);
@@ -318,7 +318,7 @@ class ImageUtils {
 
     @SuppressWarnings("WeakerAccess")
     public static
-    BufferedImage getTransparentImageAsImage(final int size) {
+    BufferedImage getTransparentImageAsBufferedImage(final int size) {
         final BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(0,0,0,0));
