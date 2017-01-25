@@ -25,19 +25,31 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItem implements MenuItemPeer {
+
+    // necessary to have the correct scaling + padding for the menu entries.
+    private static ImageIcon transparentIcon;
 
     private final SwingMenu parent;
     private final JMenuItem _native = new AdjustedJMenuItem();
 
     private volatile ActionListener swingCallback;
 
+
     // this is ALWAYS called on the EDT.
     SwingMenuItem(final SwingMenu parent) {
         this.parent = parent;
         parent._native.add(_native);
+
+        if (transparentIcon == null) {
+            File uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
+            transparentIcon = new ImageIcon(uncheckedFile.getAbsolutePath());
+        }
+
+        _native.setIcon(transparentIcon);
     }
 
     @Override
@@ -53,7 +65,7 @@ class SwingMenuItem implements MenuItemPeer {
                     _native.setIcon(origIcon);
                 }
                 else {
-                    _native.setIcon(null);
+                    _native.setIcon(transparentIcon);
                 }
             }
         });
