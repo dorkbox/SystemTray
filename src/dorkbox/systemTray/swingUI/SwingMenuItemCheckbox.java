@@ -53,6 +53,8 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
             File uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
             uncheckedIcon = new ImageIcon(uncheckedFile.getAbsolutePath());
         }
+
+        _native.setIcon(uncheckedIcon);
     }
 
     @Override
