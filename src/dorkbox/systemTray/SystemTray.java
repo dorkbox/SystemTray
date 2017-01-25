@@ -47,8 +47,8 @@ import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
 import dorkbox.systemTray.swingUI.SwingUI;
-import dorkbox.systemTray.swingUI._AppIndicatorTray;
-import dorkbox.systemTray.swingUI._GtkStatusIconTray;
+import dorkbox.systemTray.swingUI._AppIndicatorSwingTray;
+import dorkbox.systemTray.swingUI._GtkStatusIconSwingTray;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
@@ -195,8 +195,8 @@ class SystemTray {
     private static
     boolean isTrayType(final Class<? extends Tray> tray, final TrayType trayType) {
         switch (trayType) {
-            case GtkStatusIcon: return (tray == _GtkStatusIconTray.class || tray == _GtkStatusIconNativeTray.class);
-            case AppIndicator: return (tray == _AppIndicatorTray.class || tray == _AppIndicatorNativeTray.class);
+            case GtkStatusIcon: return (tray == _GtkStatusIconSwingTray.class || tray == _GtkStatusIconNativeTray.class);
+            case AppIndicator: return (tray == _AppIndicatorSwingTray.class || tray == _AppIndicatorNativeTray.class);
             case Swing: return (tray == _SwingTray.class || tray == _AwtTray.class);
         }
         return false;
@@ -208,14 +208,14 @@ class SystemTray {
             if (useNativeMenus) {
                 return _GtkStatusIconNativeTray.class;
             } else {
-                return _GtkStatusIconTray.class;
+                return _GtkStatusIconSwingTray.class;
             }
         } else if (trayType == TrayType.AppIndicator) {
             if (useNativeMenus) {
                 return _AppIndicatorNativeTray.class;
             }
             else {
-                return _AppIndicatorTray.class;
+                return _AppIndicatorSwingTray.class;
             }
         }
         else if (trayType == TrayType.Swing) {

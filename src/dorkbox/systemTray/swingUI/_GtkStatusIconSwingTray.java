@@ -44,7 +44,7 @@ import dorkbox.util.SwingUtil;
  */
 @SuppressWarnings("Duplicates")
 public
-class _GtkStatusIconTray extends Tray implements SwingUI {
+class _GtkStatusIconSwingTray extends Tray implements SwingUI {
     private volatile Pointer trayIcon;
 
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
@@ -62,7 +62,7 @@ class _GtkStatusIconTray extends Tray implements SwingUI {
 
     // called on the EDT
     public
-    _GtkStatusIconTray(final SystemTray systemTray) {
+    _GtkStatusIconSwingTray(final SystemTray systemTray) {
         super();
 
         Gtk.startGui();

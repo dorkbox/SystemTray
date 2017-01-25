@@ -82,7 +82,7 @@ import dorkbox.util.SwingUtil;
  */
 @SuppressWarnings("Duplicates")
 public
-class _AppIndicatorTray extends Tray implements SwingUI {
+class _AppIndicatorSwingTray extends Tray implements SwingUI {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
     private volatile Runnable popupRunnable;
@@ -110,7 +110,7 @@ class _AppIndicatorTray extends Tray implements SwingUI {
     // trayIcon.setToolTip("app name");
 
     public
-    _AppIndicatorTray(final SystemTray systemTray) {
+    _AppIndicatorSwingTray(final SystemTray systemTray) {
         super();
 
         Gtk.startGui();
