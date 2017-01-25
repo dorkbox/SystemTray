@@ -15,14 +15,27 @@
  */
 package dorkbox.systemTray.swingUI;
 
+import java.awt.Font;
 import java.awt.Insets;
 
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
 
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.util.ImageUtils;
+
 class AdjustedJMenu extends JMenu {
+    // get the scale (and multiply it to our font size) to get the new font size
+    private static int scale = ImageUtils.ENTRY_SIZE / SystemTray.DEFAULT_MENU_SIZE;
+
     AdjustedJMenu() {
+        super();
+
+        Font font = getFont();
+        int size = font.getSize();
+        size = size * scale;
+        setFont(new Font(font.getName(), font.getStyle(), size));
     }
 
     @Override

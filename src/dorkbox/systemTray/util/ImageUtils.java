@@ -138,7 +138,7 @@ class ImageUtils {
                     // casting around for rounding/math stuff
                     // *2 because we want a 2x scale to be 64, not 32.
                     trayScalingFactor = (int) (((double) dpiX) / ((double) 96)) * 2;
-                    // we don't want to scale the size of the menu, because java/swing takes care of scaling for us.
+                    menuScalingFactor = trayScalingFactor;
                 }
 
 
