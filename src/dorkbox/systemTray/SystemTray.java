@@ -695,7 +695,7 @@ class SystemTray {
             return;
         }
 
-        ImageUtils.determineIconSize();
+        ImageUtils.determineIconSize(!useNativeMenus);
 
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 

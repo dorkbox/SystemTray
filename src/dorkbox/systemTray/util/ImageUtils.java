@@ -20,9 +20,12 @@ import static dorkbox.systemTray.jna.windows.Gdi32.LOGPIXELSX;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,6 +43,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import com.sun.jna.Pointer;
@@ -66,8 +70,12 @@ class ImageUtils {
     public static volatile int TRAY_SIZE = 0;
     public static volatile int ENTRY_SIZE = 0;
 
+    // the menu entry font size ALSO must be detected, and it is a little bit tricky to figure this out.
+    // Only exists (and is necessary) for SWING menus
+    public static volatile Font ENTRY_FONT = null;
+
     public static
-    void determineIconSize() {
+    void determineIconSize(boolean trayHasSwingMenus) {
         double trayScalingFactor = 0;
         double menuScalingFactor = 0;
 
@@ -75,7 +83,8 @@ class ImageUtils {
             if (OS.isWindows()) {
                 int[] version = OSUtil.Windows.getVersion();
 
-                // if windows 8.1/10 - default size is x2
+                // windows 8/8.1/10 are the only windows OSes to do scaling properly (XP/Vista/7 do DPI scaling, which is terrible anyways)
+                // we are going to let windows manage scaling the icon correctly, but we are BY DEFAULT going to give it a large size to scale
 
                 // vista - 8.0 - only global DPI settings
                 // 8.1 - 10 - global + per-monitor DPI settings
@@ -90,12 +99,12 @@ class ImageUtils {
                     // Windows XP               5.1.2600  (2001-10-25)
                     // Windows Server 2003      5.2.3790  (2003-04-24)
                     // Windows Home Server		5.2.3790  (2007-06-16)
-                    trayScalingFactor = 1;
+                    trayScalingFactor = 2;
                 } else if (version[0] == 6 && version[1] == 0) {
                     // Windows Vista	        6.0.6000  (2006-11-08)
                     // Windows Server 2008 SP1	6.0.6001  (2008-02-27)
                     // Windows Server 2008 SP2	6.0.6002  (2009-04-28)
-                    trayScalingFactor = 1;
+                    trayScalingFactor = 2;
 
                 } else if (version[0] == 6 && version[1] <= 2) {
                     // Windows 7                    6.1.7600  (2009-10-22)
@@ -106,8 +115,8 @@ class ImageUtils {
                     //
                     // Windows 8                    6.2.9200  (2012-10-26)
                     // Windows Server 2012	        6.2.9200  (2012-09-04)
-                    trayScalingFactor = 2;
-                } else if (version[0] == 6 || (version[0] == 10 && version[1] == 0)) {
+                    trayScalingFactor = 4;
+                } else {
                     // Windows 8.1                  6.3.9600  (2013-10-18)
                     // Windows Server 2012 R2       6.3.9600  (2013-10-18)
                     //
@@ -117,13 +126,12 @@ class ImageUtils {
                     //
                     // Windows Server 2016          10.0.14393  (2016-10-12)
                     trayScalingFactor = 4;
-                } else {
-                    // dunnno, but i'm going to assume really HiDPI for this...
-                    trayScalingFactor = 8;
                 }
 
+                // get's the HARDWARE DEVICE logical resolution. This will be set by the monitor, and will never change -  even if
+                // scaling is changed via the control panel
                 Pointer screen = User32.GetDC(null);
-                int dpiX = GetDeviceCaps (screen, LOGPIXELSX);
+                int dpiX = GetDeviceCaps(screen, LOGPIXELSX);
                 User32.ReleaseDC(null, screen);
 
                 // 96 DPI = 100% scaling
@@ -132,13 +140,12 @@ class ImageUtils {
                 // 192 DPI = 200% scaling
 
                 // just a note on scaling...
-                // We want to scale the image as best we can beforehand, so there is an attempt to have it look good
+                // We want to scale the image as best we can beforehand, so there is an attempt to have it look good. Java by default
+                // does not scale this correctly.
                 if (dpiX != 96) {
                     // so there are additional scaling settings...
                     // casting around for rounding/math stuff
-                    // *2 because we want a 2x scale to be 64, not 32.
-                    trayScalingFactor = (int) (((double) dpiX) / ((double) 96)) * 2;
-                    menuScalingFactor =  (((double) dpiX) / ((double) 96));
+                    menuScalingFactor =  ((double) dpiX) / 96.0;
                 }
 
 
@@ -287,12 +294,63 @@ class ImageUtils {
             ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
         }
 
+        // this must be a JMenuItem component, because that is the component we are setting the font on.
+        // this is only important to do if we are a swing tray type
+        if (trayHasSwingMenus) {
+            // must be a plain style font
+            Font font = new JMenuItem().getFont().deriveFont(Font.PLAIN);
+
+            if (menuScalingFactor > 1) {
+                font = ImageUtils.getFontForSpecificHeight(font, ENTRY_SIZE);
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.debug("Menu entry font size '{}' found for requested size '{}'", font.getSize(), ENTRY_SIZE);
+                }
+            } else if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("Menu entry font size '{}'. Not scaling for requested size '{}'", font.getSize(), ENTRY_SIZE);
+            }
+
+            ENTRY_FONT = font;
+        }
+
         if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("Scaling Factor factor is '{}', tray icon size is '{}'.", trayScalingFactor, TRAY_SIZE);
-            SystemTray.logger.debug("Scaling Factor factor is '{}', tray menu size is '{}'.", menuScalingFactor, ENTRY_SIZE);
+            SystemTray.logger.debug("ScalingFactor is '{}', tray icon size is '{}'.", trayScalingFactor, TRAY_SIZE);
+            SystemTray.logger.debug("ScalingFactor is '{}', tray menu size is '{}'.", menuScalingFactor, ENTRY_SIZE);
         }
     }
 
+    /**
+     * Gets the correct font (in GENERAL) for a specified pixel height.
+     * @param font the font we are checking
+     * @param height the height in pixels we want to get as close as possible to
+     *
+     * @return the font (derived from the specified font) that is as close as possible to the requested height
+     */
+    private static
+    Font getFontForSpecificHeight(final Font font, final int height) {
+        int size = font.getSize();
+        Boolean lastAction = null;
+        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+
+        while (true) {
+            Font fontCheck = new Font(font.getName(), Font.PLAIN, size);
+
+            FontMetrics metrics = g.getFontMetrics(fontCheck);
+            Rectangle2D rect = metrics.getStringBounds("Tj|", g);
+            int testHeight = (int) rect.getHeight();
+
+            if (testHeight < height && lastAction != Boolean.FALSE) {
+                size++;
+                lastAction = Boolean.TRUE;
+            } else if (testHeight > height && lastAction != Boolean.TRUE) {
+                size--;
+                lastAction = Boolean.FALSE;
+            } else {
+                // either we are the exact size, or we are ONE font size to big/small (depending on what our initial guess was)
+                return fontCheck;
+            }
+        }
+    }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static
