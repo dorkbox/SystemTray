@@ -31,6 +31,10 @@ class Gdi32 {
         JnaHelper.register("gdi32", Gdi32.class);
     }
 
+    /**
+     * Number of pixels per logical inch along the screen width. In a system with multiple display monitors, this value is the same for
+     * all monitors.
+     */
     public static final int LOGPIXELSX = 88;
 
 
