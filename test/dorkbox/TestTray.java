@@ -62,6 +62,7 @@ class TestTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
+        systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 

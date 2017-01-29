@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.nativeUI.NativeUI;
@@ -508,20 +507,7 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        if (OSUtil.Linux.isArch()) {
-                            if (DEBUG) {
-                                logger.debug("Running Arch Linux.");
-                            }
-                            if (!Extension.isInstalled()) {
-                                logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                            "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                            "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                            "of the screen to the menu panel next to the clock.");
-                            }
-                        } else {
-                            // Automatically install the extension for everyone except Arch. It's bonkers.
-                            Extension.install();
-                        }
+                        Tray.usingGnome = true;
 
                         // are we fedora? If so, what version?
                         // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
@@ -776,11 +762,6 @@ class SystemTray {
 
 
             if (isJavaFxLoaded) {
-                if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
-                    // set a property so that GTK (if necessary) can set the name of the system tray icon
-                    System.setProperty("SystemTray_SET_NAME", "true");
-                }
-
                 // This will initialize javaFX dispatch methods
                 JavaFX.init();
             }
@@ -788,7 +769,6 @@ class SystemTray {
                 // This will initialize swt dispatch methods
                 Swt.init();
             }
-
 
 
             if ((isJavaFxLoaded || isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
@@ -1027,6 +1007,25 @@ class SystemTray {
             menu.setEnabled(enabled);
         }
     }
+
+    /**
+     * Specifies the tooltip text, usually this is used to brand the SystemTray icon with your product's name.
+     * <p>
+     * The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop
+     * Environments.
+     * <p>
+     * For more details on Linux see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12.
+     *
+     * @param tooltipText the text to use as tooltip for the tray icon, null to remove
+     */
+    public
+    void setTooltip(final String tooltipText) {
+        final Tray tray = systemTrayMenu;
+        if (tray != null) {
+            tray.setTooltip(tooltipText);
+        }
+    }
+
 
     /**
      * Specifies the new image to set for a menu entry, NULL to delete the image

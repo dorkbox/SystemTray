@@ -26,6 +26,7 @@ import com.sun.jna.ptr.PointerByReference;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.jna.linux.GEventCallback;
@@ -106,8 +107,8 @@ class _AppIndicatorSwingTray extends Tray implements SwingUI {
     private volatile boolean setName = false;
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-    //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-    // trayIcon.setToolTip("app name");
+    //   they ALSO do not support tooltips!!
+    //  https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
     public
     _AppIndicatorSwingTray(final SystemTray systemTray) {
@@ -307,7 +308,7 @@ class _AppIndicatorSwingTray extends Tray implements SwingUI {
         if (!setName) {
             setName = true;
 
-            // by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
+            // in GNOME, by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
             // If you change "SystemTray" to something else, make sure to change it in extension.js as well
 
             // can cause (potentially)
@@ -318,8 +319,14 @@ class _AppIndicatorSwingTray extends Tray implements SwingUI {
             //  in extension.js, so don't change it
 
             // additionally, this is required to be set HERE (not somewhere else)
-            AppIndicator.app_indicator_set_title(appIndicator, "SystemTray");
+            AppIndicator.app_indicator_set_title(appIndicator, Extension.DEFAULT_NAME);
         }
+    }
+
+    // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
+    @Override
+    protected
+    void setTooltip_(final String tooltipText) {
     }
 
     @Override

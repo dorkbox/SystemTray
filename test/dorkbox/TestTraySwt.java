@@ -73,6 +73,7 @@ class TestTraySwt {
         helloWorldTest.pack();
 
 
+        systemTray.setTooltip("Mail Checker");
         this.systemTray = SystemTray.getSwing();
         // this.systemTray = SystemTray.getNative();
         if (systemTray == null) {

@@ -540,8 +540,8 @@ class Gtk {
 
     public static native void gtk_status_icon_set_visible(Pointer widget, boolean visible);
 
-    // app indicators don't support this, and we cater to the lowest common denominator
-//  public static native void gtk_status_icon_set_tooltip(Pointer widget, String tooltipText);
+    // app indicators don't support this
+    public static native void gtk_status_icon_set_tooltip_text(Pointer widget, String tooltipText);
 
     public static native void gtk_status_icon_set_title(Pointer widget, String titleText);
 

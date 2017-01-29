@@ -47,6 +47,7 @@ class _SwingTray extends Tray implements SwingUI {
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File imageFile;
+    private volatile String tooltipText = null;
 
     // Called in the EDT
     public
@@ -79,6 +80,10 @@ class _SwingTray extends Tray implements SwingUI {
                             try {
                                 tray.add(trayIcon);
                                 visible = true;
+
+                                // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                                // want to make sure keep the tooltip text the same as before.
+                                trayIcon.setToolTip(tooltipText);
                             } catch (AWTException e) {
                                 dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
                             }
@@ -133,6 +138,10 @@ class _SwingTray extends Tray implements SwingUI {
                             trayIcon.setImage(trayImage);
                         }
 
+                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                        // want to make sure keep the tooltip text the same as before.
+                        trayIcon.setToolTip(tooltipText);
+
                         ((TrayPopup) _native).setTitleBarImage(imageFile);
                     }
                 });
@@ -171,6 +180,24 @@ class _SwingTray extends Tray implements SwingUI {
         };
 
         bind(swingMenu, null, systemTray);
+    }
+
+    @Override
+    protected
+    void setTooltip_(final String tooltipText) {
+        this.tooltipText = tooltipText;
+
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                // want to make sure keep the tooltip text the same as before.
+                if (trayIcon != null) {
+                    trayIcon.setToolTip(tooltipText);
+                }
+            }
+        });
     }
 
     @Override

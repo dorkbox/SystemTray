@@ -33,16 +33,6 @@ This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windo
 &nbsp;  
 
 
-We also cater to the *lowest-common-denominator* when it comes to system-tray functionality, and there are some features that we don't support.  
-````
-Specifically:   mouse-over tooltips
-````
- Rather a stupid decision, IMHO, but for more information why, [ask Mark Shuttleworth](https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12). Also, some linux systems only support right-click to display the menu, and it is not possible to change that behavior. 
-
-  
-&nbsp;  
-
-
 Problems and Restrictions
 ---------
  - **JavaFX** uses *GTK2* for Java <8, and *GTK2* or *GTK3* for Java 9+. We try to autodetect this, and are mostly successful. In *some* situations where it doesn't work. Please set `SystemTray.FORCE_GTK2=true;`, or to change JavaFX (9+), use `-Djdk.gtk.version=3` to solve this.
@@ -54,6 +44,10 @@ Problems and Restrictions
  - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together (see the `Notes` below for the details.)
  
  - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
+ 
+ - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Please note that **Ubuntu** does not always support this!
+                     
+ - **Linux/Unix Menus**  Some linux environments only support right-click to display the menu, and it is not possible to change the behavior.
 
 Compatibility Matrix
 ------------------
