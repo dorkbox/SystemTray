@@ -43,6 +43,7 @@ import dorkbox.util.process.ShellProcessBuilder;
 public
 class Extension {
     private static final String UID = "SystemTray@Dorkbox";
+    public static final String DEFAULT_NAME = "SystemTray";
 
     @Property
     /** Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome places the icon in the
@@ -215,7 +216,7 @@ class Extension {
     public static
     void install() {
         boolean isGnome = OSUtil.DesktopEnv.isGnome();
-        if (!ENABLE_EXTENSION_INSTALL || !isGnome || (isGnome && OSUtil.Linux.isDebian())) {
+        if (!ENABLE_EXTENSION_INSTALL || !isGnome || (OSUtil.Linux.isDebian())) {
             // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
             return;
         }
@@ -237,9 +238,6 @@ class Extension {
             // topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
             return;
         }
-
-        // set a property so that GTK (if necessary) can set the name
-        System.setProperty("SystemTray_SET_NAME", "true");
 
         // have to copy the extension over and enable it.
         String userHome = System.getProperty("user.home");
