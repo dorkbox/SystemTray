@@ -148,20 +148,6 @@ class TestTraySwt {
         submenu.add(disableMenu);
 
 
-// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//        submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, new ActionListener() {
-//            @Override
-//            public
-//            void actionPerformed(final ActionEvent e) {
-//                MenuItem source = (MenuItem) e.getSource();
-//                JProgressBar progressBar = new JProgressBar(0, 100);
-//                progressBar.setValue(new Random().nextInt(101));
-//                progressBar.setStringPainted(true);
-//                source.getSystemTray().add(progressBar);
-//            }
-//        }));
-
-
         submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, new ActionListener() {
             @Override
             public

@@ -131,14 +131,6 @@ class Menu extends MenuItem {
         }
     }
 
-//    /**
-//     * Adds a swing widget as a menu entry.
-//     *
-//     * @param widget the JComponent that is to be added as an entry
-//     */
-// TODO: buggy. The menu will **sometimes** stop responding to the "enter" key after this. Mnemonics still work however.
-//    Entry add(JComponent widget);
-
     /**
      * Adds a menu entry, separator, or sub-menu to this menu
      */
