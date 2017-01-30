@@ -96,9 +96,10 @@ class Gtk {
         }
 
         // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
-        if (!_isLoaded && SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing) {
+        if (!_isLoaded &&
+            (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing || SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.AWT)) {
             if (SystemTray.DEBUG) {
-                logger.debug("Forcing Swing tray, not using GTK");
+                logger.debug("Not loading GTK for Swing or AWT");
             }
             _isLoaded = true;
         }

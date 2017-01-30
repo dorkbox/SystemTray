@@ -45,7 +45,6 @@ import dorkbox.systemTray.nativeUI.NativeUI;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
-import dorkbox.systemTray.swingUI.SwingUI;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
@@ -401,7 +400,7 @@ class SystemTray {
                 logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
             }
         }
-        else if ((OS.isLinux() || OS.isUnix()) && FORCE_TRAY_TYPE != TrayType.Swing) {
+        else if ((OS.isLinux() || OS.isUnix())) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
@@ -411,6 +410,19 @@ class SystemTray {
             // don't check for SWING type at this spot, it is done elsewhere.
             if (SystemTray.FORCE_TRAY_TYPE != TrayType.AutoDetect) {
                 trayType = selectTypeQuietly(SystemTray.FORCE_TRAY_TYPE);
+            }
+
+            if (SystemTray.FORCE_TRAY_TYPE == TrayType.Swing && isSwtLoaded) {
+                if (AUTO_FIX_INCONSISTENCIES) {
+                    logger.warn("Forcing AWT because SWT cannot load Swing type.");
+                    trayType = selectTypeQuietly(TrayType.AWT);
+                } else {
+                    logger.error("Cannot initialize Swing type if SWT is loaded.");
+
+                    systemTrayMenu = null;
+                    systemTray = null;
+                    return;
+                }
             }
 
 
@@ -787,21 +799,6 @@ class SystemTray {
         }
 
         systemTrayMenu = reference.get();
-
-
-
-        // verify that we have what we are expecting.
-        if (OS.isWindows() && systemTrayMenu instanceof SwingUI) {
-            // this configuration is OK.
-        } else if (systemTrayMenu instanceof NativeUI) {
-            // this configuration is OK.
-        } else {
-            logger.error("Unable to correctly initialize the System Tray. Please write an issue and include your " +
-                                       "OS type and configuration");
-            systemTrayMenu = null;
-            systemTray = null;
-            return;
-        }
 
 
         // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
