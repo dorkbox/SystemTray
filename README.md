@@ -10,21 +10,24 @@ The [Release Candidate 3.0 downloads](https://files2.dorkbox.com) are released a
 
 ---
 
-Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications.  
+Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications on Java 6+.  
 
 
-This library provides **OS-native** menus and **Swing** menus. 
- - *Swing menus* are the default preferred type, offering more features (images attached to menu entries, text styling, etc) and a consistent look & feel across all platforms. 
- - *Native* menus, should one want them, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms.
+This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment. Linux/Unix will automatically choose Native menus, Windows will choose Swing, and MacOS will choose AWT. 
+ - Please note that *Native* menus, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms.
+
+&nbsp;  
+&nbsp;  
+
 
 The following unique problems are also solved by this library:  
 1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds
-2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux
+2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix.
 3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**
 4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
 5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do
 6. MacOS and Windows *native* menus **do not** support images attached to menu entries
-7. Gnu/Linux AppIndicator *native* menus **do not** support text styling
+
 
 
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
@@ -53,7 +56,7 @@ Compatibility Matrix
 ------------------
 `✓`=supported, `-`= not supported, `+`= see notes     
 
-OS | Swing | JavaFX | SWT
+OS | Java/Swing | JavaFX | SWT
 --- | --- | --- | --- |
 XUbuntu 16.04 | ✓ | ✓ | ✓ |
 Ubuntu 16.04 | ✓ | + | ✓ |
@@ -69,7 +72,7 @@ Arch Linux + Gnome3 | ✓ | ✓ | ✓ |
 FreeBSD 11 + Gnome3 | ✓ | ✓ | + |
 Debian 8.5 + Gnome3 | - | - | - |
 Debian 8.6 + Gnome3 | - | - | - |
-MacOSx  | ✓ | + | + |
+MacOSx  | ✓ | + | ✓ |
 Win XP  | ✓ | ✓ | ✓ |
 Win 7   | ✓ | ✓ | ✓ |
 Win 8.1 | ✓ | ✓ | ✓ |
@@ -85,11 +88,8 @@ Notes:
         - Add : `-Djavafx.macosx.embedded=true` as a JVM parameter
         - Set the system property via `System.setProperty("javafx.macosx.embedded", "true");`  before JavaFX is initialized, used, or accessed. *NOTE*: You may need to change the class (that your main method is in) so it does NOT extend the JavaFX `Application` class.
 
-  - MacOSX SWT + Swing menus are **incompatible** with each other by (Apple's) design for all versions of Java. What will happen in this combination is that the Swing EDT hangs. The only solution is to use `native` menus in this specific combination; which is automatically handled during SystemTray initialization.
+  - SWT builds for FreeBSD do not exist.
   
-  - SWT for FreeBSD builds do not exist.
-  
-  - ElementaryOS does some really bizzare things when it comes to System Tray icons/menus, and as such - the `Swing` menu implementation is not supported on that OS. The library will auto-switch to a native menu in this situation.
   
 &nbsp;  
 &nbsp;  
@@ -123,7 +123,7 @@ SystemTray.FORCE_GTK2    (type boolean, default value 'false')
  
 
 SystemTray.FORCE_TRAY_TYPE   (type SystemTray.TrayType, default value 'AutoDetect')
- - Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, or Swing.
+ - Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, Swing, or AWT.
    This is an advanced feature, and it is recommended to leave it at AutoDetect.
 
  
@@ -163,7 +163,7 @@ Extension.SHELL_RESTART_COMMAND    (type String, default value 'nome-shell --rep
    
 The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
 ```
-   this.systemTray = SystemTray.getNative();
+   this.systemTray = SystemTray.get();
    if (systemTray == null) {
        throw new RuntimeException("Unable to load SystemTray!");
    }
