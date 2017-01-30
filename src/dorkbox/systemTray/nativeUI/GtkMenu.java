@@ -226,7 +226,12 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     entry.bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Checkbox) {
-                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this);
+                    // Additionally, we can ask the SystemTray WHAT KIND of tray it is, since it will know by this point in time.
+                    // necessary because of bad layout decisions by AppIndicators for checkbox items
+
+                    // WIP. The checkbox (if appIndicator) is always black. This could cause problems depending on theme
+                    // boolean isAppIndicator = SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray;
+                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this, false);
                     add(item, index);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }

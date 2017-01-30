@@ -26,14 +26,19 @@ import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.CheckboxPeer;
+import dorkbox.systemTray.util.ImageUtils;
 
 // ElementaryOS shows the checkbox on the right, everyone else is on the left. With eOS, we CANNOT show the spacer image. It does not work
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
+    private static String checkedFile;
+    private static String uncheckedFile;
+
     private final GtkMenu parent;
 
     // these have to be volatile, because they can be changed from any thread
     private volatile ActionListener callback;
     private volatile boolean isChecked = false;
+    private volatile Pointer checkedImage;
     private volatile Pointer image;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
@@ -41,16 +46,35 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     // GtkStatusIconTray will show on mouse+keyboard movement
     private volatile char mnemonicKey = 0;
     private final long handlerId;
+    private final boolean isAppIndicator;
 
     /**
      * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
+     *
+     * note: AppIndicator tray's DO NOT show the spacer image for checkboxes so they are "shifted left", which looks awkward.
      */
-    GtkMenuItemCheckbox(final GtkMenu parent) {
-        super(Gtk.gtk_check_menu_item_new_with_mnemonic(""));
+    GtkMenuItemCheckbox(final GtkMenu parent, final boolean isAppIndicator) {
+        super(isAppIndicator ? Gtk.gtk_image_menu_item_new_with_mnemonic("") : Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
+        this.isAppIndicator = isAppIndicator;
 
         handlerId = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+
+        if (checkedFile == null) {
+            // from Brankic1979, public domain
+            checkedFile = ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, ImageUtils.class.getResource("checked_32.png")).getAbsolutePath();
+            uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE).getAbsolutePath();
+        }
+
+        if (isAppIndicator) {
+            setCheckedIconForAppIndicators();
+        }
+        else {
+            Gobject.g_signal_handler_block(_native, handlerId);
+            Gtk.gtk_check_menu_item_set_active(_native, false);
+            Gobject.g_signal_handler_unblock(_native, handlerId);
+        }
     }
 
     // called by native code ONLY
@@ -151,7 +175,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void setChecked(final Checkbox menuItem) {
-        boolean checked = menuItem.getChecked();
+        final boolean checked = menuItem.getChecked();
 
         // only dispatch if it's actually different
         if (checked != this.isChecked) {
@@ -161,16 +185,42 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 @Override
                 public
                 void run() {
-                    // note: this will trigger "activate", which will then trigger the callback.
-                    // we assume this is consistent across ALL versions and variants of GTK
-                    // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
-                    // this disables the signal handler, then enables it
-                    Gobject.g_signal_handler_block(_native, handlerId);
-                    Gtk.gtk_check_menu_item_set_active(_native, isChecked);
-                    Gobject.g_signal_handler_unblock(_native, handlerId);
+                    if (!isAppIndicator) {
+                        // note: this will trigger "activate", which will then trigger the callback.
+                        // we assume this is consistent across ALL versions and variants of GTK
+                        // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
+                        // this disables the signal handler, then enables it
+                        Gobject.g_signal_handler_block(_native, handlerId);
+                        Gtk.gtk_check_menu_item_set_active(_native, isChecked);
+                        Gobject.g_signal_handler_unblock(_native, handlerId);
+                    } else {
+                        setCheckedIconForAppIndicators();
+                    }
                 }
             });
         }
+    }
+
+    private
+    void setCheckedIconForAppIndicators() {
+        if (checkedImage != null) {
+            Gtk.gtk_container_remove(_native, checkedImage);  // will automatically get destroyed if no other references to it
+            checkedImage = null;
+            Gtk.gtk_widget_show_all(_native);
+        }
+
+
+        if (this.isChecked) {
+            checkedImage = Gtk.gtk_image_new_from_file(checkedFile);
+        } else {
+            checkedImage = Gtk.gtk_image_new_from_file(uncheckedFile);
+        }
+        Gtk.gtk_image_menu_item_set_image(_native, checkedImage);
+
+        //  must always re-set always-show after setting the image
+        Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
+
+        Gtk.gtk_widget_show_all(_native);
     }
 
     @Override
