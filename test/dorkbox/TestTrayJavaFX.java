@@ -114,8 +114,7 @@ class TestTrayJavaFX {
         primaryStage.show();
 
 
-        this.systemTray = SystemTray.getSwing();
-        // this.systemTray = SystemTray.getNative();
+        this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }

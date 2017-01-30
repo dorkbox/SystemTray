@@ -75,7 +75,7 @@ class ImageUtils {
     public static volatile Font ENTRY_FONT = null;
 
     public static
-    void determineIconSize(boolean trayHasSwingMenus) {
+    void determineIconSize() {
         double trayScalingFactor = 0;
         double menuScalingFactor = 0;
 
@@ -295,8 +295,8 @@ class ImageUtils {
         }
 
         // this must be a JMenuItem component, because that is the component we are setting the font on.
-        // this is only important to do if we are a swing tray type
-        if (trayHasSwingMenus) {
+        // this is only important to do if we are a swing tray type, which ONLY happens in Windows
+        if (OS.isWindows()) {
             // must be a plain style font
             Font font = new JMenuItem().getFont().deriveFont(Font.PLAIN);
 

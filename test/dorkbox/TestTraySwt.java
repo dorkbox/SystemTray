@@ -73,13 +73,12 @@ class TestTraySwt {
         helloWorldTest.pack();
 
 
-        systemTray.setTooltip("Mail Checker");
-        this.systemTray = SystemTray.getSwing();
-        // this.systemTray = SystemTray.getNative();
+        this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
+        systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 

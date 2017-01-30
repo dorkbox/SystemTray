@@ -46,8 +46,6 @@ import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
 import dorkbox.systemTray.swingUI.SwingUI;
-import dorkbox.systemTray.swingUI._AppIndicatorSwingTray;
-import dorkbox.systemTray.swingUI._GtkStatusIconSwingTray;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
@@ -81,14 +79,12 @@ class SystemTray {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
 
     public enum TrayType {
-        /** Will choose as a 'best guess' which tray type to use based on if native is requested or not */
+        /** Will choose as a 'best guess' which tray type to use */
         AutoDetect,
-        /** if native, will have Gtk Menus. Non-native will have Swing menus */
         GtkStatusIcon,
-        /** if native, will have Gtk Menus. Non-native will have Swing menus */
         AppIndicator,
-        /** if native, will have AWT Menus. Non-native will have Swing menus */
-        Swing
+        Swing,
+        AWT
     }
 
     @Property
@@ -128,7 +124,7 @@ class SystemTray {
 
     @Property
     /**
-     * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, or Swing.
+     * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, Swing, or AWT.
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
@@ -194,45 +190,36 @@ class SystemTray {
     private static
     boolean isTrayType(final Class<? extends Tray> tray, final TrayType trayType) {
         switch (trayType) {
-            case GtkStatusIcon: return (tray == _GtkStatusIconSwingTray.class || tray == _GtkStatusIconNativeTray.class);
-            case AppIndicator: return (tray == _AppIndicatorSwingTray.class || tray == _AppIndicatorNativeTray.class);
-            case Swing: return (tray == _SwingTray.class || tray == _AwtTray.class);
+            case GtkStatusIcon: return tray == _GtkStatusIconNativeTray.class;
+            case AppIndicator: return tray == _AppIndicatorNativeTray.class;
+            case Swing: return tray == _SwingTray.class;
+            case AWT: return tray == _AwtTray.class;
         }
         return false;
     }
 
     private static
-    Class<? extends Tray> selectType(final boolean useNativeMenus, final TrayType trayType) throws Exception {
+    Class<? extends Tray> selectType(final TrayType trayType) throws Exception {
         if (trayType == TrayType.GtkStatusIcon) {
-            if (useNativeMenus) {
-                return _GtkStatusIconNativeTray.class;
-            } else {
-                return _GtkStatusIconSwingTray.class;
-            }
-        } else if (trayType == TrayType.AppIndicator) {
-            if (useNativeMenus) {
-                return _AppIndicatorNativeTray.class;
-            }
-            else {
-                return _AppIndicatorSwingTray.class;
-            }
+            return _GtkStatusIconNativeTray.class;
+        }
+        else if (trayType == TrayType.AppIndicator) {
+            return _AppIndicatorNativeTray.class;
         }
         else if (trayType == TrayType.Swing) {
-            if (useNativeMenus) {
-                return _AwtTray.class;
-            }
-            else {
-                return _SwingTray.class;
-            }
+            return _SwingTray.class;
+        }
+        else if (trayType == TrayType.AWT) {
+            return _AwtTray.class;
         }
 
         return null;
     }
 
     private static
-    Class<? extends Tray> selectTypeQuietly(final boolean useNativeMenus, final TrayType trayType) {
+    Class<? extends Tray> selectTypeQuietly(final TrayType trayType) {
         try {
-            return selectType(useNativeMenus, trayType);
+            return selectType(trayType);
         } catch (Throwable t) {
             if (DEBUG) {
                 logger.error("Cannot initialize {}", trayType.name(), t);
@@ -243,7 +230,7 @@ class SystemTray {
     }
 
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
-    private static void init(boolean useNativeMenus) {
+    private static void init() {
         if (systemTray != null) {
             return;
         }
@@ -279,10 +266,6 @@ class SystemTray {
 
             // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
             // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
-            if (isSwtLoaded) {
-                useNativeMenus = true;
-                logger.warn("MacOSX does not support SWT + Swing at the same time. Forcing Native menus instead.");
-            }
         }
 
         // no tray in a headless environment
@@ -298,28 +281,17 @@ class SystemTray {
         // OSx can use Swing (non-native) or AWT (native) .
         // Linux can use Swing (non-native) menus + (native Icon via GTK or AppIndicator), GtkStatusIcon (native), or AppIndicator (native)
         if (OS.isWindows()) {
-            if (useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                // windows MUST use swing non-native only. AWT (native) looks terrible!
-                useNativeMenus = false;
-                logger.warn("Windows cannot use a 'native' SystemTray, defaulting to non-native SwingUI");
-            }
-
             if (FORCE_TRAY_TYPE != TrayType.Swing) {
                 // windows MUST use swing only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
-                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to SwingUI");
+                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to Swing");
             }
         }
         else if (OS.isMacOsX()) {
             if (FORCE_TRAY_TYPE != TrayType.Swing ) {
-                if (useNativeMenus) {
-                    logger.warn("MacOsX cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to SwingUI");
-                } else {
-                    logger.warn("MacOsX cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to AWT Native UI");
-                }
-
                 // MacOsX MUST use swing (and AWT) only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
+                logger.warn("MacOS cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to Awt");
             }
         }
         else if (OS.isLinux() || OS.isUnix()) {
@@ -399,7 +371,6 @@ class SystemTray {
             logger.debug("Is AutoTraySize? {}", AUTO_TRAY_SIZE);
             logger.debug("Is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("Is SWT detected? {}", isSwtLoaded);
-            logger.debug("Is using native menus? {}", useNativeMenus);
             logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
             logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
         }
@@ -413,10 +384,22 @@ class SystemTray {
         if (OS.isWindows()) {
             // windows is funky, and is hardcoded to 16x16. We fix that.
             SystemTrayFixes.fixWindows();
+
+            try {
+                trayType = selectType(TrayType.Swing);
+            } catch (Throwable e) {
+                logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+            }
         }
-        else if (OS.isMacOsX() && useNativeMenus) {
+        else if (OS.isMacOsX()) {
             // macosx doesn't respond to all buttons (but should)
             SystemTrayFixes.fixMacOS();
+
+            try {
+                trayType = selectType(TrayType.AWT);
+            } catch (Throwable e) {
+                logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+            }
         }
         else if ((OS.isLinux() || OS.isUnix()) && FORCE_TRAY_TYPE != TrayType.Swing) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
@@ -427,7 +410,7 @@ class SystemTray {
             // this can never be swing
             // don't check for SWING type at this spot, it is done elsewhere.
             if (SystemTray.FORCE_TRAY_TYPE != TrayType.AutoDetect) {
-                trayType = selectTypeQuietly(useNativeMenus, SystemTray.FORCE_TRAY_TYPE);
+                trayType = selectTypeQuietly(SystemTray.FORCE_TRAY_TYPE);
             }
 
 
@@ -461,7 +444,7 @@ class SystemTray {
             if (trayType == null) {
                 // Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                 if ("unity".equalsIgnoreCase(XDG)) {
-                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                    trayType = selectTypeQuietly(TrayType.AppIndicator);
                 }
                 else if ("xfce".equalsIgnoreCase(XDG)) {
                     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
@@ -469,18 +452,18 @@ class SystemTray {
                     // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
 
                     // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
-                    trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                    trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 else if ("lxde".equalsIgnoreCase(XDG)) {
-                    trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                    trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 else if ("kde".equalsIgnoreCase(XDG)) {
                     if (OSUtil.Linux.isFedora()) {
                         // Fedora KDE requires GtkStatusIcon
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     } else {
                         // kde (at least, plasma 5.5.6) requires appindicator
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                        trayType = selectTypeQuietly(TrayType.AppIndicator);
                     }
 
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
@@ -489,14 +472,9 @@ class SystemTray {
                     // elementaryOS. It only supports appindicator (not gtkstatusicon)
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
-                    if (!useNativeMenus && AUTO_FIX_INCONSISTENCIES) {
-                        logger.warn("Cannot use non-native menus with pantheon DE. Forcing native menus.");
-                        useNativeMenus = true;
-                    }
-
                     // ElementaryOS shows the checkbox on the right, everyone else is on the left.
                     // With eOS, we CANNOT show the spacer image. It does not work.
-                    trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                    trayType = selectTypeQuietly(TrayType.AppIndicator);
                 }
                 else if ("gnome".equalsIgnoreCase(XDG)) {
                     // check other DE
@@ -517,22 +495,22 @@ class SystemTray {
                             }
 
                             // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
-                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                            trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
                         else if (OSUtil.Linux.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
-                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                            trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
                         else if (OSUtil.Unix.isFreeBSD()) {
-                            trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                            trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
                         else {
                             // arch likely will have problems unless the correct/appropriate libraries are installed.
-                            trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                            trayType = selectTypeQuietly(TrayType.AppIndicator);
                         }
                     }
                     else if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("default".equalsIgnoreCase(GDM)) {
                         // this can be gnome3 on debian
@@ -542,16 +520,16 @@ class SystemTray {
                             logger.warn("Debian with Gnome detected. SystemTray support is not known to work.");
                         }
 
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.AppIndicator);
+                        trayType = selectTypeQuietly(TrayType.AppIndicator);
                     }
                 }
             }
@@ -584,7 +562,7 @@ class SystemTray {
                                 if (readLine != null && readLine.contains("indicator-app")) {
                                     // make sure we can also load the library (it might be the wrong version)
                                     try {
-                                        trayType = selectType(useNativeMenus, TrayType.AppIndicator);
+                                        trayType = selectType(TrayType.AppIndicator);
                                     } catch (Exception e) {
                                         if (DEBUG) {
                                             logger.error("AppIndicator support detected, but unable to load the library. Falling back to GTK", e);
@@ -609,7 +587,7 @@ class SystemTray {
 
             // fallback...
             if (trayType == null) {
-                trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                 logger.warn("Unable to determine the system window manager type. Falling back to GtkStatusIcon.");
             }
 
@@ -659,18 +637,6 @@ class SystemTray {
             }
         }
 
-        // this is likely windows OR mac
-        if (trayType == null) {
-            try {
-                trayType = selectType(useNativeMenus, TrayType.Swing);
-            } catch (Throwable e) {
-                if (DEBUG) {
-                    logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.", e);
-                } else {
-                    logger.error("Maybe you should grant the AWTPermission `accessSystemTray` in the SecurityManager.");
-                }
-            }
-        }
 
         if (trayType == null) {
             // unsupported tray, or unknown type
@@ -681,7 +647,7 @@ class SystemTray {
             return;
         }
 
-        ImageUtils.determineIconSize(!useNativeMenus);
+        ImageUtils.determineIconSize();
 
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
@@ -732,7 +698,7 @@ class SystemTray {
                 if (isTrayType(trayType, TrayType.AppIndicator)) {
                     if (Gtk.isGtk2 && AppIndicator.isVersion3) {
                         try {
-                            trayType = selectType(useNativeMenus, TrayType.GtkStatusIcon);
+                            trayType = selectType(TrayType.GtkStatusIcon);
                             logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
                                         "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
                         } catch (Throwable e) {
@@ -753,7 +719,7 @@ class SystemTray {
                     if (!AppIndicator.isLoaded) {
                         // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
                         logger.warn("Unable to initialize the AppIndicator correctly, falling back to GtkStatusIcon type");
-                        trayType = selectTypeQuietly(useNativeMenus, TrayType.GtkStatusIcon);
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                 }
             }
@@ -827,9 +793,7 @@ class SystemTray {
         // verify that we have what we are expecting.
         if (OS.isWindows() && systemTrayMenu instanceof SwingUI) {
             // this configuration is OK.
-        } else if (useNativeMenus && systemTrayMenu instanceof NativeUI) {
-            // this configuration is OK.
-        } else if (!useNativeMenus && systemTrayMenu instanceof SwingUI) {
+        } else if (systemTrayMenu instanceof NativeUI) {
             // this configuration is OK.
         } else {
             logger.error("Unable to correctly initialize the System Tray. Please write an issue and include your " +
@@ -880,22 +844,6 @@ class SystemTray {
     }
 
     /**
-     * Returns a SystemTray instance that uses a custom Swing menus, which is more advanced than the native menus. The drawback is that
-     * this menu is not native, and so loses the specific Look and Feel of that platform.
-     * <p>
-     * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
-     * supported, in which case this will return NULL.
-     * <p>
-     * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
-     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
-     */
-    public static
-    SystemTray getSwing() {
-        init(false);
-        return systemTray;
-    }
-
-    /**
      * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu. The drawback is
      * that this menu is native, and sometimes native menus looks absolutely HORRID.
      * <p>
@@ -906,8 +854,8 @@ class SystemTray {
      * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
      */
     public static
-    SystemTray getNative() {
-        init(true);
+    SystemTray get() {
+        init();
         return systemTray;
     }
 
