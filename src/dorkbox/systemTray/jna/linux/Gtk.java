@@ -58,7 +58,7 @@ class Gtk {
     private static final boolean alreadyRunningGTK;
 
     // when debugging the EDT, we need a longer timeout.
-    private static final boolean debugEDT = false;
+    private static final boolean debugEDT = true;
 
     // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
     private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
@@ -553,9 +553,6 @@ class Gtk {
     public static native void gtk_menu_item_set_label(Pointer menu_item, String label);
 
     public static native void gtk_menu_shell_append(Pointer menu_shell, Pointer child);
-
-    // Typically this results in the menu shell being erased from the screen
-    public static native void gtk_menu_shell_deactivate(Pointer menuShell);
 
     public static native void gtk_widget_set_sensitive(Pointer widget, boolean sensitive);
 

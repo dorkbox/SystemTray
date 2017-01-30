@@ -20,7 +20,6 @@ import static dorkbox.systemTray.SystemTray.logger;
 import com.sun.jna.Callback;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 
 import dorkbox.systemTray.jna.JnaHelper;
 
@@ -44,8 +43,6 @@ class Gobject {
     }
 
     // objdump -T /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 | grep block
-
-    public static native void g_object_get(Pointer object, String objectName, PointerByReference objectVal, Pointer nullValue);
 
     public static native void g_object_unref(Pointer object);
 
