@@ -233,7 +233,7 @@ ISSUES:
 
 This project **includes** some utility classes, which are an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function. Additionally this project is **kept in sync** with the utilities library, so "jar hell" is not an issue, and the latest release will always include the same utility files as all other projects in the dorkbox repository at that time.
   
-  Please note that the utility classes have their source code included in the release, and eventually, the utility library (in it's entirety) will be added to github. 
+  Please note that the utility classes have their source code included in the release, and eventually, the utility library (in it's entirety) will be added. 
 ```
 <dependency>
   <groupId>com.dorkbox</groupId>
