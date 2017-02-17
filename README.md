@@ -22,11 +22,12 @@ This library provides **OS Native** menus and **Swing/AWT** menus, depending on 
 
 The following unique problems are also solved by this library:  
 1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds
-2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix.
+2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix
 3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**
 4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
 5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do
 6. MacOS and Windows *native* menus **do not** support images attached to menu entries
+7. Windows menus **do not** support a different L&F from applications
 
 
 
@@ -50,7 +51,7 @@ Problems and Restrictions
  
  - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Please note that **Ubuntu** does not always support this!
                      
- - **Linux/Unix Menus**  Some linux environments only support right-click to display the menu, and it is not possible to change the behavior.
+ - **Linux/Unix Menus** Some linux environments only support right-click to display the menu, and it is not possible to change the behavior.
 
 Compatibility Matrix
 ------------------
@@ -134,27 +135,31 @@ SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
  
  
 SystemTray.AUTO_FIX_INCONSISTENCIES    (type boolean, default value 'true')
-   -  Allows the SystemTray logic to resolve various OS inconsistencies for the SystemTray in different combinations
+ -  Allows the SystemTray logic to resolve various OS inconsistencies for the SystemTray in different combinations
  
+ 
+SystemTray.SWING_UI    (type SwingUIFactory, default value 'null')
+ - Allows the developer to provide a custom look and feel for the Swing UI, if defined. See the test example for specific use.
+      
  
 SystemTray.DEBUG    (type boolean, default value 'false')
-  -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
+ -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
   
   
 Extension.ENABLE_EXTENSION_INSTALL    (type boolean, default value 'true')
-  - Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome 
-    places the icon in the "notification drawer", which is a collapsible menu (usually) at the bottom left corner 
-    of the screen.  This should be set to false if you want to preserve the default Desktop Environment UI preferences.
-    Additionally, Arch Linux is the only exception to this rule where it does not install the extension, so TopIcons is
-    necessary for placing the icon near the clock.
+ - Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome 
+   places the icon in the "notification drawer", which is a collapsible menu (usually) at the bottom left corner 
+   of the screen.  This should be set to false if you want to preserve the default Desktop Environment UI preferences.
+   Additionally, Arch Linux is the only exception to this rule where it does not install the extension, so TopIcons is
+   necessary for placing the icon near the clock.
   
   
 Extension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
-  - Permit the gnome-shell to be restarted when the extension is installed.
+ - Permit the gnome-shell to be restarted when the extension is installed.
   
   
 Extension.SHELL_RESTART_COMMAND    (type String, default value 'nome-shell --replace &')
-  - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
+ - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
   
   
 ```
@@ -163,26 +168,30 @@ Extension.SHELL_RESTART_COMMAND    (type String, default value 'nome-shell --rep
    
 The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
 ```
-   this.systemTray = SystemTray.get();
-   if (systemTray == null) {
-       throw new RuntimeException("Unable to load SystemTray!");
-   }
+    SystemTray.SWING_UI = new CustomSwingUI();
 
-   try {
-       this.systemTray.setImage("grey_icon.png");
-   } catch (IOException e) {
-       e.printStackTrace();
-   }
-
-   this.systemTray.setStatus("Not Running");
-   
-   this.systemTray.addEntry("Quit", new SystemTrayMenuAction() {
+    SystemTray systemTray = SystemTray.get();
+    if (systemTray == null) {
+        throw new RuntimeException("Unable to load SystemTray!");
+    }
+ 
+    try {
+        systemTray.setImage("grey_icon.png");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+ 
+    systemTray.setStatus("Not Running");
+    
+    
+    systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
         @Override
         public
-        void onClick(final SystemTray systemTray, final Menu parent, final Entry entry) {
-            System.exit(0);
+        void actionPerformed(final ActionEvent e) {
+            systemTray.shutdown();
+            //System.exit(0);  not necessary if all non-daemon threads have stopped.
         }
-    });
+    })).setShortcut('q'); // case does not matter
 ```
 &nbsp;  
 &nbsp;  
@@ -229,18 +238,21 @@ ISSUES:
 &nbsp; 
 &nbsp; 
 
-<h4>We now release to maven!</h4> 
+<h4>Release Notes</h4> 
 
 This project **includes** some utility classes, which are an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function. Additionally this project is **kept in sync** with the utilities library, so "jar hell" is not an issue, and the latest release will always include the same utility files as all other projects in the dorkbox repository at that time.
   
-  Please note that the utility classes have their source code included in the release, and eventually the entire utility library will be provided as a dorkbox repository.
-```
+  Please note that the utility classes have their source code included in the release, and also on [GitHub](https://github.com/dorkbox/Utilities) repository.
+  
+  
+<h5>Maven Info</h5>
+````
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
   <version>2.20</version>
 </dependency>
-```
+````
 
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  

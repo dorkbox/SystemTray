@@ -56,6 +56,8 @@ class TestTray {
 
     public
     TestTray() {
+        SystemTray.SWING_UI = new CustomSwingUI();
+
         this.systemTray = SystemTray.get();
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");

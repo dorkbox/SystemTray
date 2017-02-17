@@ -19,18 +19,29 @@ import java.awt.Font;
 
 import javax.swing.JMenuItem;
 
+import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.StatusPeer;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItemStatus implements StatusPeer {
 
     private final SwingMenu parent;
-    private final JMenuItem _native = new AdjustedJMenuItem();
+    private final JMenuItem _native = new JMenuItem();
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItemStatus(final SwingMenu parent) {
+    SwingMenuItemStatus(final SwingMenu parent, final Entry entry) {
         this.parent = parent;
+
+        // this is before setUI, so that users can customize the font if they want
+        if (ImageUtils.ENTRY_FONT != null) {
+            _native.setFont(ImageUtils.ENTRY_FONT);
+        }
+        if (SystemTray.SWING_UI != null) {
+            _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
+        }
 
         // status is ALWAYS at 0 index...
         parent._native.add(_native, 0);

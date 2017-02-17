@@ -22,6 +22,7 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 
+import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
@@ -34,14 +35,23 @@ class SwingMenuItem implements MenuItemPeer {
     private static ImageIcon transparentIcon;
 
     private final SwingMenu parent;
-    private final JMenuItem _native = new AdjustedJMenuItem();
+    private final JMenuItem _native = new JMenuItem();
 
     private volatile ActionListener swingCallback;
 
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItem(final SwingMenu parent) {
+    SwingMenuItem(final SwingMenu parent, Entry entry) {
         this.parent = parent;
+
+        // this is before setUI, so that users can customize the font if they want
+        if (ImageUtils.ENTRY_FONT != null) {
+            _native.setFont(ImageUtils.ENTRY_FONT);
+        }
+        if (SystemTray.SWING_UI != null) {
+            _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
+        }
+
         parent._native.add(_native);
 
         if (transparentIcon == null) {

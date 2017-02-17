@@ -45,6 +45,7 @@ import dorkbox.systemTray.nativeUI.NativeUI;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
+import dorkbox.systemTray.swingUI.SwingUIFactory;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
@@ -127,7 +128,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
+    public static TrayType FORCE_TRAY_TYPE = TrayType.Swing;
 
     @Property
     /**
@@ -145,6 +146,12 @@ class SystemTray {
      * This is an advanced feature, and it is recommended to leave as true
      */
     public static boolean AUTO_FIX_INCONSISTENCIES = true;
+
+    @Property
+    /**
+     * Allows the developer to provide a custom look and feel for the Swing UI, if defined. See the test example for specific use.
+     */
+    public static SwingUIFactory SWING_UI = null;
 
     @Property
     /**

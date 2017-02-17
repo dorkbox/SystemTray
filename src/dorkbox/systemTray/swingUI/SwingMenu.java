@@ -19,6 +19,8 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
@@ -26,7 +28,9 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
+import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
@@ -38,15 +42,33 @@ class SwingMenu implements MenuPeer {
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    SwingMenu(final SwingMenu parent) {
+    SwingMenu(final SwingMenu parent, final Menu entry) {
         this.parent = parent;
 
         if (parent == null) {
-            this._native = new TrayPopup();
+            TrayPopup trayPopup = new TrayPopup();
+            // this is before setUI, so that users can customize the font if they want
+            if (ImageUtils.ENTRY_FONT != null) {
+                trayPopup.setFont(ImageUtils.ENTRY_FONT);
+            }
+            if (SystemTray.SWING_UI != null) {
+                trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
+            }
+            this._native = trayPopup;
         }
         else {
-            this._native = new AdjustedJMenu();
-            parent._native.add(this._native);
+            JMenu jMenu = new JMenu();
+            JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
+
+            // this is before setUI, so that users can customize the font if they want
+            jMenu.setFont(ImageUtils.ENTRY_FONT);
+            if (SystemTray.SWING_UI != null) {
+                jMenu.setUI(SystemTray.SWING_UI.getItemUI(jMenu, entry));
+                popupMenu.setUI(SystemTray.SWING_UI.getMenuUI(popupMenu, entry));
+            }
+
+            this._native = jMenu;
+            parent._native.add(jMenu);
         }
     }
 
@@ -59,7 +81,7 @@ class SwingMenu implements MenuPeer {
             public
             void run() {
                 if (entry instanceof Menu) {
-                    SwingMenu swingMenu = new SwingMenu(SwingMenu.this);
+                    SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
                     ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Separator) {
@@ -67,15 +89,15 @@ class SwingMenu implements MenuPeer {
                     entry.bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Checkbox) {
-                    SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this);
+                    SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Status) {
-                    SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this);
+                    SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
                     ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof MenuItem) {
-                    SwingMenuItem item = new SwingMenuItem(SwingMenu.this);
+                    SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
                     ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
             }
@@ -93,10 +115,10 @@ class SwingMenu implements MenuPeer {
                 File imageFile = menuItem.getImage();
                 if (imageFile != null) {
                     ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((AdjustedJMenu) _native).setIcon(origIcon);
+                    ((JMenu) _native).setIcon(origIcon);
                 }
                 else {
-                    ((AdjustedJMenu) _native).setIcon(null);
+                    ((JMenu) _native).setIcon(null);
                 }
             }
         });
@@ -124,7 +146,7 @@ class SwingMenu implements MenuPeer {
             @Override
             public
             void run() {
-                ((AdjustedJMenu) _native).setText(menuItem.getText());
+                ((JMenu) _native).setText(menuItem.getText());
             }
         });
     }
@@ -147,7 +169,7 @@ class SwingMenu implements MenuPeer {
             @Override
             public
             void run() {
-                ((AdjustedJMenu) _native).setMnemonic(vKey);
+                ((JMenu) _native).setMnemonic(vKey);
             }
         });
     }

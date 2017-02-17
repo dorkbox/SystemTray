@@ -28,10 +28,9 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
+    <orderEntry type="module" module-name="Utilities" />
     <orderEntry type="library" name="logging slf4j-api" level="application" />
     <orderEntry type="library" name="logging logback" level="application" />
-    <orderEntry type="module" module-name="Dorkbox-Util" />
-    <orderEntry type="module" module-name="JavaLauncher-Util" />
     <orderEntry type="library" name="jna" level="application" />
     <orderEntry type="library" name="SWT" level="project" />
     <orderEntry type="library" name="asm" level="application" />

@@ -17,6 +17,7 @@ package dorkbox.systemTray.swingUI;
 
 import javax.swing.JSeparator;
 
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.util.SwingUtil;
 
@@ -28,6 +29,11 @@ class SwingMenuItemSeparator implements EntryPeer {
     // this is ALWAYS called on the EDT.
     SwingMenuItemSeparator(final SwingMenu parent) {
         this.parent = parent;
+
+        if (SystemTray.SWING_UI != null) {
+            _native.setUI(SystemTray.SWING_UI.getSeparatorUI(_native));
+        }
+
         parent._native.add(_native);
     }
 

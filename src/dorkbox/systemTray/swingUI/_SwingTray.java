@@ -62,7 +62,7 @@ class _SwingTray extends Tray implements SwingUI {
         _SwingTray.this.tray = SystemTray.getSystemTray();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null) {
+        final SwingMenu swingMenu = new SwingMenu(null, null) {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
