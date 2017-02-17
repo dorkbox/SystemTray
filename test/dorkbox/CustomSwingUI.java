@@ -28,9 +28,9 @@ import javax.swing.plaf.SeparatorUI;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.swingUI.DefaultMenuItemUI;
-import dorkbox.systemTray.swingUI.DefaultPopupMenuUI;
-import dorkbox.systemTray.swingUI.DefaultSeparatorUI;
+import dorkbox.util.swing.DefaultMenuItemUI;
+import dorkbox.util.swing.DefaultPopupMenuUI;
+import dorkbox.util.swing.DefaultSeparatorUI;
 import dorkbox.systemTray.swingUI.SwingUIFactory;
 
 /**
