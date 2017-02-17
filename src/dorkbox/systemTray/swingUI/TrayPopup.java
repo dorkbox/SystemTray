@@ -29,7 +29,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JPopupMenu;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
@@ -50,15 +49,11 @@ class TrayPopup extends JPopupMenu {
     private final JDialog hiddenDialog;
 
     private volatile File iconFile;
-    private volatile Runnable runnable;
 
     @SuppressWarnings("unchecked")
     TrayPopup() {
         super();
         setFocusable(true);
-//        setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0)); // borderUI resource border type will get changed!
-        setBorder(new EmptyBorder(1, 1, 1, 1));
-
 
         // Initialize the hidden dialog as a headless, title-less dialog window
         hiddenDialog = new JDialog((Frame)null, "Tray menu");
@@ -100,11 +95,6 @@ class TrayPopup extends JPopupMenu {
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 hiddenDialog.setVisible(false);
                 hiddenDialog.toBack();
-
-                Runnable r = runnable;
-                if (r != null) {
-                    r.run();
-                }
             }
 
             public void popupMenuCanceled(PopupMenuEvent e) {
@@ -129,10 +119,6 @@ class TrayPopup extends JPopupMenu {
                 SystemTray.logger.error("Error setting the title-bar image for the popup menu task tray dialog");
             }
         }
-    }
-
-    void setOnHideRunnable(final Runnable runnable) {
-        this.runnable = runnable;
     }
 
     void close() {
