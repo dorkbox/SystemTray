@@ -128,7 +128,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.Swing;
+    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
     @Property
     /**
