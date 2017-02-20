@@ -58,7 +58,7 @@ class JavaFX {
 
                 _isEventThreadObject = _isEventThreadMethod.invoke(null);
                 _isEventThreadMethod = _isEventThreadObject.getClass()
-                            .getMethod("isFxUserThread", null);
+                            .getMethod("isFxUserThread", (java.lang.Class<?>[])null);
             }
         } catch (Throwable e) {
             SystemTray.logger.error("Cannot initialize JavaFX", e);
@@ -102,7 +102,7 @@ class JavaFX {
             if (OS.javaVersion <= 7) {
                 return (Boolean) isEventThreadMethod.invoke(null);
             } else {
-                return (Boolean) isEventThreadMethod.invoke(isEventThreadObject, null);
+                return (Boolean) isEventThreadMethod.invoke(isEventThreadObject, (java.lang.Class<?>[])null);
             }
         } catch (Throwable e) {
             SystemTray.logger.error("Unable to check if JavaFX is in the event thread. Please create an issue with your OS and Java " +
