@@ -4,12 +4,9 @@ Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusI
 
 
 This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment, and if AutoDetect (the default) is set. Linux/Unix will automatically choose *Nativ*e menus, Windows will choose *Swing*, and MacOS will choose *AWT*. 
- - Please note that *Native* menus, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms.
-
+ - Please note that *Native* menus, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms and environments.
 
 &nbsp;  
-&nbsp;  
-
 
 The following unique problems are also solved by this library:  
  1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds  
@@ -17,8 +14,8 @@ The following unique problems are also solved by this library:
  3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
  4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
  5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
- 6. MacOS and Windows *native* menus **do not** support images attached to menu entries  
- 7. Windows menus **do not** support a different L&F from applications  
+ 6. Windows *native* menus **do not** support images attached to menu entries  
+ 7. Windows menus **do not** support a different L&F from the running application  
 
 
 
@@ -37,6 +34,8 @@ Problems and Restrictions
  - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager -- and this cannot happen between different user accounts. **There is no workaround.**
  
  - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together (see the `Notes` below for the details.)
+ 
+  - **MacOSX** *native* menus cannot display images attached to menu entries. If desired, one could override the default for MacOSX so that it uses *Swing* instead of *AWT*, however this will result the SystemTray no-longer supporting the OS theme and transparency. The default of *AWT* was chosen because it looks much, much better than *Swing*. 
  
  - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
  
