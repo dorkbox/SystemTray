@@ -249,7 +249,7 @@ Maven Info
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
 https://github.com/dorkbox/SystemTray/releases  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/system_tray/  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
 
 
 
