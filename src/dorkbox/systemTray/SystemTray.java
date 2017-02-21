@@ -157,7 +157,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
 
     private static volatile SystemTray systemTray = null;
