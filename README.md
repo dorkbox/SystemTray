@@ -242,13 +242,14 @@ Maven Info
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>SystemTray</artifactId>
-  <version>2.20</version>
+  <version>3.0</version>
 </dependency>
 ````
 
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/system_tray/  
+https://github.com/dorkbox/SystemTray/releases
 
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
