@@ -1,33 +1,24 @@
 SystemTray
 ==========
-
-
-    Currently in Release Candidate phase. Please see notes below.
-
-
-The [Release Candidate 3.0 downloads](https://files2.dorkbox.com) are released as a "all-in-one" jar, for a variety of different tray types and configurations.  Please note that SWT testing will require you to download the SWT native library and add it to the classpath when you launch the jar. If you use SWT, you should be familiar with this, otherwise don't worry about it.
-
-
----
-
 Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications on Java 6+.  
 
 
-This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment. Linux/Unix will automatically choose Native menus, Windows will choose Swing, and MacOS will choose AWT. 
+This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment, and if AutoDetect (the default) is set. Linux/Unix will automatically choose *Nativ*e menus, Windows will choose *Swing*, and MacOS will choose *AWT*. 
  - Please note that *Native* menus, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms.
+
 
 &nbsp;  
 &nbsp;  
 
 
 The following unique problems are also solved by this library:  
-1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds
-2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix
-3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**
+1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds  
+2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix  
+3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
 4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
-5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do
-6. MacOS and Windows *native* menus **do not** support images attached to menu entries
-7. Windows menus **do not** support a different L&F from applications
+5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
+6. MacOS and Windows *native* menus **do not** support images attached to menu entries  
+7. Windows menus **do not** support a different L&F from applications  
 
 
 
