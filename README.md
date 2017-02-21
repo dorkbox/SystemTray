@@ -12,13 +12,13 @@ This library provides **OS Native** menus and **Swing/AWT** menus, depending on 
 
 
 The following unique problems are also solved by this library:  
-1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds  
-2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix  
-3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
-4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
-5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
-6. MacOS and Windows *native* menus **do not** support images attached to menu entries  
-7. Windows menus **do not** support a different L&F from applications  
+ 1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds  
+ 2. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix  
+ 3. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
+ 4. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
+ 5. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
+ 6. MacOS and Windows *native* menus **do not** support images attached to menu entries  
+ 7. Windows menus **do not** support a different L&F from applications  
 
 
 
