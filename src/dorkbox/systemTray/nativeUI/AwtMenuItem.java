@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-import java.awt.MenuItem;
 import java.awt.MenuShortcut;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,7 +26,7 @@ import dorkbox.util.SwingUtil;
 class AwtMenuItem implements MenuItemPeer {
 
     private final AwtMenu parent;
-    private final MenuItem _native = new java.awt.MenuItem();
+    private final java.awt.MenuItem _native = new java.awt.MenuItem();
 
     private volatile ActionListener swingCallback;
 

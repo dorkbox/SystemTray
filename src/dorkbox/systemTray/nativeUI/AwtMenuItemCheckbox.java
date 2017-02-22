@@ -36,6 +36,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     // this is ALWAYS called on the EDT.
     AwtMenuItemCheckbox(final AwtMenu parent) {
         this.parent = parent;
+        parent._native.add(_native);
     }
 
     @Override
