@@ -287,14 +287,14 @@ class SystemTray {
         // OSx can use Swing (non-native) or AWT (native) .
         // Linux can use Swing (non-native) menus + (native Icon via GTK or AppIndicator), GtkStatusIcon (native), or AppIndicator (native)
         if (OS.isWindows()) {
-            if (FORCE_TRAY_TYPE != TrayType.Swing) {
+            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing) {
                 // windows MUST use swing only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
                 logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to Swing");
             }
         }
         else if (OS.isMacOsX()) {
-            if (FORCE_TRAY_TYPE != TrayType.Swing ) {
+            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.AWT) {
                 // MacOsX MUST use swing (and AWT) only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
                 logger.warn("MacOS cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to Awt");
