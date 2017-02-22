@@ -776,7 +776,7 @@ class SystemTray {
                 ((OS.isLinux() || OS.isUnix()) && NativeUI.class.isAssignableFrom(trayType) && trayType != _AwtTray.class)) {
                 try {
                     reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
-                    logger.info("Successfully Loaded: {}", trayType.getSimpleName());
+
                 } catch (Exception e) {
                     logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
                 }
@@ -794,7 +794,6 @@ class SystemTray {
                     void run() {
                         try {
                             reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(systemTray));
-                            logger.info("Successfully Loaded: {}", finalTrayType.getSimpleName());
                         } catch (Exception e) {
                             logger.error("Unable to create tray type: '" + finalTrayType.getSimpleName() + "'", e);
                         }
@@ -806,7 +805,13 @@ class SystemTray {
         }
 
         systemTrayMenu = reference.get();
-
+        if (systemTrayMenu != null) {
+            if (DEBUG) {
+                logger.info("Successfully loaded type: {}", trayType.getSimpleName());
+            } else {
+                logger.info("Successfully loaded");
+            }
+        }
 
         // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
         if (ENABLE_SHUTDOWN_HOOK) {
