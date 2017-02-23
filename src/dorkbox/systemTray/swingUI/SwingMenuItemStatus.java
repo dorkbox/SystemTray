@@ -23,7 +23,6 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.StatusPeer;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItemStatus implements StatusPeer {
@@ -35,10 +34,6 @@ class SwingMenuItemStatus implements StatusPeer {
     SwingMenuItemStatus(final SwingMenu parent, final Entry entry) {
         this.parent = parent;
 
-        // this is before setUI, so that users can customize the font if they want
-        if (ImageUtils.ENTRY_FONT != null) {
-            _native.setFont(ImageUtils.ENTRY_FONT);
-        }
         if (SystemTray.SWING_UI != null) {
             _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
         }

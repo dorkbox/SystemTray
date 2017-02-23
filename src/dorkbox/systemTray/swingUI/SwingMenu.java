@@ -30,7 +30,6 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
@@ -47,10 +46,6 @@ class SwingMenu implements MenuPeer {
 
         if (parent == null) {
             TrayPopup trayPopup = new TrayPopup();
-            // this is before setUI, so that users can customize the font if they want
-            if (ImageUtils.ENTRY_FONT != null) {
-                trayPopup.setFont(ImageUtils.ENTRY_FONT);
-            }
             if (SystemTray.SWING_UI != null) {
                 trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
             }
@@ -60,8 +55,6 @@ class SwingMenu implements MenuPeer {
             JMenu jMenu = new JMenu();
             JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
 
-            // this is before setUI, so that users can customize the font if they want
-            jMenu.setFont(ImageUtils.ENTRY_FONT);
             if (SystemTray.SWING_UI != null) {
                 jMenu.setUI(SystemTray.SWING_UI.getItemUI(jMenu, entry));
                 popupMenu.setUI(SystemTray.SWING_UI.getMenuUI(popupMenu, entry));

@@ -45,10 +45,6 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
     SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
         this.parent = parent;
 
-        // this is before setUI, so that users can customize the font if they want
-        if (ImageUtils.ENTRY_FONT != null) {
-            _native.setFont(ImageUtils.ENTRY_FONT);
-        }
         if (SystemTray.SWING_UI != null) {
             _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
         }

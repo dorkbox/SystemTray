@@ -20,12 +20,9 @@ import static dorkbox.systemTray.jna.windows.Gdi32.LOGPIXELSX;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,7 +40,6 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import com.sun.jna.Pointer;
@@ -69,10 +65,6 @@ class ImageUtils {
     // https://wiki.archlinux.org/index.php/HiDPI
     public static volatile int TRAY_SIZE = 0;
     public static volatile int ENTRY_SIZE = 0;
-
-    // the menu entry font size ALSO must be detected, and it is a little bit tricky to figure this out.
-    // Only exists (and is necessary) for SWING menus
-    public static volatile Font ENTRY_FONT = null;
 
     public static
     void determineIconSize() {
@@ -294,63 +286,13 @@ class ImageUtils {
             ENTRY_SIZE = SystemTray.DEFAULT_MENU_SIZE;
         }
 
-        // this must be a JMenuItem component, because that is the component we are setting the font on.
-        // this is only important to do if we are a swing tray type, which ONLY happens in Windows
-        if (OS.isWindows()) {
-            // must be a plain style font
-            Font font = new JMenuItem().getFont().deriveFont(Font.PLAIN);
-
-            if (menuScalingFactor > 1) {
-                font = ImageUtils.getFontForSpecificHeight(font, ENTRY_SIZE);
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Menu entry font size '{}' found for requested size '{}'", font.getSize(), ENTRY_SIZE);
-                }
-            } else if (SystemTray.DEBUG) {
-                SystemTray.logger.debug("Menu entry font size '{}'. Not scaling for requested size '{}'", font.getSize(), ENTRY_SIZE);
-            }
-
-            ENTRY_FONT = font;
-        }
-
         if (SystemTray.DEBUG) {
             SystemTray.logger.debug("ScalingFactor is '{}', tray icon size is '{}'.", trayScalingFactor, TRAY_SIZE);
             SystemTray.logger.debug("ScalingFactor is '{}', tray menu size is '{}'.", menuScalingFactor, ENTRY_SIZE);
         }
     }
 
-    /**
-     * Gets the correct font (in GENERAL) for a specified pixel height.
-     * @param font the font we are checking
-     * @param height the height in pixels we want to get as close as possible to
-     *
-     * @return the font (derived from the specified font) that is as close as possible to the requested height
-     */
-    private static
-    Font getFontForSpecificHeight(final Font font, final int height) {
-        int size = font.getSize();
-        Boolean lastAction = null;
-        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
 
-        while (true) {
-            Font fontCheck = new Font(font.getName(), Font.PLAIN, size);
-
-            FontMetrics metrics = g.getFontMetrics(fontCheck);
-            Rectangle2D rect = metrics.getStringBounds("Tj|", g);
-            int testHeight = (int) rect.getHeight();
-
-            if (testHeight < height && lastAction != Boolean.FALSE) {
-                size++;
-                lastAction = Boolean.TRUE;
-            } else if (testHeight > height && lastAction != Boolean.TRUE) {
-                size--;
-                lastAction = Boolean.FALSE;
-            } else {
-                // either we are the exact size, or we are ONE font size to big/small (depending on what our initial guess was)
-                return fontCheck;
-            }
-        }
-    }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static
