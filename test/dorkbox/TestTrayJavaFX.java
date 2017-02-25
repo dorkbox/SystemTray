@@ -114,7 +114,8 @@ class TestTrayJavaFX {
         primaryStage.show();
 
 
-        SystemTray.SWING_UI = new CustomSwingUI();
+//        SwingUtil.setLookAndFeel(null);
+//        SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();
         if (systemTray == null) {
