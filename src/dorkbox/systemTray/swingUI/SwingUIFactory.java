@@ -45,7 +45,7 @@ interface SwingUIFactory {
      * Allows one to specify the Look & Feel of a menu entry
      *
      * @param jMenuItem the swing JMenuItem that is displayed in the menu
-     * @param entry the entry which is bound to the JMenuItem.
+     * @param entry the entry which is bound to the JMenuItem. Can be null during initialization.
      *
      * @return the UI used to customize the Look & Feel of the menu entry
      */
