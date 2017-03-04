@@ -38,6 +38,14 @@ import dorkbox.systemTray.swingUI.SwingUIFactory;
  *
  * This implementation is provided as an example of what looks reasonable on our systems for Nimbus. Naturally, everyone will have
  * different systems and thus will want to change this based on their own, specified Swing L&F.
+ *
+ * NOTICE: components can ALSO have different sizes attached to them, resulting in different sized components
+ * mini
+ *       myButton.putClientProperty("JComponent.sizeVariant", "mini");
+ * small
+ *       mySlider.putClientProperty("JComponent.sizeVariant", "small");
+ * large
+ *       myTextField.putClientProperty("JComponent.sizeVariant", "large");
  */
 public
 class CustomSwingUI implements SwingUIFactory {

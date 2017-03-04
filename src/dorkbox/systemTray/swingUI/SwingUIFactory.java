@@ -27,6 +27,14 @@ import dorkbox.systemTray.Menu;
 
 /**
  * Factory to allow for Look & Feel of the Swing UI components in the SystemTray. Provide an implementation to customize the Swing L&F.
+ *
+ * NOTICE: components can ALSO have different sizes attached to them, resulting in different sized components
+ * mini
+ *       myButton.putClientProperty("JComponent.sizeVariant", "mini");
+ * small
+ *       mySlider.putClientProperty("JComponent.sizeVariant", "small");
+ * large
+ *       myTextField.putClientProperty("JComponent.sizeVariant", "large");
  */
 public
 interface SwingUIFactory {
