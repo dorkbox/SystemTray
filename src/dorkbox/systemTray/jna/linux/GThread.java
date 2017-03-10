@@ -17,7 +17,7 @@ package dorkbox.systemTray.jna.linux;
 
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.jna.JnaHelper;
+import dorkbox.util.jna.JnaHelper;
 
 /**
  * bindings for libgthread
