@@ -59,8 +59,6 @@ class _SwingTray extends Tray implements SwingUI {
                                        "type and configuration");
         }
 
-        _SwingTray.this.tray = SystemTray.getSystemTray();
-
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final SwingMenu swingMenu = new SwingMenu(null, null) {
             @Override
@@ -70,6 +68,10 @@ class _SwingTray extends Tray implements SwingUI {
                     @Override
                     public
                     void run() {
+                        if (tray == null) {
+                            tray = SystemTray.getSystemTray();
+                        }
+
                         boolean enabled = menuItem.getEnabled();
 
                         if (visible && !enabled) {
@@ -104,6 +106,10 @@ class _SwingTray extends Tray implements SwingUI {
                     @Override
                     public
                     void run() {
+                        if (tray == null) {
+                            tray = SystemTray.getSystemTray();
+                        }
+
                         // stupid java won't scale it right away, so we have to do this twice to get the correct size
                         final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
                         trayImage.flush();
@@ -167,7 +173,9 @@ class _SwingTray extends Tray implements SwingUI {
                     public
                     void run() {
                         if (trayIcon != null) {
-                            tray.remove(trayIcon);
+                            if (tray != null) {
+                                tray.remove(trayIcon);
+                            }
                             trayIcon = null;
                         }
 

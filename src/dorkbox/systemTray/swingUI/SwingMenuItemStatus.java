@@ -18,6 +18,7 @@ package dorkbox.systemTray.swingUI;
 import java.awt.Font;
 
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Status;
@@ -38,6 +39,7 @@ class SwingMenuItemStatus implements StatusPeer {
             _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
         }
 
+        _native.setHorizontalAlignment(SwingConstants.LEFT);
         // status is ALWAYS at 0 index...
         parent._native.add(_native, 0);
 

@@ -21,12 +21,13 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItem implements MenuItemPeer {
@@ -48,10 +49,11 @@ class SwingMenuItem implements MenuItemPeer {
             _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
         }
 
+        _native.setHorizontalAlignment(SwingConstants.LEFT);
         parent._native.add(_native);
 
         if (transparentIcon == null) {
-            File uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
+            File uncheckedFile = ImageResizeUtil.getTransparentImage();
             transparentIcon = new ImageIcon(uncheckedFile.getAbsolutePath());
         }
 
