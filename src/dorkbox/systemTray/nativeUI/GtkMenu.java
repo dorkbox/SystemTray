@@ -28,6 +28,7 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.MenuPeer;
 
@@ -215,7 +216,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 if (entry instanceof Menu) {
                     // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
                     // see: https://bugs.launchpad.net/glipper/+bug/1203888
-
                     GtkMenu item = new GtkMenu(GtkMenu.this);
                     add(item, index);
                     ((Menu) entry).bind(item, parentMenu, parentMenu.getSystemTray());
@@ -229,9 +229,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     // Additionally, we can ask the SystemTray WHAT KIND of tray it is, since it will know by this point in time.
                     // necessary because of bad layout decisions by AppIndicators for checkbox items
 
-                    // WIP. The checkbox (if appIndicator) is always black. This could cause problems depending on theme
-                    // boolean isAppIndicator = SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray;
-                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this, false);
+                    boolean isAppIndicator = SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray;
+                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this, isAppIndicator);
                     add(item, index);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }

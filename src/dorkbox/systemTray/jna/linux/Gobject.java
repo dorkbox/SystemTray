@@ -15,13 +15,13 @@
  */
 package dorkbox.systemTray.jna.linux;
 
-import static dorkbox.systemTray.SystemTray.logger;
-
 import com.sun.jna.Callback;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
 
-import dorkbox.systemTray.jna.JnaHelper;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.util.jna.JnaHelper;
 
 /**
  * bindings for libgobject-2.0
@@ -35,10 +35,10 @@ class Gobject {
         try {
             NativeLibrary library = JnaHelper.register("gobject-2.0", Gobject.class);
             if (library == null) {
-                logger.error("Error loading GObject library, it failed to load.");
+                SystemTray.logger.error("Error loading GObject library, it failed to load.");
             }
         } catch (Throwable e) {
-            logger.error("Error loading GObject library, it failed to load {}", e.getMessage());
+            SystemTray.logger.error("Error loading GObject library, it failed to load {}", e.getMessage());
         }
     }
 
@@ -54,4 +54,25 @@ class Gobject {
 
     public static native void g_signal_handler_block(Pointer instance, long handlerId);
     public static native void g_signal_handler_unblock(Pointer instance, long handlerId);
+
+    public static native void g_object_get(Pointer instance, String property_name, PointerByReference value, Pointer terminator);
+
+
+
+    // Types are here  https://developer.gnome.org/gobject/stable/gobject-Type-Information.html
+    public static native void g_value_init(Pointer gvalue, double type);
+
+    /**
+     * Clears the current value in value (if any) and "unsets" the type, this releases all resources associated with this GValue. An unset value is the same as an uninitialized (zero-filled) GValue structure.
+     * @param gvalue
+     */
+    public static native void g_value_unset(Pointer gvalue);
+
+    public static native String g_value_get_string(Pointer gvalue);
+    public static native int g_value_get_int(Pointer gvalue);
+
+
+    public static native Pointer g_type_class_ref(Pointer widgetType);
+    public static native void g_type_class_unref(Pointer widgetClass);
+
 }
