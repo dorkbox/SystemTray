@@ -64,8 +64,6 @@ class _AwtTray extends Tray implements NativeUI {
                                        "type and configuration");
         }
 
-        _AwtTray.this.tray = SystemTray.getSystemTray();
-
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final AwtMenu awtMenu = new AwtMenu(null) {
             @Override
@@ -75,6 +73,10 @@ class _AwtTray extends Tray implements NativeUI {
                     @Override
                     public
                     void run() {
+                        if (tray == null) {
+                            tray = SystemTray.getSystemTray();
+                        }
+
                         boolean enabled = menuItem.getEnabled();
 
                         if (OS.isMacOsX()) {
@@ -138,6 +140,10 @@ class _AwtTray extends Tray implements NativeUI {
                     @Override
                     public
                     void run() {
+                        if (tray == null) {
+                            tray = SystemTray.getSystemTray();
+                        }
+
                         // stupid java won't scale it right away, so we have to do this twice to get the correct size
                         final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
                         trayImage.flush();
@@ -185,7 +191,10 @@ class _AwtTray extends Tray implements NativeUI {
                     void run() {
                         if (trayIcon != null) {
                             trayIcon.setPopupMenu(null);
-                            tray.remove(trayIcon);
+                            if (tray != null) {
+                                tray.remove(trayIcon);
+                            }
+
                             trayIcon = null;
                         }
 
@@ -209,6 +218,10 @@ class _AwtTray extends Tray implements NativeUI {
             @Override
             public
             void run() {
+                if (tray == null) {
+                    tray = SystemTray.getSystemTray();
+                }
+
                 // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
                 // want to make sure keep the tooltip text the same as before.
                 if (trayIcon != null) {

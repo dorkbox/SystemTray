@@ -28,7 +28,7 @@ import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**
  * Class for handling all system tray interactions.
@@ -169,7 +169,6 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
 
                         if (!isActive) {
                             isActive = true;
-
                             AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
                         }
                     }
@@ -220,9 +219,10 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             @Override
             public
             void run() {
-                // we initialize with a blank image
-                File image = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
                 String id = System.nanoTime() + "DBST";
+
+                // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
+                File image = ImageResizeUtil.getTransparentImage(); // tiny size is OK because we will be replacing this image.
                 appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
@@ -232,10 +232,10 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
         bind(gtkMenu, null, systemTray);
     }
 
-    // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
     @Override
     protected
     void setTooltip_(final String tooltipText) {
+        // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
     }
 
     @Override

@@ -22,12 +22,12 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.EntryPeer;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.ImageResizeUtil;
 
 abstract
 class GtkBaseMenuItem implements EntryPeer {
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
-    private static File transparentIcon = null;
+    private static final File transparentIcon = ImageResizeUtil.getTransparentImage();
     private volatile boolean hasLegitImage = true;
 
     // these have to be volatile, because they can be changed from any thread
@@ -38,11 +38,6 @@ class GtkBaseMenuItem implements EntryPeer {
 
     GtkBaseMenuItem(final Pointer _native) {
         this._native = _native;
-
-        // cannot be done in a static initializer, because the tray icon size might not yet have been determined
-        if (transparentIcon == null) {
-            transparentIcon = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
-        }
     }
 
     public
