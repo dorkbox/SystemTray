@@ -50,7 +50,7 @@ import dorkbox.util.jna.JnaHelper;
  *
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc"})
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc", "DeprecatedIsStillUsed"})
 public
 class Gtk {
     // For funsies to look at, SyncThing did a LOT of work on compatibility in python (unfortunate for us, but interesting).
@@ -778,11 +778,6 @@ class Gtk {
     Pointer gtk_settings_get_default();
 
     /**
-     * Returns the style context associated to widget . The returned object is guaranteed to be the same for the lifetime of widget .
-     */
-    public static native Pointer gtk_widget_get_style_context(Pointer widget);
-
-    /**
      * Finds all matching RC styles for a given widget, composites them together, and then creates a GtkStyle representing the composite
      * appearance. (GTK+ actually keeps a cache of previously created styles, so a new style may not be created.)
      */
@@ -803,10 +798,6 @@ class Gtk {
      */
     public static native  boolean gtk_style_lookup_color(Pointer widgetStyle, String color_name, Pointer color);
 
-    /**
-     * Looks up and resolves a color name in the context color map.
-     */
-    public static native boolean gtk_style_context_lookup_color(Pointer widget, String name, Pointer color);
 
     /**
      * Adds widget to container . Typically used for simple containers such as GtkWindow, GtkFrame, or GtkButton; for more complicated
@@ -916,20 +907,20 @@ class Gtk {
                 }
 
                 if (Gtk.isGtk3) {
-                    Pointer context = Gtk.gtk_widget_get_style_context(item);
+                    Pointer context = Gtk3.gtk_widget_get_style_context(item);
                     int state = Gtk3.gtk_style_context_get_state(context);
 
                     GdkRGBAColor gdkColor = new GdkRGBAColor();
-                    boolean success = Gtk.gtk_style_context_lookup_color(context, "fg_color", gdkColor.getPointer());
+                    boolean success = Gtk3.gtk_style_context_lookup_color(context, "fg_color", gdkColor.getPointer());
                     if (!success) {
-                        success = Gtk.gtk_style_context_lookup_color(context, "text_color", gdkColor.getPointer());
+                        success = Gtk3.gtk_style_context_lookup_color(context, "text_color", gdkColor.getPointer());
                     }
                     if (!success) {
-                        success = Gtk.gtk_style_context_lookup_color(context, "menu_fg_color", gdkColor.getPointer());
+                        success = Gtk3.gtk_style_context_lookup_color(context, "menu_fg_color", gdkColor.getPointer());
                     }
 
                     if (!success) {
-                        success = Gtk.gtk_style_context_lookup_color(context, "color", gdkColor.getPointer());
+                        success = Gtk3.gtk_style_context_lookup_color(context, "color", gdkColor.getPointer());
                     }
 
                     if (success) {

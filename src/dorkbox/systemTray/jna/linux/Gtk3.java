@@ -69,4 +69,18 @@ class Gtk3 {
      * @since 3.0
      */
     public static native int gtk_style_context_get_state(Pointer context);
+
+    /**
+     * Looks up and resolves a color name in the context color map.
+     *
+     * @since 3.0 (but not in the documentation...)
+     */
+    public static native boolean gtk_style_context_lookup_color(Pointer widget, String name, Pointer color);
+
+    /**
+     * Returns the style context associated to widget . The returned object is guaranteed to be the same for the lifetime of widget .
+     *
+     * @since 3.0 (but not in the documentation...)
+     */
+    public static native Pointer gtk_widget_get_style_context(Pointer widget);
 }
