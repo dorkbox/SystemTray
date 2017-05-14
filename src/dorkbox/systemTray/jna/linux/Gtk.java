@@ -20,7 +20,9 @@ import static dorkbox.systemTray.SystemTray.logger;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -952,6 +954,7 @@ class Gtk {
 
         Color color1 = color.get();
         if (color1 != null) {
+            System.err.println("COLOR: " + color1);
             return color1;
         }
 
@@ -971,24 +974,27 @@ class Gtk {
     private static Color getFromCss() {
         String css = getGtkThemeCss();
         if (css != null) {
-            // System.err.println("css: " + css);
+//            System.err.println("css: " + css);
 
             String[] nodes;
             Tray tray = (Tray) SystemTray.get()
                                          .getMenu();
 
 
-            // we care about the following CSS head nodes, and account for MULTIPLE versions, in order of preference.
+            // we care about the following CSS head nodes, and account for multiple versions, in order of preference.
             if (tray instanceof _GtkStatusIconNativeTray) {
-                nodes = new String[] {"gnome-panel-menu-bar", "unity-panel", "PanelMenuBar", ".check"};
+                nodes = new String[] {"GtkPopover", "gnome-panel-menu-bar", "unity-panel", "PanelMenuBar", ".check"};
             }
             else if (tray instanceof _AppIndicatorNativeTray) {
-                nodes = new String[] {"unity-panel", "gnome-panel-menu-bar", "PanelMenuBar", ".check"};
+                nodes = new String[] {"GtkPopover", "unity-panel", "gnome-panel-menu-bar", "PanelMenuBar", ".check"};
             }
             else {
                 // not supported for other types
                 return null;
             }
+
+            // collect a list of all of the sections that have what we are interested in
+            List<String> sections = new ArrayList<String>();
 
             String colorString = null;
 
@@ -996,66 +1002,54 @@ class Gtk {
             colorCheck:
             for (String node : nodes) {
                 int i = 0;
-                while (i != -1 && colorString == null) {
+                while (i != -1) {
                     i = css.indexOf(node, i);
                     if (i > -1) {
                         int endOfNodeLabels = css.indexOf("{", i);
+                        int endOfSection = css.indexOf("}", endOfNodeLabels + 1) + 1;
+                        int endOfSectionTest = css.indexOf("}", i) + 1;
 
-                        String nodeLabel = css.substring(i, endOfNodeLabels);
-
-                        if (!nodeLabel.contains("menuitem")) {
-                            // maybe there is ANOTHER node that has the required classes, this has higher priority than without
-                            // advance the counter
-                            i = endOfNodeLabels;
+                        // this makes sure that weird parsing errors don't happen as a result of node keywords appearing in node sections
+                        if (endOfSection != endOfSectionTest) {
+                            // advance the index
+                            i = endOfSection;
                             continue;
                         }
 
-                        int endOfSection = css.indexOf("}", endOfNodeLabels);
+                        String nodeLabel = css.substring(i, endOfNodeLabels);
                         String nodeSection = css.substring(endOfNodeLabels, endOfSection);
+
+//                        if (nodeSection.contains("menu_fg_color")) {
+//                            System.err.println(nodeSection);
+//                        }
 
                         int j = nodeSection.indexOf(" color");
                         if (j > -1) {
-                            int startOfColorDef = nodeSection.indexOf(":", j) + 1;
-                            int endOfColorDef = nodeSection.indexOf(";", startOfColorDef);
-                            colorString = nodeSection.substring(startOfColorDef, endOfColorDef)
-                                                     .trim();
+                            sections.add(nodeLabel + " " + nodeSection);
                         }
-                        else {
-                            // advance the index
-                            i = endOfSection;
-                        }
+
+                        // advance the index
+                        i = endOfSection;
                     }
                 }
             }
 
+//            for (String section : sections) {
+//                System.err.println("--------------");
+//                System.err.println(section);
+//                System.err.println("--------------");
+//            }
 
-            if (colorString == null) {
-                colorCheck:
-                for (String node : nodes) {
-                    int i = 0;
-                    while (i != -1 && colorString == null) {
-                        i = css.indexOf(node, i);
-                        if (i > -1) {
-                            int endOfNodeLabels = css.indexOf("{", i);
-                            int endOfSection = css.indexOf("}", endOfNodeLabels);
-                            String nodeSection = css.substring(endOfNodeLabels, endOfSection);
+           if (!sections.isEmpty()) {
+               String section = sections.get(0);
+               int start = section.indexOf("{");
+               int colorIndex = section.indexOf(" color", start);
 
-                            int j = nodeSection.indexOf(" color");
-                            if (j > -1) {
-                                int startOfColorDef = nodeSection.indexOf(":", j) + 1;
-                                int endOfColorDef = nodeSection.indexOf(";", startOfColorDef);
-                                colorString = nodeSection.substring(startOfColorDef, endOfColorDef)
-                                                         .trim();
-                            }
-                            else {
-                                // advance the index
-                                i = endOfSection;
-                            }
-                        }
-                    }
-                }
-            }
-
+               int startOfColorDef = section.indexOf(":", colorIndex) + 1;
+               int endOfColorDef = section.indexOf(";", startOfColorDef);
+               colorString = section.substring(startOfColorDef, endOfColorDef)
+                                        .trim();
+           }
 
             // hopefully we found it.
             if (colorString != null) {
@@ -1069,6 +1063,10 @@ class Gtk {
                     int end = css.lastIndexOf(colorDefine);
                     end = css.lastIndexOf(";", end) + 1; // include the ;
                     String colorDefines = css.substring(start, end);
+
+//                    System.err.println("+++++++++++++++++++++++");
+//                    System.err.println(colorDefines);
+//                    System.err.println("+++++++++++++++++++++++");
 
                     // since it's a color definition, it will start a very specific way.
                     String newColorString = colorDefine + " " + colorString;
@@ -1086,7 +1084,9 @@ class Gtk {
                                                                     .trim();
 
                                 if (colorSubString.startsWith("@")) {
-                                    i = endIndex;
+                                    // have to recursively get the defined color
+                                    newColorString = colorDefine + " " + colorSubString.substring(1);
+                                    i = 0;
                                     continue;
                                 }
 
