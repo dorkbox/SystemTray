@@ -63,8 +63,7 @@ public
 class SystemTrayFixes {
 
     // oh my. Java likes to think that ALL windows tray icons are 16x16.... Lets fix that!
-    // https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
-    public static void fixWindows() {
+    public static void fixWindows(int trayIconSize) {
         String vendor = System.getProperty("java.vendor").toLowerCase(Locale.US);
         // spaces at the end to make sure we check for words
         if (!(vendor.contains("sun ") || vendor.contains("oracle "))) {
@@ -112,7 +111,7 @@ class SystemTrayFixes {
                 trayClass.getConstructors()[0].setModifiers(trayClass.getConstructors()[0].getModifiers() & javassist.Modifier.PUBLIC);
                 CtMethod ctMethodGet = trayClass.getDeclaredMethod("getTrayIconSize");
                 ctMethodGet.setBody("{" +
-                                    "return new java.awt.Dimension(" + ImageUtils.TRAY_SIZE + ", " + ImageUtils.TRAY_SIZE + ");" +
+                                    "return new java.awt.Dimension(" + trayIconSize + ", " + trayIconSize + ");" +
                                     "}");
 
                 trayBytes = trayClass.toBytecode();
@@ -123,7 +122,7 @@ class SystemTrayFixes {
                 CtMethod ctMethodCreate = trayIconClass.getDeclaredMethod("createNativeImage");
                 CtMethod ctMethodUpdate = trayIconClass.getDeclaredMethod("updateNativeImage");
 
-                int TRAY_MASK = (ImageUtils.TRAY_SIZE * ImageUtils.TRAY_SIZE) / 8;
+                int TRAY_MASK = (trayIconSize * trayIconSize) / 8;
                 ctMethodCreate.setBody("{" +
                     "java.awt.image.BufferedImage bufferedImage = $1;" +
 
@@ -192,10 +191,10 @@ class SystemTrayFixes {
             BootStrapClassLoader.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
-                logger.debug("Successfully changed tray icon size to: {}", ImageUtils.TRAY_SIZE);
+                logger.debug("Successfully changed tray icon size to: {}", trayIconSize);
             }
         } catch (Exception e) {
-            logger.error("Error setting tray icon size to: {}", ImageUtils.TRAY_SIZE, e);
+            logger.error("Error setting tray icon size to: {}", trayIconSize, e);
         }
     }
 
