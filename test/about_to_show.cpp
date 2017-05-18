@@ -1,3 +1,5 @@
+// from: https://github.com/seppestas/test-libappindicator
+
 // sudo apt-get install libgtk2.0-dev libappindicator-dev
 // gcc example2.c `pkg-config --cflags gtk+-2.0` -I/usr/include/libappindicator-0.1/ -o example `pkg-config --libs gtk+-2.0` -L/usr/lib -lappindicator
 
