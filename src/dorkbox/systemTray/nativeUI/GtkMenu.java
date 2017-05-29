@@ -28,10 +28,10 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.peer.MenuPeer;
 
+@SuppressWarnings("deprecation")
 class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
     private final List<GtkBaseMenuItem> menuEntries = new LinkedList<GtkBaseMenuItem>();
@@ -59,6 +59,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
+    private
     GtkMenu(final GtkMenu parent) {
         super(Gtk.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
         this.parent = parent;
@@ -99,6 +100,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
      *
      * ALWAYS CALLED ON EDT
      */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     private
     void deleteMenu() {
         if (obliterateInProgress.get()) {
@@ -135,6 +137,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
      *
      * ALWAYS CALLED ON THE EDT
      */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     private
     void createMenu() {
         if (obliterateInProgress.get()) {
@@ -176,6 +179,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
      *
      * ALWAYS CALLED ON THE EDT
      */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     private
     void obliterateMenu() {
         if (_nativeMenu != null && !obliterateInProgress.get()) {
@@ -226,11 +230,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     entry.bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Checkbox) {
-                    // Additionally, we can ask the SystemTray WHAT KIND of tray it is, since it will know by this point in time.
-                    // necessary because of bad layout decisions by AppIndicators for checkbox items
-
-                    boolean isAppIndicator = SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray;
-                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this, isAppIndicator);
+                    GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this);
                     add(item, index);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }

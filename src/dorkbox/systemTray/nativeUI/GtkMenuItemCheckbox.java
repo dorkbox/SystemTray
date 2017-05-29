@@ -32,14 +32,38 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkTheme;
 import dorkbox.systemTray.peer.CheckboxPeer;
+import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.util.OSUtil;
 import dorkbox.util.SwingUtil;
 
-// ElementaryOS shows the checkbox on the right, everyone else is on the left. With eOS, we CANNOT show the spacer image. It does not work
+@SuppressWarnings("deprecation")
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
-    private static String checkedFile;
-    private static String uncheckedFile;
+    private static volatile String checkedFile;
+
+    // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
+    private static final String uncheckedFile = ImageResizeUtil.getTransparentImage().getAbsolutePath();
+
+    // Note:  So far, ONLY Ubuntu has managed to fail at rendering (bad layouts) checkbox menu items.
+    //          If there are OTHER OSes that fail, checks for them should be added here
+    private static final boolean useFakeCheckMark;
+    static {
+        // this class is initialized on the GTK dispatch thread.
+
+        if (SystemTray.AUTO_FIX_INCONSISTENCIES &&
+            (SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray) &&
+            OSUtil.Linux.isUbuntu()) {
+            useFakeCheckMark = true;
+        } else {
+            useFakeCheckMark = false;
+        }
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.info("Using Fake CheckMark: " + useFakeCheckMark);
+        }
+    }
 
     private final GtkMenu parent;
 
@@ -54,73 +78,59 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     // GtkStatusIconTray will show on mouse+keyboard movement
     private volatile char mnemonicKey = 0;
     private final long handlerId;
-    private final boolean isAppIndicator;
+
+
 
     /**
-     * called from inside dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
+     * called from inside GTK dispatch thread. ONLY creates the menu item, but DOES NOT attach it!
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      *
-     * Because AppIndicator checkbox's DO NOT align correctly (on ubuntu), we use an image_menu_item (instead of a check_menu_item), so that
-     * the alignment is correct for the menu item (with a check_menu_item, they are shifted left - which looks pretty bad)
+     * Because Ubuntu AppIndicator checkbox's DO NOT align correctly, we use an image_menu_item (instead of a check_menu_item),
+     * so that the alignment is correct for the menu item (with a check_menu_item, they are shifted left - which looks pretty bad)
      *
      * For AppIndicators, this is not possible to fix, because we cannot control how the menu's are rendered (this is by design)
      * Specifically, since it's implementation was copied from GTK, GtkCheckButton and GtkRadioButton allocate only the minimum size
      * necessary for its child. This causes the child alignment to fail. There is no fix we can apply - so we don't use them.
+     *
+     * Again, this is ONLY noticed on UBUNTU. For example, ElementaryOS is OK (it is also with a checkbox on the right).
+     * ElementaryOS shows the checkbox on the right, everyone else is on the left. With eOS, we CANNOT show the spacer image, so we MUST
+     * show this as a GTK Status Icon (not an AppIndicator), this way the "proper" checkbox is shown.
      */
-    GtkMenuItemCheckbox(final GtkMenu parent, final boolean isAppIndicator) {
-        super(isAppIndicator ? Gtk.gtk_image_menu_item_new_with_mnemonic("") : Gtk.gtk_check_menu_item_new_with_mnemonic(""));
+    GtkMenuItemCheckbox(final GtkMenu parent) {
+        super(useFakeCheckMark ? Gtk.gtk_image_menu_item_new_with_mnemonic("") : Gtk.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
-        this.isAppIndicator = isAppIndicator;
 
         handlerId = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
 
-        if (checkedFile == null) {
-            Color color = Gtk.getCurrentThemeTextColor();
+        if (useFakeCheckMark) {
+            if (checkedFile == null) {
+                // on GTK thread
+                final Color color = GtkTheme.getCurrentThemeTextColor();
 
-            try {
-                int iconSize = 32;
-                final File newFile = new File(ImageResizeUtil.TEMP_DIR, iconSize + "_checkMark_" + color.getRGB() + ".png").getAbsoluteFile();
-
-                if (!newFile.canRead()) {
-                    JMenuItem jMenuItem = new JMenuItem();
-
-                    // do the same modifications that would also happen (if specified) for the actual displayed menu items
-                    if (SystemTray.SWING_UI != null) {
-                        jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
-                    }
-
-                    // make sure the directory exists
-                    if (!newFile.getParentFile()
-                                .isDirectory()) {
-
-                        boolean mkdirs = newFile.getParentFile()
-                                                .mkdirs();
-
-                        if (!mkdirs) {
-                            SystemTray.logger.error("Unable to create directory for check-mark image at: {}", newFile);
+                // have to invoke Swing components on the Swing thread! In some cases, when the UI Manager is the native one (and
+                // thus is GTK), the swing thread is combined with the GTK thread. This causes problems!
+                SwingUtil.invokeLater(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        if (checkedFile == null) {
+                            checkedFile = getCheckedFile(color);
                         }
+
+                        // now that the swing part is finished, we can conclude with the GTK part
+                        Gtk.dispatch(new Runnable() {
+                            @Override
+                            public
+                            void run() {
+                                    setCheckedIconForFakeCheckMarks();
+                            }
+                        });
                     }
-
-                    // get the largest font (based on the orig font) that can be used WITHOUT changing the size of the JMenuItem
-                    Font fontForSpecificHeight = SwingUtil.getFontForSpecificHeight(jMenuItem.getFont(), iconSize);
-
-                    BufferedImage fontAsImage = SwingUtil.getFontAsImage(fontForSpecificHeight, "✔", color); // or "✓"
-                    ImageIO.write(fontAsImage, "png", newFile);
-                }
-
-                checkedFile = newFile.getAbsolutePath();
-
-                // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
-                uncheckedFile = ImageResizeUtil.getTransparentImage().getAbsolutePath();
-            } catch(Exception e) {
-                SystemTray.logger.error("Error creating check-mark image.", e);
+                });
+            } else {
+                setCheckedIconForFakeCheckMarks();
             }
-        }
-
-        if (isAppIndicator) {
-            setCheckedIconForAppIndicators();
-        }
-        else {
+        } else {
             Gobject.g_signal_handler_block(_native, handlerId);
             Gtk.gtk_check_menu_item_set_active(_native, false);
             Gobject.g_signal_handler_unblock(_native, handlerId);
@@ -235,7 +245,9 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 @Override
                 public
                 void run() {
-                    if (!isAppIndicator) {
+                    if (useFakeCheckMark) {
+                        setCheckedIconForFakeCheckMarks();
+                    } else {
                         // note: this will trigger "activate", which will then trigger the callback.
                         // we assume this is consistent across ALL versions and variants of GTK
                         // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
@@ -243,16 +255,15 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                         Gobject.g_signal_handler_block(_native, handlerId);
                         Gtk.gtk_check_menu_item_set_active(_native, isChecked);
                         Gobject.g_signal_handler_unblock(_native, handlerId);
-                    } else {
-                        setCheckedIconForAppIndicators();
                     }
                 }
             });
         }
     }
 
+    // this is pretty much ONLY for Ubuntu AppIndicators
     private
-    void setCheckedIconForAppIndicators() {
+    void setCheckedIconForFakeCheckMarks() {
         if (checkedImage != null) {
             Gtk.gtk_container_remove(_native, checkedImage);  // will automatically get destroyed if no other references to it
             checkedImage = null;
@@ -302,5 +313,51 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                 parent.remove(GtkMenuItemCheckbox.this);
             }
         });
+    }
+
+    /**
+     * This must always occur on the SWING thread (because stuff here is SWING related...)
+     *
+     * This saves a scalable CheckMark to a correctly sized PNG file.
+     *
+     * @param color the color of the CheckMark
+     */
+    private static
+    String getCheckedFile(Color color) {
+        final int iconSize = 32;
+        String name = iconSize + "_checkMark" + HeavyCheckMark.VERSION + "_" + color.getRGB() + ".png";
+        final File newFile = new File(ImageResizeUtil.TEMP_DIR, name).getAbsoluteFile();
+
+        if (newFile.canRead() || newFile.length() == 0) {
+            try {
+                JMenuItem jMenuItem = new JMenuItem();
+                // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                if (SystemTray.SWING_UI != null) {
+                    jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                }
+
+                // make sure the directory exists
+                if (!newFile.getParentFile()
+                            .isDirectory()) {
+
+                    boolean mkdirs = newFile.getParentFile()
+                                            .mkdirs();
+
+                    if (!mkdirs) {
+                        SystemTray.logger.error("Unable to create directory for check-mark image at: {}", newFile);
+                    }
+                }
+
+                // get the largest font (based on the orig font) that can be used WITHOUT changing the size of the JMenuItem
+                Font fontForSpecificHeight = SwingUtil.getFontForSpecificHeight(jMenuItem.getFont(), iconSize);
+
+                BufferedImage img = HeavyCheckMark.draw(fontForSpecificHeight, color);
+                ImageIO.write(img, "png", newFile);
+            } catch (Exception e) {
+                SystemTray.logger.error("Error creating check-mark image.", e);
+            }
+        }
+
+        return newFile.getAbsolutePath();
     }
 }
