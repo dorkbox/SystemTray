@@ -1,45 +1,58 @@
 package dorkbox.systemTray.util;
 
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
+import java.io.File;
+
+import javax.imageio.ImageIO;
+
+import dorkbox.systemTray.SystemTray;
 
 public class HeavyCheckMark {
+    // this is a slight adjustment from the original size of the SVG image this came from, translated via Flamingo
+    private static final double SVG_ORIG_SIZE = 226.0D;
+
     // if you change how this mark is drawn, increment the version so that the cached file is correctly regenerated.
-    public static int VERSION = 1;
+    private static final int VERSION = 1;
 
+    /**
+     * This saves a scalable CheckMark to a correctly sized PNG file.
+     *
+     * @param color the color of the CheckMark
+     * @param iconSize the size of the icon (NOT the size of the image. The size of the image is iconSize + padding)
+     * @param padding the amount of padding to apply to all edges of the icon. 8 means that on all sides, there will be 8 pixels
+     *                  between the icon and the edge of the image.  Image size = icon size + (padding * 2)
+     */
     public static
-    BufferedImage draw(final Font fontForSpecificHeight, final Color color) {
-        // Because font metrics is based on a graphics context, we need to create a small, temporary image to determine the width and height
-        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = img.createGraphics();
-        g2d.setFont(fontForSpecificHeight);
+    String getFile(Color color, int iconSize, int padding) {
+        int totalPadding = padding * 2;
+        int imageSize = iconSize + totalPadding;
 
-        FontMetrics fm = g2d.getFontMetrics();
-        int width = fm.stringWidth("X");
-        int height = fm.getHeight();
-        g2d.dispose();
+        String name = imageSize + "_checkMark_" + HeavyCheckMark.VERSION + "_" + color.getRGB() + ".png";
+        final File newFile = new File(ImageResizeUtil.TEMP_DIR, name).getAbsoluteFile();
 
-        // make it square
-        if (width > height) {
-            height = width;
+        if (newFile.canRead() || newFile.length() == 0) {
+            try {
+                BufferedImage img = HeavyCheckMark.draw(color, imageSize, totalPadding);
+                ImageIO.write(img, "png", newFile);
+            } catch (Exception e) {
+                SystemTray.logger.error("Error creating check-mark image.", e);
+            }
         }
 
-        double adjustment = 1.5; // empirical testing, this is the best size adjustment
+        return newFile.getAbsolutePath();
+    }
 
-        int setSize = 256; // this is the size the shape is drawn at
-        int wantedSize = 16; // this is the target size, adjusted via 'adjustment'
-        double ratio = 1.0 / (setSize / wantedSize) * adjustment;
+    private static
+    BufferedImage draw(final Color color, int size, int padding) {
+        double scale = (size - padding) / SVG_ORIG_SIZE;
 
-        System.err.println("ratio " + ratio);
-
-        img = new BufferedImage(height, height, BufferedImage.TYPE_INT_ARGB);
-        g2d = img.createGraphics();
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
 
         g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -51,40 +64,42 @@ public class HeavyCheckMark {
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
         AffineTransform at = new AffineTransform();
-        double xAdjustment = (height / 2.0) - (HeavyCheckMark.width() * ratio) / 2.0;
-        double yAdjustment = -((((y() * adjustment) - y()) + ((setSize-height()) * ratio / 2.0)) * ratio);
+        double midPoint = (size / 2.0) - ((size - padding) / 2.0);
 
-        at.translate(xAdjustment, yAdjustment);
+        at.translate(midPoint, midPoint);
+        at.scale(scale, scale);
         g2d.setTransform(at);
 
 
         GeneralPath shape = new GeneralPath();
 
-        shape.moveTo(79.1719 * ratio, 320.7656 * ratio);
-        shape.quadTo(89.4375 * ratio, 299.25 * ratio, 103.6406 * ratio, 273.5156 * ratio);
-        shape.quadTo(117.8438 * ratio, 247.7812 * ratio, 135.7734 * ratio, 222.1875 * ratio);
-        shape.quadTo(153.7031 * ratio, 196.5938 * ratio, 161.9297 * ratio, 188.2266 * ratio);
-        shape.quadTo(170.1562 * ratio, 179.8594 * ratio, 175.8516 * ratio, 174.9375 * ratio);
-        shape.quadTo(181.5469 * ratio, 170.0156 * ratio, 196.0312 * ratio, 167.7656 * ratio);
-        shape.quadTo(210.5156 * ratio, 165.5156 * ratio, 217.9688 * ratio, 165.5156 * ratio);
-        shape.quadTo(222.8906 * ratio, 165.5156 * ratio, 226.0547 * ratio, 168.5391 * ratio);
-        shape.quadTo(229.2188 * ratio, 171.5625 * ratio, 229.2188 * ratio, 176.4844 * ratio);
-        shape.quadTo(229.2188 * ratio, 180.2812 * ratio, 227.3906 * ratio, 183.0234 * ratio);
-        shape.quadTo(225.5625 * ratio, 185.7656 * ratio, 219.7969 * ratio, 191.25 * ratio);
-        shape.quadTo(192.0938 * ratio, 216.7031 * ratio, 162.1406 * ratio, 263.8125 * ratio);
-        shape.quadTo(132.1875 * ratio, 310.9219 * ratio, 114.6094 * ratio, 355.0781 * ratio);
-        shape.quadTo(106.3125 * ratio, 375.3281 * ratio, 103.9219 * ratio, 378.8438 * ratio);
-        shape.quadTo(101.5312 * ratio, 382.3594 * ratio, 96.6094 * ratio, 385.3828 * ratio);
-        shape.quadTo(91.6875 * ratio, 388.4062 * ratio, 76.3594 * ratio, 388.4062 * ratio);
-        shape.quadTo(64.2656 * ratio, 388.4062 * ratio, 60.8906 * ratio, 386.9297 * ratio);
-        shape.quadTo(57.5156 * ratio, 385.4531 * ratio, 55.6875 * ratio, 383.7656 * ratio);
-        shape.quadTo(53.8594 * ratio, 382.0781 * ratio, 45.2812 * ratio, 369.1406 * ratio);
-        shape.quadTo(36.4219 * ratio, 355.5 * ratio, 19.5469 * ratio, 336.9375 * ratio);
-        shape.quadTo(9.8438 * ratio, 326.25 * ratio, 9.8438 * ratio, 319.0781 * ratio);
-        shape.quadTo(9.8438 * ratio, 308.6719 * ratio, 20.8828 * ratio, 300.9375 * ratio);
-        shape.quadTo(31.9219 * ratio, 293.2031 * ratio, 40.3594 * ratio, 293.2031 * ratio);
-        shape.quadTo(49.6406 * ratio, 293.2031 * ratio, 60.1875 * ratio, 300.7266 * ratio);
-        shape.quadTo(70.7344 * ratio, 308.25 * ratio, 79.1719 * ratio, 320.7656 * ratio);
+        shape.moveTo(70.98225, 156.26561);
+        shape.quadTo(81.24785, 134.75002, 95.45094, 109.01561);
+        shape.quadTo(109.654144, 83.28121, 127.58374, 57.68751);
+        shape.quadTo(145.51344, 32.09381, 153.74004, 23.726612);
+        shape.quadTo(161.96654, 15.359412, 167.66194, 10.437512);
+        shape.quadTo(173.35724, 5.5156126, 187.84154, 3.2656126);
+        shape.quadTo(202.32594, 1.0156126, 209.77914, 1.0156126);
+        shape.quadTo(214.70094, 1.0156126, 217.86505, 4.0391126);
+        shape.quadTo(221.02914, 7.0625124, 221.02914, 11.984413);
+        shape.quadTo(221.02914, 15.781213, 219.20094, 18.523413);
+        shape.quadTo(217.37285, 21.265614, 211.60724, 26.750011);
+        shape.quadTo(183.90414, 52.20311, 153.95094, 99.312515);
+        shape.quadTo(123.99784, 146.42192, 106.41974, 190.57812);
+        shape.quadTo(98.12284, 210.82812, 95.73224, 214.34383);
+        shape.quadTo(93.34154, 217.85942, 88.41974, 220.88283);
+        shape.quadTo(83.49784, 223.90623, 68.16974, 223.90623);
+        shape.quadTo(56.07594, 223.90623, 52.70094, 222.42973);
+        shape.quadTo(49.32594, 220.95314, 47.49784, 219.26564);
+        shape.quadTo(45.669743, 217.57814, 37.09154, 204.64064);
+        shape.quadTo(28.232243, 191.00005, 11.357241, 172.43755);
+        shape.quadTo(1.6541405, 161.75005, 1.6541405, 154.57814);
+        shape.quadTo(1.6541405, 144.17194, 12.69314, 136.43755);
+        shape.quadTo(23.732239, 128.70314, 32.16974, 128.70314);
+        shape.quadTo(41.45094, 128.70314, 51.99784, 136.22664);
+        shape.quadTo(62.54474, 143.75005, 70.98224, 156.26564);
+        shape.closePath();
+
         shape.closePath();
 
         g2d.setPaint(color);
@@ -92,34 +107,6 @@ public class HeavyCheckMark {
         g2d.dispose();
 
         return img;
-    }
-
-    /**
-     * Returns the width of the checkmark
-     */
-    private static int width() {
-        return 219;
-    }
-
-    /**
-     * Returns the height of the checkmark
-     */
-    private static int height() {
-        return 222;
-    }
-
-    /**
-     * Returns the X of the checkmark
-     */
-    private static int x() {
-        return 10;
-    }
-
-    /**
-     * Returns the Y of the checkmark
-     */
-    private static int y() {
-        return 166;
     }
 }
 
