@@ -1,10 +1,14 @@
 package dorkbox.systemTray.jna.linux;
 
+import static dorkbox.systemTray.util.CssParser.CssNode;
+import static dorkbox.systemTray.util.CssParser.getAttributeFromSections;
+import static dorkbox.systemTray.util.CssParser.getSections;
+import static dorkbox.systemTray.util.CssParser.injectAdditionalCss;
+import static dorkbox.systemTray.util.CssParser.removeComments;
+
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,6 +25,8 @@ import dorkbox.util.FileUtil;
  * as the text.
  * <p>
  * Additionally, CUSTOM, user theme modifications in ~/.gtkrc-2.0 (for example), will be ignored.
+ *
+ * Also note: not all themes have CSS or Theme files!!!
  */
 @SuppressWarnings("deprecation")
 public
@@ -29,11 +35,96 @@ class GtkTheme {
     private static final boolean DEBUG_SHOW_CSS = false;
     private static final boolean DEBUG_VERBOSE = false;
 
-    // size of GTK checkbox
-    //
-    /*
+    // CSS nodes that we care about, in oder of preference from left to right.
+    private static final
+    String[] cssNodes = new String[] {"GtkPopover", "unity-panel", ".unity-panel", "gnome-panel-menu-bar", ".gnome-panel-menu-bar",
+                                   "PanelMenuBar", ".menuitem", ".entry", "*"};
 
-     -GtkCheckMenuItem-indicator-size: 14;
+    /**
+     * Gets the text height of menu items (in the system tray menu), as specified by CSS.
+     * NOTE: not all themes have CSS
+     */
+    public static
+    int getTextHeight() {
+        String css = getCss();
+        if (css != null) {
+            System.err.println(css);
+            // collect a list of all of the sections that have what we are interested in.
+            List<CssNode> sections = getSections(css, cssNodes, null);
+            String size = getAttributeFromSections(sections, cssNodes, "MenuItem-indicator-size", false);
+//            CheckButton-indicator-size
+            int i = stripNonDigits(size);
+            if (i != 0) {
+                return i;
+            }
+        }
+
+        // sane default
+        return 14;
+    }
+
+    /**
+     * Gets the text padding of menu items (in the system tray menu), as specified by CSS. This is the padding value for all sides!
+     * NOTE: not all themes have CSS
+     */
+    public static
+    int getTextPadding() {
+        /*
+        Maybe he best way is to get the element size, then subtract the text size.
+
+        The margin properties set the size of the white space outside the border.
+
+        we care about top and bottom padding
+
+        padding:10px 5px 15px 20px;
+top padding is 10px
+right padding is 5px
+bottom padding is 15px
+left padding is 20px
+
+padding:10px 5px 15px;
+top padding is 10px
+right and left padding are 5px
+bottom padding is 15px
+
+padding:10px 5px;
+top and bottom padding are 10px
+right and left padding are 5px
+
+padding:10px;
+all four paddings are 10px
+
+
+        GtkColorButton.button {
+            padding: 2px;
+        }
+
+
+        GtkPopover {
+    margin: 10px;
+    padding: 2px;
+    border-radius: 3px;
+    border-color: shade(@menu_bg_color, 0.8);
+    border-width: 1px;
+    border-style: solid;
+    background-clip: border-box;
+    background-image: none;
+    background-color: @menu_bg_color;
+    color: @menu_fg_color;
+    box-shadow: 0 2px 3px alpha(black, 0.5);
+}
+
+.menubar.menuitem,
+.menubar .menuitem {
+    padding: 3px 8px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+    background-color: transparent;
+    background-image: none;
+    color: @menubar_fg_color;
+}
+
 
 .entry {
     padding: 3px;
@@ -53,58 +144,66 @@ class GtkTheme {
     color: @theme_text_color;
 }
 
+.button {
+    -GtkWidget-focus-padding: 1;
+    -GtkWidget-focus-line-width: 0;
 
-.menuitem .entry {
-    border-color: shade(@menu_bg_color, 0.7);
-    background-color: @menu_bg_color;
-    background-image: none;
-    color: @menu_fg_color;
-}
-
-GtkPopover {
-    margin: 10px;
-    padding: 2px;
-    border-radius: 3px;
-    border-color: shade(@menu_bg_color, 0.8);
+    padding: 2px 4px;
     border-width: 1px;
+    border-radius: 3px;
     border-style: solid;
-    background-clip: border-box;
-    background-image: none;
-    background-color: @menu_bg_color;
-    color: @menu_fg_color;
-    box-shadow: 0 2px 3px alpha(black, 0.5);
+    border-top-color: shade(@theme_bg_color, 0.8);
+    border-right-color: shade(@theme_bg_color, 0.72);
+    border-left-color: shade(@theme_bg_color, 0.72);
+    border-bottom-color: shade(@theme_bg_color, 0.7);
+    background-image: linear-gradient(to bottom,
+                                      shade(shade(@theme_bg_color, 1.02), 1.05),
+                                      shade(shade(@theme_bg_color, 1.02), 0.97)
+                                      );
+
+    color: @theme_fg_color;
 }
 
-GtkPopover .entry {
-    border-color: mix(@menu_bg_color, @menu_fg_color, 0.12);
-    background-color: @menu_bg_color;
-    background-image: none;
-    color: @menu_fg_color;
-}
 
-     */
-    public static
-    int getTextHeight() {
+         */
+
+
         String css = getCss();
         if (css != null) {
+            // collect a list of all of the sections that have what we are interested in.
+            List<CssNode> sections = getSections(css, cssNodes, null);
+            String padding = getAttributeFromSections(sections, cssNodes, "padding", true);
+            String border = getAttributeFromSections(sections, cssNodes, "border-width", true);
 
+            return stripNonDigits(padding) + stripNonDigits(border);
         }
 
-
-
-        return 9;
+        return 0;
     }
 
 
+    /**
+     * Gets the system tray indicator size as specified by CSS.
+     */
     public static
-    int getTextPadding() {
-        return 9;
+    int getIndicatorSize() {
+        String css = getCss();
+        if (css != null) {
+            String[] cssNodes = new String[] {"GdMainIconView", ".content-view"};
+
+            // collect a list of all of the sections that have what we are interested in.
+            List<CssNode> sections = getSections(css, cssNodes, null);
+            String indicatorSize = getAttributeFromSections(sections, cssNodes, "-GdMainIconView-icon-size", true);
+
+            int i = stripNonDigits(indicatorSize);
+            if (i != 0) {
+                return i;
+            }
+        }
+
+        // sane default
+        return 40;
     }
-
-
-
-
-
 
     /**
      * @return the widget color of text for the current theme, or black. It is important that this is called AFTER GTK has been initialized.
@@ -274,65 +373,66 @@ GtkPopover .entry {
                 System.err.println(css);
             }
 
-            // in order from left to right, try to get the color value
-            String[] nodes = new String[] {"GtkPopover", "unity-panel", "gnome-panel-menu-bar", "PanelMenuBar", ".menuitem", ".entry"};
-
-
             // collect a list of all of the sections that have what we are interested in.
-            List<CssNode> sections = getSections(css, nodes);
-
-            //
-            String colorString = getAttributeFromSections(sections, nodes, "color");
+            List<CssNode> sections = getSections(css, cssNodes, null);
+            String colorString = getAttributeFromSections(sections, cssNodes, "color", true);
 
             // hopefully we found it.
             if (colorString != null) {
                 if (colorString.startsWith("@")) {
                     // it's a color definition
-                    colorString = colorString.substring(1);
+                    String colorSubString = getColorDefinition(css, colorString.substring(1));
 
-                    // have to setup the "define color" section
-                    String colorDefine = "@define-color";
-                    int start = css.indexOf(colorDefine);
-                    int end = css.lastIndexOf(colorDefine);
-                    end = css.lastIndexOf(";", end) + 1; // include the ;
-                    String colorDefines = css.substring(start, end);
-
-                    if (DEBUG_VERBOSE) {
-                        System.err.println("+++++++++++++++++++++++");
-                        System.err.println(colorDefines);
-                        System.err.println("+++++++++++++++++++++++");
-                    }
-
-                    // since it's a color definition, it will start a very specific way.
-                    String newColorString = colorDefine + " " + colorString;
-
-                    int i = 0;
-                    while (i != -1) {
-                        i = colorDefines.indexOf(newColorString);
-
-                        if (i >= 0) {
-                            try {
-                                int startIndex = i + newColorString.length();
-                                int endIndex = colorDefines.indexOf(";", i);
-
-                                String colorSubString = colorDefines.substring(startIndex, endIndex)
-                                                                    .trim();
-
-                                if (colorSubString.startsWith("@")) {
-                                    // have to recursively get the defined color
-                                    newColorString = colorDefine + " " + colorSubString.substring(1);
-                                    i = 0;
-                                    continue;
-                                }
-
-                                return parseColor(colorSubString);
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    }
+                    return parseColor(colorSubString);
                 }
                 else {
                     return parseColor(colorString);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static
+    String getColorDefinition(final String css, final String colorString) {
+        // have to setup the "define color" section
+        String colorDefine = "@define-color";
+        int start = css.indexOf(colorDefine);
+        int end = css.lastIndexOf(colorDefine);
+        end = css.lastIndexOf(";", end) + 1; // include the ;
+        String colorDefines = css.substring(start, end);
+
+        if (DEBUG_VERBOSE) {
+            System.err.println("+++++++++++++++++++++++");
+            System.err.println(colorDefines);
+            System.err.println("+++++++++++++++++++++++");
+        }
+
+        // since it's a color definition, it will start a very specific way.
+        String newColorString = colorDefine + " " + colorString;
+
+        int i = 0;
+        while (i != -1) {
+            i = colorDefines.indexOf(newColorString);
+
+            if (i >= 0) {
+                try {
+                    int startIndex = i + newColorString.length();
+                    int endIndex = colorDefines.indexOf(";", i);
+
+                    String colorSubString = colorDefines.substring(startIndex, endIndex)
+                                                        .trim();
+
+                    if (colorSubString.startsWith("@")) {
+                        // have to recursively get the defined color
+                        newColorString = colorDefine + " " + colorSubString.substring(1);
+                        i = 0;
+                        continue;
+                    }
+
+                    return colorSubString;
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -872,286 +972,26 @@ GtkPopover .entry {
         return themeName;
     }
 
-    private static class CssNode {
-        String label;
-        List<CssAttribute> attributes;
-
-        CssNode(final String label, final List<CssAttribute> attributes) {
-            this.label = label;
-            this.attributes = attributes;
+    // have to strip anything that is not a number.
+    public static
+    int stripNonDigits(final String value) {
+        if (value == null || value.isEmpty()) {
+            return 0;
         }
 
-        @Override
-        public
-        String toString() {
-            return label + ' ' + Arrays.toString(attributes.toArray());
-        }
-    }
+        int numberIndex = 0;
+        int length = value.length();
 
-    private static class CssAttribute {
-        String key;
-        String value;
-
-        public
-        CssAttribute(final String key, final String value) {
-            this.key = key;
-            this.value = value;
-        }
-    }
-
-    /**
-     * Gets the sections of text, of the specified CSS nodes.
-     */
-    private static
-    List<CssNode> getSections(String css, String[] nodes) {
-        // collect a list of all of the sections that have what we are interested in
-        List<CssNode> sections = new ArrayList<CssNode>();
-
-        // now check the css nodes to see if they contain a combination of what we are looking for.
-        colorCheck:
-        for (String node : nodes) {
-            int i = 0;
-            while (i != -1) {
-                i = css.indexOf(node, i);
-                if (i > -1) {
-                    int endOfNodeLabels = css.indexOf("{", i);
-                    int endOfSection = css.indexOf("}", endOfNodeLabels + 1) + 1;
-                    int endOfSectionTest = css.indexOf("}", i) + 1;
-
-                    // this makes sure that weird parsing errors don't happen as a result of node keywords appearing in node sections
-                    if (endOfSection != endOfSectionTest) {
-                        // advance the index
-                        i = endOfSection;
-                        continue;
-                    }
-
-                    String nodeLabel = css.substring(i, endOfNodeLabels);
-
-                    List<CssAttribute> attributes = new ArrayList<CssAttribute>();
-
-                    // split the section into an arrayList, one per item. Split by attribute element
-                    String nodeSection = css.substring(endOfNodeLabels, endOfSection);
-                    int start = nodeSection.indexOf('{')+1;
-                    while (start != -1) {
-                        int end = nodeSection.indexOf(';', start);
-                        if (end != -1) {
-                            int seperator = nodeSection.indexOf(':', start);
-
-                            if (seperator < end) {
-                                String key = nodeSection.substring(start, seperator).trim();
-                                String value = nodeSection.substring(seperator+1, end).trim();
-
-                                attributes.add(new CssAttribute(key, value));
-                            }
-                            start = end+1;
-                        } else {
-                            break;
-                        }
-                    }
-
-                    sections.add(new CssNode(nodeLabel, attributes));
-
-                    // advance the index
-                    i = endOfSection;
-                }
-            }
+        while (numberIndex < length && Character.isDigit(value.charAt(numberIndex))) {
+            numberIndex++;
         }
 
-        if (DEBUG_VERBOSE) {
-            for (CssNode section : sections) {
-                System.err.println("--------------");
-                System.err.println(section);
-                System.err.println("--------------");
-            }
+        String substring = value.substring(0, numberIndex);
+        try {
+            return Integer.parseInt(substring);
+        } catch (Exception ignored) {
         }
 
-        return sections;
-    }
-
-    // find an attribute name from the list of sections. The incoming sections will all be related to one of the nodes, we just have to
-    // prioritize them on WHO has the attribute we are looking for.
-    private static
-    String getAttributeFromSections(final List<CssNode> sections, final String[] nodes, final String attributeName) {
-        // a list of sections that contains the exact attribute we are looking for
-        List<CssNode> sectionsWithAttribute = new ArrayList<CssNode>();
-
-
-        for (CssNode cssNode : sections) {
-            for (CssAttribute attribute : cssNode.attributes) {
-                if (attribute.key.equals(attributeName)) {
-                    sectionsWithAttribute.add(cssNode);
-                }
-            }
-        }
-
-        // if we only have 1, then return that one
-        if (sectionsWithAttribute.size() == 1) {
-            CssNode cssNode = sectionsWithAttribute.get(0);
-            for (CssAttribute attribute : cssNode.attributes) {
-                if (attribute.key.equals(attributeName)) {
-                    return attribute.value;
-                }
-            }
-
-            return null;
-        }
-
-
-        // now we need to narrow down which sections have the attribute.
-        // This is because a section can override another, and we want to reflect that info.
-        // If a section has more than one node as it's label, then it has a higher priority, and overrides ones that only have a single label.
-        // IE:  "GtkPopover .entry"  overrides   ".entry"
-
-
-        int maxValue = -1;
-        CssNode maxNode = null; // guaranteed to be non-null
-
-        // not the CLEANEST way to do this, but it works by only choosing css nodes that are important
-        for (CssNode cssNode : sectionsWithAttribute) {
-            int count = 0;
-            for (String node : nodes) {
-                String label = cssNode.label;
-                boolean startsWith = label.startsWith(node);
-                boolean contains = label.contains(node);
-
-                if (startsWith) {
-                    count+=1;
-                } else if (contains) {
-                    // if it has MORE than just one node label (that we care about), it's more important that one that is by itself.
-                    count+=2;
-                }
-            }
-
-            if (count > maxValue) {
-                maxValue = count;
-                maxNode = cssNode;
-            }
-        }
-
-
-        // get the attribute from the highest scoring node
-        //noinspection ConstantConditions
-        for (CssAttribute attribute : maxNode.attributes) {
-            if (attribute.key.equals(attributeName)) {
-                return attribute.value;
-            }
-        }
-
-        return null;
-    }
-
-
-    @SuppressWarnings("Duplicates")
-    private static
-    void removeComments(final StringBuilder stringBuilder) {
-        // remove block comments, /* .... */  This can span multiple lines
-        int start = 0;
-        while (start != -1) {
-            // get the start of a comment
-            start = stringBuilder.indexOf("/*", start);
-
-            if (start != -1) {
-                // get the end of a comment
-                int end = stringBuilder.indexOf("*/", start);
-                if (end != -1) {
-                    stringBuilder.delete(start, end + 2); // 2 is the size of */
-
-                    // sometimes when the comments are removed, there is a trailing newline. remove that too. Works for windows too
-                    if (stringBuilder.charAt(start) == '\n') {
-                        stringBuilder.delete(start, start + 1);
-                    }
-                    else {
-                        start++;
-                    }
-                }
-            }
-        }
-
-        // now remove comments that start with // (line MUST start with //)
-        start = 0;
-        while (start != -1) {
-            // get the start of a comment
-            start = stringBuilder.indexOf("//", start);
-
-            if (start != -1) {
-                // the comment is at the start of a line
-                if (start == 0 || stringBuilder.charAt(start-1) == '\n') {
-                    // get the end of the comment (the end of the line)
-                    int end = stringBuilder.indexOf("\n", start);
-                    if (end != -1) {
-                        stringBuilder.delete(start, end + 1); // 1 is the size of \n
-                    }
-                }
-
-                // sometimes when the comments are removed, there is a trailing newline. remove that too. Works for windows too
-                if (stringBuilder.charAt(start) == '\n') {
-                    stringBuilder.delete(start, start + 1);
-                }
-                else if (start > 0){
-                    start++;
-                }
-            }
-        }
-
-        // now remove comments that start with # (line MUST start with #)
-        start = 0;
-        while (start != -1) {
-            // get the start of a comment
-            start = stringBuilder.indexOf("#", start);
-
-            if (start != -1) {
-                // the comment is at the start of a line
-                if (start == 0 || stringBuilder.charAt(start-1) == '\n') {
-                    // get the end of the comment (the end of the line)
-                    int end = stringBuilder.indexOf("\n", start);
-                    if (end != -1) {
-                        stringBuilder.delete(start, end + 1); // 1 is the size of \n
-                    }
-                }
-
-                // sometimes when the comments are removed, there is a trailing newline. remove that too. Works for windows too
-                if (stringBuilder.charAt(start) == '\n') {
-                    stringBuilder.delete(start, start + 1);
-                }
-                else if (start > 0){
-                    start++;
-                }
-            }
-        }
-    }
-
-    private static
-    void injectAdditionalCss(final File parent, final StringBuilder stringBuilder) {
-        // not the BEST way to do this because duplicates are not merged at all.
-
-        int start = 0;
-        while (start != -1) {
-            // now check if it says: @import url("gtk-main.css")
-            start = stringBuilder.indexOf("@import url(", start);
-
-            if (start != -1) {
-                int end = stringBuilder.indexOf("\")", start);
-                if (end != -1) {
-                    String url = stringBuilder.substring(start + 13, end);
-                    stringBuilder.delete(start, end + 2); // 2 is the size of ")
-
-                    if (DEBUG_VERBOSE) {
-                        System.err.println("import url: " + url);
-                    }
-                    try {
-                        // now inject the new file where the import command was.
-                        File file = new File(parent, url);
-                        StringBuilder stringBuilder2 = new StringBuilder((int) (file.length()));
-                        FileUtil.read(file, stringBuilder2);
-
-                        removeComments(stringBuilder2);
-
-                        stringBuilder.insert(start, stringBuilder2);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
+        return 0;
     }
 }
