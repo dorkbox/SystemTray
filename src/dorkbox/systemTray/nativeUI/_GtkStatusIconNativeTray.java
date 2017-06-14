@@ -35,7 +35,7 @@ import dorkbox.systemTray.jna.linux.Gtk;
  * This is the "old" way to do it, and does not work with some newer desktop environments.
  */
 @SuppressWarnings("Duplicates")
-public
+public final
 class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     private volatile Pointer trayIcon;
 
@@ -55,6 +55,8 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     private volatile boolean visible = true;
     private volatile File imageFile;
 
+    private final GtkMenu gtkMenu;
+
     // called on the EDT
     public
     _GtkStatusIconNativeTray(final SystemTray systemTray) {
@@ -63,7 +65,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
         Gtk.startGui();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final GtkMenu gtkMenu = new GtkMenu() {
+        gtkMenu = new GtkMenu() {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
@@ -215,7 +217,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     }
 
     @Override
-    public final
+    public
     boolean hasImage() {
         return imageFile != null;
     }

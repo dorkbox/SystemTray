@@ -41,7 +41,7 @@ import dorkbox.util.SwingUtil;
  * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open. MacOS does not have this problem.
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
-public
+public final
 class _AwtTray extends Tray implements NativeUI {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;

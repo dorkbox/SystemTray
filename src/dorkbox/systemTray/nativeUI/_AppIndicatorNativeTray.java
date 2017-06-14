@@ -76,7 +76,7 @@ import dorkbox.systemTray.util.ImageResizeUtil;
  * http://bazaar.launchpad.net/~ubuntu-desktop/ido/gtk3/files
  */
 @SuppressWarnings("Duplicates")
-public
+public final
 class _AppIndicatorNativeTray extends Tray implements NativeUI {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
@@ -239,7 +239,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
     }
 
     @Override
-    public final
+    public
     boolean hasImage() {
         return imageFile != null;
     }
