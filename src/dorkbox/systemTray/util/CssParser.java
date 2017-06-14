@@ -403,15 +403,17 @@ class CssParser {
 
         // get the attribute from the highest scoring node
         //noinspection ConstantConditions
-        for (CssAttribute attribute : maxNode.attributes) {
-            if (equalsOrContained) {
-                if (attribute.key.equals(attributeName)) {
-                    return attribute.value;
+        if (maxNode != null) {
+            for (CssAttribute attribute : maxNode.attributes) {
+                if (equalsOrContained) {
+                    if (attribute.key.equals(attributeName)) {
+                        return attribute.value;
+                    }
                 }
-            }
-            else {
-                if (attribute.key.contains(attributeName)) {
-                    return attribute.value;
+                else {
+                    if (attribute.key.contains(attributeName)) {
+                        return attribute.value;
+                    }
                 }
             }
         }
