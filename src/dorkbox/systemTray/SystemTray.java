@@ -20,11 +20,9 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,9 +33,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.java.swing.plaf.gtk.GTKLookAndFeel;
 
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
@@ -47,8 +48,8 @@ import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
 import dorkbox.systemTray.swingUI.SwingUIFactory;
 import dorkbox.systemTray.swingUI._SwingTray;
-import dorkbox.systemTray.util.ImageUtils;
 import dorkbox.systemTray.util.JavaFX;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.Swt;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.util.CacheUtil;
@@ -57,15 +58,15 @@ import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.process.ShellProcessBuilder;
+import sun.security.action.GetPropertyAction;
 
 
 /**
- * Professional, cross-platform **SystemTray**, **AWT**, **GtkStatusIcon**, and **AppIndicator** support for java applications.
+ * Professional, cross-platform **SystemTray**, **AWT**, **GtkStatusIcon**, and **AppIndicator** support for Java applications.
  * <p>
  * This library provides **OS native** menus and **Swing** menus.
  * <ul>
- *     <li> Swing menus are the default prefered type becuase they offer more features (images attached to menu entries, text styling, etc) and
+ *     <li> Swing menus are the default preferred type because they offer more features (images attached to menu entries, text styling, etc) and
  * a consistent look & feel across all platforms.
  *     </li>
  *     <li> Native menus, should one want them, follow the specified look and feel of that OS, and thus are limited by what is supported on the
@@ -90,33 +91,12 @@ class SystemTray {
     @Property
     /** Enables auto-detection for the system tray. This should be mostly successful.
      * <p>
-     * Auto-detection will use DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE as a 'base-line' for determining what size to use.
+     * Auto-detection will use DEFAULT_TRAY_SIZE as a 'base-line' for determining what size to use.
      * <p>
      * If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_TRAY_SIZE or
      * DEFAULT_MENU_SIZE instead
      */
-    public static boolean AUTO_TRAY_SIZE = true;
-
-    @Property
-    /**
-     * Size of the tray, so that the icon can be properly scaled based on OS.
-     * <p>
-     * This value can be automatically scaled based on the the platform and scaling-factor.
-     * - Windows will automatically scale up/down.
-     * - GtkStatusIcon will usually automatically scale up/down
-     * - AppIndicators will not always automatically scale (it will sometimes display whatever is specified here)
-     * <p>
-     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
-     */
-    public static int DEFAULT_TRAY_SIZE = 16;
-
-    @Property
-    /**
-     * Size of the menu entries, so that the icon can be properly scaled based on OS.
-     * <p>
-     * You will experience WEIRD graphical glitches if this is NOT a power of 2.
-     */
-    public static int DEFAULT_MENU_SIZE = 16;
+    public static boolean AUTO_SIZE = true;
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
@@ -128,7 +108,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
+    public static TrayType FORCE_TRAY_TYPE = TrayType.Swing;
 
     @Property
     /**
@@ -149,7 +129,7 @@ class SystemTray {
 
     @Property
     /**
-     * Allows the developer to provide a custom look and feel for the Swing UI, if defined. See the test example for specific use.
+     * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
      */
     public static SwingUIFactory SWING_UI = null;
 
@@ -157,7 +137,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = true;
 
 
     private static volatile SystemTray systemTray = null;
@@ -201,6 +181,7 @@ class SystemTray {
             case Swing: return tray == _SwingTray.class;
             case AWT: return tray == _AwtTray.class;
         }
+
         return false;
     }
 
@@ -301,8 +282,47 @@ class SystemTray {
             }
         }
         else if (OS.isLinux() || OS.isUnix()) {
-            // kablooie if SWT/JavaFX is not configured in a way that works with us.
+            // kablooie if SWT/JavaFX or Swing is not configured in a way that works with us.
             if (FORCE_TRAY_TYPE != TrayType.Swing) {
+                // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux, this will cause GTK2 to get loaded first,
+                // which will cause conflicts if one tries to use GTK3
+                if (!FORCE_GTK2 && !isJavaFxLoaded && !isSwtLoaded) {
+
+                    String currentUI = UIManager.getLookAndFeel()
+                                                .getClass()
+                                                .getName();
+
+                    boolean mustForceGtk2 = false;
+
+                    if (currentUI.equals(GTKLookAndFeel.class.getCanonicalName())) {
+                        // this means our look and feel is the GTK look and feel... THIS CREATES PROBLEMS!
+
+                        // THIS IS NOT DOCUMENTED ANYWHERE...
+                        String swingGtkVersion = java.security.AccessController.doPrivileged(new GetPropertyAction("swing.gtk.version"));
+                        mustForceGtk2 = swingGtkVersion == null || swingGtkVersion.startsWith("2");
+                    }
+
+                    if (mustForceGtk2) {
+                        // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
+                        // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
+
+                        if (AUTO_FIX_INCONSISTENCIES) {
+                            // we must use GTK2 because Swing is configured to use GTK2
+                            logger.warn("Forcing GTK2 because the Swing UIManager is GTK2");
+                            FORCE_GTK2 = true;
+                        } else {
+                            logger.error("Unable to use the SystemTray when the Swing UIManager is configured to use the native L&F, which " +
+                                         "uses GTK2. This is incompatible with GTK3.   " +
+                                         "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
+
+                            systemTrayMenu = null;
+                            systemTray = null;
+                            return;
+                        }
+                    }
+                }
+
+
                 if (isSwtLoaded) {
                     // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                     // System.setProperty("SWT_GTK3", "0");
@@ -336,8 +356,8 @@ class SystemTray {
                     // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
                     // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
                     // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
-                    boolean isJFX_GTK3 = System.getProperty("jdk.gtk.version", "2").equals("3");
-                    if (isJFX_GTK3 && FORCE_GTK2) {
+                    boolean isJava_GTK3_Possible = OS.javaVersion >= 9 && System.getProperty("jdk.gtk.version", "2").equals("3");
+                    if (isJava_GTK3_Possible && FORCE_GTK2) {
                         // if we are java9, then we can change it -- otherwise we cannot.
                         if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
                             logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
@@ -353,7 +373,7 @@ class SystemTray {
                             systemTray = null;
                             return;
                         }
-                    } else if (!isJFX_GTK3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                    } else if (!isJava_GTK3_Possible && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                         // we must use GTK2, because JavaFX is GTK2
                         logger.warn("Forcing GTK2 because JavaFX is GTK2");
                         FORCE_GTK2 = true;
@@ -374,10 +394,15 @@ class SystemTray {
             logger.debug("{} {} {}", jvmVendor, jvmName, jvmVersion);
 
 
-            logger.debug("Is AutoTraySize? {}", AUTO_TRAY_SIZE);
+            logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
             logger.debug("Is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("Is SWT detected? {}", isSwtLoaded);
-            logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
+            if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
+                logger.debug("Auto-detecting tray type");
+            }
+            else {
+                logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
+            }
             logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
         }
 
@@ -388,9 +413,6 @@ class SystemTray {
 
         // this has to happen BEFORE any sort of swing system tray stuff is accessed
         if (OS.isWindows()) {
-            // windows is funky, and is hardcoded to 16x16. We fix that.
-            SystemTrayFixes.fixWindows();
-
             try {
                 trayType = selectType(TrayType.Swing);
             } catch (Throwable e) {
@@ -421,9 +443,10 @@ class SystemTray {
 
             if (SystemTray.FORCE_TRAY_TYPE == TrayType.Swing && isSwtLoaded) {
                 if (AUTO_FIX_INCONSISTENCIES) {
-                    logger.warn("Forcing AWT because SWT cannot load Swing type.");
+                    logger.warn("Forcing AWT because SWT cannot load Swing tray type.");
                     trayType = selectTypeQuietly(TrayType.AWT);
-                } else {
+                }
+                else {
                     logger.error("Cannot initialize Swing type if SWT is loaded.");
 
                     systemTrayMenu = null;
@@ -432,123 +455,129 @@ class SystemTray {
                 }
             }
 
+            // Ubuntu UNITY has issues with GtkStatusIcon (it won't work...)
+            if (isTrayType(trayType, TrayType.GtkStatusIcon) && OSUtil.DesktopEnv.get() == OSUtil.DesktopEnv.Env.Unity && OSUtil.Linux.isUbuntu()) {
+                if (AUTO_FIX_INCONSISTENCIES) {
+                    // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
+                    logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
+                    SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
+                    trayType = selectTypeQuietly(TrayType.AppIndicator);
+                }
+                else {
+                    logger.error("Unable to use the GtkStatusIcons when running on Ubuntu with the Unity display environment, and thus" +
+                                 " the SystemTray will not work. " +
+                                 "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
+
+                    systemTrayMenu = null;
+                    systemTray = null;
+                    return;
+                }
+            }
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-
-            // if we are running as ROOT, we *** WILL NOT *** have access to  'XDG_CURRENT_DESKTOP'
-            //   *unless env's are preserved, but they are not guaranteed to be
-            // see:  http://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
-            String XDG = System.getenv("XDG_CURRENT_DESKTOP");
-            if (XDG == null) {
-                // maybe we are running as root???
-                XDG = "unknown"; // try to autodetect if we should use app indicator or gtkstatusicon
-            }
-
-
-            // BLEH. if gnome-shell is running, IT'S REALLY GNOME!
-            // we must ALWAYS do this check!!
-            boolean isReallyGnome = OSUtil.DesktopEnv.isGnome();
-
-            if (isReallyGnome) {
-                if (DEBUG) {
-                    logger.error("Auto-detected that gnome-shell is running");
-                }
-                XDG = "gnome";
-            }
-
-            if (DEBUG) {
-                logger.debug("Currently using the '{}' desktop", XDG);
-            }
-
             if (trayType == null) {
-                // Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
-                if ("unity".equalsIgnoreCase(XDG)) {
-                    trayType = selectTypeQuietly(TrayType.AppIndicator);
+                OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
+
+                if (DEBUG) {
+                    logger.debug("Currently using the '{}' desktop environment", de);
                 }
-                else if ("xfce".equalsIgnoreCase(XDG)) {
-                    // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
-                    // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
-                    // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
 
-                    // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
-                    trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                }
-                else if ("lxde".equalsIgnoreCase(XDG)) {
-                    trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                }
-                else if ("kde".equalsIgnoreCase(XDG)) {
-                    if (OSUtil.Linux.isFedora()) {
-                        // Fedora KDE requires GtkStatusIcon
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                    } else {
-                        // kde (at least, plasma 5.5.6) requires appindicator
-                        trayType = selectTypeQuietly(TrayType.AppIndicator);
-                    }
+                switch (de) {
+                    case Gnome: {
+                        // check other DE / OS combos that are based on gnome
+                        String GDM = System.getenv("GDMSESSION");
 
-                    // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
-                }
-                else if ("pantheon".equalsIgnoreCase(XDG)) {
-                    // elementaryOS. It only supports appindicator (not gtkstatusicon)
-                    // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
+                        if (DEBUG) {
+                            logger.debug("Currently using the '{}' session type", GDM);
+                        }
 
-                    // ElementaryOS shows the checkbox on the right, everyone else is on the left.
-                    // With eOS, we CANNOT show the spacer image. It does not work.
-                    trayType = selectTypeQuietly(TrayType.AppIndicator);
-                }
-                else if ("gnome".equalsIgnoreCase(XDG)) {
-                    // check other DE
-                    String GDM = System.getenv("GDMSESSION");
+                        if ("gnome".equalsIgnoreCase(GDM)) {
+                            Tray.usingGnome = true;
 
-                    if (DEBUG) {
-                        logger.debug("Currently using the '{}' session type", GDM);
-                    }
+                            // are we fedora? If so, what version?
+                            // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
+                            if (OSUtil.Linux.isFedora()) {
+                                if (DEBUG) {
+                                    logger.debug("Running Fedora");
+                                }
 
-                    if ("gnome".equalsIgnoreCase(GDM)) {
-                        Tray.usingGnome = true;
+                                // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
+                                trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                            }
+                            else if (OSUtil.Linux.isUbuntu()) {
+                                // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
+                                trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                            }
+                            else if (OSUtil.Unix.isFreeBSD()) {
+                                trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                            }
+                            else {
+                                // arch likely will have problems unless the correct/appropriate libraries are installed.
+                                trayType = selectTypeQuietly(TrayType.AppIndicator);
+                            }
+                        }
+                        else if ("cinnamon".equalsIgnoreCase(GDM)) {
+                            trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        }
+                        else if ("default".equalsIgnoreCase(GDM)) {
+                            // this can be gnome3 on debian
 
-                        // are we fedora? If so, what version?
-                        // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
-                        if (OSUtil.Linux.isFedora()) {
-                            if (DEBUG) {
-                                logger.debug("Running Fedora");
+                            if (OSUtil.Linux.isDebian()) {
+                                // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
+                                logger.warn("Debian with Gnome detected. SystemTray support is not known to work.");
                             }
 
-                            // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
                             trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
-                        else if (OSUtil.Linux.isUbuntu()) {
-                            // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
+                        else if ("gnome-classic".equalsIgnoreCase(GDM)) {
                             trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
-                        else if (OSUtil.Unix.isFreeBSD()) {
+                        else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
                             trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
-                        else {
-                            // arch likely will have problems unless the correct/appropriate libraries are installed.
+                        else if ("ubuntu".equalsIgnoreCase(GDM)) {
                             trayType = selectTypeQuietly(TrayType.AppIndicator);
                         }
+                        break;
                     }
-                    else if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                    }
-                    else if ("default".equalsIgnoreCase(GDM)) {
-                        // this can be gnome3 on debian
-
-                        if (OSUtil.Linux.isDebian()) {
-                            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
-                            logger.warn("Debian with Gnome detected. SystemTray support is not known to work.");
+                    case KDE: {
+                        if (OSUtil.Linux.isFedora()) {
+                            // Fedora KDE requires GtkStatusIcon
+                            trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        } else {
+                            // kde (at least, plasma 5.5.6) requires appindicator
+                            trayType = selectTypeQuietly(TrayType.AppIndicator);
                         }
 
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
+                        break;
                     }
-                    else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                    }
-                    else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                    }
-                    else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                    case Unity: {
+                        // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                         trayType = selectTypeQuietly(TrayType.AppIndicator);
+                        break;
+                    }
+                    case XFCE: {
+                        // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
+                        // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
+                        // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
+
+                        // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        break;
+                    }
+                    case LXDE: {
+                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        break;
+                    }
+                    case Pantheon: {
+                        // elementaryOS. It only supports appindicator (not gtkstatusicon)
+                        // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
+
+                        // ElementaryOS shows the checkbox on the right, everyone else is on the left.
+                        // With eOS, we CANNOT show the spacer image. It does not work.
+                        trayType = selectTypeQuietly(TrayType.AppIndicator);
+                        break;
                     }
                 }
             }
@@ -620,39 +649,11 @@ class SystemTray {
                 return;
             }
 
-            if (isTrayType(trayType, TrayType.AppIndicator)) {
+            if (isTrayType(trayType, TrayType.AppIndicator) && OSUtil.Linux.isRoot()) {
                 // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
 
-                // this means we are running as sudo
-                String sudoUser = System.getenv("SUDO_USER");
-                if (sudoUser != null) {
-                    // running as a "sudo" user
-                    logger.error("Attempting to load the SystemTray as the 'root' user. This will likely not work because of dbus restrictions.");
-                }
-                else {
-                    // running as root (also can be "sudo" user). A bit slower that checking a sys env, but this is guaranteed to work
-                    try {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-                        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-                        // id -u
-                        final ShellProcessBuilder shell = new ShellProcessBuilder(outputStream);
-                        shell.setExecutable("id");
-                        shell.addArgument("-u");
-                        shell.start();
-
-
-                        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
-                        if ("0".equals(output)) {
-                            logger.error("Attempting to load the SystemTray as the 'root' user. This will likely not work because of dbus " +
-                                         "restrictions.");
-                        }
-                    } catch (Throwable e) {
-                        if (DEBUG) {
-                            logger.error("Cannot get id for root", e);
-                        }
-                    }
-                }
+                logger.error("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
+                             "restrictions.");
             }
         }
 
@@ -666,8 +667,6 @@ class SystemTray {
             return;
         }
 
-        ImageUtils.determineIconSize();
-
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
         // - appIndicator/gtk require strings (which is the path)
@@ -675,7 +674,7 @@ class SystemTray {
         CacheUtil.tempDir = "SysTray";
 
         try {
-            if (OS.isLinux() || OS.isUnix()) {
+            if ((OS.isLinux() || OS.isUnix()) && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator))) {
                 // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
                 // appindicator3 doesn't support menu icons via GTK2!!
                 if (!Gtk.isLoaded) {
@@ -684,7 +683,6 @@ class SystemTray {
                     systemTray = null;
                     return;
                 }
-
 
                 if (OSUtil.Linux.isArch()) {
                     // arch linux is fun!
@@ -766,9 +764,20 @@ class SystemTray {
                 return;
             }
 
+            // this logic has to be JUST before we create the system Tray
+            if (OS.isWindows()) {
+                // windows hard-codes the image size
+                SystemTrayFixes.fixWindows(SizeAndScalingUtil.getTrayImageSize(trayType));
+            } else  if (OS.isMacOsX()) {
+                // macosx doesn't respond to all buttons (but should)
+                SystemTrayFixes.fixMacOS();
+            }
+
+            // initialize tray/menu image sizes
+            SizeAndScalingUtil.getTrayImageSize(trayType);
+            SizeAndScalingUtil.getMenuImageSize(trayType);
+
             // javaFX and SWT should not start on the EDT!!
-
-
 
             // if it's linux + native menus must not start on the EDT!
             // _AwtTray must be constructed on the EDT however...
@@ -1004,9 +1013,9 @@ class SystemTray {
     }
 
     /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imagePath the full path of the image to use or null
      */
@@ -1016,16 +1025,16 @@ class SystemTray {
             throw new NullPointerException("imagePath cannot be null!");
         }
 
-        final Menu menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage(imagePath);
+        final Tray tray = systemTrayMenu;
+        if (tray != null) {
+            tray.setImage(imagePath);
         }
     }
 
     /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
-     *<p>
-     * This method will cache the image if it needs to be resized to fit.
+     * Specifies the new image to set for the tray icon.
+     * <p>
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageUrl the URL of the image to use or null
      */
@@ -1042,9 +1051,9 @@ class SystemTray {
     }
 
     /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageStream the InputStream of the image to use
      */
@@ -1061,9 +1070,9 @@ class SystemTray {
     }
 
     /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param image the image of the image to use
      */
@@ -1080,9 +1089,9 @@ class SystemTray {
     }
 
     /**
-     * Specifies the new image to set for a menu entry, NULL to delete the image
+     * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      *@param imageStream the ImageInputStream of the image to use
      */
@@ -1092,10 +1101,27 @@ class SystemTray {
             throw new NullPointerException("image cannot be null!");
         }
 
-        final Menu menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage(imageStream);
+        final Tray tray = systemTrayMenu;
+        if (tray != null) {
+            tray.setImage(imageStream);
         }
+    }
+
+    /**
+     * @return the system tray image size, accounting for OS and theme differences
+     */
+    public
+    int getTrayImageSize() {
+        return SizeAndScalingUtil.getTrayImageSize(systemTrayMenu.getClass());
+    }
+
+
+    /**
+     * @return the system tray menu image size, accounting for OS and theme differences
+     */
+    public
+    int getMenuImageSize() {
+        return SizeAndScalingUtil.getMenuImageSize(systemTrayMenu.getClass());
     }
 }
 

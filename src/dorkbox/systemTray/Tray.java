@@ -23,7 +23,7 @@ import java.net.URL;
 import javax.imageio.stream.ImageInputStream;
 
 import dorkbox.systemTray.gnomeShell.Extension;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.OSUtil;
 
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
@@ -53,7 +53,7 @@ class Tray extends Menu {
         }
     }
 
-    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
+    // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
     // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
@@ -142,72 +142,78 @@ class Tray extends Menu {
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageFile the file of the image to use
      */
+    @Override
     public
     void setImage(final File imageFile) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageFile));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageFile));
     }
 
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imagePath the full path of the image to use
      */
+    @Override
     public
     void setImage(final String imagePath) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imagePath));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imagePath));
     }
 
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageUrl the URL of the image to use
      */
+    @Override
     public
     void setImage(final URL imageUrl) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageUrl));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageUrl));
     }
 
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageStream the InputStream of the image to use
      */
+    @Override
     public
     void setImage(final InputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
     }
 
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param image the image of the image to use
      */
+    @Override
     public
     void setImage(final Image image) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, image));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, image));
     }
 
     /**
      * Specifies the new image to set for the tray icon.
      * <p>
-     * This method will cache the image if it needs to be resized to fit.
+     * If AUTO_SIZE, then this method resize the image (best guess), otherwise the image "as-is" will be used
      *
      * @param imageStream the ImageInputStream of the image to use
      */
+    @Override
     public
     void setImage(final ImageInputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.TRAY_SIZE, imageStream));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
     }
 }

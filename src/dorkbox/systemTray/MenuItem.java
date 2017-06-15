@@ -24,7 +24,7 @@ import java.net.URL;
 import javax.imageio.stream.ImageInputStream;
 
 import dorkbox.systemTray.peer.MenuItemPeer;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -83,32 +83,32 @@ class MenuItem extends Entry {
 
     public
     MenuItem(final String text, final String imagePath, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, imagePath), callback, false);
     }
 
     public
     MenuItem(final String text, final File imageFile, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageFile), callback, false);
     }
 
     public
     MenuItem(final String text, final URL imageUrl, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageUrl), callback, false);
     }
 
     public
     MenuItem(final String text, final InputStream imageStream, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageStream), callback, false);
     }
 
     public
     MenuItem(final String text, final Image image, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, image), callback, false);
     }
 
     public
     MenuItem(final String text, final ImageInputStream imageStream, final ActionListener callback) {
-        this(text, ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream), callback, false);
+        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageStream), callback, false);
     }
 
     // the last parameter (unused) is there so the signature is different
@@ -213,7 +213,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final File imageFile) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageFile));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageFile));
     }
 
     /**
@@ -225,7 +225,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final String imagePath) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imagePath));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imagePath));
     }
 
     /**
@@ -237,7 +237,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final URL imageUrl) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageUrl));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageUrl));
     }
 
     /**
@@ -249,7 +249,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final InputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageStream));
     }
 
     /**
@@ -261,7 +261,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final Image image) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, image));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, image));
     }
 
     /**
@@ -273,7 +273,7 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final ImageInputStream imageStream) {
-        setImage_(ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, imageStream));
+        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageStream));
     }
 
 
