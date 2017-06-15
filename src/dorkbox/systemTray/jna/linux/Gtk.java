@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.jna.Function;
+import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Entry;
@@ -38,14 +39,13 @@ import dorkbox.util.jna.JnaHelper;
  * <p>
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings({"Duplicates", "SameParameterValue", "DanglingJavadoc", "DeprecatedIsStillUsed"})
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DeprecatedIsStillUsed"})
 public
 class Gtk {
     // For funsies to look at, SyncThing did a LOT of work on compatibility in python (unfortunate for us, but interesting).
     // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
 
-    @SuppressWarnings("unused")
     public static class State {
         public static final int NORMAL = 0x0; // normal state.
         public static final int ACTIVE = 0x1; // pressed-in or activated; e.g. buttons while the mouse button is held down.
@@ -76,18 +76,21 @@ class Gtk {
 
     // objdump -T /usr/local/lib/libgtk-3.so.0 | grep gtk
 
-    @SuppressWarnings("WeakerAccess")
     public static final int FALSE = 0;
     public static final int TRUE = 1;
     private static final boolean alreadyRunningGTK;
+
     // when debugging the EDT, we need a longer timeout.
     private static final boolean debugEDT = true;
+
     // timeout is in seconds
     private static final int TIMEOUT = debugEDT ? 10000000 : 2;
+
     // have to save these in a field to prevent GC on the objects (since they go out-of-scope from java)
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final LinkedList<Object> gtkCallbacks = new LinkedList<Object>();
+
     public static Function gtk_status_icon_position_menu = null;
+
     // This is required because the EDT needs to have it's own value for this boolean, that is a different value than the main thread
     private static ThreadLocal<Boolean> isDispatch = new ThreadLocal<Boolean>() {
         @Override
@@ -96,11 +99,16 @@ class Gtk {
             return false;
         }
     };
+
     private static volatile boolean started = false;
-    @SuppressWarnings("FieldCanBeLocal")
+
     private static Thread gtkUpdateThread = null;
 
-    /**
+    public static final int MAJOR;
+    public static final int MINOR;
+    public static final int MICRO;
+
+    /*
      * We can have GTK v3 or v2.
      *
      * Observations:
@@ -112,6 +120,9 @@ class Gtk {
         boolean _isGtk2 = false;
         boolean _isLoaded = false;
         boolean _alreadyRunningGTK = false;
+        int major = 0;
+        int minor = 0;
+        int micro = 0;
 
         boolean shouldLoadGtk = !(OS.isWindows() || OS.isMacOsX());
         if (!shouldLoadGtk) {
@@ -124,6 +135,7 @@ class Gtk {
             if (SystemTray.DEBUG) {
                 logger.debug("Not loading GTK for Swing or AWT");
             }
+            shouldLoadGtk = false;
             _isLoaded = true;
         }
 
@@ -134,7 +146,7 @@ class Gtk {
 
         if (!_isLoaded && shouldUseGtk2) {
             try {
-                JnaHelper.register(gtk2LibName, Gtk.class);
+                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
                 _isGtk2 = true;
 
@@ -142,6 +154,10 @@ class Gtk {
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
                 _alreadyRunningGTK = gtk_main_level() != 0;
                 _isLoaded = true;
+
+                major = library.getGlobalVariableAddress("gtk_major_version").getInt(0);
+                minor = library.getGlobalVariableAddress("gtk_minor_version").getInt(0);
+                micro = library.getGlobalVariableAddress("gtk_micro_version").getInt(0);
 
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk2LibName);
@@ -171,6 +187,10 @@ class Gtk {
                 _alreadyRunningGTK = gtk_main_level() != 0;
                 _isLoaded = true;
 
+                major = Gtk3.gtk_get_major_version();
+                minor = Gtk3.gtk_get_minor_version();
+                micro = Gtk3.gtk_get_micro_version();
+
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk3LibName);
                 }
@@ -184,7 +204,7 @@ class Gtk {
         // now version 2
         if (!_isLoaded) {
             try {
-                JnaHelper.register(gtk2LibName, Gtk.class);
+                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
                 _isGtk2 = true;
 
@@ -192,6 +212,10 @@ class Gtk {
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
                 _alreadyRunningGTK = gtk_main_level() != 0;
                 _isLoaded = true;
+
+                major = library.getGlobalVariableAddress("gtk_major_version").getInt(0);
+                minor = library.getGlobalVariableAddress("gtk_minor_version").getInt(0);
+                micro = library.getGlobalVariableAddress("gtk_micro_version").getInt(0);
 
                 if (SystemTray.DEBUG) {
                     logger.debug("GTK: {}", gtk2LibName);
@@ -217,6 +241,10 @@ class Gtk {
             alreadyRunningGTK = _alreadyRunningGTK;
             isGtk2 = _isGtk2;
             isGtk3 = !_isGtk2;
+
+            MAJOR = major;
+            MINOR = minor;
+            MICRO = micro;
         }
         else {
             isLoaded = false;
@@ -224,11 +252,22 @@ class Gtk {
             alreadyRunningGTK = false;
             isGtk2 = false;
             isGtk3 = false;
+
+            MAJOR = 0;
+            MINOR = 0;
+            MICRO = 0;
         }
 
-        if (shouldLoadGtk && !_isLoaded) {
-            throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
-                                       "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
+        if (shouldLoadGtk) {
+            // now we output what version of GTK we have loaded.
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("GTK Version: " + MAJOR + "." + MINOR + "." + MICRO);
+            }
+
+            if (!_isLoaded) {
+                throw new RuntimeException("We apologize for this, but we are unable to determine the GTK library is in use, " +
+                                           "or even if it is in use... Please create an issue for this and include your OS type and configuration.");
+            }
         }
     }
 
@@ -568,7 +607,6 @@ class Gtk {
     public static native
     Pointer gtk_menu_new();
 
-
     /**
      * Sets or replaces the menu item’s submenu, or removes it when a NULL submenu is passed.
      */
@@ -646,16 +684,37 @@ class Gtk {
     Pointer gtk_status_icon_new();
 
     /**
-     * Gets the size in pixels that is available for the image. Stock icons and named icons adapt their size automatically if the size of
-     * the notification area changes. For other storage types, the size-changed signal can be used to react to size changes.
-     * Note that the returned size is only meaningful while the status icon is embedded (see gtk_status_icon_is_embedded()).
-     * <p>
-     * gtk_status_icon_get_size has been deprecated since version 3.14 and should not be used in newly-written code.
-     * Use notifications
+     * Obtains the root window (parent all other windows are inside) for the default display and screen.
+     *
+     * @return the default root window
      */
-    @Deprecated
     public static native
-    int gtk_status_icon_get_size(Pointer status_icon);
+    Pointer gdk_get_default_root_window();
+
+    /**
+     * Gets the default screen for the default display. (See gdk_display_get_default()).
+     *
+     * @return a GdkScreen, or NULL if there is no default display.
+     *
+     * @since 2.2
+     */
+    public static native
+    Pointer gdk_screen_get_default();
+
+    /**
+     * Gets the resolution for font handling on the screen; see gdk_screen_set_resolution() for full details.
+     *
+     * IE:
+     *
+     * The resolution for font handling on the screen. This is a scale factor between points specified in a PangoFontDescription and
+     * cairo units. The default value is 96, meaning that a 10 point font will be 13 units high. (10 * 96. / 72. = 13.3).
+     *
+     * @return the current resolution, or -1 if no resolution has been set.
+     *
+     * @since Since: 2.10
+     */
+    public static native
+    double gdk_screen_get_resolution(Pointer screen);
 
     /**
      * Makes status_icon display the file filename . See gtk_status_icon_new_from_file() for details.
@@ -678,7 +737,6 @@ class Gtk {
     void gtk_status_icon_set_visible(Pointer widget, boolean visible);
 
 
-    @Deprecated
     /**
      * Sets text as the contents of the tooltip.
      * This function will take care of setting “has-tooltip” to TRUE and of the default handler for the “query-tooltip” signal.
@@ -687,7 +745,9 @@ class Gtk {
      *
      * gtk_status_icon_set_tooltip_text has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
-     */ public static native
+     */
+    @Deprecated
+    public static native
     void gtk_status_icon_set_tooltip_text(Pointer widget, String tooltipText);
 
     /**
@@ -780,13 +840,12 @@ class Gtk {
     void gtk_widget_destroy(Pointer widget);
 
     /**
-     * Gets the GtkSettings object for the default GDK screen, creating it if necessary. See gtk_settings_get_for_screen().
-     * <p>
-     * If there is no default screen, then returns NULL.
+     * Gets the GtkSettings object for screen , creating it if necessary.
+     *
+     * @since 2.2
      */
     public static native
-    Pointer gtk_settings_get_default();
-
+    Pointer gtk_settings_get_for_screen(Pointer screen);
 
     /**
      * Simply an accessor function that returns @widget->style.
@@ -800,14 +859,6 @@ class Gtk {
      */
     public static native
     Pointer gtk_rc_get_style(Pointer widget);
-
-    /**
-     * Creates a toplevel container widget that is used to retrieve snapshots of widgets without showing them on the screen.
-     *
-     * @since 2.20
-     */
-    public static native
-    Pointer gtk_offscreen_window_new();
 
     /**
      * Looks up color_name in the style’s logical color mappings, filling in color and returning TRUE if found, otherwise returning

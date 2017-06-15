@@ -27,6 +27,11 @@ class Gtk3 {
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
     // objdump -T /usr/local/lib/libgtk-3.so.0 | grep gtk
 
+    public static native int gtk_get_major_version();
+    public static native int gtk_get_minor_version();
+    public static native int gtk_get_micro_version();
+
+
     /**
      * Loads a theme from the usual theme paths
      *
@@ -83,4 +88,21 @@ class Gtk3 {
      * @since 3.0 (but not in the documentation...)
      */
     public static native Pointer gtk_widget_get_style_context(Pointer widget);
+
+    /**
+     * Returns the internal scale factor that maps from window coordinates to the actual device pixels. On traditional systems this is 1,
+     * but on very high density outputs this can be a higher value (often 2).
+     *
+     * A higher value means that drawing is automatically scaled up to a higher resolution, so any code doing drawing will automatically
+     * look nicer. However, if you are supplying pixel-based data the scale value can be used to determine whether to use a pixel
+     * resource with higher resolution data.
+     *
+     * The scale of a window may change during runtime, if this happens a configure event will be sent to the toplevel window.
+     *
+     * @return the scale factor
+     *
+     * @since 3.10
+     */
+    public static native
+    int gdk_window_get_scale_factor (Pointer window);
 }
