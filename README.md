@@ -88,26 +88,9 @@ Notes:
 ```
 Customization parameters:
 
-SystemTray.AUTO_TRAY_SIZE   (type boolean, default value 'true')
+SystemTray.AUTO_SIZE   (type boolean, default value 'true')
  - Enables auto-detection for the system tray. This should be mostly successful.
-   Auto-detection will use DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE as a 'base-line' for determining what size to use. 
    
-   If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_TRAY_SIZE or DEFAULT_MENU_SIZE instead
-
-
-SystemTray.DEFAULT_TRAY_SIZE   (type int, default value '16')
- - Size of the tray, so that the icon can be properly scaled based on OS.
-   This value can be automatically scaled based on the the platform and scaling-factor.
-   - Windows will automatically scale up/down.
-   - GtkStatusIcon will usually automatically scale up/down
-   - AppIndicators will not always automatically scale (it will sometimes display whatever is specified here)
-   You will experience WEIRD graphical glitches if this is NOT a power of 2.
-
-
-SystemTray.DEFAULT_MENU_SIZE   (type int, default value '16')
- - Size of the menu entries, so that the icon can be properly scaled based on OS.
- You will experience WEIRD graphical glitches if this is NOT a power of 2.
-
  
 SystemTray.FORCE_GTK2    (type boolean, default value 'false')
  - Forces the system tray to always choose GTK2 (even when GTK3 might be available).
