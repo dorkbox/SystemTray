@@ -22,8 +22,8 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.jna.JnaHelper;
 import dorkbox.util.OS;
+import dorkbox.util.jna.JnaHelper;
 
 /**
  * bindings for libappindicator
@@ -64,7 +64,7 @@ class AppIndicator {
         if (!_isLoaded && SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.GtkStatusIcon) {
             // if we force GTK type system tray, don't attempt to load AppIndicator libs
             if (SystemTray.DEBUG) {
-                logger.debug("Forcing GTK tray, not using appindicator");
+                logger.debug("Forced GtkStatusIcon tray type, not using AppIndicator");
             }
             _isLoaded = true;
         }
