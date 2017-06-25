@@ -94,7 +94,7 @@ class SystemTray {
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static boolean FORCE_GTK2 = true;
+    public static boolean FORCE_GTK2 = false;
 
     @Property
     /**
