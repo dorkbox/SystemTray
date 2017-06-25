@@ -129,15 +129,8 @@ class Gtk {
             _isLoaded = true;
         }
 
-        // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon.
-        if (!_isLoaded &&
-            (SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.Swing || SystemTray.FORCE_TRAY_TYPE == SystemTray.TrayType.AWT)) {
-            if (SystemTray.DEBUG) {
-                logger.debug("Not loading GTK for Swing or AWT");
-            }
-            shouldLoadGtk = false;
-            _isLoaded = true;
-        }
+        // we can force the system to use the swing indicator, which WORKS, but doesn't support transparency in the icon. However, there
+        // are certain GTK functions we might want to use (even if we are Swing or AWT), so we load GTK anyways...
 
         // in some cases, we ALWAYS want to try GTK2 first
         String gtk2LibName = "gtk-x11-2.0";
@@ -341,10 +334,10 @@ class Gtk {
     void gtk_main();
 
     /**
-     * Waits for the GUI to finish loading
+     * Waits for the all posted events to GTK to finish loading
      */
     public static
-    void waitForStartup() {
+    void waitForEventsToComplete() {
         final CountDownLatch blockUntilStarted = new CountDownLatch(1);
 
         dispatch(new Runnable() {
@@ -360,7 +353,7 @@ class Gtk {
                 try {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                            SystemTray.logger.error("Something is very wrong. The waitForEventsToComplete took longer than expected.",
                                                     new Exception(""));
                         }
                     }
@@ -386,7 +379,7 @@ class Gtk {
                 try {
                     if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                         if (SystemTray.DEBUG) {
-                            SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                            SystemTray.logger.error("Something is very wrong. The waitForEventsToComplete took longer than expected.",
                                                     new Exception(""));
                         }
                     }
@@ -409,7 +402,7 @@ class Gtk {
             try {
                 if (!blockUntilStarted.await(10, TimeUnit.SECONDS)) {
                     if (SystemTray.DEBUG) {
-                        SystemTray.logger.error("Something is very wrong. The waitForStartup took longer than expected.",
+                        SystemTray.logger.error("Something is very wrong. The waitForEventsToComplete took longer than expected.",
                                                 new Exception(""));
                     }
                 }

@@ -62,8 +62,6 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     _GtkStatusIconNativeTray(final SystemTray systemTray) {
         super();
 
-        Gtk.startGui();
-
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         gtkMenu = new GtkMenu() {
             @Override
@@ -170,7 +168,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
             }
         });
 
-        Gtk.waitForStartup();
+        Gtk.waitForEventsToComplete();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
         Gtk.dispatch(new Runnable() {

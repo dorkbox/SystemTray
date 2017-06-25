@@ -99,8 +99,6 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
     _AppIndicatorNativeTray(final SystemTray systemTray) {
         super();
 
-        Gtk.startGui();
-
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final GtkMenu gtkMenu = new GtkMenu() {
             /**
@@ -108,6 +106,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
              *
              * ALWAYS CALLED ON THE EDT
              */
+            @Override
             protected final
             void onMenuAdded(final Pointer menu) {
                 // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
@@ -227,7 +226,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             }
         });
 
-        Gtk.waitForStartup();
+        Gtk.waitForEventsToComplete();
 
         bind(gtkMenu, null, systemTray);
     }

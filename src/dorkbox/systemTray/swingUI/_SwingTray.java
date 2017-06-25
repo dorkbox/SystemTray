@@ -61,11 +61,6 @@ class _SwingTray extends Tray implements SwingUI {
                                        "type and configuration");
         }
 
-        if (OS.isLinux() || OS.isUnix()) {
-            // linux/unix need access to GTK, so load it up!
-            Gtk.startGui();
-        }
-
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final SwingMenu swingMenu = new SwingMenu(null, null) {
             @Override
@@ -194,16 +189,12 @@ class _SwingTray extends Tray implements SwingUI {
 
 
                 if (OS.isLinux() || OS.isUnix()) {
-                    // does not need to be called on the dispatch (it does that)
+                    // does not need to be called on the dispatch (it does that). Startup happens in the SystemTray (in a special block),
+                    // because we MUST startup the system tray BEFORE to access GTK before we create the swing version (to get size info)
                     Gtk.shutdownGui();
                 }
             }
         };
-
-        if (OS.isLinux() || OS.isUnix()) {
-            // linux/unix need access to GTK, so load it up!
-            Gtk.waitForStartup();
-        }
 
         bind(swingMenu, null, systemTray);
     }

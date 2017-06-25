@@ -89,18 +89,12 @@ class SystemTray {
     }
 
     @Property
-    /** Enables auto-detection for the system tray. This should be mostly successful.
-     * <p>
-     * Auto-detection will use DEFAULT_TRAY_SIZE as a 'base-line' for determining what size to use.
-     * <p>
-     * If auto-detection fails and the incorrect size is detected or used, disable this and specify the correct DEFAULT_TRAY_SIZE or
-     * DEFAULT_MENU_SIZE instead
-     */
+    /** Enables auto-detection for the system tray. This should be mostly successful. */
     public static boolean AUTO_SIZE = true;
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static boolean FORCE_GTK2 = false;
+    public static boolean FORCE_GTK2 = true;
 
     @Property
     /**
@@ -108,7 +102,7 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.Swing;
+    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
     @Property
     /**
@@ -264,9 +258,9 @@ class SystemTray {
             return;
         }
 
-        // Windows can ONLY use Swing (non-native) - AWT/native looks absolutely horrid
+        // Windows can ONLY use Swing (non-native) - AWT/native looks absolutely horrid and is not an option
         // OSx can use Swing (non-native) or AWT (native) .
-        // Linux can use Swing (non-native) menus + (native Icon via GTK or AppIndicator), GtkStatusIcon (native), or AppIndicator (native)
+        // Linux can use Swing (non-native), AWT (native), GtkStatusIcon (native), or AppIndicator (native)
         if (OS.isWindows()) {
             if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing) {
                 // windows MUST use swing only!
@@ -282,102 +276,96 @@ class SystemTray {
             }
         }
         else if (OS.isLinux() || OS.isUnix()) {
-            // kablooie if SWT/JavaFX or Swing is not configured in a way that works with us.
-            if (FORCE_TRAY_TYPE != TrayType.Swing) {
-                // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux, this will cause GTK2 to get loaded first,
-                // which will cause conflicts if one tries to use GTK3
-                if (!FORCE_GTK2 && !isJavaFxLoaded && !isSwtLoaded) {
+            // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux, this will cause GTK2 to get loaded first,
+            // which will cause conflicts if one tries to use GTK3
+            if (!FORCE_GTK2 && !isJavaFxLoaded && !isSwtLoaded) {
 
-                    String currentUI = UIManager.getLookAndFeel()
-                                                .getClass()
-                                                .getName();
+                String currentUI = UIManager.getLookAndFeel()
+                                            .getClass()
+                                            .getName();
 
-                    boolean mustForceGtk2 = false;
+                boolean mustForceGtk2 = false;
 
-                    if (currentUI.equals(GTKLookAndFeel.class.getCanonicalName())) {
-                        // this means our look and feel is the GTK look and feel... THIS CREATES PROBLEMS!
+                if (currentUI.equals(GTKLookAndFeel.class.getCanonicalName())) {
+                    // this means our look and feel is the GTK look and feel... THIS CREATES PROBLEMS!
 
-                        // THIS IS NOT DOCUMENTED ANYWHERE...
-                        String swingGtkVersion = java.security.AccessController.doPrivileged(new GetPropertyAction("swing.gtk.version"));
-                        mustForceGtk2 = swingGtkVersion == null || swingGtkVersion.startsWith("2");
-                    }
-
-                    if (mustForceGtk2) {
-                        // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
-                        // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
-
-                        if (AUTO_FIX_INCONSISTENCIES) {
-                            // we must use GTK2 because Swing is configured to use GTK2
-                            logger.warn("Forcing GTK2 because the Swing UIManager is GTK2");
-                            FORCE_GTK2 = true;
-                        } else {
-                            logger.error("Unable to use the SystemTray when the Swing UIManager is configured to use the native L&F, which " +
-                                         "uses GTK2. This is incompatible with GTK3.   " +
-                                         "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
-
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
-                        }
-                    }
+                    // THIS IS NOT DOCUMENTED ANYWHERE...
+                    String swingGtkVersion = java.security.AccessController.doPrivileged(new GetPropertyAction("swing.gtk.version"));
+                    mustForceGtk2 = swingGtkVersion == null || swingGtkVersion.startsWith("2");
                 }
 
+                if (mustForceGtk2) {
+                    // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
+                    // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
 
-                if (isSwtLoaded) {
-                    // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
-                    // System.setProperty("SWT_GTK3", "0");
+                    if (AUTO_FIX_INCONSISTENCIES) {
+                        // we must use GTK2 because Swing is configured to use GTK2
+                        logger.warn("Forcing GTK2 because the Swing UIManager is GTK2");
+                        FORCE_GTK2 = true;
+                    } else {
+                        logger.error("Unable to use the SystemTray when the Swing UIManager is configured to use the native L&F, which " +
+                                     "uses GTK2. This is incompatible with GTK3.   " +
+                                     "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
 
-                    // was SWT forced?
-                    String swt_gtk3 = System.getProperty("SWT_GTK3");
-                    boolean isSwt_GTK3 = swt_gtk3 != null && !swt_gtk3.equals("0");
-                    if (!isSwt_GTK3) {
-                        // check a different property
-                        String property = System.getProperty("org.eclipse.swt.internal.gtk.version");
-                        isSwt_GTK3 = property != null && !property.startsWith("2.");
+                        systemTrayMenu = null;
+                        systemTray = null;
                     }
+                }
+            }
+            else if (isSwtLoaded) {
+                // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
+                // System.setProperty("SWT_GTK3", "0");
 
-                    if (isSwt_GTK3 && FORCE_GTK2) {
-                        logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
-                                     "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
-                                     "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+                // was SWT forced?
+                String swt_gtk3 = System.getProperty("SWT_GTK3");
+                boolean isSwt_GTK3 = swt_gtk3 != null && !swt_gtk3.equals("0");
+                if (!isSwt_GTK3) {
+                    // check a different property
+                    String property = System.getProperty("org.eclipse.swt.internal.gtk.version");
+                    isSwt_GTK3 = property != null && !property.startsWith("2.");
+                }
+
+                if (isSwt_GTK3 && FORCE_GTK2) {
+                    logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
+                                 "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
+                                 "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+
+                    systemTrayMenu = null;
+                    systemTray = null;
+                    return;
+                } else if (!isSwt_GTK3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                    // we must use GTK2, because SWT is GTK2
+                    logger.warn("Forcing GTK2 because SWT is GTK2");
+                    FORCE_GTK2 = true;
+                }
+            }
+            else if (isJavaFxLoaded) {
+                // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
+                // see
+                // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+                // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
+                // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
+                boolean isJava_GTK3_Possible = OS.javaVersion >= 9 && System.getProperty("jdk.gtk.version", "2").equals("3");
+                if (isJava_GTK3_Possible && FORCE_GTK2) {
+                    // if we are java9, then we can change it -- otherwise we cannot.
+                    if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
+                        logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
+                                    "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                    "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
+
+                        FORCE_GTK2 = false;
+                    } else {
+                        logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
+                                     "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
 
                         systemTrayMenu = null;
                         systemTray = null;
                         return;
-                    } else if (!isSwt_GTK3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
-                        // we must use GTK2, because SWT is GTK2
-                        logger.warn("Forcing GTK2 because SWT is GTK2");
-                        FORCE_GTK2 = true;
                     }
-                }
-                else if (isJavaFxLoaded) {
-                    // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
-                    // see
-                    // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
-                    // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
-                    // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
-                    boolean isJava_GTK3_Possible = OS.javaVersion >= 9 && System.getProperty("jdk.gtk.version", "2").equals("3");
-                    if (isJava_GTK3_Possible && FORCE_GTK2) {
-                        // if we are java9, then we can change it -- otherwise we cannot.
-                        if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
-                            logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
-                                        "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
-                                        "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
-
-                            FORCE_GTK2 = false;
-                        } else {
-                            logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
-                                         "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
-
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
-                        }
-                    } else if (!isJava_GTK3_Possible && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
-                        // we must use GTK2, because JavaFX is GTK2
-                        logger.warn("Forcing GTK2 because JavaFX is GTK2");
-                        FORCE_GTK2 = true;
-                    }
+                } else if (!isJava_GTK3_Possible && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                    // we must use GTK2, because JavaFX is GTK2
+                    logger.warn("Forcing GTK2 because JavaFX is GTK2");
+                    FORCE_GTK2 = true;
                 }
             }
         }
@@ -420,13 +408,14 @@ class SystemTray {
             }
         }
         else if (OS.isMacOsX()) {
-            // macosx doesn't respond to all buttons (but should)
-            SystemTrayFixes.fixMacOS();
-
-            try {
-                trayType = selectType(TrayType.AWT);
-            } catch (Throwable e) {
-                logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+            if (SystemTray.FORCE_TRAY_TYPE != TrayType.AutoDetect) {
+                // macos can ONLY use the AWT tray indicator, if you want it to follow the L&F of the OS. If we force a specific type,
+                // then allow that.
+                try {
+                    trayType = selectType(TrayType.AWT);
+                } catch (Throwable e) {
+                    logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+                }
             }
         }
         else if ((OS.isLinux() || OS.isUnix())) {
@@ -635,36 +624,34 @@ class SystemTray {
 
             // fallback...
             if (trayType == null) {
-                trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
-                logger.warn("Unable to determine the system window manager type. Falling back to GtkStatusIcon.");
+                logger.warn("Unable to determine the system window manager type. Using the Swing Tray type instead.");
+
+                trayType = selectTypeQuietly(TrayType.Swing);
             }
 
             // this is bad...
             if (trayType == null) {
-                logger.error("SystemTray initialization failed. Unable to load the system tray native libraries. Please write an issue " +
-                             "and include your OS type and configuration");
+                logger.error("SystemTray initialization failed. Unable to load the system tray native libraries. " +
+                             "Using the Swing Tray type instead. Please write an issue and include your OS type and configuration");
 
-                systemTrayMenu = null;
-                systemTray = null;
-                return;
+                trayType = selectTypeQuietly(TrayType.Swing);
             }
 
             if (isTrayType(trayType, TrayType.AppIndicator) && OSUtil.Linux.isRoot()) {
                 // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
-
                 logger.error("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
-                             "restrictions.");
+                             "restrictions. Using the Swing Tray type instead.");
+
+                trayType = selectTypeQuietly(TrayType.Swing);
             }
         }
 
 
         if (trayType == null) {
-            // unsupported tray, or unknown type
-            logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Something is seriously wrong.");
+            trayType = selectTypeQuietly(TrayType.Swing);
 
-            systemTrayMenu = null;
-            systemTray = null;
-            return;
+            // unsupported tray, or unknown type
+            logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Falling back to the Swing Tray.");
         }
 
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
@@ -674,17 +661,17 @@ class SystemTray {
         CacheUtil.tempDir = "SysTray";
 
         try {
-            if ((OS.isLinux() || OS.isUnix()) && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator))) {
+            // at this point, the tray type is what it should be. If there are failures or special cases, all types will fall back to
+            // Swing.
+
+            if (OS.isLinux() || OS.isUnix()) {
                 // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
                 // appindicator3 doesn't support menu icons via GTK2!!
                 if (!Gtk.isLoaded) {
-                    logger.error("Unable to initialize GTK! Something is severely wrong!");
-                    systemTrayMenu = null;
-                    systemTray = null;
-                    return;
+                    logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
+                    trayType = selectTypeQuietly(TrayType.Swing);
                 }
-
-                if (OSUtil.Linux.isArch()) {
+                else if (OSUtil.Linux.isArch()) {
                     // arch linux is fun!
 
                     if (isTrayType(trayType, TrayType.AppIndicator)) {
@@ -696,47 +683,31 @@ class SystemTray {
                         if (!AppIndicator.isLoaded) {
                             if (Gtk.isGtk2) {
                                 logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
-                                             "Please install libappindicator, for example: 'sudo pacman -S libappindicator'");
-                                systemTrayMenu = null;
-                                systemTray = null;
-                                return;
+                                             "Please install libappindicator, for example: 'sudo pacman -S libappindicator'. " +
+                                             "Using the Swing Tray type instead.");
                             } else {
                                 logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
-                                             "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'"); // GTK3
-                                systemTrayMenu = null;
-                                systemTray = null;
-                                return;
+                                             "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. " +
+                                             "Using the Swing Tray type instead."); // GTK3
                             }
+
+                            trayType = selectTypeQuietly(TrayType.Swing);
                         }
                     }
                 }
-
-
-                if (isTrayType(trayType, TrayType.AppIndicator)) {
+                else if (isTrayType(trayType, TrayType.AppIndicator)) {
                     if (Gtk.isGtk2 && AppIndicator.isVersion3) {
-                        try {
-                            trayType = selectType(TrayType.GtkStatusIcon);
-                            logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
-                                        "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
-                        } catch (Throwable e) {
-                            if (DEBUG) {
-                                logger.error("Cannot initialize _GtkStatusIconTray", e);
-                            }
-                            logger.error("AppIndicator3 detected with GTK2 and unable to fallback to using GTK2 system tray type." +
-                                         "AppIndicator3 requires GTK3 to be fully functional, and while this will work -- " +
-                                         "the menu icons WILL NOT be visible." +
-                                         " Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'");
+                        logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
+                                    "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'. " +
+                                    "Using the Swing Tray type instead.");
 
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
-                        }
+                        trayType = selectTypeQuietly(TrayType.Swing);
                     }
-
-                    if (!AppIndicator.isLoaded) {
+                    else if (!AppIndicator.isLoaded) {
                         // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
-                        logger.warn("Unable to initialize the AppIndicator correctly, falling back to GtkStatusIcon type");
-                        trayType = selectTypeQuietly(TrayType.GtkStatusIcon);
+                        logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
+
+                        trayType = selectTypeQuietly(TrayType.Swing);
                     }
                 }
             }
@@ -753,6 +724,35 @@ class SystemTray {
                 Swt.init();
             }
 
+            if (OS.isLinux() || OS.isUnix()) {
+                // linux/unix need access to GTK, so load it up before the tray is loaded!
+                Gtk.startGui();
+                Gtk.waitForEventsToComplete();
+            }
+
+
+            // initialize tray/menu image sizes. This must be BEFORE the system tray has been created
+            int trayImageSize = SizeAndScalingUtil.getTrayImageSize(trayType);
+            SizeAndScalingUtil.getMenuImageSize(trayType);
+
+
+
+            // this logic has to be before we create the system Tray
+            if (OS.isWindows()) {
+                // windows hard-codes the image size
+                SystemTrayFixes.fixWindows(trayImageSize);
+            }
+            else if (OS.isMacOsX()) {
+                // macosx doesn't respond to all buttons (but should)
+                SystemTrayFixes.fixMacOS();
+            }
+            else if ((OS.isLinux() || OS.isUnix())) {
+                // linux/mac doesn't have transparent backgrounds for swing
+                SystemTrayFixes.fixLinux(trayImageSize);
+            }
+
+
+
 
             if ((isJavaFxLoaded || isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
                 // oh boy! This WILL NOT WORK. Let the dev know
@@ -763,19 +763,6 @@ class SystemTray {
                 systemTray = null;
                 return;
             }
-
-            // this logic has to be JUST before we create the system Tray
-            if (OS.isWindows()) {
-                // windows hard-codes the image size
-                SystemTrayFixes.fixWindows(SizeAndScalingUtil.getTrayImageSize(trayType));
-            } else  if (OS.isMacOsX()) {
-                // macosx doesn't respond to all buttons (but should)
-                SystemTrayFixes.fixMacOS();
-            }
-
-            // initialize tray/menu image sizes
-            SizeAndScalingUtil.getTrayImageSize(trayType);
-            SizeAndScalingUtil.getMenuImageSize(trayType);
 
             // javaFX and SWT should not start on the EDT!!
 
