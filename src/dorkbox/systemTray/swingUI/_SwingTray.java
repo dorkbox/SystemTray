@@ -28,6 +28,8 @@ import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -57,6 +59,11 @@ class _SwingTray extends Tray implements SwingUI {
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
                                        "type and configuration");
+        }
+
+        if (OS.isLinux() || OS.isUnix()) {
+            // linux/unix need access to GTK, so load it up!
+            Gtk.startGui();
         }
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
@@ -184,8 +191,19 @@ class _SwingTray extends Tray implements SwingUI {
                 });
 
                 super.remove();
+
+
+                if (OS.isLinux() || OS.isUnix()) {
+                    // does not need to be called on the dispatch (it does that)
+                    Gtk.shutdownGui();
+                }
             }
         };
+
+        if (OS.isLinux() || OS.isUnix()) {
+            // linux/unix need access to GTK, so load it up!
+            Gtk.waitForStartup();
+        }
 
         bind(swingMenu, null, systemTray);
     }
