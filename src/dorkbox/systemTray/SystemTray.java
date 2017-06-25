@@ -737,20 +737,21 @@ class SystemTray {
 
 
 
-            // this logic has to be before we create the system Tray
-            if (OS.isWindows()) {
-                // windows hard-codes the image size
-                SystemTrayFixes.fixWindows(trayImageSize);
+            if (AUTO_FIX_INCONSISTENCIES) {
+                // this logic has to be before we create the system Tray
+                if (OS.isWindows()) {
+                    // windows hard-codes the image size
+                    SystemTrayFixes.fixWindows(trayImageSize);
+                }
+                else if (OS.isMacOsX()) {
+                    // macosx doesn't respond to all buttons (but should)
+                    SystemTrayFixes.fixMacOS();
+                }
+                else if ((OS.isLinux() || OS.isUnix())) {
+                    // linux/mac doesn't have transparent backgrounds for swing and hard-codes the image size
+                    SystemTrayFixes.fixLinux(trayImageSize);
+                }
             }
-            else if (OS.isMacOsX()) {
-                // macosx doesn't respond to all buttons (but should)
-                SystemTrayFixes.fixMacOS();
-            }
-            else if ((OS.isLinux() || OS.isUnix())) {
-                // linux/mac doesn't have transparent backgrounds for swing
-                SystemTrayFixes.fixLinux(trayImageSize);
-            }
-
 
 
 
