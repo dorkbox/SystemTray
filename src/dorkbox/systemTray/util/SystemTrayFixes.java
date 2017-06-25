@@ -27,6 +27,8 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.CtNewMethod;
+import javassist.Modifier;
 
 
 /*
@@ -438,102 +440,249 @@ class SystemTrayFixes {
 
         try {
             ClassPool pool = ClassPool.getDefault();
-            byte[] iconCanvasBytes;
+            CtField ctField;
+
+            String className = "sun.awt.X11.XTrayIconPeer";
+            byte[] eFrameBytes;
+            byte[] trayIconBytes;
 
             {
-                CtClass trayIconClass = pool.get("sun.awt.X11.XTrayIconPeer");
-                CtClass[] nestedClasses = trayIconClass.getNestedClasses();
+                CtClass trayIconClass = pool.get(className);
 
-                // looking for IconCanvas
-                CtClass iconCanvasClass = null;
+                ctField = new CtField(pool.get("java.awt.Robot"), "robot", trayIconClass);
+                ctField.setModifiers(Modifier.STATIC);
+                trayIconClass.addField(ctField);
+
+                ctField = new CtField(pool.get("java.awt.Color"), "color", trayIconClass);
+                ctField.setModifiers(Modifier.STATIC);
+                trayIconClass.addField(ctField);
+
+                trayIconBytes = trayIconClass.toBytecode();
+
+
+                CtClass eFrameClass = null;
+                CtClass[] nestedClasses = trayIconClass.getNestedClasses();
                 for (CtClass nestedClass : nestedClasses) {
-                    if (nestedClass.getName()
-                                   .equals(trayIconClass.getName() + "$IconCanvas")) {
-                        iconCanvasClass = nestedClass;
-                        break;
+                    String name = nestedClass.getName();
+
+                    if (name.equals(className + "$XTrayIconEmbeddedFrame")) {
+                        eFrameClass = nestedClass;
                     }
                 }
 
-                if (iconCanvasClass == null) {
-                    throw new RuntimeException("Unable to find required classes. Unable to continue initialization.");
+                if (eFrameClass == null) {
+                    throw new RuntimeException("Unable to find required classes to fix. Unable to continue initialization.");
                 }
 
-                CtField ctField;
-                ctField = new CtField(pool.get("java.awt.Color"), "color", iconCanvasClass);
-                iconCanvasClass.addField(ctField);
+                // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
+                // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
+                // time. This means we cannot take a screen shot, because before the window is placed, another icon is in this spot,
+                // and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
+                // the pixel color, so at least we can fake transparency. This only works if the notification area is a solid color,
+                // and not an image or gradient.
+                CtMethod methodVisible = CtNewMethod.make(
+                "public void setVisible(boolean b) " +
+                "{ " +
+                    "if (b) {" +
+                        "if (" + className + ".robot == null) {" +
+                            className + ".robot = new java.awt.Robot();" +
+                        "}" +
 
-                ctField = new CtField(pool.get("java.awt.Robot"), "robot", iconCanvasClass);
-                iconCanvasClass.addField(ctField);
-
-                CtMethod ctMethodRepaintImage = iconCanvasClass.getDeclaredMethod("repaintImage");
-                String body = "{" +
-                    "boolean doClear = $1;" +
-
-                    "java.lang.System.err.println(\"update image: \" + doClear);" +
-
-                    "java.awt.Graphics g = getGraphics();" +
-                    "if (g != null) {" +
-                    "   try {" +
-                    "       if (isVisible()) {" +
-                    "           if (robot == null) {" +
-                    "               robot = new java.awt.Robot();" +
-                    "           }" +
-                    "       if (doClear) {" +
-                    // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
-                    // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
-                    // time. This means we cannot take a screen shot, because before the window is placed, another icon is in this spot,
-                    // and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
-                    // the pixel color, so at least we can fake transparency. This only works if the notification area is a solid color,
-                    // and not an image or gradient.
-                    "              java.awt.Point loc = getLocationOnScreen();" +
-                    "              color = robot.getPixelColor(loc.x-1, loc.y-1);" +
-                    "              update(g);" +
-                    "          } else {" +
-                    "              paint(g);" +
-                    "          }" +
-                    "      }" +
-                    "  } finally {" +
-                    "      g.dispose();" +
-                    "  }" +
+                        "java.awt.Point loc = getPeer().getLocationOnScreen();" +
+                        className + ".color = " + className + ".robot.getPixelColor(loc.x-1, loc.y-1);" +
+                        // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur
+                        "setBackground(" + className + ".color);" +
                     "}" +
-                "}";
-                ctMethodRepaintImage.setBody(body);
+
+                    "super.setVisible(b);" +
+                " }",
+                                eFrameClass);
+                eFrameClass.addMethod(methodVisible);
+
+                eFrameBytes = eFrameClass.toBytecode();
 
 
-                CtMethod ctMethodPaint = iconCanvasClass.getDeclaredMethod("paint");
-                body = "{" +
-                    "java.awt.Graphics g = $1;" +
-
-                    "if (g != null && curW > 0 && curH > 0) {" +
-                    "     java.awt.image.BufferedImage bufImage = new java.awt.image.BufferedImage(curW, curH, java.awt.image.BufferedImage.TYPE_INT_ARGB);" +
-                    "     java.awt.Graphics2D gr = bufImage.createGraphics();" +
-                    "     if (gr != null) {" +
-                    "         try {" +
-
-                    // this will render the image "nicely"
-                    "             gr.addRenderingHints(new java.awt.RenderingHints(java.awt.RenderingHints.KEY_RENDERING," +
-                    "                                                              java.awt.RenderingHints.VALUE_RENDER_QUALITY));" +
-
-                    // Have to replace the color with the correct pixel color to simulate transparency
-                    "             gr.setColor(color);" +
-                    "             gr.fillRect(0, 0, curW, curH);" +
-                    "             gr.drawImage(image, 0, 0, curW, curH, observer);" +
-                    "             gr.dispose();" +
-                    "             g.drawImage(bufImage, 0, 0, curW, curH, null);" +
-                    "          } finally {" +
-                    "             g.dispose();" +
-                    "          }" +
-                    "     }" +
-                    "}" +
-                "}";
-                ctMethodPaint.setBody(body);
+//                CtMethod ctMethodRepaintImage = iconCanvasClass.getDeclaredMethod("repaintImage");
 
 
-                iconCanvasBytes = iconCanvasClass.toBytecode();
+//                MethodInfo methodInfo = ctMethodRepaintImage.getMethodInfo();
+//                ConstPool pool2 = methodInfo.getConstPool();
+//                CodeIterator ci = methodInfo.getCodeAttribute().iterator();
+//                int lineNumber = -1;
+//
+//                while (ci.hasNext()) {
+//                    int index = ci.next();
+//                    lineNumber = methodInfo.getLineNumber(index);
+//                    int opcode = ci.byteAt(index);
+//
+//                    String op = Mnemonic.OPCODE[opcode];
+//                    switch (opcode) {
+//                        case INVOKEVIRTUAL: {
+//                            int i = ci.u16bitAt(index + 1);
+//
+//                            // specifically inject the pixel grabbing code JUST before update happens.
+//                            if (pool2.getMethodrefClassName(i)
+//                                     .equals("sun.awt.X11.XTrayIconPeer$IconCanvas") &&
+//
+//                                pool2.getMethodrefName(i)
+//                                     .equals("update") &&
+//
+//                                pool2.getMethodrefType(i)
+//                                     .equals("(Ljava/awt/Graphics;)V")) {
+//
+//
+////                                "           if (robot == null) {" +
+////                                "               robot = new java.awt.Robot();" +
+////                                "           }" +
+////                                "       if (doClear) {" +
+
+////                                "              java.awt.Point loc = getLocationOnScreen();" +
+////                                "              color = robot.getPixelColor(loc.x-1, loc.y-1);" +
+//
+//
+//                                System.out.println(op + " " + "#" + i + " = Method " + pool2.getMethodrefClassName(i) + "." +
+//                                                   pool2.getMethodrefName(i) + "(" + pool2.getMethodrefType(i) + ")");
+//                            }
+//                        }
+//                    }
+//
+////                    System.out.println(lineNumber + " * " + Mnemonic.OPCODE[op] + "  ");
+//                    System.out.println(lineNumber + " * " + InstructionPrinter.instructionString(ci, index, pool2));
+//                }
+
+//new Canvas().update();
+
+//                CtMethod methodUpdate = iconCanvasClass.getMethod("update", "(Ljava/awt/Graphics;)V");
+
+
+//                for(CtMethod method:iconCanvasClass.getDeclaredMethods()){
+//                    System.err.println("MEthod: " + method.getName());
+//                    method.insertBefore("System.out.println(\"Before every method call....\");");
+//                }
+//
+//                for (CtMethod method : iconCanvasClass.getMethods()) {
+////                    System.err.println("Method: " + method.getName());
+//                    if (method.getName()
+//                              .equals("getBackground")) {
+//
+//                        System.err.println("found " + method.getName());
+////                        method.insertBefore("System.err.println(\"Before every method call....\");");
+//                        method.setBody("return color;");
+//                    }
+//                }
+
+
+//                StringBuilder collector = new StringBuilder();
+//                int lastLine = -1;
+//
+//                while (ci.hasNext()) {
+//                    int index = ci.next();
+//                    lineNumber = methodInfo.getLineNumber(index);
+//                    int op = ci.byteAt(index);
+//
+//                    if (lastLine == -1) {
+//                        lastLine = lineNumber;
+//                    }
+//
+//                    if (lineNumber != lastLine) {
+//                        if (collector.length() > 0) {
+//                            System.out.println(lastLine + " : " + collector);
+//                        }
+//                        lastLine = lineNumber;
+//                        collector.delete(0, collector.length());
+//                    }
+//
+//                    collector.append(Mnemonic.OPCODE[op])
+//                             .append(" ");
+//
+////                    System.out.println(lineNumber + " * " + Mnemonic.OPCODE[op] + "  ");
+//                    System.out.println(lineNumber + " * " + InstructionPrinter.instructionString(ci, index, pool2));
+//                }
+//
+//                if (collector.length() > 0) {
+//                    System.out.println(lineNumber + " : " + collector);
+//                }
+
+
+
+
+
+
+
+
+//                String body = "{" +
+//                    "boolean doClear = $1;" +
+//
+//                    "java.lang.System.err.println(\"update image: \" + doClear);" +
+//
+//                    "java.awt.Graphics g = getGraphics();" +
+//                    "if (g != null) {" +
+//                    "   try {" +
+//                    "       if (isVisible()) {" +
+//                    "           if (robot == null) {" +
+//                    "               robot = new java.awt.Robot();" +
+//                    "           }" +
+//                    "       if (doClear) {" +
+//                    // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
+//                    // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
+//                    // time. This means we cannot take a screen shot, because before the window is placed, another icon is in this spot,
+//                    // and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
+//                    // the pixel color, so at least we can fake transparency. This only works if the notification area is a solid color,
+//                    // and not an image or gradient.
+//                    "              java.awt.Point loc = getLocationOnScreen();" +
+//                    "              color = robot.getPixelColor(loc.x-1, loc.y-1);" +
+//                    "              update(g);" +
+//                    "          } else {" +
+//                    "              paint(g);" +
+//                    "          }" +
+//                    "      }" +
+//                    "  } finally {" +
+//                    "      g.dispose();" +
+//                    "  }" +
+//                    "}" +
+//                "}";
+//                ctMethodRepaintImage.setBody(body);
+
+//
+//                CtMethod ctMethodPaint = iconCanvasClass.getDeclaredMethod("paint");
+//                body = "{" +
+//                    "java.awt.Graphics g = $1;" +
+//
+//                    "if (g != null && curW > 0 && curH > 0) {" +
+//                    "     java.awt.image.BufferedImage bufImage = new java.awt.image.BufferedImage(curW, curH, java.awt.image.BufferedImage.TYPE_INT_ARGB);" +
+//                    "     java.awt.Graphics2D gr = bufImage.createGraphics();" +
+//                    "     if (gr != null) {" +
+//                    "         try {" +
+//
+//                    // this will render the image "nicely"
+//                    "             gr.addRenderingHints(new java.awt.RenderingHints(java.awt.RenderingHints.KEY_RENDERING," +
+//                    "                                                              java.awt.RenderingHints.VALUE_RENDER_QUALITY));" +
+//
+//                    // Have to replace the color with the correct pixel color to simulate transparency
+//                    "             gr.setColor(color);" +
+//                    "             gr.fillRect(0, 0, curW, curH);" +
+//                    "             gr.drawImage(image, 0, 0, curW, curH, observer);" +
+//                    "             gr.dispose();" +
+//                    "             g.drawImage(bufImage, 0, 0, curW, curH, null);" +
+//                    "          } finally {" +
+//                    "             g.dispose();" +
+//                    "          }" +
+//                    "     }" +
+//                    "}" +
+//                "}";
+//                ctMethodPaint.setBody(body);
+
+
+//                iconCanvasClass.writeFile("/tmp/modifiedClassesFolder");
+
+
+
+
             }
 
             // whoosh, past the classloader and directly into memory.
-            BootStrapClassLoader.defineClass(iconCanvasBytes);
+            BootStrapClassLoader.defineClass(trayIconBytes);
+            BootStrapClassLoader.defineClass(eFrameBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon background color");
