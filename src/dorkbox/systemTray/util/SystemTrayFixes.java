@@ -50,29 +50,27 @@ import javassist.CtMethod;
  * Important distinction: We are not DISTRIBUTING java, nor modifying the distribution class files.
  *
  * What we are doing is modifying what is already present, post-distribution, and it is impossible to distribute what is modified
- *
- * To see what files we need to fix...
- * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
- * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
- * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/141beb4d854d/src/macosx/classes/sun/lwawt/macosx/CTrayIcon.java#l216
  */
+
+
 /**
  * Fixes issues with some java runtimes
  */
 public
 class SystemTrayFixes {
+    private static
+    boolean isSwingTrayLoaded() {
+        String className;
 
-    // oh my. Java likes to think that ALL windows tray icons are 16x16.... Lets fix that!
-    public static void fixWindows(int trayIconSize) {
-        String vendor = System.getProperty("java.vendor").toLowerCase(Locale.US);
-        // spaces at the end to make sure we check for words
-        if (!(vendor.contains("sun ") || vendor.contains("oracle "))) {
-            // not fixing things that are not broken.
-            return;
+        if (OS.isWindows()) {
+            className = "sun.awt.windows.WTrayIconPeer";
         }
-
-
-        boolean isWindowsSwingTrayLoaded = false;
+        else if (OS.isMacOsX()){
+            className = "sun.lwawt.macosx.CTrayIcon";
+        }
+        else {
+            className = "sun.awt.X11.XTrayIconPeer";
+        }
 
         try {
             // this is important to use reflection, because if JavaFX is not being used, calling getToolkit() will initialize it...
@@ -80,17 +78,42 @@ class SystemTrayFixes {
             m.setAccessible(true);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
 
-            // if we are using swing (in windows only) the icon size is usually incorrect. We cannot fix that if it's already loaded.
-            isWindowsSwingTrayLoaded = (null != m.invoke(cl, "sun.awt.windows.WTrayIconPeer")) ||
-                                       (null != m.invoke(cl, "java.awt.SystemTray"));
+            // if we are using swing the classes are already created and we cannot fix that if it's already loaded.
+            return (null != m.invoke(cl, className)) || (null != m.invoke(cl, "java.awt.SystemTray"));
         } catch (Throwable e) {
             if (SystemTray.DEBUG) {
-                logger.debug("Error detecting if the Swing SystemTray is loaded", e);
+                logger.debug("Error detecting if the Swing SystemTray is loaded, unexpected error.", e);
             }
         }
 
-        if (isWindowsSwingTrayLoaded) {
-            throw new RuntimeException("Unable to initialize the swing tray in windows, it has already been created!");
+        return true;
+    }
+
+    private static
+    boolean isOracleVM() {
+        String vendor = System.getProperty("java.vendor")
+                              .toLowerCase(Locale.US);
+
+        // spaces at the end to make sure we check for words
+        return !(vendor.contains("sun ") || vendor.contains("oracle "));
+    }
+
+
+    /**
+     * oh my. Java likes to think that ALL windows tray icons are 16x16.... Lets fix that!
+     *
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
+     */
+    public static void fixWindows(int trayIconSize) {
+        if (isOracleVM()) {
+            // not fixing things that are not broken.
+            return;
+        }
+
+        if (isSwingTrayLoaded()) {
+            // we have to throw a significant error.
+            throw new RuntimeException("Unable to initialize the Swing System Tray, it has already been created!");
         }
 
         try {
@@ -198,37 +221,24 @@ class SystemTrayFixes {
         }
     }
 
-    // MacOS AWT is hardcoded to respond only to lef-click for menus, where it should be any mouse button
-    // https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
-    // https://bugs.openjdk.java.net/browse/JDK-7158615
+    /**
+     * MacOS AWT is hardcoded to respond only to lef-click for menus, where it should be any mouse button
+     *
+     * https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
+     * https://bugs.openjdk.java.net/browse/JDK-7158615
+     *
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/macosx/classes/sun/lwawt/macosx/CTrayIcon.java
+     */
     public static void fixMacOS() {
-        String vendor = System.getProperty("java.vendor").toLowerCase(Locale.US);
-        // spaces at the end to make sure we check for words
-        if (!(vendor.contains("sun ") || vendor.contains("oracle "))) {
+        if (isOracleVM()) {
             // not fixing things that are not broken.
             return;
         }
 
 
-        boolean isMacTrayLoaded = false;
-
-        try {
-            // this is important to use reflection, because if JavaFX is not being used, calling getToolkit() will initialize it...
-            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-            m.setAccessible(true);
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-
-            // if we are using AWT (in MacOS only) the menu trigger is incomplete. We cannot fix that if it's already loaded.
-            isMacTrayLoaded = (null != m.invoke(cl, "sun.lwawt.macosx.CTrayIcon")) ||
-                              (null != m.invoke(cl, "java.awt.SystemTray"));
-        } catch (Throwable e) {
-            if (SystemTray.DEBUG) {
-                logger.debug("Error detecting if the MacOS SystemTray is loaded", e);
-            }
-        }
-
-        if (isMacTrayLoaded) {
-            throw new RuntimeException("Unable to initialize the AWT tray in MacOSx, it has already been created!");
+        if (isSwingTrayLoaded()) {
+            // we have to throw a significant error.
+            throw new RuntimeException("Unable to initialize the AWT System Tray, it has already been created!");
         }
 
         try {
@@ -387,5 +397,149 @@ class SystemTrayFixes {
         }
     }
 
+    /**
+     * Linux/Unix/Solaris use X11 + AWT to add an AWT window to a spot in the notification panel. UNFORTUNATELY, AWT
+     * components are heavyweight, and DO NOT support transparency -- so one gets a "grey" box as the background of the icon.
+     *
+     * Spectacularly enough, because this uses X11, it works on any X backend -- regardless of GtkStatusIcon or AppIndicator support. This
+     * actually provides **more** support than GtkStatusIcons or AppIndicators, since this will ALWAYS work.
+     *
+     * Additionally, the size of the tray is hard-coded to be 24 -- so we want to fix that as well.
+     *
+     *
+     * The down side, is that there is a "grey" box -- so hack around this issue by getting the color of a pixel in the notification area 1
+     * off the corner, and setting that as the background.
+     *
+     * It would be better to take a screenshot of the space BEHIND the tray icon, but we can't do that because there is no way to get
+     * the info BEFORE the AWT is added to the notification area. See comments below for more details.
+     *
+     * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
+     * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
+     *
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/solaris/classes/sun/awt/X11/XTrayIconPeer.java
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/solaris/classes/sun/awt/X11/XSystemTrayPeer.java
+     */
+    public static
+    void fixLinux() {
+        // linux/mac doesn't have transparent backgrounds for "swing" system tray icons
+        // TODO Fix the tray icon size to something other than (hardcoded) 24. This will be a lot of work, since this value is in the
+        // constructor, and there is a significant amount of code and anonymous classes there - and javassist does not support non-staic
+        // anonymous classes.
 
+        if (isOracleVM()) {
+            // not fixing things that are not broken.
+            return;
+        }
+
+        if (isSwingTrayLoaded()) {
+            // we have to throw a significant error.
+            throw new RuntimeException("Unable to initialize the Swing System Tray, it has already been created!");
+        }
+
+        try {
+            ClassPool pool = ClassPool.getDefault();
+            byte[] iconCanvasBytes;
+
+            {
+                CtClass trayIconClass = pool.get("sun.awt.X11.XTrayIconPeer");
+                CtClass[] nestedClasses = trayIconClass.getNestedClasses();
+
+                // looking for IconCanvas
+                CtClass iconCanvasClass = null;
+                for (CtClass nestedClass : nestedClasses) {
+                    if (nestedClass.getName()
+                                   .equals(trayIconClass.getName() + "$IconCanvas")) {
+                        iconCanvasClass = nestedClass;
+                        break;
+                    }
+                }
+
+                if (iconCanvasClass == null) {
+                    throw new RuntimeException("Unable to find required classes. Unable to continue initialization.");
+                }
+
+                CtField ctField;
+                ctField = new CtField(pool.get("java.awt.Color"), "color", iconCanvasClass);
+                iconCanvasClass.addField(ctField);
+
+                ctField = new CtField(pool.get("java.awt.Robot"), "robot", iconCanvasClass);
+                iconCanvasClass.addField(ctField);
+
+                CtMethod ctMethodRepaintImage = iconCanvasClass.getDeclaredMethod("repaintImage");
+                String body = "{" +
+                    "boolean doClear = $1;" +
+
+                    "java.lang.System.err.println(\"update image: \" + doClear);" +
+
+                    "java.awt.Graphics g = getGraphics();" +
+                    "if (g != null) {" +
+                    "   try {" +
+                    "       if (isVisible()) {" +
+                    "           if (robot == null) {" +
+                    "               robot = new java.awt.Robot();" +
+                    "           }" +
+                    "       if (doClear) {" +
+                    // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
+                    // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
+                    // time. This means we cannot take a screen shot, because before the window is placed, another icon is in this spot,
+                    // and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
+                    // the pixel color, so at least we can fake transparency. This only works if the notification area is a solid color,
+                    // and not an image or gradient.
+                    "              java.awt.Point loc = getLocationOnScreen();" +
+                    "              color = robot.getPixelColor(loc.x-1, loc.y-1);" +
+                    "              update(g);" +
+                    "          } else {" +
+                    "              paint(g);" +
+                    "          }" +
+                    "      }" +
+                    "  } finally {" +
+                    "      g.dispose();" +
+                    "  }" +
+                    "}" +
+                "}";
+                ctMethodRepaintImage.setBody(body);
+
+
+                CtMethod ctMethodPaint = iconCanvasClass.getDeclaredMethod("paint");
+                body = "{" +
+                    "java.awt.Graphics g = $1;" +
+
+                    "if (g != null && curW > 0 && curH > 0) {" +
+                    "     java.awt.image.BufferedImage bufImage = new java.awt.image.BufferedImage(curW, curH, java.awt.image.BufferedImage.TYPE_INT_ARGB);" +
+                    "     java.awt.Graphics2D gr = bufImage.createGraphics();" +
+                    "     if (gr != null) {" +
+                    "         try {" +
+
+                    // this will render the image "nicely"
+                    "             gr.addRenderingHints(new java.awt.RenderingHints(java.awt.RenderingHints.KEY_RENDERING," +
+                    "                                                              java.awt.RenderingHints.VALUE_RENDER_QUALITY));" +
+
+                    // Have to replace the color with the correct pixel color to simulate transparency
+                    "             gr.setColor(color);" +
+                    "             gr.fillRect(0, 0, curW, curH);" +
+                    "             gr.drawImage(image, 0, 0, curW, curH, observer);" +
+                    "             gr.dispose();" +
+                    "             g.drawImage(bufImage, 0, 0, curW, curH, null);" +
+                    "          } finally {" +
+                    "             g.dispose();" +
+                    "          }" +
+                    "     }" +
+                    "}" +
+                "}";
+                ctMethodPaint.setBody(body);
+
+
+                iconCanvasBytes = iconCanvasClass.toBytecode();
+            }
+
+            // whoosh, past the classloader and directly into memory.
+            BootStrapClassLoader.defineClass(iconCanvasBytes);
+
+            if (SystemTray.DEBUG) {
+                logger.debug("Successfully changed tray icon background color");
+            }
+        } catch (Exception e) {
+            logger.error("Error setting tray icon background color", e);
+        }
+    }
 }
