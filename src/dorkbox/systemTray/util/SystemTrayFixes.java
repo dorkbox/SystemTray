@@ -27,6 +27,7 @@ import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
@@ -144,11 +145,13 @@ class SystemTrayFixes {
                 trayClass.getConstructors()[0].setModifiers(trayClass.getConstructors()[0].getModifiers() & javassist.Modifier.PUBLIC);
 
 
-                CtBehavior methodInfos[] = new CtBehavior[]{
-                                trayClass.getDeclaredMethod("getTrayIconSize")
-                };
+                CtMethod method = trayClass.getDeclaredMethod("getTrayIconSize");
+                CtBehavior methodInfos[] = new CtBehavior[]{ method };
 
                 fixTraySize(methodInfos, trayIconSize);
+
+                // perform pre-verification for the modified method
+                method.getMethodInfo().rebuildStackMapForME(trayClass.getClassPool());
 
                 trayBytes = trayClass.toBytecode();
             }
@@ -218,6 +221,10 @@ class SystemTrayFixes {
                         "}" +
                     "}" +
                 "}");
+
+                // perform pre-verification for the modified method
+                ctMethodCreate.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
+                ctMethodUpdate.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
 
                 trayIconBytes = trayIconClass.toBytecode();
             }
@@ -397,6 +404,9 @@ class SystemTrayFixes {
                 "}" +
             "}");
 
+            // perform pre-verification for the modified method
+            ctMethodGet.getMethodInfo().rebuildStackMapForME(trayClass.getClassPool());
+
             mouseEventBytes = trayClass.toBytecode();
 
             // whoosh, past the classloader and directly into memory.
@@ -490,13 +500,20 @@ class SystemTrayFixes {
                 // Since, looking at the source code, there is NO other case where the number 24 is used (except for size), we just
                 // bytecode replace 24 with our specified size.
 
-                CtBehavior methodInfos[] = new CtBehavior[]{
-                                trayIconClass.getDeclaredConstructors()[0], // only 1 constructor
-                                trayIconClass.getDeclaredMethod("getBounds"),
-                                trayPeerClass.getDeclaredMethod("getTrayIconSize")
+                CtConstructor constructor = trayIconClass.getDeclaredConstructors()[0]; // only 1 constructor
+                CtMethod method1 = trayIconClass.getDeclaredMethod("getBounds");
+                CtMethod method2 = trayPeerClass.getDeclaredMethod("getTrayIconSize");
+
+                CtBehavior methodInfos[] = new CtBehavior[]{constructor,
+                                                            method1, method2
                 };
 
                 fixTraySize(methodInfos, trayIconSize);
+
+                // perform pre-verification for the modified method
+                constructor.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
+                method1.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
+                method2.getMethodInfo().rebuildStackMapForME(trayPeerClass.getClassPool());
 
                 trayIconBytes = trayIconClass.toBytecode();
                 trayPeerBytes = trayPeerClass.toBytecode();
@@ -525,6 +542,9 @@ class SystemTrayFixes {
                     "super.setVisible(b);" +
                 " }", eFrameClass);
                 eFrameClass.addMethod(methodVisible);
+
+                methodVisible.getMethodInfo().rebuildStackMapForME(eFrameClass.getClassPool());
+
                 eFrameBytes = eFrameClass.toBytecode();
             }
 
@@ -544,7 +564,8 @@ class SystemTrayFixes {
     private static
     void fixTraySize(final CtBehavior[] behaviors, final int traySize) {
         for (CtBehavior behavior : behaviors) {
-            CodeIterator methodIterator = behavior.getMethodInfo().getCodeAttribute().iterator();
+            MethodInfo methodInfo = behavior.getMethodInfo();
+            CodeIterator methodIterator = methodInfo.getCodeAttribute().iterator();
 
             while (methodIterator.hasNext()) {
                 int index;
