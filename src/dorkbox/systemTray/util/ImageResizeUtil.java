@@ -38,17 +38,19 @@ import dorkbox.util.ImageUtil;
 
 public
 class ImageResizeUtil {
-    public static final File TEMP_DIR = new File(CacheUtil.TEMP_DIR, "SystemTrayImages");
-
     public static
     File getTransparentImage() {
         // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
         // it is HIGHLY unlikely that the menu entry will be smaller than 4px.
+        return getTransparentImage(4);
+    }
 
+    public static
+    File getTransparentImage(final int imageSize) {
         // NOTE: this does not need to be called on the EDT
         try {
-            final File newFile = new File(TEMP_DIR, 4 + "_empty.png").getAbsoluteFile();
-            return ImageUtil.getTransparentImage(4, newFile);
+            final File newFile = CacheUtil.create(imageSize + "_empty.png");
+            return ImageUtil.getTransparentImage(imageSize, newFile);
         } catch (IOException e) {
             throw new RuntimeException("Unable to generate transparent image! Something is severely wrong!");
         }
@@ -74,7 +76,7 @@ class ImageResizeUtil {
 
 
             // if we already have this fileName, reuse it
-            final File check = getIfCached(cacheName);
+            final File check = CacheUtil.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -89,18 +91,6 @@ class ImageResizeUtil {
             // this must be thrown
             throw new RuntimeException("Serious problems! Unable to extract error image, this should NEVER happen!", e);
         }
-    }
-
-    private static
-    File getIfCached(final String cacheName) {
-        try {
-            final File check = CacheUtil.check(cacheName);
-            if (check != null) {
-                return check;
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
     }
 
     private static synchronized
@@ -148,7 +138,7 @@ class ImageResizeUtil {
 
 
             // if we already have this fileName, reuse it
-            final File check = getIfCached(cacheName);
+            final File check = CacheUtil.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -157,7 +147,7 @@ class ImageResizeUtil {
             imageStream.mark(0);
             Dimension imageSize = ImageUtil.getImageSize(imageStream);
             //noinspection NumericCastThatLosesPrecision
-            if (size == ((int) imageSize.getWidth())) {
+            if (size == ((int) imageSize.getWidth()) && size == (int) imageSize.getHeight()) {
                 // we can reuse this URL (it's the correct size).
                 needsResize = false;
             }
@@ -228,16 +218,13 @@ class ImageResizeUtil {
         // have to resize the file (and return the new path)
 
         // now have to resize this file.
-        File newFile = new File(TEMP_DIR, "temp_resize.png").getAbsoluteFile();
-        Image image;
 
+        File newFile = CacheUtil.create("temp_resize.png");
+        Image image;
 
         // resize the image, keep aspect
         image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
         image = image.getScaledInstance(size, -1, Image.SCALE_SMOOTH);
-
-        // make whatever dirs we need to.
-        newFile.getParentFile().mkdirs();
 
         // if it's already there, we have to delete it
         newFile.delete();
