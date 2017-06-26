@@ -11,6 +11,7 @@ import java.io.File;
 import javax.imageio.ImageIO;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.CacheUtil;
 
 public class HeavyCheckMark {
     // this is a slight adjustment from the original size of the SVG image this came from, translated via Flamingo
@@ -29,15 +30,14 @@ public class HeavyCheckMark {
      */
     public static
     String getFile(Color color, int iconSize, int padding) {
-        int totalPadding = padding * 2;
-        int imageSize = iconSize + totalPadding;
+        int imageSize = iconSize + padding;
 
         String name = imageSize + "_checkMark_" + HeavyCheckMark.VERSION + "_" + color.getRGB() + ".png";
-        final File newFile = new File(ImageResizeUtil.TEMP_DIR, name).getAbsoluteFile();
 
+        final File newFile = CacheUtil.create(name);
         if (newFile.canRead() || newFile.length() == 0) {
             try {
-                BufferedImage img = HeavyCheckMark.draw(color, imageSize, totalPadding);
+                BufferedImage img = HeavyCheckMark.draw(color, imageSize, padding);
                 ImageIO.write(img, "png", newFile);
             } catch (Exception e) {
                 SystemTray.logger.error("Error creating check-mark image.", e);
