@@ -24,20 +24,33 @@ public class HeavyCheckMark {
      * This saves a scalable CheckMark to a correctly sized PNG file.
      *
      * @param color the color of the CheckMark
-     * @param iconSize the size of the icon (NOT the size of the image. The size of the image is iconSize + padding)
-     * @param padding the amount of padding to apply to all edges of the icon. 8 means that on all sides, there will be 8 pixels
-     *                  between the icon and the edge of the image.  Image size = icon size + (padding * 2)
+     * @param checkMarkSize the size of the CheckMark inside the image. (does not include padding)
+     *
+     * @param paddingTop amount of padding to apply to the top edge of the icon.
+     * @param paddingLeft amount of padding to apply to the left edge of the icon.
+     * @param paddingBottom amount of padding to apply to the bottom edge of the icon.
+     * @param paddingRight amount of padding to apply to the right edge of the icon.
      */
     public static
-    String getFile(Color color, int iconSize, int padding) {
-        int imageSize = iconSize + padding;
+    String getFile(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight) {
 
-        String name = imageSize + "_checkMark_" + HeavyCheckMark.VERSION + "_" + color.getRGB() + ".png";
+        //noinspection StringBufferReplaceableByString
+        String name = new StringBuilder().append(checkMarkSize)
+                                         .append(paddingTop)
+                                         .append(paddingBottom)
+                                         .append(paddingLeft)
+                                         .append(paddingRight)
+                                         .append("_checkMark_")
+                                         .append(HeavyCheckMark.VERSION)
+                                         .append("_")
+                                         .append(color.getRGB())
+                                         .append(".png")
+                                         .toString();
 
         final File newFile = CacheUtil.create(name);
         if (newFile.canRead() || newFile.length() == 0) {
             try {
-                BufferedImage img = HeavyCheckMark.draw(color, imageSize, padding);
+                BufferedImage img = HeavyCheckMark.draw(color, checkMarkSize, paddingTop, paddingLeft, paddingBottom, paddingRight);
                 ImageIO.write(img, "png", newFile);
             } catch (Exception e) {
                 SystemTray.logger.error("Error creating check-mark image.", e);
@@ -48,10 +61,14 @@ public class HeavyCheckMark {
     }
 
     private static
-    BufferedImage draw(final Color color, int size, int padding) {
-        double scale = (size - padding) / SVG_ORIG_SIZE;
+    BufferedImage draw(final Color color, final int checkMarkSize, final int paddingTop, final int paddingLeft, int paddingBottom, int paddingRight) {
+        int sizeX = checkMarkSize + paddingLeft + paddingRight;
+        int sizeY = checkMarkSize + paddingTop + paddingBottom;
 
-        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        double scaleX = checkMarkSize / SVG_ORIG_SIZE;
+        double scaleY = checkMarkSize / SVG_ORIG_SIZE;
+
+        BufferedImage img = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
 
         g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
@@ -64,10 +81,8 @@ public class HeavyCheckMark {
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
         AffineTransform at = new AffineTransform();
-        double midPoint = (size / 2.0) - ((size - padding) / 2.0);
-
-        at.translate(midPoint, midPoint);
-        at.scale(scale, scale);
+        at.translate(paddingLeft, paddingTop);
+        at.scale(scaleX, scaleY);
         g2d.setTransform(at);
 
 
