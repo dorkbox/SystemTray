@@ -17,7 +17,6 @@ package dorkbox.systemTray.swingUI;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
@@ -26,41 +25,47 @@ import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.systemTray.util.ImageUtils;
+import dorkbox.systemTray.util.HeavyCheckMark;
+import dorkbox.util.FontUtil;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemCheckbox implements CheckboxPeer {
-
-    private final SwingMenu parent;
-    private final JMenuItem _native = new JMenuItem();
+class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
     // these have to be volatile, because they can be changed from any thread
-    private volatile ActionListener callback;
     private volatile boolean isChecked = false;
 
-    private static ImageIcon checkedIcon;
-    private static ImageIcon uncheckedIcon;
+    private static volatile ImageIcon checkedIcon;
 
     // this is ALWAYS called on the EDT.
     SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
-        this.parent = parent;
-
-        if (SystemTray.SWING_UI != null) {
-            _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
-        }
-
-        parent._native.add(_native);
+        super(parent, entry);
 
         if (checkedIcon == null) {
-            // from Brankic1979, public domain
-            File checkedFile = ImageUtils.resizeAndCache(ImageUtils.ENTRY_SIZE, ImageUtils.class.getResource("checked_32.png"));
-            checkedIcon = new ImageIcon(checkedFile.getAbsolutePath());
+            try {
+                JMenuItem jMenuItem = new JMenuItem();
 
-            File uncheckedFile = ImageUtils.getTransparentImage(ImageUtils.ENTRY_SIZE);
-            uncheckedIcon = new ImageIcon(uncheckedFile.getAbsolutePath());
+                // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                if (SystemTray.SWING_UI != null) {
+                    jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                }
+
+                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+                int menuImageSize = SystemTray.get()
+                                              .getMenuImageSize();
+
+                // Having the checkmark size the same size as the letter X is a reasonably nice size.
+                int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
+
+                // we have to to the left/right as well, otherwise the checkmark will (possibly) not be centered
+                int sizePadding = (menuImageSize - size) / 2;
+
+
+                checkedIcon = new ImageIcon(HeavyCheckMark.get(jMenuItem.getForeground(), size,
+                                                               0, sizePadding, 0, sizePadding));
+            } catch(Exception e) {
+                SystemTray.logger.error("Error creating check-mark image.", e);
+            }
         }
-
-        _native.setIcon(uncheckedIcon);
     }
 
     @Override
@@ -154,29 +159,10 @@ class SwingMenuItemCheckbox implements CheckboxPeer {
                         _native.setIcon(checkedIcon);
                     }
                     else {
-                        _native.setIcon(uncheckedIcon);
+                        _native.setIcon(SwingMenuItem.transparentIcon);
                     }
                 }
             });
         }
-    }
-
-    @Override
-    public
-    void remove() {
-        //noinspection Duplicates
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (callback != null) {
-                    _native.removeActionListener(callback);
-                    callback = null;
-                }
-
-                parent._native.remove(_native);
-                _native.removeAll();
-            }
-        });
     }
 }
