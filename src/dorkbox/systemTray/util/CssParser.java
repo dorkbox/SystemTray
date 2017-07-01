@@ -138,6 +138,14 @@ class CssParser {
                             if (separator < end) {
                                 String key = nodeSection.substring(start, separator);
                                 String value = nodeSection.substring(separator + 1, end);
+
+                                if (value.contains("url(") || value.contains("url (")) {
+                                    // this is really a URL , so we have to goto to the closing ');'
+                                    end = nodeSection.indexOf(')', end);
+                                    end = nodeSection.indexOf(';', end);
+                                    value = nodeSection.substring(separator + 1, end);
+                                }
+
                                 attributes.add(new CssAttribute(key, value));
                             }
                             start = end + 1;
