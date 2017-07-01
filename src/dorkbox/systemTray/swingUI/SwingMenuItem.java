@@ -33,12 +33,12 @@ import dorkbox.util.SwingUtil;
 class SwingMenuItem implements MenuItemPeer {
 
     // necessary to have the correct scaling + padding for the menu entries.
-    private static ImageIcon transparentIcon;
+    protected static ImageIcon transparentIcon;
 
-    private final SwingMenu parent;
-    private final JMenuItem _native = new JMenuItem();
+    protected final SwingMenu parent;
+    protected final JMenuItem _native = new JMenuItem();
 
-    private volatile ActionListener swingCallback;
+    protected volatile ActionListener callback;
 
 
     // this is ALWAYS called on the EDT.
@@ -53,8 +53,23 @@ class SwingMenuItem implements MenuItemPeer {
         parent._native.add(_native);
 
         if (transparentIcon == null) {
-            File uncheckedFile = ImageResizeUtil.getTransparentImage();
-            transparentIcon = new ImageIcon(uncheckedFile.getAbsolutePath());
+            try {
+                JMenuItem jMenuItem = new JMenuItem();
+
+                // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                if (SystemTray.SWING_UI != null) {
+                    jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                }
+
+                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+                int menuImageSize = SystemTray.get()
+                                              .getMenuImageSize();
+
+                transparentIcon = new ImageIcon(ImageResizeUtil.getTransparentImage(menuImageSize)
+                                                               .getAbsolutePath());
+            } catch (Exception e) {
+                SystemTray.logger.error("Error creating transparent image.", e);
+            }
         }
 
         _native.setIcon(transparentIcon);
@@ -107,12 +122,12 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setCallback(final MenuItem menuItem) {
-        if (swingCallback != null) {
-            _native.removeActionListener(swingCallback);
+        if (callback != null) {
+            _native.removeActionListener(callback);
         }
 
         if (menuItem.getCallback() != null) {
-            swingCallback = new ActionListener() {
+            callback = new ActionListener() {
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
@@ -128,10 +143,10 @@ class SwingMenuItem implements MenuItemPeer {
                 }
             };
 
-            _native.addActionListener(swingCallback);
+            _native.addActionListener(callback);
         }
         else {
-            swingCallback = null;
+            callback = null;
         }
     }
 
@@ -159,9 +174,9 @@ class SwingMenuItem implements MenuItemPeer {
             @Override
             public
             void run() {
-                if (swingCallback != null) {
-                    _native.removeActionListener(swingCallback);
-                    swingCallback = null;
+                if (callback != null) {
+                    _native.removeActionListener(callback);
+                    callback = null;
                 }
                 parent._native.remove(_native);
                 _native.removeAll();
