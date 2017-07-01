@@ -15,8 +15,6 @@
  */
 package dorkbox.systemTray.util;
 
-import static dorkbox.util.ImageUtil.getBufferedImage;
-
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -119,7 +117,7 @@ class ImageResizeUtil {
 
     @SuppressWarnings("Duplicates")
     private static synchronized
-    File resizeAndCache(final int height, InputStream imageStream) {
+    File resizeAndCache(final int size, InputStream imageStream) {
         if (imageStream == null) {
             return null;
         }
@@ -133,7 +131,7 @@ class ImageResizeUtil {
             imageStream.mark(0);
 
             // check if we already have this file information saved to disk, based on size + hash of data
-            cacheName = height + "_" + CacheUtil.createNameAsHash(imageStream);
+            cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 
@@ -147,14 +145,14 @@ class ImageResizeUtil {
             imageStream.mark(0);
             Dimension imageSize = ImageUtil.getImageSize(imageStream);
             //noinspection NumericCastThatLosesPrecision
-            if (height == (int) imageSize.getHeight()) {
+            if (size == (int) imageSize.getHeight() && size == (int) imageSize.getWidth()) {
                 // we can reuse this URL (it's the correct size).
                 needsResize = false;
             }
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error getting image size. Using error icon instead", e);
-            return getErrorImage(height);
+            return getErrorImage(size);
         } finally {
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
         }
@@ -164,7 +162,7 @@ class ImageResizeUtil {
         if (needsResize) {
             // we have to hop through hoops.
             try {
-                File resizedFile = resizeFileNoCheck(height, imageStream);
+                File resizedFile = resizeFileNoCheck(size, imageStream);
 
                 // now cache that file
                 try {
@@ -172,13 +170,13 @@ class ImageResizeUtil {
                 } catch (Exception e) {
                     // have to serve up the error image instead.
                     SystemTray.logger.error("Error caching image. Using error icon instead", e);
-                    return getErrorImage(height);
+                    return getErrorImage(size);
                 }
 
             } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error resizing image. Using error icon instead", e);
-                return getErrorImage(height);
+                return getErrorImage(size);
             }
 
         } else {
@@ -188,7 +186,7 @@ class ImageResizeUtil {
             } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error caching image. Using error icon instead", e);
-                return getErrorImage(height);
+                return getErrorImage(size);
             }
         }
     }
@@ -208,7 +206,9 @@ class ImageResizeUtil {
 
 
     /**
-     * Resizes the given InputStream to the specified size. No checks are performed if it's the correct size to begin with.
+     * Resizes the given InputStream to the specified height. No checks are performed if it's the correct height to begin with.
+     *
+     * Additionally, the image is scaled to where it's largest dimension will always be <= to the size.
      *
      * @return the file on disk that is the resized icon
      */
@@ -217,20 +217,26 @@ class ImageResizeUtil {
     File resizeFileNoCheck(final int size, InputStream inputStream) throws IOException {
         // have to resize the file (and return the new path)
 
-        // now have to resize this file.
-
         File newFile = CacheUtil.create("temp_resize.png");
-        Image image;
-
-        // resize the image based on height, keep aspect ratio
-        image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
-        image = image.getScaledInstance(-1, size, Image.SCALE_SMOOTH);
-
         // if it's already there, we have to delete it
         newFile.delete();
 
+        // resize the image, keep aspect ratio
+        Image image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
+
+        int height = image.getHeight(null);
+        int width = image.getWidth(null);
+
+        if (width > height) {
+            // fit on the width
+            image = image.getScaledInstance(size, -1, Image.SCALE_SMOOTH);
+        } else {
+            // fit on the height
+            image = image.getScaledInstance(-1, size, Image.SCALE_SMOOTH);
+        }
+
         // now write out the new one
-        BufferedImage bufferedImage = getBufferedImage(image);
+        BufferedImage bufferedImage = ImageUtil.getSquareBufferedImage(image);
         ImageIO.write(bufferedImage, "png", newFile); // made up extension
 
         return newFile;
@@ -320,7 +326,7 @@ class ImageResizeUtil {
         try {
             final Image trayImage =  ImageUtil.getImageImmediate(image);
 
-            BufferedImage bufferedImage = getBufferedImage(trayImage);
+            BufferedImage bufferedImage = ImageUtil.getBufferedImage(trayImage);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "png", os);
             InputStream imageInputStream = new ByteArrayInputStream(os.toByteArray());
