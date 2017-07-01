@@ -60,8 +60,14 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 int sizePadding = (menuImageSize - size) / 2;
 
 
-                checkedIcon = new ImageIcon(HeavyCheckMark.get(jMenuItem.getForeground(), size,
-                                                               0, sizePadding, 0, sizePadding));
+                String checkmarkPath;
+                if (SystemTray.SWING_UI != null) {
+                    checkmarkPath = SystemTray.SWING_UI.getCheckMarkIcon(jMenuItem.getForeground(), size, 0, sizePadding, 0, sizePadding);
+                } else {
+                    checkmarkPath = HeavyCheckMark.get(jMenuItem.getForeground(), size, 0, sizePadding, 0, sizePadding);
+                }
+
+                checkedIcon = new ImageIcon(checkmarkPath);
             } catch(Exception e) {
                 SystemTray.logger.error("Error creating check-mark image.", e);
             }

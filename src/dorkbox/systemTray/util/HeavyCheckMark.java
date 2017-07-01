@@ -21,7 +21,7 @@ public class HeavyCheckMark {
     private static final int VERSION = 1;
 
     /**
-     * This saves a scalable CheckMark to a correctly sized PNG file.
+     * This saves a vector CheckMark to a correctly sized PNG file.
      *
      * @param color the color of the CheckMark
      * @param checkMarkSize the size of the CheckMark inside the image. (does not include padding)

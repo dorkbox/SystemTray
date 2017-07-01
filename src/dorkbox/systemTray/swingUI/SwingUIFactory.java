@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray.swingUI;
 
+import java.awt.Color;
+
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -67,4 +69,20 @@ interface SwingUIFactory {
      * @return the UI used to customize the Look & Feel of a menu separator entry
      */
     SeparatorUI getSeparatorUI(JSeparator jSeparator);
+
+    /**
+     * Get the path to a CheckMark image for a specified color, size, and padding.
+     * <p>
+     * This is necessary because Swing does not have correct spacing when rendering CheckMark menu items next to
+     * normal menu menu items (with, or without, images attached).
+     *
+     * @param color the color of the CheckMark
+     * @param checkMarkSize the size of the CheckMark inside the image. (does not include padding)
+     *
+     * @param paddingTop amount of padding to apply to the top edge of the icon.
+     * @param paddingLeft amount of padding to apply to the left edge of the icon.
+     * @param paddingBottom amount of padding to apply to the bottom edge of the icon.
+     * @param paddingRight amount of padding to apply to the right edge of the icon.
+     */
+    String getCheckMarkIcon(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight);
 }
