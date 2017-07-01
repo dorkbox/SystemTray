@@ -28,10 +28,10 @@ import javax.swing.plaf.SeparatorUI;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
+import dorkbox.systemTray.swingUI.SwingUIFactory;
 import dorkbox.util.swing.DefaultMenuItemUI;
 import dorkbox.util.swing.DefaultPopupMenuUI;
 import dorkbox.util.swing.DefaultSeparatorUI;
-import dorkbox.systemTray.swingUI.SwingUIFactory;
 
 /**
  * Factory to allow for Look & Feel of the Swing UI components in the SystemTray.
@@ -67,9 +67,11 @@ class CustomSwingUI implements SwingUIFactory {
             void installUI(final JComponent c) {
                 super.installUI(c);
 
+                JPopupMenu popupMenu = (JPopupMenu) c;
+
                 // borderUI resource border type will get changed internally!
                 // setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0));
-                c.setBorder(new EmptyBorder(1, 1, 1, 1));
+                popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
             }
         };
     }
@@ -91,7 +93,10 @@ class CustomSwingUI implements SwingUIFactory {
             void installUI(final JComponent c) {
                 super.installUI(c);
 
-                ((JMenuItem) c).setMargin(new Insets(2, -2, 2, 4));
+
+                JMenuItem menuItem = (JMenuItem) c;
+                menuItem.setIconTextGap(8);
+                menuItem.setMargin(new Insets(2, -2, 2, 4));
                 c.setBorder(new EmptyBorder(1, 1, 1, 1));
             }
         };
