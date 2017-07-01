@@ -38,8 +38,6 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.java.swing.plaf.gtk.GTKLookAndFeel;
-
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
@@ -107,11 +105,13 @@ class SystemTray {
     @Property
     /**
      * When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
+     * Additionally, when using the Swing tray type, Windows does not always remove the tray icon if the JVM is stopped, and this makes
+     * sure that the tray is also removed from the notification area.
+     * <p>
      * This property is available to disable this functionality in situations where you don't want this to happen.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true.
-     */
-    public static boolean ENABLE_SHUTDOWN_HOOK = true;
+     */ public static boolean ENABLE_SHUTDOWN_HOOK = true;
 
     @Property
     /**
@@ -210,7 +210,7 @@ class SystemTray {
         return null;
     }
 
-    // This will return the default "autodetect" tray type
+    // This will return what the default "autodetect" tray type should be
     private static
     Class<? extends Tray> getAutoDetectTrayType() {
         if (OS.isWindows()) {
@@ -486,7 +486,8 @@ class SystemTray {
 
                 boolean mustForceGtk2 = false;
 
-                if (currentUI.equals(GTKLookAndFeel.class.getCanonicalName())) {
+                // GTKLookAndFeel.class.getCanonicalName()
+                if (currentUI.equals("com.sun.java.swing.plaf.gtk.GTKLookAndFeel")) {
                     // this means our look and feel is the GTK look and feel... THIS CREATES PROBLEMS!
 
                     // THIS IS NOT DOCUMENTED ANYWHERE...
@@ -590,6 +591,7 @@ class SystemTray {
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
             logger.debug("Is JavaFX detected? {}", isJavaFxLoaded);
             logger.debug("Is SWT detected? {}", isSwtLoaded);
+            logger.debug("Java Swing L&F: {}", UIManager.getLookAndFeel().getID());
             if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
                 logger.debug("Auto-detecting tray type");
             }
@@ -618,11 +620,19 @@ class SystemTray {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
             if (isTrayType(trayType, TrayType.GtkStatusIcon) && OSUtil.DesktopEnv.get() == OSUtil.DesktopEnv.Env.Unity && OSUtil.Linux.isUbuntu()) {
                 if (AUTO_FIX_INCONSISTENCIES) {
-                    // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
-                    SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
-                    trayType = selectTypeQuietly(TrayType.AppIndicator);
+                    // GTK2 does not support AppIndicators!
+                    if (Gtk.isGtk2) {
+                        trayType = selectTypeQuietly(TrayType.Swing);
+                        logger.warn("Forcing Swing Tray type because Ubuntu Unity display environment removed support for GtkStatusIcons " +
+                                    "and GTK2+ was specified.");
+                    }
+                    else {
+                        // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
+                        SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
+                        trayType = selectTypeQuietly(TrayType.AppIndicator);
 
-                    logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
+                        logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
+                    }
                 }
                 else {
                     logger.error("Unable to use the GtkStatusIcons when running on Ubuntu with the Unity display environment, and thus" +
@@ -844,6 +854,17 @@ class SystemTray {
                         }
                     }
                 });
+            }
+            else if (isTrayType(trayType, TrayType.Swing)) {
+                Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        if (systemTray != null) {
+                            systemTray.shutdown();
+                        }
+                    }
+                }));
             }
         }
     }
