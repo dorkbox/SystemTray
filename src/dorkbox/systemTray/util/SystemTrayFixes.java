@@ -148,7 +148,7 @@ class SystemTrayFixes {
                 CtMethod method = trayClass.getDeclaredMethod("getTrayIconSize");
                 CtBehavior methodInfos[] = new CtBehavior[]{ method };
 
-                fixTraySize(methodInfos, trayIconSize);
+                fixTraySize(methodInfos, 16, trayIconSize);
 
                 // perform pre-verification for the modified method
                 method.getMethodInfo().rebuildStackMapForME(trayClass.getClassPool());
@@ -504,11 +504,9 @@ class SystemTrayFixes {
                 CtMethod method1 = trayIconClass.getDeclaredMethod("getBounds");
                 CtMethod method2 = trayPeerClass.getDeclaredMethod("getTrayIconSize");
 
-                CtBehavior methodInfos[] = new CtBehavior[]{constructor,
-                                                            method1, method2
-                };
+                CtBehavior methodInfos[] = new CtBehavior[]{constructor, method1, method2};
 
-                fixTraySize(methodInfos, trayIconSize);
+                fixTraySize(methodInfos, 24, trayIconSize);
 
                 // perform pre-verification for the modified method
                 constructor.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
@@ -562,7 +560,7 @@ class SystemTrayFixes {
     }
 
     private static
-    void fixTraySize(final CtBehavior[] behaviors, final int traySize) {
+    void fixTraySize(final CtBehavior[] behaviors, final int oldTraySize, final int newTraySize) {
         for (CtBehavior behavior : behaviors) {
             MethodInfo methodInfo = behavior.getMethodInfo();
             CodeIterator methodIterator = methodInfo.getCodeAttribute().iterator();
@@ -577,9 +575,9 @@ class SystemTrayFixes {
                         case BIPUSH: {
                             int i = methodIterator.byteAt(index + 1);
 
-                            if (i == 24) {
+                            if (i == oldTraySize) {
                                 // re-write this to be our custom size.
-                                methodIterator.writeByte((byte) traySize, index + 1);
+                                methodIterator.writeByte((byte) newTraySize, index + 1);
                             }
                         }
                     }
@@ -619,7 +617,7 @@ class SystemTrayFixes {
             collector.append(Mnemonic.OPCODE[op])
                      .append(" ");
 
-                    System.out.println(lineNumber + " * " + Mnemonic.OPCODE[op] + "  ");
+            System.out.println(lineNumber + " * " + Mnemonic.OPCODE[op] + "  ");
             System.out.println(lineNumber + " * " + InstructionPrinter.instructionString(ci, index, pool2));
         }
 
