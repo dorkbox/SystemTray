@@ -32,7 +32,7 @@ public class HeavyCheckMark {
      * @param paddingRight amount of padding to apply to the right edge of the icon.
      */
     public static
-    String getFile(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight) {
+    String get(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight) {
 
         //noinspection StringBufferReplaceableByString
         String name = new StringBuilder().append(checkMarkSize)
