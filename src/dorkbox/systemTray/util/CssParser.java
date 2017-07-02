@@ -3,11 +3,11 @@ package dorkbox.systemTray.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import dorkbox.util.FileUtil;
+import dorkbox.util.OS;
 
 /**
  * A simple, basic CSS parser
@@ -42,7 +42,16 @@ class CssParser {
         @Override
         public
         String toString() {
-            return label + "\n\t" + Arrays.toString(attributes.toArray());
+            StringBuilder builder = new StringBuilder();
+            for (CssAttribute attribute : attributes) {
+                builder.append("\t")
+                       .append(attribute.key)
+                       .append(" : ")
+                       .append(attribute.value)
+                       .append(OS.LINE_SEPARATOR);
+            }
+
+            return label + "\n" + builder.toString();
         }
     }
 
@@ -129,26 +138,51 @@ class CssParser {
 
                     // split the section into an arrayList, one per item. Split by attribute element
                     String nodeSection = css.substring(endOfNodeLabels, endOfSection);
-                    int start = nodeSection.indexOf('{') + 1;
-                    while (start != -1) {
-                        int end = nodeSection.indexOf(';', start);
+                    int sectionStart = nodeSection.indexOf('{') + 1;
+                    int sectionEnd = nodeSection.indexOf('}');
+
+                    while (sectionStart != -1) {
+                        int end = nodeSection.indexOf(';', sectionStart);
                         if (end != -1) {
-                            int separator = nodeSection.indexOf(':', start);
-
+                            int separator = nodeSection.indexOf(':', sectionStart);
+                            // String.charAt() is a bit slow because of all the extra range checking it performes
                             if (separator < end) {
-                                String key = nodeSection.substring(start, separator);
-                                String value = nodeSection.substring(separator + 1, end);
+                                // the parenthesis must be balanced for the value
+                                short parenCount = 0;
 
-                                if (value.contains("url(") || value.contains("url (")) {
-                                    // this is really a URL , so we have to goto to the closing ');'
-                                    end = nodeSection.indexOf(')', end);
-                                    end = nodeSection.indexOf(';', end);
-                                    value = nodeSection.substring(separator + 1, end);
+                                int j = separator;
+                                while (j < end) {
+                                    j++;
+
+                                    if (nodeSection.charAt(j) == '(') {
+                                        parenCount++;
+                                    }
+                                    else if (nodeSection.charAt(j) == ')') {
+                                        parenCount--;
+                                    }
                                 }
 
+                                j--;
+
+                                if (parenCount > 0) {
+                                    do {
+                                        // find the extended balancing paren
+                                        if (nodeSection.charAt(j) == ')') {
+                                            parenCount--;
+                                        }
+
+                                        j++;
+                                    } while (parenCount > 0 && j < sectionEnd);
+                                    end = j;
+                                } else {
+                                    end = j+1;
+                                }
+
+                                String key = nodeSection.substring(sectionStart, separator);
+                                String value = nodeSection.substring(separator + 1, end);
                                 attributes.add(new CssAttribute(key, value));
                             }
-                            start = end + 1;
+                            sectionStart = end + 1;
                         }
                         else {
                             break;
@@ -382,7 +416,7 @@ class CssParser {
 
 
         int maxValue = -1;
-        CssNode maxNode = null; // guaranteed to be non-null
+        CssNode maxNode = null;
 
         // not the CLEANEST way to do this, but it works by only choosing css nodes that are important
         for (CssNode cssNode : sectionsWithAttribute) {
