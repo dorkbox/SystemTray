@@ -599,42 +599,44 @@ class CssParser {
      */
     private static
     List<Entry> getColorDefinition(final String css) {
-        // have to setup the "define color" section
-        String colorDefine = "@define-color";
-        int start = css.indexOf(colorDefine);
-        int end = css.lastIndexOf(colorDefine);
-        end = css.lastIndexOf(";", end) + 1; // include the ;
-        String colorDefines = css.substring(start, end);
-
-        if (DEBUG_VERBOSE) {
-            System.err.println("+++++++++++++++++++++++");
-            System.err.println(colorDefines);
-            System.err.println("+++++++++++++++++++++++");
-        }
-
-
         // since it's a color definition, it will start a very specific way. This will recursively get the defined colors.
-        String[] split = colorDefines.split(colorDefine);
-        List<Entry> defines = new ArrayList<Entry>(split.length);
+        List<Entry> defines = new ArrayList<Entry>();
+        {
+            // have to setup the "define color" section
+            String colorDefine = "@define-color";
+            int length = colorDefine.length() + 1;
 
-        for (String s : split) {
-            s = s.trim();
-            int endDefine = s.indexOf(" ");
-            if (endDefine > -1) {
-                String label = s.substring(0, endDefine);
-                String value = s.substring(endDefine + 1);
+            int start = 0;
+            int mid = 0;
+            int end = 0;
 
-                // remove the trailing ;
-                int endOfValue = value.length() - 1;
-                if (value.charAt(endOfValue) == ';') {
-                    value = value.substring(0, endOfValue);
+            while (start < css.length()) {
+                start = css.indexOf(colorDefine, start);
+                if (start == -1) {
+                    break;
                 }
 
-                Entry attribute = new Entry(label, value);
-                defines.add(attribute);
+                start += length;
+                end = css.indexOf(';', start) + 1;  // include the ;
+                mid = css.indexOf(' ', start);
+
+                if (mid > -1) {
+                    String label = css.substring(start, mid);
+                    String value = css.substring(mid + 1, end);
+
+                    // remove the trailing ;
+                    int endOfValue = value.length() - 1;
+                    if (value.charAt(endOfValue) == ';') {
+                        value = value.substring(0, endOfValue);
+                    }
+
+                    Entry attribute = new Entry(label, value);
+                    defines.add(attribute);
+                }
+
+                start = end + 1;
             }
         }
-
 
         // now to recursively figure out the color definitions
         boolean allClean = false;
@@ -655,12 +657,19 @@ class CssParser {
                         }
                     }
 
-                    String replacement = d.value.substring(i+1, lastLetter);
+                    String replacement = value.substring(i+1, lastLetter);
 
                     // the target value for replacement will ALWAYS be earlier in the list.
                     for (Entry d2 : defines) {
                         if (d2.key.equals(replacement)) {
-                            d.value = value.replace("@" + replacement, d2.value);
+                            int length = d2.value.length();
+
+                            // string.replace() goes bonkers on the heap... This keeps it under control
+                            StringBuilder builder = new StringBuilder(value);
+                            builder.insert(i, d2.value);
+                            builder.delete(i + length, lastLetter + length);
+
+                            d.value = builder.toString();
                             break;
                         }
                     }
