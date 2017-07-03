@@ -118,7 +118,7 @@ class GtkTheme {
                 Pointer offscreen = Gtk.gtk_offscreen_window_new();
 
                 // get the default icon size for the "paste" icon.
-                Pointer item = Gtk2.gtk_image_menu_item_new_from_stock("gtk-paste", null);
+                Pointer item = Gtk.gtk_image_menu_item_new_from_stock("gtk-paste", null);
 
                 Gtk.gtk_container_add(offscreen, item);
 
