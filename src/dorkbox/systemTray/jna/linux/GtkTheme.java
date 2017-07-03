@@ -23,6 +23,7 @@ import dorkbox.systemTray.util.CssParser;
 import dorkbox.systemTray.util.CssParser.Css;
 import dorkbox.systemTray.util.CssParser.CssNode;
 import dorkbox.systemTray.util.CssParser.Entry;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.MathUtil;
 import dorkbox.util.OS;
@@ -46,7 +47,6 @@ class GtkTheme {
     private static final boolean DEBUG_VERBOSE = false;
 
     // CSS nodes that we care about, in oder of preference from left to right.
-    // GtkPopover is a bubble-like context window, primarily meant to provide context-dependent information or options.
     private static final
     String[] cssNodes = new String[] {".menuitem", ".entry", "*"};
 
@@ -66,14 +66,39 @@ class GtkTheme {
 
         // ink pixel size is how much exact space it takes on the screen
         PangoRectangle ink = new PangoRectangle();
+
+        Gtk.pango_layout_get_pixel_extents(pangoLayout, ink.getPointer(), null);
+        ink.read();
+
+        Rectangle size = new Rectangle(ink.width, ink.height);
+
+        Gtk.gtk_widget_destroy(item);
+        Gtk.gtk_widget_destroy(offscreen);
+
+        return size;
+    }
+
+    public static
+    Rectangle getLogicalTextHeight(String text) {
+        // have to use pango to get the size of text (for the checkmark size)
+        Pointer offscreen = Gtk.gtk_offscreen_window_new();
+
+        // we use the size of "X" as the checkmark
+        Pointer item = Gtk.gtk_image_menu_item_new_with_mnemonic(text);
+
+        Gtk.gtk_container_add(offscreen, item);
+
+        // get the text widget (GtkAccelLabel) from inside the GtkMenuItem
+        Pointer textLabel = Gtk.gtk_bin_get_child(item);
+        Pointer pangoLayout = Gtk.gtk_label_get_layout(textLabel);
+
         // logical pixel size (ascent + descent)
         PangoRectangle logical = new PangoRectangle();
 
-        Gtk.pango_layout_get_pixel_extents(pangoLayout, ink.getPointer(), logical.getPointer());
-        ink.read();
-        // logical.read();
+        Gtk.pango_layout_get_pixel_extents(pangoLayout, null, logical.getPointer());
+        logical.read();
 
-        Rectangle size = new Rectangle(ink.width, ink.height);
+        Rectangle size = new Rectangle(logical.width, logical.height);
 
         Gtk.gtk_widget_destroy(item);
         Gtk.gtk_widget_destroy(offscreen);
@@ -150,19 +175,195 @@ class GtkTheme {
             right += tmp.right;
 
             Gtk3.gtk_style_context_restore (context);
+        } else {
+            GtkStyle.ByReference style = Gtk.gtk_widget_get_style(item);
+            top += style.ythickness;
+            bottom += style.ythickness;
+            left += style.xthickness;
+            right += style.xthickness;
         }
 
-        GtkStyle.ByReference style = Gtk.gtk_widget_get_style(item);
-        top += style.ythickness;
-        bottom += style.ythickness;
-        left += style.xthickness;
-        right += style.xthickness;
 
 
         Gtk.gtk_widget_destroy(item);
         Gtk.gtk_widget_destroy(offscreen);
 
+
+        if (top == 0 && bottom == 0 && left == 0 && right == 0) {
+            // sometimes GTK2 cannot get this info!!
+
+            // parse if from CSS...
+            Css css = getCss();
+            if (css != null) {
+                // collect a list of all of the sections that have what we are interested in.
+                List<CssNode> sections = CssParser.getSections(css, cssNodes, null);
+
+                List<Entry> paddingEntries = CssParser.getAttributeFromSections(sections, "padding", true);
+                String padding = CssParser.selectMostRelevantAttribute(cssNodes, paddingEntries);
+
+                // can be padding: 2px 4px;
+                // can be padding-bottom: 3px;
+                if (padding != null) {
+                    String[] split = padding.split(" ");
+                    if (split.length == 4) {
+                        // padding:10px 5px 15px 20px;
+                        //  top padding is 10px
+                        //  right padding is 5px
+                        //  bottom padding is 15px
+                        //  left padding is 20px
+                        top = MathUtil.stripTrailingNonDigits(split[0]);
+                        right = MathUtil.stripTrailingNonDigits(split[1]);
+                        bottom = MathUtil.stripTrailingNonDigits(split[2]);
+                        left = MathUtil.stripTrailingNonDigits(split[3]);
+                    }
+                    else if (split.length == 3) {
+                        // padding:10px 5px 15px;
+                        //  top padding is 10px
+                        //  right and left padding are 5px
+                        //  bottom padding is 15px
+                        top = MathUtil.stripTrailingNonDigits(split[0]);
+                        right = left = MathUtil.stripTrailingNonDigits(split[1]);
+                        bottom = MathUtil.stripTrailingNonDigits(split[2]);
+                    }
+                    else if (split.length == 2) {
+                        // padding:10px 5px;
+                        //  top and bottom padding are 10px
+                        //  right and left padding are 5px
+                        top = bottom = MathUtil.stripTrailingNonDigits(split[0]);
+                        right = left = MathUtil.stripTrailingNonDigits(split[1]);
+                    }
+                    else if (split.length == 1) {
+                        // padding:10px;
+                        //  all four paddings are 10px
+                        top = bottom = right = left = MathUtil.stripTrailingNonDigits(split[0]);
+                    }
+                }
+                else {
+                    // it's explicit padding sizes.
+                    paddingEntries = CssParser.getAttributeFromSections(sections, "padding-top", true);
+                    padding = CssParser.selectMostRelevantAttribute(cssNodes, paddingEntries);
+                    top = MathUtil.stripTrailingNonDigits(padding);
+
+
+                    paddingEntries = CssParser.getAttributeFromSections(sections, "padding-right", true);
+                    padding = CssParser.selectMostRelevantAttribute(cssNodes, paddingEntries);
+                    right = MathUtil.stripTrailingNonDigits(padding);
+
+
+                    paddingEntries = CssParser.getAttributeFromSections(sections, "padding-bottom", true);
+                    padding = CssParser.selectMostRelevantAttribute(cssNodes, paddingEntries);
+                    bottom = MathUtil.stripTrailingNonDigits(padding);
+
+
+                    paddingEntries = CssParser.getAttributeFromSections(sections, "padding-left", true);
+                    padding = CssParser.selectMostRelevantAttribute(cssNodes, paddingEntries);
+                    left = MathUtil.stripTrailingNonDigits(padding);
+                }
+
+                List<Entry> borderEntries = CssParser.getAttributeFromSections(sections, "border-width", true);
+                String border = CssParser.selectMostRelevantAttribute(cssNodes, borderEntries);
+
+
+                // can be border-width, etc
+                // can be border-bottom-width, etc
+                if (border != null) {
+                    String[] split = border.split(" ");
+                    if (split.length == 4) {
+                        top += MathUtil.stripTrailingNonDigits(split[0]);
+                        right += MathUtil.stripTrailingNonDigits(split[1]);
+                        bottom += MathUtil.stripTrailingNonDigits(split[2]);
+                        left += MathUtil.stripTrailingNonDigits(split[3]);
+                    }
+                    else if (split.length == 3) {
+                        top += MathUtil.stripTrailingNonDigits(split[0]);
+
+                        int borderX = MathUtil.stripTrailingNonDigits(split[1]);
+                        right += borderX;
+                        left += borderX;
+
+                        bottom += MathUtil.stripTrailingNonDigits(split[2]);
+                    }
+                    else if (split.length == 2) {
+                        int borderY = MathUtil.stripTrailingNonDigits(split[0]);
+                        int borderX = MathUtil.stripTrailingNonDigits(split[1]);
+
+                        top += borderY;
+                        bottom += borderY;
+
+                        right += borderX;
+                        left += borderX;
+                    }
+                    else if (split.length == 1) {
+                        int b = MathUtil.stripTrailingNonDigits(split[0]);
+
+                        top += b;
+                        bottom += b;
+                        right += b;
+                        left += b;
+                    }
+                }
+                else {
+                    // it's explicit border sizes.
+
+                    borderEntries = CssParser.getAttributeFromSections(sections, "border-top-width", true);
+                    border = CssParser.selectMostRelevantAttribute(cssNodes, borderEntries);
+                    top += MathUtil.stripTrailingNonDigits(border);
+
+                    borderEntries = CssParser.getAttributeFromSections(sections, "border-right-width", true);
+                    border = CssParser.selectMostRelevantAttribute(cssNodes, borderEntries);
+                    right += MathUtil.stripTrailingNonDigits(border);
+
+                    borderEntries = CssParser.getAttributeFromSections(sections, "border-bottom-width", true);
+                    border = CssParser.selectMostRelevantAttribute(cssNodes, borderEntries);
+                    bottom += MathUtil.stripTrailingNonDigits(border);
+
+                    borderEntries = CssParser.getAttributeFromSections(sections, "border-left-width", true);
+                    border = CssParser.selectMostRelevantAttribute(cssNodes, borderEntries);
+                    left += MathUtil.stripTrailingNonDigits(border);
+                }
+            }
+        }
+
         return new Insets(top, left, bottom, right);
+    }
+
+    /**
+     * @return the size of the GTK menu entry's IMAGE, as best as we can tell, for determining how large of icons to use for the menu entry
+     */
+    public static
+    int getMenuEntryImageSize() {
+        final AtomicReference<Integer> imageHeight = new AtomicReference<Integer>();
+
+        Gtk.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                Pointer offscreen = Gtk.gtk_offscreen_window_new();
+
+                // get the default icon size for the "paste" icon.
+                Pointer item = Gtk2.gtk_image_menu_item_new_from_stock("gtk-paste", null);
+
+                Gtk.gtk_container_add(offscreen, item);
+
+                PointerByReference r = new PointerByReference();
+                Gobject.g_object_get(item, "image", r.getPointer(), null);
+
+                Pointer imageWidget = r.getValue();
+                GtkRequisition gtkRequisition = new GtkRequisition();
+                Gtk.gtk_widget_size_request(imageWidget, gtkRequisition.getPointer());
+                gtkRequisition.read();
+
+                imageHeight.set(gtkRequisition.height);
+            }
+        });
+
+        int height = imageHeight.get();
+        if (height > 0) {
+            return height;
+        }
+        else {
+            return 16; // who knows?
+        }
     }
 
     /**
@@ -172,6 +373,27 @@ class GtkTheme {
      */
     public static
     int getIndicatorSize(final Class<? extends Tray> trayType) {
+//        double scalingFactor = getLinuxScalingFactor();
+//
+//        if (scalingFactor > 1) {
+//            return scalingFactor;
+//        }
+//
+//        // fedora 23+ has a different size for the indicator (NOT default 16px)
+//        int fedoraVersion = OSUtil.Linux.getFedoraVersion();
+//
+//        if (fedoraVersion >= 23) {
+//            System.err.println("FEDORA SCALE? ");
+////                    if (SystemTray.DEBUG) {
+////                        SystemTray.logger.debug("Adjusting tray/menu scaling for FEDORA " + fedoraVersion);
+////                    }
+//
+//            return 2;
+////                    trayScalingFactor = 2;
+//        }
+//
+//        return 0;
+
         if (OSUtil.DesktopEnv.isKDE()) {
             // KDE
             /*
@@ -191,28 +413,31 @@ class GtkTheme {
              */
         }
         else {
-            final AtomicInteger screenScale = new AtomicInteger();
-            final AtomicReference<Double> screenDPI = new AtomicReference<Double>();
 
-            Gtk.dispatchAndWait(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // screen DPI
-                    Pointer screen = Gtk.gdk_screen_get_default();
-                    if (screen != null) {
-                        // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
-                        screenDPI.set(Gtk.gdk_screen_get_resolution(screen));
-                    }
+            double linuxScalingFactor = SizeAndScalingUtil.getLinuxScalingFactor();
 
-                    if (Gtk.isGtk3) {
-                        Pointer window = Gtk.gdk_get_default_root_window();
-                        if (window != null) {
-                            screenScale.set(Gtk3.gdk_window_get_scale_factor(window));
-                        }
-                    }
-                }
-            });
+//            final AtomicInteger screenScale = new AtomicInteger();
+//            final AtomicReference<Double> screenDPI = new AtomicReference<Double>();
+//
+//            Gtk.dispatchAndWait(new Runnable() {
+//                @Override
+//                public
+//                void run() {
+//                    // screen DPI
+//                    Pointer screen = Gtk.gdk_screen_get_default();
+//                    if (screen != null) {
+//                        // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
+//                        screenDPI.set(Gtk.gdk_screen_get_resolution(screen));
+//                    }
+//
+//                    if (Gtk.isGtk3) {
+//                        Pointer window = Gtk.gdk_get_default_root_window();
+//                        if (window != null) {
+//                            screenScale.set(Gtk3.gdk_window_get_scale_factor(window));
+//                        }
+//                    }
+//                }
+//            });
 
             // TODO: what to do with screen DPI? 72 is default? 96 is default (yes, i think)?
             OSUtil.DesktopEnv.Env env = OSUtil.DesktopEnv.get();
@@ -220,15 +445,12 @@ class GtkTheme {
             if (OSUtil.Linux.isUbuntu() && env == OSUtil.DesktopEnv.Env.Unity) {
                 // if we measure on ubuntu unity using a screen shot (using swing, so....) , the max size was 24, HOWEVER this goes from
                 // the top->bottom of the indicator bar -- and since it was swing, it uses a different rendering method and it (honestly)
-                // looks weird, because there is no padding on the icon. The official AppIndicator size is hardcoded...
+                // looks weird, because there is no padding for the icon. The official AppIndicator size is hardcoded...
                 // http://bazaar.launchpad.net/~indicator-applet-developers/libindicator/trunk.16.10/view/head:/libindicator/indicator-image-helper.c
 
                 return 22;
             }
             else {
-                // Swing or AWT. While not "normal", this is absolutely a possible combination.
-                // NOTE: On linux, if using Swing -- the icon will look HORRID! The background is not rendered correctly!
-
                 // xfce is easy, because it's not a GTK setting for the size  (xfce notification area maximum icon size)
                 if (env == OSUtil.DesktopEnv.Env.XFCE) {
                     String properties = OSUtil.DesktopEnv.queryXfce("xfce4-panel", null);
@@ -301,29 +523,35 @@ class GtkTheme {
 
                 int i = traySize.get();
                 System.err.println("TRAY SIZE: " + traySize.get());
-                System.err.println("SCREEN DPI: " + screenDPI.get());
-                System.err.println("SCREEN SCALE: " + screenScale.get());
+//                System.err.println("SCREEN DPI: " + screenDPI.get());
+//                System.err.println("SCREEN SCALE: " + screenScale.get());
                 if (i != 0) {
-                    // xfce gtk status icon is also size 22, measured manually
                     return i;
                 }
             }
         }
 
+//        void
+//        gtk_widget_get_preferred_height (GtkWidget *widget,
+//                                         gint *minimum_height,
+//                                         gint *natural_height);
+
+//                g_param_spec_int ("check-icon-size",
+//                                  "Check icon size",
+//                                  "Check icon size",
+//                                  -1, G_MAXINT, 40,
+//                                  G_PARAM_READWRITE));
+
+
+//                    -GtkCheckButton-indicator-size: 15;
+//                    -GtkCheckMenuItem-indicator-size: 14;
+
+
 // https://wiki.gnome.org/HowDoI/HiDpi
 
 //                String css = getCss();
-//                System.err.println(css);
-
-
-
-
-
-//
 //            -GtkCheckButton-indicator-size: 16;
 //            -GtkCheckMenuItem-indicator-size: 16;
-//
-
 
 //            xdpyinfo | grep dots reported 96x96 dots
 
@@ -365,28 +593,6 @@ class GtkTheme {
         // what about KDE or elementary OS or unix? or arch?
 //        return 32;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // if we are an AppIndicator -- the size is hardcoded to 22
-        // http://bazaar.launchpad.net/~indicator-applet-developers/libindicator/trunk.16.10/view/head:/libindicator/indicator-image-helper.c
 
         // sane default
         return 22;
@@ -1154,28 +1360,5 @@ class GtkTheme {
         // will be either the string, or null.
         return themeName.get();
 
-    }
-
-    // have to strip anything that is not a number.
-    public static
-    int stripNonDigits(final String value) {
-        if (value == null || value.isEmpty()) {
-            return 0;
-        }
-
-        int numberIndex = 0;
-        int length = value.length();
-
-        while (numberIndex < length && Character.isDigit(value.charAt(numberIndex))) {
-            numberIndex++;
-        }
-
-        String substring = value.substring(0, numberIndex);
-        try {
-            return Integer.parseInt(substring);
-        } catch (Exception ignored) {
-        }
-
-        return 0;
     }
 }
