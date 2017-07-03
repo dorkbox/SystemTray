@@ -549,7 +549,9 @@ class CssParser {
                         sections.set(i, null);
 
                         // now merge both lists.
-                        for (Entry attribute : section.attributes) {
+                        final List<Entry> attributes = section.attributes;
+                        for (int i1 = 0; i1 < attributes.size(); i1++) {
+                            final Entry attribute = attributes.get(i1);
                             for (Iterator<Entry> iterator2 = section2.attributes.iterator(); iterator2.hasNext(); ) {
                                 final Entry attribute2 = iterator2.next();
 
