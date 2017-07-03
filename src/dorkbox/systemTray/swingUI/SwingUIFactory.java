@@ -45,7 +45,7 @@ interface SwingUIFactory {
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)
      *
      * @param jPopupMenu the swing JPopupMenu that is displayed when one clicks on the System Tray icon
-     * @param entry the entry which is bound to the menu, or null if it is the main SystemTray menu.
+     * @param entry the entry which is bound to the menu, or NULL if it is the main SystemTray menu.
      *
      * @return the UI used to customize the Look & Feel of the SystemTray menu + sub-menus
      */
@@ -55,7 +55,7 @@ interface SwingUIFactory {
      * Allows one to specify the Look & Feel of a menu entry
      *
      * @param jMenuItem the swing JMenuItem that is displayed in the menu
-     * @param entry the entry which is bound to the JMenuItem. Can be null during initialization.
+     * @param entry the entry which is bound to the JMenuItem. Can be NULL during initialization.
      *
      * @return the UI used to customize the Look & Feel of the menu entry
      */
