@@ -49,22 +49,18 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                     jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
                 }
 
+                // Having the checkmark size the same size as the letter X is a reasonably nice size.
+                int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
+
                 // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
                 int menuImageSize = SystemTray.get()
                                               .getMenuImageSize();
 
-                // Having the checkmark size the same size as the letter X is a reasonably nice size.
-                int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
-
-                // we have to to the left/right as well, otherwise the checkmark will (possibly) not be centered
-                int sizePadding = (menuImageSize - size) / 2;
-
-
                 String checkmarkPath;
                 if (SystemTray.SWING_UI != null) {
-                    checkmarkPath = SystemTray.SWING_UI.getCheckMarkIcon(jMenuItem.getForeground(), size, 0, sizePadding, 0, sizePadding);
+                    checkmarkPath = SystemTray.SWING_UI.getCheckMarkIcon(jMenuItem.getForeground(), size, menuImageSize);
                 } else {
-                    checkmarkPath = HeavyCheckMark.get(jMenuItem.getForeground(), size, 0, sizePadding, 0, sizePadding);
+                    checkmarkPath = HeavyCheckMark.get(jMenuItem.getForeground(), size, menuImageSize);
                 }
 
                 checkedIcon = new ImageIcon(checkmarkPath);

@@ -14,32 +14,31 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 
 public class HeavyCheckMark {
-    // this is a slight adjustment from the original size of the SVG image this came from, translated via Flamingo
-    private static final double SVG_ORIG_SIZE = 226.0D;
+    private static final double SVG_ORIG_SIZE_Y = 222.0D;
+
+    // this is a slight adjustment from the original size (225) of the SVG image this came from, translated via Flamingo
+    private static final double SVG_ORIG_SIZE_X = 226.0D;
 
     // if you change how this mark is drawn, increment the version so that the cached file is correctly regenerated.
     private static final int VERSION = 1;
 
     /**
-     * This saves a vector CheckMark to a correctly sized PNG file.
+     * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize
+     * (which is square)
      *
      * @param color the color of the CheckMark
      * @param checkMarkSize the size of the CheckMark inside the image. (does not include padding)
+     * @param targetImageSize the size of the resulting image (the checkmark will be centered in this image)
      *
-     * @param paddingTop amount of padding to apply to the top edge of the icon.
-     * @param paddingLeft amount of padding to apply to the left edge of the icon.
-     * @param paddingBottom amount of padding to apply to the bottom edge of the icon.
-     * @param paddingRight amount of padding to apply to the right edge of the icon.
+     * @return the full path to the checkmark image
      */
     public static
-    String get(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight) {
+    String get(Color color, int checkMarkSize, int targetImageSize) {
 
         //noinspection StringBufferReplaceableByString
         String name = new StringBuilder().append(checkMarkSize)
-                                         .append(paddingTop)
-                                         .append(paddingBottom)
-                                         .append(paddingLeft)
-                                         .append(paddingRight)
+                                         .append("-")
+                                         .append(targetImageSize)
                                          .append("_checkMark_")
                                          .append(HeavyCheckMark.VERSION)
                                          .append("_")
@@ -47,10 +46,15 @@ public class HeavyCheckMark {
                                          .append(".png")
                                          .toString();
 
+        // targetImageSize must ALWAYS be >= to checkMarkSize
+        if (targetImageSize < checkMarkSize) {
+            targetImageSize = checkMarkSize;
+        }
+
         final File newFile = CacheUtil.create(name);
         if (newFile.canRead() || newFile.length() == 0) {
             try {
-                BufferedImage img = HeavyCheckMark.draw(color, checkMarkSize, paddingTop, paddingLeft, paddingBottom, paddingRight);
+                BufferedImage img = HeavyCheckMark.draw(color, checkMarkSize, targetImageSize);
                 ImageIO.write(img, "png", newFile);
             } catch (Exception e) {
                 SystemTray.logger.error("Error creating check-mark image.", e);
@@ -61,14 +65,8 @@ public class HeavyCheckMark {
     }
 
     private static
-    BufferedImage draw(final Color color, final int checkMarkSize, final int paddingTop, final int paddingLeft, int paddingBottom, int paddingRight) {
-        int sizeX = checkMarkSize + paddingLeft + paddingRight;
-        int sizeY = checkMarkSize + paddingTop + paddingBottom;
-
-        double scaleX = checkMarkSize / SVG_ORIG_SIZE;
-        double scaleY = checkMarkSize / SVG_ORIG_SIZE;
-
-        BufferedImage img = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_ARGB);
+    BufferedImage draw(final Color color, final int checkMarkSize, final int targetImageSize) {
+        BufferedImage img = new BufferedImage(targetImageSize, targetImageSize, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
 
         g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
@@ -80,8 +78,16 @@ public class HeavyCheckMark {
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
+
+        double scaleX = checkMarkSize / SVG_ORIG_SIZE_X;
+        double scaleY = checkMarkSize / SVG_ORIG_SIZE_Y;
+        double ratio = SVG_ORIG_SIZE_X / SVG_ORIG_SIZE_Y;
+
+        // checkmark is wider than it is tall
+        int pad = (targetImageSize - checkMarkSize) / 2;
+
         AffineTransform at = new AffineTransform();
-        at.translate(paddingLeft, paddingTop);
+        at.translate(pad * ratio, pad);
         at.scale(scaleX, scaleY);
         g2d.setTransform(at);
 

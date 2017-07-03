@@ -16,7 +16,6 @@
 package dorkbox.systemTray.nativeUI;
 
 import java.awt.Color;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -102,13 +101,14 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 if (checkedFile == null) {
                     Rectangle size = GtkTheme.getPixelTextHeight("X");
+                    int imageHeight = SystemTray.get().getMenuImageSize();
+                    int height = size.height;
 
                     if ((SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray)) {
                         // only app indicators don't need padding, as they automatically center the icon
-                        checkedFile = HeavyCheckMark.get(color, size.height, 0, 0, 0, 0);
+                        checkedFile = HeavyCheckMark.get(color, height, height);
                     } else {
-                        Insets padding = GtkTheme.getTextPadding("X");
-                        checkedFile = HeavyCheckMark.get(color, size.height, 0, padding.left, 0, padding.right);
+                        checkedFile = HeavyCheckMark.get(color, height, imageHeight);
                     }
                 }
             }

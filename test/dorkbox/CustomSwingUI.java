@@ -119,22 +119,17 @@ class CustomSwingUI implements SwingUIFactory {
 
 
     /**
-     * Get the path to a CheckMark image for a specified color, size, and padding.
-     * <p>
-     * This is necessary because Swing does not have correct spacing when rendering CheckMark menu items next to
-     * normal menu menu items (with, or without, images attached).
+     * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize
+     * (which is square)
      *
      * @param color the color of the CheckMark
      * @param checkMarkSize the size of the CheckMark inside the image. (does not include padding)
      *
-     * @param paddingTop amount of padding to apply to the top edge of the icon.
-     * @param paddingLeft amount of padding to apply to the left edge of the icon.
-     * @param paddingBottom amount of padding to apply to the bottom edge of the icon.
-     * @param paddingRight amount of padding to apply to the right edge of the icon.
+     * @return the full path to the checkmark image
      */
     @Override
     public
-    String getCheckMarkIcon(Color color, int checkMarkSize, int paddingTop, int paddingLeft , int paddingBottom, int paddingRight) {
-        return HeavyCheckMark.get(color, checkMarkSize, paddingTop, paddingLeft, paddingBottom, paddingRight);
+    String getCheckMarkIcon(final Color color, final int checkMarkSize, final int targetImageSize) {
+        return HeavyCheckMark.get(color, checkMarkSize, targetImageSize);
     }
 }
