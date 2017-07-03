@@ -516,7 +516,6 @@ class SystemTrayFixes {
                 trayIconBytes = trayIconClass.toBytecode();
                 trayPeerBytes = trayPeerClass.toBytecode();
 
-
                 // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
                 // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
                 // time). This means we cannot take a screen shot because before the window is placed, another icon is in this
@@ -525,20 +524,30 @@ class SystemTrayFixes {
                 // is a solid color, and not an image or gradient.
                 CtMethod methodVisible = CtNewMethod.make(
                 "public void setVisible(boolean b) " +
-                "{ " +
-                    "if (b) {" +
-                        "if (" + className + ".robot == null) {" +
-                            className + ".robot = new java.awt.Robot();" +
+                    "{ " +
+                        "if (b) {" +
+                            "if (" + className + ".robot == null) {" +
+                                className + ".robot = new java.awt.Robot();" +
+                            "}" +
+
+                            "java.awt.Point loc = getPeer().getLocationOnScreen();" +
+                            // "java.lang.System.err.println(\"Pixel location: \" + loc.x + \" : \" + loc.y);" +
+
+                            "int locX = loc.x;" +
+                            "int locY = loc.y;" +
+
+                            // offset the pixel grabbing location, if possible. If we go negative, weird colors happen.
+                            "if (locX > 0) locX -= 1;" +
+                            "if (locY > 0) locY -= 1;" +
+
+                            className + ".color = " + className + ".robot.getPixelColor(locX, locY);" +
+                            // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur)
+                            "setBackground(" + className + ".color);" +
                         "}" +
 
-                        "java.awt.Point loc = getPeer().getLocationOnScreen();" +
-                        className + ".color = " + className + ".robot.getPixelColor(loc.x-1, loc.y-1);" +
-                        // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur)
-                        "setBackground(" + className + ".color);" +
-                    "}" +
-
-                    "super.setVisible(b);" +
-                " }", eFrameClass);
+                        "super.setVisible(b);" +
+                    " }",
+                eFrameClass);
                 eFrameClass.addMethod(methodVisible);
 
                 methodVisible.getMethodInfo().rebuildStackMapForME(eFrameClass.getClassPool());
