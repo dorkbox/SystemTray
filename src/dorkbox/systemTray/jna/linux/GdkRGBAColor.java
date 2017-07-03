@@ -1,5 +1,6 @@
 package dorkbox.systemTray.jna.linux;
 
+import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 
@@ -16,6 +17,25 @@ class GdkRGBAColor extends Structure {
     public double green;
     public double blue;
     public double alpha;
+
+    public float red() {
+        return (float) red;
+    }
+
+    public float green() {
+        return (float) green;
+    }
+
+    public float blue() {
+        return (float) blue;
+    }
+
+    public
+    Color getColor() {
+        read(); // have to read the struct members first!
+        return new Color(red(), green(), blue());
+    }
+
 
     @Override
     protected

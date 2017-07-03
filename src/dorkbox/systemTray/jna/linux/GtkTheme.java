@@ -1,22 +1,32 @@
 package dorkbox.systemTray.jna.linux;
 
-import static dorkbox.systemTray.util.CssParser.CssNode;
-import static dorkbox.systemTray.util.CssParser.getAttributeFromSections;
-import static dorkbox.systemTray.util.CssParser.getSections;
 import static dorkbox.systemTray.util.CssParser.injectAdditionalCss;
 import static dorkbox.systemTray.util.CssParser.removeComments;
 
 import java.awt.Color;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.CssParser;
+import dorkbox.systemTray.util.CssParser.Css;
+import dorkbox.systemTray.util.CssParser.CssNode;
+import dorkbox.systemTray.util.CssParser.Entry;
 import dorkbox.util.FileUtil;
+import dorkbox.util.MathUtil;
+import dorkbox.util.OS;
+import dorkbox.util.OSUtil;
 
 /**
  * Class to contain all of the methods needed to get the text color from the AppIndicator/GtkStatusIcon menu entry. This is primarily
@@ -28,7 +38,7 @@ import dorkbox.util.FileUtil;
  *
  * Also note: not all themes have CSS or Theme files!!!
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "WeakerAccess"})
 public
 class GtkTheme {
     private static final boolean DEBUG = false;
@@ -36,173 +46,350 @@ class GtkTheme {
     private static final boolean DEBUG_VERBOSE = false;
 
     // CSS nodes that we care about, in oder of preference from left to right.
+    // GtkPopover is a bubble-like context window, primarily meant to provide context-dependent information or options.
     private static final
-    String[] cssNodes = new String[] {"GtkPopover", "unity-panel", ".unity-panel", "gnome-panel-menu-bar", ".gnome-panel-menu-bar",
-                                   "PanelMenuBar", ".menuitem", ".entry", "*"};
+    String[] cssNodes = new String[] {".menuitem", ".entry", "*"};
 
-    /**
-     * Gets the text height of menu items (in the system tray menu), as specified by CSS.
-     * NOTE: not all themes have CSS
-     */
     public static
-    int getTextHeight() {
-        String css = getCss();
-        if (css != null) {
-            System.err.println(css);
-            // collect a list of all of the sections that have what we are interested in.
-            List<CssNode> sections = getSections(css, cssNodes, null);
-            String size = getAttributeFromSections(sections, cssNodes, "MenuItem-indicator-size", false);
-//            CheckButton-indicator-size
-            int i = stripNonDigits(size);
-            if (i != 0) {
-                return i;
-            }
-        }
+    Rectangle getPixelTextHeight(String text) {
+        // have to use pango to get the size of text (for the checkmark size)
+        Pointer offscreen = Gtk.gtk_offscreen_window_new();
 
-        // sane default
-        return 14;
+        // we use the size of "X" as the checkmark
+        Pointer item = Gtk.gtk_image_menu_item_new_with_mnemonic(text);
+
+        Gtk.gtk_container_add(offscreen, item);
+
+        // get the text widget (GtkAccelLabel) from inside the GtkMenuItem
+        Pointer textLabel = Gtk.gtk_bin_get_child(item);
+        Pointer pangoLayout = Gtk.gtk_label_get_layout(textLabel);
+
+        // ink pixel size is how much exact space it takes on the screen
+        PangoRectangle ink = new PangoRectangle();
+        // logical pixel size (ascent + descent)
+        PangoRectangle logical = new PangoRectangle();
+
+        Gtk.pango_layout_get_pixel_extents(pangoLayout, ink.getPointer(), logical.getPointer());
+        ink.read();
+        // logical.read();
+
+        Rectangle size = new Rectangle(ink.width, ink.height);
+
+        Gtk.gtk_widget_destroy(item);
+        Gtk.gtk_widget_destroy(offscreen);
+
+        return size;
     }
 
     /**
      * Gets the text padding of menu items (in the system tray menu), as specified by CSS. This is the padding value for all sides!
      * NOTE: not all themes have CSS
      */
+    @SuppressWarnings("Duplicates")
     public static
-    int getTextPadding() {
-        /*
-        Maybe he best way is to get the element size, then subtract the text size.
+    Insets getTextPadding(String text) {
+        // have to use pango to get the size of text (for the checkmark size)
+        Pointer offscreen = Gtk.gtk_offscreen_window_new();
 
-        The margin properties set the size of the white space outside the border.
+        // we use the size of "X" as the checkmark
+        Pointer item = Gtk.gtk_image_menu_item_new_with_mnemonic(text);
 
-        we care about top and bottom padding
+        Gtk.gtk_container_add(offscreen, item);
 
-        padding:10px 5px 15px 20px;
-top padding is 10px
-right padding is 5px
-bottom padding is 15px
-left padding is 20px
+        // get the text widget (GtkAccelLabel) from inside the GtkMenuItem
+        Pointer textLabel = Gtk.gtk_bin_get_child(item);
 
-padding:10px 5px 15px;
-top padding is 10px
-right and left padding are 5px
-bottom padding is 15px
+        int top = 0;
+        int bottom = 0;
+        int right = 0;
+        int left = 0;
 
-padding:10px 5px;
-top and bottom padding are 10px
-right and left padding are 5px
+        IntByReference pointer = new IntByReference();
+        Gobject.g_object_get(textLabel, "ypad", pointer.getPointer(), null);
+        int value = pointer.getValue();
 
-padding:10px;
-all four paddings are 10px
+        top += value;
+        bottom += value;
+
+        Gobject.g_object_get(textLabel, "xpad", pointer.getPointer(), null);
+        value = pointer.getValue();
+
+        left += value;
+        right += value;
 
 
-        GtkColorButton.button {
-            padding: 2px;
+        value = Gtk.gtk_container_get_border_width(item);
+
+        top += value;
+        bottom += value;
+        left += value;
+        right += value;
+
+
+        if (Gtk.isGtk3) {
+            Pointer context = Gtk3.gtk_widget_get_style_context(item);
+            GtkBorder tmp = new GtkBorder();
+
+            Gtk3.gtk_style_context_save(context);
+
+            Gtk3.gtk_style_context_add_class(context, "frame");
+            Gtk3.gtk_style_context_get_padding(context, Gtk.State.NORMAL, tmp.getPointer());
+            tmp.read();
+
+            top += tmp.top;
+            bottom += tmp.bottom;
+            left += tmp.left;
+            right += tmp.right;
+
+            Gtk3.gtk_style_context_get_border(context, Gtk.State.NORMAL, tmp.getPointer());
+            tmp.read();
+
+            top += tmp.top;
+            bottom += tmp.bottom;
+            left += tmp.left;
+            right += tmp.right;
+
+            Gtk3.gtk_style_context_restore (context);
         }
 
-
-        GtkPopover {
-    margin: 10px;
-    padding: 2px;
-    border-radius: 3px;
-    border-color: shade(@menu_bg_color, 0.8);
-    border-width: 1px;
-    border-style: solid;
-    background-clip: border-box;
-    background-image: none;
-    background-color: @menu_bg_color;
-    color: @menu_fg_color;
-    box-shadow: 0 2px 3px alpha(black, 0.5);
-}
-
-.menubar.menuitem,
-.menubar .menuitem {
-    padding: 3px 8px;
-    border-width: 1px;
-    border-style: solid;
-    border-color: transparent;
-    background-color: transparent;
-    background-image: none;
-    color: @menubar_fg_color;
-}
+        GtkStyle.ByReference style = Gtk.gtk_widget_get_style(item);
+        top += style.ythickness;
+        bottom += style.ythickness;
+        left += style.xthickness;
+        right += style.xthickness;
 
 
-.entry {
-    padding: 3px;
-    border-width: 1px;
-    border-style: solid;
-    border-top-color: shade(@theme_bg_color, 0.6);
-    border-right-color: shade(@theme_bg_color, 0.7);
-    border-left-color: shade(@theme_bg_color, 0.7);
-    border-bottom-color: shade(@theme_bg_color, 0.72);
-    border-radius: 3px;
-    background-color: @theme_base_color;
-    background-image: linear-gradient(to bottom,
-                                      shade(@theme_base_color, 0.99),
-                                      @theme_base_color
-                                      );
+        Gtk.gtk_widget_destroy(item);
+        Gtk.gtk_widget_destroy(offscreen);
 
-    color: @theme_text_color;
-}
-
-.button {
-    -GtkWidget-focus-padding: 1;
-    -GtkWidget-focus-line-width: 0;
-
-    padding: 2px 4px;
-    border-width: 1px;
-    border-radius: 3px;
-    border-style: solid;
-    border-top-color: shade(@theme_bg_color, 0.8);
-    border-right-color: shade(@theme_bg_color, 0.72);
-    border-left-color: shade(@theme_bg_color, 0.72);
-    border-bottom-color: shade(@theme_bg_color, 0.7);
-    background-image: linear-gradient(to bottom,
-                                      shade(shade(@theme_bg_color, 1.02), 1.05),
-                                      shade(shade(@theme_bg_color, 1.02), 0.97)
-                                      );
-
-    color: @theme_fg_color;
-}
-
-
-         */
-
-
-        String css = getCss();
-        if (css != null) {
-            // collect a list of all of the sections that have what we are interested in.
-            List<CssNode> sections = getSections(css, cssNodes, null);
-            String padding = getAttributeFromSections(sections, cssNodes, "padding", true);
-            String border = getAttributeFromSections(sections, cssNodes, "border-width", true);
-
-            return stripNonDigits(padding) + stripNonDigits(border);
-        }
-
-        return 0;
+        return new Insets(top, left, bottom, right);
     }
 
-
     /**
-     * Gets the system tray indicator size as specified by CSS.
+     * Gets the system tray indicator size.
+     *  - AppIndicator:  will properly scale the image if it's not the correct size
+     *  - GtkStatusIndicator:  ??
      */
     public static
-    int getIndicatorSize() {
-        String css = getCss();
-        if (css != null) {
-            String[] cssNodes = new String[] {"GdMainIconView", ".content-view"};
+    int getIndicatorSize(final Class<? extends Tray> trayType) {
+        if (OSUtil.DesktopEnv.isKDE()) {
+            // KDE
+            /*
+             *   Tray icons with fixed size
+             *   If the tray icons are not scaled with the rest of the desktop, the size can be set editing the default value for iconSize
+             *   in /usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml
+             *   (e.g. the value 2 may be fine):
+             *
+             *   /usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml
+             *      <entry name="iconSize" type="Int">
+             *          <label>Default icon size for the systray icons, it's an enum which values mean,
+             *                  Small, SmallMedium, Medium, Large, Huge, Enormous respectively.   On low DPI systems they correspond to
+             *                  16, 22, 32, 48, 64, 128 pixels. On high DPI systems those values would be scaled up, depending on the DPI.
+             *          </label>
+             *          <default>2</default>
+             *     </entry>
+             */
+        }
+        else {
+            final AtomicInteger screenScale = new AtomicInteger();
+            final AtomicReference<Double> screenDPI = new AtomicReference<Double>();
 
-            // collect a list of all of the sections that have what we are interested in.
-            List<CssNode> sections = getSections(css, cssNodes, null);
-            String indicatorSize = getAttributeFromSections(sections, cssNodes, "-GdMainIconView-icon-size", true);
+            Gtk.dispatchAndWait(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // screen DPI
+                    Pointer screen = Gtk.gdk_screen_get_default();
+                    if (screen != null) {
+                        // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
+                        screenDPI.set(Gtk.gdk_screen_get_resolution(screen));
+                    }
 
-            int i = stripNonDigits(indicatorSize);
-            if (i != 0) {
-                return i;
+                    if (Gtk.isGtk3) {
+                        Pointer window = Gtk.gdk_get_default_root_window();
+                        if (window != null) {
+                            screenScale.set(Gtk3.gdk_window_get_scale_factor(window));
+                        }
+                    }
+                }
+            });
+
+            // TODO: what to do with screen DPI? 72 is default? 96 is default (yes, i think)?
+            OSUtil.DesktopEnv.Env env = OSUtil.DesktopEnv.get();
+
+            if (OSUtil.Linux.isUbuntu() && env == OSUtil.DesktopEnv.Env.Unity) {
+                // if we measure on ubuntu unity using a screen shot (using swing, so....) , the max size was 24, HOWEVER this goes from
+                // the top->bottom of the indicator bar -- and since it was swing, it uses a different rendering method and it (honestly)
+                // looks weird, because there is no padding on the icon. The official AppIndicator size is hardcoded...
+                // http://bazaar.launchpad.net/~indicator-applet-developers/libindicator/trunk.16.10/view/head:/libindicator/indicator-image-helper.c
+
+                return 22;
+            }
+            else {
+                // Swing or AWT. While not "normal", this is absolutely a possible combination.
+                // NOTE: On linux, if using Swing -- the icon will look HORRID! The background is not rendered correctly!
+
+                // xfce is easy, because it's not a GTK setting for the size  (xfce notification area maximum icon size)
+                if (env == OSUtil.DesktopEnv.Env.XFCE) {
+                    String properties = OSUtil.DesktopEnv.queryXfce("xfce4-panel", null);
+                    List<String> propertiesAsList = Arrays.asList(properties.split(OS.LINE_SEPARATOR));
+                    for (String prop : propertiesAsList) {
+                        if (prop.startsWith("/plugins/") && prop.endsWith("/size-max")) {
+                            // this is the property we are looking for (we just don't know which panel it's on)
+
+                            String size = OSUtil.DesktopEnv.queryXfce("xfce4-panel", prop);
+                            try {
+                                return Integer.parseInt(size);
+                            } catch (Exception e) {
+                                SystemTray.logger.error("Unable to get XFCE notification panel size for channel '{}', property '{}'",
+                                                        "xfce4-panel", prop, e);
+                            }
+                        }
+                    }
+
+                    // default...
+                    return 22;
+                }
+
+
+                // try to use GTK to get the tray icon size
+                final AtomicInteger traySize = new AtomicInteger();
+
+                Gtk.dispatchAndWait(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        Pointer screen = Gtk.gdk_screen_get_default();
+                        Pointer settings = null;
+
+                        if (screen != null) {
+                            settings = Gtk.gtk_settings_get_for_screen(screen);
+                        }
+
+                        if (settings != null) {
+                            PointerByReference pointer = new PointerByReference();
+
+                            // https://wiki.archlinux.org/index.php/GTK%2B
+                            // To use smaller icons, use a line like this:
+                            //    gtk-icon-sizes = "panel-menu=16,16:panel=16,16:gtk-menu=16,16:gtk-large-toolbar=16,16:gtk-small-toolbar=16,16:gtk-button=16,16"
+
+                            // this gets icon sizes. On XFCE, ubuntu, it returns "panel-menu-bar=24,24"
+                            // NOTE: gtk-icon-sizes is deprecated and ignored since GTK+ 3.10.
+
+                            // A list of icon sizes. The list is separated by colons, and item has the form: size-name = width , height
+                            Gobject.g_object_get(settings, "gtk-icon-sizes", pointer.getPointer(), null);
+
+                            Pointer value = pointer.getValue();
+                            if (value != null) {
+                                String iconSizes = value.getString(0);
+                                String[] strings = new String[] {"panel-menu-bar=", "panel=", "gtk-large-toolbar=", "gtk-small-toolbar="};
+                                for (String var : strings) {
+                                    int i = iconSizes.indexOf(var);
+                                    if (i >= 0) {
+                                        String size = iconSizes.substring(i + var.length(), iconSizes.indexOf(",", i));
+
+                                        if (MathUtil.isInteger(size)) {
+                                            traySize.set(Integer.parseInt(size));
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                int i = traySize.get();
+                System.err.println("TRAY SIZE: " + traySize.get());
+                System.err.println("SCREEN DPI: " + screenDPI.get());
+                System.err.println("SCREEN SCALE: " + screenScale.get());
+                if (i != 0) {
+                    // xfce gtk status icon is also size 22, measured manually
+                    return i;
+                }
             }
         }
 
+// https://wiki.gnome.org/HowDoI/HiDpi
+
+//                String css = getCss();
+//                System.err.println(css);
+
+
+
+
+
+//
+//            -GtkCheckButton-indicator-size: 16;
+//            -GtkCheckMenuItem-indicator-size: 16;
+//
+
+
+//            xdpyinfo | grep dots reported 96x96 dots
+
+        // else it's an app indicator
+
+        // if we can get the theme path, the theme path will (almost always) have size info as part of the path name!
+//            app_indicator_get_icon_theme_path ()
+//
+//const gchar *       app_indicator_get_icon_theme_path   (AppIndicator *self);
+//            Wrapper function for property "icon-theme-path".
+//
+//                                                          self :
+//
+//            The AppIndicator object to use
+//            Returns :
+//
+//            The current icon theme path.
+
+
+
+
+
+//                g_param_spec_int ("check-icon-size",
+//                                  "Check icon size",
+//                                  "Check icon size",
+//                                  -1, G_MAXINT, 40,
+//                                  G_PARAM_READWRITE));
+
+
+//                    -GtkCheckButton-indicator-size: 15;
+//                    -GtkCheckMenuItem-indicator-size: 14;
+
+            // GdMainIconView.content-view {
+            //   -GdMainIconView-icon-size: 40;
+            //}
+
+
+        // no idea? check scaling? base it off of CSS values????
+        // what about KDE or elementary OS or unix? or arch?
+//        return 32;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // if we are an AppIndicator -- the size is hardcoded to 22
+        // http://bazaar.launchpad.net/~indicator-applet-developers/libindicator/trunk.16.10/view/head:/libindicator/indicator-image-helper.c
+
         // sane default
-        return 40;
+        return 22;
     }
 
     /**
@@ -218,12 +405,16 @@ all four paddings are 10px
         // this information insanely difficult to get.
         final AtomicReference<Color> color = new AtomicReference<Color>(null);
         Gtk.dispatchAndWait(new Runnable() {
-
+            @SuppressWarnings("UnusedAssignment")
             @Override
             public
             void run() {
-                // see if we can get the info via CSS properties (> GTK+ 3.2 uses an API, GTK2 gets it from disk)
-                Color c = getFromCss();
+                Color c;
+
+                // see if we can get the info via CSS properties (> GTK+ 3.2 uses an API, GTK2 gets it from disk).
+                // This is often the BEST way to get information, since GTK **DOES NOT** make it easy to get widget information BEFORE
+                // the widget is realized -- which in our case, we must do.
+                c = getFromCss();
                 if (c != null) {
                     if (DEBUG) {
                         System.err.println("Got from CSS");
@@ -232,9 +423,8 @@ all four paddings are 10px
                     return;
                 }
 
-                // we got here because it's not possible to get the info via raw-CSS
 
-                // try to get via the color scheme. A bit more accurate than parsing the raw theme file
+                // try to get via the color scheme.
                 c = getFromColorScheme();
                 if (c != null) {
                     if (DEBUG) {
@@ -260,15 +450,13 @@ all four paddings are 10px
                 }
 
 
-                // the following methods all require an offscreen widget to get the style information from. This rarely is correct for
-                // some bizzare reason.
-
+                // the following methods all require an offscreen widget to get the style information from.
 
                 // create an off-screen widget (don't forget to destroy everything!)
-                Pointer menu = Gtk.gtk_menu_new();
+                Pointer offscreen = Gtk.gtk_offscreen_window_new();
                 Pointer item = Gtk.gtk_image_menu_item_new_with_mnemonic("a");
 
-                Gtk.gtk_container_add(menu, item);
+                Gtk.gtk_container_add(offscreen, item);
                 Gtk.gtk_widget_show_all(item);
 
                 // Try to get via RC style... Sometimes this works (sometimes it does not...)
@@ -276,29 +464,44 @@ all four paddings are 10px
                     Pointer style = Gtk.gtk_rc_get_style(item);
 
                     GdkColor gdkColor = new GdkColor();
-                    boolean success;
+                    boolean success = false;
 
                     success = Gtk.gtk_style_lookup_color(style, "menu_fg_color", gdkColor.getPointer());
                     if (!success) {
                         success = Gtk.gtk_style_lookup_color(style, "text_color", gdkColor.getPointer());
+                        if (success) {
+                            System.err.println("a");
+                        }
                     }
                     if (!success) {
                         success = Gtk.gtk_style_lookup_color(style, "theme_text_color", gdkColor.getPointer());
+                        if (success) {
+                            System.err.println("a");
+                        }
                     }
                     if (success) {
-                        color.set(gdkColor.getColor());
-
-                        Gtk.gtk_widget_destroy(item);
-                        return;
+                        c = gdkColor.getColor();
                     }
                 }
 
+                if (c != null) {
+                    if (DEBUG) {
+                        System.err.println("Got from gtk offscreen gtk_style_lookup_color");
+                    }
+                    color.set(c);
+                    Gtk.gtk_widget_destroy(item);
+                    return;
+                }
+
+
+
                 if (Gtk.isGtk3) {
                     Pointer context = Gtk3.gtk_widget_get_style_context(item);
-                    int state = Gtk3.gtk_style_context_get_state(context);
 
                     GdkRGBAColor gdkColor = new GdkRGBAColor();
-                    boolean success = Gtk3.gtk_style_context_lookup_color(context, "fg_color", gdkColor.getPointer());
+                    boolean success = false;
+
+                    success = Gtk3.gtk_style_context_lookup_color(context, "fg_color", gdkColor.getPointer());
                     if (!success) {
                         success = Gtk3.gtk_style_context_lookup_color(context, "text_color", gdkColor.getPointer());
                     }
@@ -311,42 +514,38 @@ all four paddings are 10px
                     }
 
                     if (success) {
-                        color.set(new Color((float) gdkColor.red, (float) gdkColor.green, (float) gdkColor.blue, (float) gdkColor.alpha));
-                    }
-                    else {
-                        // fall back in case nothing else works
-                        Gtk3.gtk_style_context_get_color(context, state, gdkColor.getPointer());
-                        if (gdkColor.red == 0.0 && gdkColor.green == 0.0 && gdkColor.blue == 0.0 && gdkColor.alpha == 0.0) {
-                            // have nothing here, check something else...
-                            if (DEBUG) {
-                                System.err.println("No valid output from gtk_style_context_get_color");
-                            }
-                        }
-                        else {
-                            // if we have something that is not all 0's
-                            color.set(new Color((float) gdkColor.red,
-                                                (float) gdkColor.green,
-                                                (float) gdkColor.blue,
-                                                (float) gdkColor.alpha));
-                        }
+                        c = gdkColor.getColor();
                     }
                 }
 
-                // this also doesn't always work...
+                if (c != null) {
+                    color.set(c);
+                    if (DEBUG) {
+                        System.err.println("Got from gtk3 offscreen gtk_widget_get_style_context");
+                    }
+                    Gtk.gtk_widget_destroy(item);
+                    return;
+                }
+
+                // this doesn't always work...
                 GtkStyle.ByReference style = Gtk.gtk_widget_get_style(item);
                 color.set(style.text[Gtk.State.NORMAL].getColor());
+
+                if (DEBUG) {
+                    System.err.println("Got from gtk gtk_widget_get_style");
+                }
 
                 Gtk.gtk_widget_destroy(item);
             }
         });
 
 
-        Color color1 = color.get();
-        if (color1 != null) {
+        Color c = color.get();
+        if (c != null) {
             if (DEBUG) {
-                System.err.println("COLOR FOUND: " + color1);
+                System.err.println("COLOR FOUND: " + c);
             }
-            return color1;
+            return c;
         }
 
         SystemTray.logger.error("Unable to determine the text color in use by your system. Please create an issue and include your " +
@@ -363,91 +562,49 @@ all four paddings are 10px
      * <p>
      * > GTK+ 3.2 uses an API, GTK2 gets it from disk
      *
-     * @return the color string, parsed from CSS/
+     * @return the color string, parsed from CSS,
      */
     private static
     Color getFromCss() {
-        String css = getCss();
+        Css css = getCss();
         if (css != null) {
             if (DEBUG_SHOW_CSS) {
                 System.err.println(css);
             }
 
-            // collect a list of all of the sections that have what we are interested in.
-            List<CssNode> sections = getSections(css, cssNodes, null);
-            String colorString = getAttributeFromSections(sections, cssNodes, "color", true);
+            try {
+                // collect a list of all of the sections that have what we are interested in.
+                List<CssNode> sections = CssParser.getSections(css, cssNodes, null);
+                List<Entry> colorStrings = CssParser.getAttributeFromSections(sections, "color", true);
 
-            // hopefully we found it.
-            if (colorString != null) {
-                if (colorString.startsWith("@")) {
-                    // it's a color definition
-                    String colorSubString = getColorDefinition(css, colorString.substring(1));
+                String colorString = CssParser.selectMostRelevantAttribute(cssNodes, colorStrings);
 
-                    return parseColor(colorSubString);
-                }
-                else {
-                    return parseColor(colorString);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static
-    String getColorDefinition(final String css, final String colorString) {
-        // have to setup the "define color" section
-        String colorDefine = "@define-color";
-        int start = css.indexOf(colorDefine);
-        int end = css.lastIndexOf(colorDefine);
-        end = css.lastIndexOf(";", end) + 1; // include the ;
-        String colorDefines = css.substring(start, end);
-
-        if (DEBUG_VERBOSE) {
-            System.err.println("+++++++++++++++++++++++");
-            System.err.println(colorDefines);
-            System.err.println("+++++++++++++++++++++++");
-        }
-
-        // since it's a color definition, it will start a very specific way.
-        String newColorString = colorDefine + " " + colorString;
-
-        int i = 0;
-        while (i != -1) {
-            i = colorDefines.indexOf(newColorString);
-
-            if (i >= 0) {
-                try {
-                    int startIndex = i + newColorString.length();
-                    int endIndex = colorDefines.indexOf(";", i);
-
-                    String colorSubString = colorDefines.substring(startIndex, endIndex)
-                                                        .trim();
-
-                    if (colorSubString.startsWith("@")) {
-                        // have to recursively get the defined color
-                        newColorString = colorDefine + " " + colorSubString.substring(1);
-                        i = 0;
-                        continue;
+                if (colorString != null) {
+                    if (colorString.startsWith("@")) {
+                        // it's a color definition
+                        String colorSubString = css.getColorDefinition(colorString.substring(1));
+                        return parseColor(colorSubString);
                     }
-
-                    return colorSubString;
-                } catch (Exception ignored) {
+                    else {
+                        return parseColor(colorString);
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
         return null;
     }
-
 
     /**
      * @return the CSS for the current theme or null. It is important that this is called AFTER GTK has been initialized.
      */
     public static
-    String getCss() {
-        if (Gtk.isGtk3) {
-            final AtomicReference<String> css = new AtomicReference<String>(null);
+    Css getCss() {
+        String css;
+        if (Gtk.isLoaded && Gtk.isGtk3) {
+            final AtomicReference<String> css_ = new AtomicReference<String>(null);
 
             Gtk.dispatchAndWait(new Runnable() {
                 @Override
@@ -463,7 +620,7 @@ all four paddings are 10px
                             // NOTE: This can output warnings if the theme doesn't parse correctly by GTK, so we suppress them
                             Glib.GLogFunc orig = Glib.g_log_set_default_handler(Glib.nullLogFunc, null);
 
-                            css.set(Gtk3.gtk_css_provider_to_string(value));
+                            css_.set(Gtk3.gtk_css_provider_to_string(value));
 
                             Glib.g_log_set_default_handler(orig, null);
                         }
@@ -476,7 +633,7 @@ all four paddings are 10px
                             // NOTE: This can output warnings if the theme doesn't parse correctly by GTK, so we suppress them
                             Glib.GLogFunc orig = Glib.g_log_set_default_handler(Glib.nullLogFunc, null);
 
-                            css.set(Gtk3.gtk_css_provider_to_string(value));
+                            css_.set(Gtk3.gtk_css_provider_to_string(value));
 
                             Glib.g_log_set_default_handler(orig, null);
                         }
@@ -485,14 +642,17 @@ all four paddings are 10px
             });
 
             // will be either the string, or null.
-            return css.get();
+            css = css_.get();
         }
         else {
             // GTK2 has to get the GTK3 theme text a different way (parsing it from disk). SOMETIMES, the app must be GTK2, even though
             // the system is GTK3. This works around the API restriction if we are an APP in GTK2 mode. This is not done ALL the time,
             // because this is not as accurate as using the GTK3 API.
-            return getGtk3ThemeCssViaFile();
+            // This can also be a requirement if GTK is not loaded
+            css = getGtk3ThemeCssViaFile();
         }
+
+        return CssParser.parse(css);
     }
 
     /**
@@ -502,13 +662,19 @@ all four paddings are 10px
      */
     public static
     Color getFromColorScheme() {
-        Pointer settings = Gtk.gtk_settings_get_default();
+        Pointer screen = Gtk.gdk_screen_get_default();
+        Pointer settings = null;
+
+        if (screen != null) {
+            settings = Gtk.gtk_settings_get_for_screen(screen);
+        }
+
         if (settings != null) {
             // see if we can get the info we want the EASY way (likely only when GTK+ 2 is used, but can be < GTK+ 3.2)...
 
             //  been deprecated since version 3.8
             PointerByReference pointer = new PointerByReference();
-            Gobject.g_object_get(settings, "gtk-color-scheme", pointer, null);
+            Gobject.g_object_get(settings, "gtk-color-scheme", pointer.getPointer(), null);
 
 
             // A palette of named colors for use in themes. The format of the string is
@@ -577,7 +743,7 @@ all four paddings are 10px
                                     String colorString = s.substring(startIndex, endIndex)
                                                           .trim();
 
-                                    if (DEBUG) {
+                                    if (DEBUG_VERBOSE) {
                                         System.out.println("Color string: " + colorString);
                                     }
                                     return parseColor(colorString);
@@ -608,7 +774,6 @@ all four paddings are 10px
         }
 
         File gtkFile = new File(themeDirectory, "gtk.css");
-
         try {
             StringBuilder stringBuilder = new StringBuilder((int) (gtkFile.length()));
             FileUtil.read(gtkFile, stringBuilder);
@@ -623,8 +788,11 @@ all four paddings are 10px
             injectAdditionalCss(themeDirectory, stringBuilder);
 
             return stringBuilder.toString();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
             // cant read the file or something else.
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.error("Error getting RAW GTK3 theme file.", e);
+            }
         }
 
         return null;
@@ -800,6 +968,10 @@ all four paddings are 10px
     @SuppressWarnings("Duplicates")
     private static
     Color parseColor(String colorString) {
+        if (colorString == null) {
+            return null;
+        }
+
         int red = 0;
         int green = 0;
         int blue = 0;
@@ -950,26 +1122,38 @@ all four paddings are 10px
      */
     public static
     String getThemeName() {
-        String themeName = null;
+        final AtomicReference<String> themeName = new AtomicReference<String>(null);
 
-        Pointer settings = Gtk.gtk_settings_get_default();
-        if (settings != null) {
+        Gtk.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                Pointer screen = Gtk.gdk_screen_get_default();
+                Pointer settings = null;
 
+                if (screen != null) {
+                    settings = Gtk.gtk_settings_get_for_screen(screen);
+                }
 
-            PointerByReference pointer = new PointerByReference();
-            Gobject.g_object_get(settings, "gtk-theme-name", pointer, null);
+                if (settings != null) {
+                    PointerByReference pointer = new PointerByReference();
+                    Gobject.g_object_get(settings, "gtk-theme-name", pointer.getPointer(), null);
 
-            Pointer value = pointer.getValue();
-            if (value != null) {
-                themeName = value.getString(0);
+                    Pointer value = pointer.getValue();
+                    if (value != null) {
+                        themeName.set(value.getString(0));
+                    }
+                }
+
+                if (DEBUG) {
+                    System.err.println("Theme name: " + themeName);
+                }
             }
-        }
+        });
 
-        if (DEBUG) {
-            System.err.println("Theme name: " + themeName);
-        }
+        // will be either the string, or null.
+        return themeName.get();
 
-        return themeName;
     }
 
     // have to strip anything that is not a number.

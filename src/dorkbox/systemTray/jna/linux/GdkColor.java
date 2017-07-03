@@ -47,6 +47,7 @@ class GdkColor extends Structure {
 
     public
     Color getColor() {
+        read(); // have to read the struct members first!
         return new Color(red(), green(), blue());
     }
 

@@ -89,6 +89,49 @@ class Gtk3 {
      */
     public static native Pointer gtk_widget_get_style_context(Pointer widget);
 
+
+    /**
+     * Saves the context state, so temporary modifications done through gtk_style_context_add_class(), gtk_style_context_remove_class(),
+     * gtk_style_context_set_state(), etc. can quickly be reverted in one go through gtk_style_context_restore().
+     *
+     * The matching call to gtk_style_context_restore() must be done before GTK returns to the main loop.
+     *
+     * @since 3.0
+     */
+    public static native void gtk_style_context_save(Pointer context);
+
+
+    /**
+     * Restores context state to a previous stage. See gtk_style_context_save().
+     *
+     * @since 3.0
+     */
+    public static native void gtk_style_context_restore(Pointer context);
+
+    /**
+     * Adds a style class to context , so posterior calls to gtk_style_context_get() or any of the gtk_render_*() functions will make
+     * use of this new class for styling.
+     *
+     * @since 3.0
+     */
+    public static native void gtk_style_context_add_class(Pointer context, String className);
+
+    /**
+     * Gets the padding for a given state as a GtkBorder. See gtk_style_context_get() and GTK_STYLE_PROPERTY_PADDING for details.
+     *
+     * @since 3.0
+     */
+    public static native void gtk_style_context_get_padding(Pointer context, int state, Pointer border);
+
+    /**
+     * Gets the border for a given state as a GtkBorder.
+     *
+     * See gtk_style_context_get_property() and GTK_STYLE_PROPERTY_BORDER_WIDTH for details.
+     *
+     * @since 3.0
+     */
+    public static native void gtk_style_context_get_border(Pointer context, int state, Pointer border);
+
     /**
      * Returns the internal scale factor that maps from window coordinates to the actual device pixels. On traditional systems this is 1,
      * but on very high density outputs this can be a higher value (often 2).

@@ -18,7 +18,6 @@ package dorkbox.systemTray.jna.linux;
 import com.sun.jna.Callback;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.jna.JnaHelper;
@@ -55,7 +54,7 @@ class Gobject {
     public static native void g_signal_handler_block(Pointer instance, long handlerId);
     public static native void g_signal_handler_unblock(Pointer instance, long handlerId);
 
-    public static native void g_object_get(Pointer instance, String property_name, PointerByReference value, Pointer terminator);
+    public static native void g_object_get(Pointer instance, String property_name, Pointer value, Pointer terminator);
 
 
 

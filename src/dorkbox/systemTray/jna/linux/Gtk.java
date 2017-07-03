@@ -35,17 +35,21 @@ import dorkbox.util.OS;
 import dorkbox.util.jna.JnaHelper;
 
 /**
- * bindings for GTK+ 2. Bindings that are exclusively for GTK+ 3 are in that respective class
+ * Bindings for GTK+ 2. Bindings that are exclusively for GTK+ 3 are in that respective class
  * <p>
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings({"Duplicates", "SameParameterValue", "DeprecatedIsStillUsed"})
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DeprecatedIsStillUsed", "WeakerAccess", "deprecation"})
 public
 class Gtk {
+    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
+    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
+    // objdump -T /usr/local/lib/libgtk-3.so.0 | grep gtk
+
     // For funsies to look at, SyncThing did a LOT of work on compatibility in python (unfortunate for us, but interesting).
     // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
-
+    @SuppressWarnings({"unused", "PointlessBitwiseExpression"})
     public static class State {
         public static final int NORMAL = 0x0; // normal state.
         public static final int ACTIVE = 0x1; // pressed-in or activated; e.g. buttons while the mouse button is held down.
@@ -70,11 +74,6 @@ class Gtk {
     public static final boolean isGtk3;
     public static final boolean isLoaded;
 
-
-    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
-    // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-3.so.0 | grep gtk
-
-    // objdump -T /usr/local/lib/libgtk-3.so.0 | grep gtk
 
     public static final int FALSE = 0;
     public static final int TRUE = 1;
@@ -102,6 +101,7 @@ class Gtk {
 
     private static volatile boolean started = false;
 
+    @SuppressWarnings("FieldCanBeLocal")
     private static Thread gtkUpdateThread = null;
 
     public static final int MAJOR;
@@ -139,13 +139,13 @@ class Gtk {
 
         if (!_isLoaded && shouldUseGtk2) {
             try {
-                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk.class);
+                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk2.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
                 _isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                _alreadyRunningGTK = gtk_main_level() != 0;
+                _alreadyRunningGTK = Gtk2.gtk_main_level() != 0;
                 _isLoaded = true;
 
                 major = library.getGlobalVariableAddress("gtk_major_version").getInt(0);
@@ -167,7 +167,8 @@ class Gtk {
         // start with version 3
         if (!_isLoaded) {
             try {
-                JnaHelper.register(gtk3LibName, Gtk.class);
+                // ALSO map Gtk2.java to GTK3 library. Cannot have Gtk3 extend Gtk2, it won't work.
+                JnaHelper.register(gtk3LibName, Gtk2.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk3LibName, "gtk_status_icon_position_menu");
 
                 // ALSO have to load the SPECIFIC Gtk+ 3 methods. We cannot subclass because JNA doesn't like it.
@@ -177,7 +178,7 @@ class Gtk {
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                _alreadyRunningGTK = gtk_main_level() != 0;
+                _alreadyRunningGTK = Gtk2.gtk_main_level() != 0;
                 _isLoaded = true;
 
                 major = Gtk3.gtk_get_major_version();
@@ -197,13 +198,13 @@ class Gtk {
         // now version 2
         if (!_isLoaded) {
             try {
-                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk.class);
+                NativeLibrary library = JnaHelper.register(gtk2LibName, Gtk2.class);
                 gtk_status_icon_position_menu = Function.getFunction(gtk2LibName, "gtk_status_icon_position_menu");
                 _isGtk2 = true;
 
                 // when running inside of JavaFX, this will be '1'. All other times this should be '0'
                 // when it's '1', it means that someone else has started GTK -- so we DO NOT NEED TO.
-                _alreadyRunningGTK = gtk_main_level() != 0;
+                _alreadyRunningGTK = Gtk2.gtk_main_level() != 0;
                 _isLoaded = true;
 
                 major = library.getGlobalVariableAddress("gtk_major_version").getInt(0);
@@ -292,7 +293,7 @@ class Gtk {
                         // prep for the event loop.
                         // GThread.g_thread_init(null);  would be needed for g_idle_add()
 
-                        if (!gtk_init_check(0)) {
+                        if (!Gtk2.gtk_init_check(0)) {
                             if (SystemTray.DEBUG) {
                                 logger.error("Error starting GTK");
                             }
@@ -306,7 +307,7 @@ class Gtk {
                         }
 
                         // blocks unit quit
-                        gtk_main();
+                        Gtk2.gtk_main();
 
                         // clean up threads
                         // gdk_threads_leave();  would be needed for g_idle_add()
@@ -318,20 +319,6 @@ class Gtk {
             }
         }
     }
-
-    /**
-     * This would NORMALLY have a 2nd argument that is a String[] -- however JNA direct-mapping DOES NOT support this. We are lucky
-     * enough that we just pass 'null' as the second argument, therefore, we don't have to define that parameter here.
-     */
-    private static native
-    boolean gtk_init_check(int argc);
-
-    /**
-     * Runs the main loop until gtk_main_quit() is called. You can nest calls to gtk_main(). In that case gtk_main_quit() will make the
-     * innermost invocation of the main loop return.
-     */
-    private static native
-    void gtk_main();
 
     /**
      * Waits for the all posted events to GTK to finish loading
@@ -484,20 +471,9 @@ class Gtk {
             }
 
             // the correct way to do it. Add with a slightly higher value
-            gdk_threads_add_idle_full(100, callback, null, null);
+            Gtk2.gdk_threads_add_idle_full(100, callback, null, null);
         }
     }
-
-    /**
-     * Adds a function to be called whenever there are no higher priority events pending. If the function returns FALSE it is automatically
-     * removed from the list of event sources and will not be called again.
-     * <p>
-     * This variant of g_idle_add_full() calls function with the GDK lock held. It can be thought of a MT-safe version for GTK+ widgets
-     * for the following use case, where you have to worry about idle_callback() running in thread A and accessing self after it has
-     * been finalized in thread B.
-     */
-    public static native
-    int gdk_threads_add_idle_full(int priority, FuncCallback function, Pointer data, Pointer notify);
 
     public static
     void shutdownGui() {
@@ -507,7 +483,7 @@ class Gtk {
             void run() {
                 // If JavaFX/SWT is used, this is UNNECESSARY (and will break SWT/JavaFX shutdown)
                 if (!alreadyRunningGTK) {
-                    gtk_main_quit();
+                    Gtk2.gtk_main_quit();
                 }
 
                 started = false;
@@ -559,13 +535,6 @@ class Gtk {
     }
 
     /**
-     * Makes the innermost invocation of the main loop return when it regains control. ONLY CALL FROM THE GtkSupport class, UNLESS you know
-     * what you're doing!
-     */
-    private static native
-    void gtk_main_quit();
-
-    /**
      * required to properly setup the dispatch flag when using native menus
      *
      * @param callback will never be null.
@@ -589,28 +558,28 @@ class Gtk {
     }
 
     /**
-     * aks for the current nesting level of the main loop. Useful to determine (at startup) if GTK is already running
-     */
-    private static native
-    int gtk_main_level();
-
-    /**
      * Creates a new GtkMenu
      */
-    public static native
-    Pointer gtk_menu_new();
+    public static
+    Pointer gtk_menu_new() {
+        return Gtk2.gtk_menu_new();
+    }
 
     /**
      * Sets or replaces the menu item’s submenu, or removes it when a NULL submenu is passed.
      */
-    public static native
-    Pointer gtk_menu_item_set_submenu(Pointer menuEntry, Pointer menu);
+    public static
+    void gtk_menu_item_set_submenu(Pointer menuEntry, Pointer menu) {
+        Gtk2.gtk_menu_item_set_submenu(menuEntry, menu);
+    }
 
     /**
      * Creates a new GtkSeparatorMenuItem.
      */
-    public static native
-    Pointer gtk_separator_menu_item_new();
+    public static
+    Pointer gtk_separator_menu_item_new() {
+        return Gtk2.gtk_separator_menu_item_new();
+    }
 
     /**
      * Creates a new GtkImage displaying the file filename . If the file isn’t found or can’t be loaded, the resulting GtkImage will
@@ -618,17 +587,18 @@ class Gtk {
      * <p>
      * If the file contains an animation, the image will contain an animation.
      */
-    public static native
-    Pointer gtk_image_new_from_file(String iconPath);
-
+    public static
+    Pointer gtk_image_new_from_file(String iconPath) {
+        return Gtk2.gtk_image_new_from_file(iconPath);
+    }
 
     /**
      * Sets the active state of the menu item’s check box.
      */
-    public static native
-    void gtk_check_menu_item_set_active(Pointer check_menu_item, boolean isChecked);
-
-
+    public static
+    void gtk_check_menu_item_set_active(Pointer check_menu_item, boolean isChecked) {
+        Gtk2.gtk_check_menu_item_set_active(check_menu_item, isChecked);
+    }
 
     /**
      * Creates a new GtkImageMenuItem containing a label. The label will be created using gtk_label_new_with_mnemonic(), so underscores
@@ -639,12 +609,15 @@ class Gtk {
      * gtk_image_menu_item_new_with_mnemonic has been deprecated since version 3.10 and should not be used in newly-written code.
      * NOTE: Use gtk_menu_item_new_with_mnemonic() instead.
      */
-    @Deprecated
-    public static native
-    Pointer gtk_image_menu_item_new_with_mnemonic(String label);
+    public static
+    Pointer gtk_image_menu_item_new_with_mnemonic(String label) {
+        return Gtk2.gtk_image_menu_item_new_with_mnemonic(label);
+    }
 
-    public static native
-    Pointer gtk_check_menu_item_new_with_mnemonic(String label);
+    public static
+    Pointer gtk_check_menu_item_new_with_mnemonic(String label) {
+        return Gtk2.gtk_check_menu_item_new_with_mnemonic(label);
+    }
 
     /**
      * Sets the image of image_menu_item to the given widget. Note that it depends on the show-menu-images setting whether the image
@@ -652,9 +625,10 @@ class Gtk {
      * <p>
      * gtk_image_menu_item_set_image has been deprecated since version 3.10 and should not be used in newly-written code.
      */
-    @Deprecated
-    public static native
-    void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image);
+    public static
+    void gtk_image_menu_item_set_image(Pointer image_menu_item, Pointer image) {
+        Gtk2.gtk_image_menu_item_set_image(image_menu_item, image);
+    }
 
     /**
      * If TRUE, the menu item will ignore the “gtk-menu-images” setting and always show the image, if available.
@@ -662,9 +636,10 @@ class Gtk {
      * <p>
      * gtk_image_menu_item_set_always_show_image has been deprecated since version 3.10 and should not be used in newly-written code.
      */
-    @Deprecated
-    public static native
-    void gtk_image_menu_item_set_always_show_image(Pointer menu_item, boolean forceShow);
+    public static
+    void gtk_image_menu_item_set_always_show_image(Pointer menu_item, boolean forceShow) {
+        Gtk2.gtk_image_menu_item_set_always_show_image(menu_item, forceShow);
+    }
 
     /**
      * Creates an empty status icon object.
@@ -672,17 +647,20 @@ class Gtk {
      * gtk_status_icon_new has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    Pointer gtk_status_icon_new();
+    public static
+    Pointer gtk_status_icon_new() {
+        return Gtk2.gtk_status_icon_new();
+    }
 
     /**
      * Obtains the root window (parent all other windows are inside) for the default display and screen.
      *
      * @return the default root window
      */
-    public static native
-    Pointer gdk_get_default_root_window();
+    public static
+    Pointer gdk_get_default_root_window() {
+        return Gtk2.gdk_get_default_root_window();
+    }
 
     /**
      * Gets the default screen for the default display. (See gdk_display_get_default()).
@@ -691,8 +669,10 @@ class Gtk {
      *
      * @since 2.2
      */
-    public static native
-    Pointer gdk_screen_get_default();
+    public static
+    Pointer gdk_screen_get_default() {
+        return Gtk2.gdk_screen_get_default();
+    }
 
     /**
      * Gets the resolution for font handling on the screen; see gdk_screen_set_resolution() for full details.
@@ -706,8 +686,10 @@ class Gtk {
      *
      * @since Since: 2.10
      */
-    public static native
-    double gdk_screen_get_resolution(Pointer screen);
+    public static
+    double gdk_screen_get_resolution(Pointer screen) {
+        return Gtk2.gdk_screen_get_resolution(screen);
+    }
 
     /**
      * Makes status_icon display the file filename . See gtk_status_icon_new_from_file() for details.
@@ -715,9 +697,10 @@ class Gtk {
      * gtk_status_icon_set_from_file has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    void gtk_status_icon_set_from_file(Pointer widget, String label);
+    public static
+    void gtk_status_icon_set_from_file(Pointer widget, String label) {
+        Gtk2.gtk_status_icon_set_from_file(widget, label);
+    }
 
     /**
      * Shows or hides a status icon.
@@ -725,9 +708,10 @@ class Gtk {
      * gtk_status_icon_set_visible has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    void gtk_status_icon_set_visible(Pointer widget, boolean visible);
+    public static
+    void gtk_status_icon_set_visible(Pointer widget, boolean visible) {
+        Gtk2.gtk_status_icon_set_visible(widget, visible);
+    }
 
 
     /**
@@ -739,9 +723,10 @@ class Gtk {
      * gtk_status_icon_set_tooltip_text has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    void gtk_status_icon_set_tooltip_text(Pointer widget, String tooltipText);
+    public static
+    void gtk_status_icon_set_tooltip_text(Pointer widget, String tooltipText) {
+        Gtk2.gtk_status_icon_set_tooltip_text(widget, tooltipText);
+    }
 
     /**
      * Sets the title of this tray icon. This should be a short, human-readable, localized string describing the tray icon. It may be used
@@ -750,9 +735,10 @@ class Gtk {
      * gtk_status_icon_set_title has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    void gtk_status_icon_set_title(Pointer widget, String titleText);
+    public static
+    void gtk_status_icon_set_title(Pointer widget, String titleText) {
+        Gtk2.gtk_status_icon_set_title(widget, titleText);
+    }
 
     /**
      * Sets the name of this tray icon. This should be a string identifying this icon. It is may be used for sorting the icons in the
@@ -761,9 +747,10 @@ class Gtk {
      * gtk_status_icon_set_name has been deprecated since version 3.14 and should not be used in newly-written code.
      * Use notifications
      */
-    @Deprecated
-    public static native
-    void gtk_status_icon_set_name(Pointer widget, String name);
+    public static
+    void gtk_status_icon_set_name(Pointer widget, String name) {
+        Gtk2.gtk_status_icon_set_name(widget, name);
+    }
 
     /**
      * Displays a menu and makes it available for selection.
@@ -771,34 +758,43 @@ class Gtk {
      * gtk_menu_popup has been deprecated since version 3.22 and should not be used in newly-written code.
      * NOTE: Please use gtk_menu_popup_at_widget(), gtk_menu_popup_at_pointer(). or gtk_menu_popup_at_rect() instead
      */
-    @Deprecated
-    public static native
-    void gtk_menu_popup(Pointer menu, Pointer widget, Pointer bla, Function func, Pointer data, int button, int time);
+    public static
+    void gtk_menu_popup(Pointer menu, Pointer widget, Pointer bla, Function func, Pointer data, int button, int time) {
+        Gtk2.gtk_menu_popup(menu, widget, bla, func, data, button, time);
+    }
 
     /**
      * Sets text on the menu_item label
      */
-    public static native
-    void gtk_menu_item_set_label(Pointer menu_item, String label);
+    public static
+    void gtk_menu_item_set_label(Pointer menu_item, String label) {
+        Gtk2.gtk_menu_item_set_label(menu_item, label);
+    }
 
     /**
      * Adds a new GtkMenuItem to the end of the menu shell's item list.
      */
-    public static native
-    void gtk_menu_shell_append(Pointer menu_shell, Pointer child);
+    public static
+    void gtk_menu_shell_append(Pointer menu_shell, Pointer child) {
+        Gtk2.gtk_menu_shell_append(menu_shell, child);
+    }
 
     /**
      * Sets the sensitivity of a widget. A widget is sensitive if the user can interact with it. Insensitive widgets are “grayed out”
      * and the user can’t interact with them. Insensitive widgets are known as “inactive”, “disabled”, or “ghosted” in some other toolkits.
      */
-    public static native
-    void gtk_widget_set_sensitive(Pointer widget, boolean sensitive);
+    public static
+    void gtk_widget_set_sensitive(Pointer widget, boolean sensitive) {
+        Gtk2.gtk_widget_set_sensitive(widget, sensitive);
+    }
 
     /**
      * Recursively shows a widget, and any child widgets (if the widget is a container)
      */
-    public static native
-    void gtk_widget_show_all(Pointer widget);
+    public static
+    void gtk_widget_show_all(Pointer widget) {
+        Gtk2.gtk_widget_show_all(widget);
+    }
 
     /**
      * Removes widget from container . widget must be inside container . Note that container will own a reference to widget , and that
@@ -808,8 +804,10 @@ class Gtk {
      * If you don’t want to use widget again it’s usually more efficient to simply destroy it directly using gtk_widget_destroy()
      * since this will remove it from the container and help break any circular reference count cycles.
      */
-    public static native
-    void gtk_container_remove(Pointer parentWidget, Pointer widget);
+    public static
+    void gtk_container_remove(Pointer parentWidget, Pointer widget) {
+        Gtk2.gtk_container_remove(parentWidget, widget);
+    }
 
     /**
      * Destroys a widget.
@@ -829,29 +827,37 @@ class Gtk {
      * <p>
      * NOTE You should typically call this function on top level widgets, and rarely on child widgets.
      */
-    public static native
-    void gtk_widget_destroy(Pointer widget);
+    public static
+    void gtk_widget_destroy(Pointer widget) {
+        Gtk2.gtk_widget_destroy(widget);
+    }
 
     /**
      * Gets the GtkSettings object for screen , creating it if necessary.
      *
      * @since 2.2
      */
-    public static native
-    Pointer gtk_settings_get_for_screen(Pointer screen);
+    public static
+    Pointer gtk_settings_get_for_screen(Pointer screen) {
+        return Gtk2.gtk_settings_get_for_screen(screen);
+    }
 
     /**
      * Simply an accessor function that returns @widget->style.
      */
-    public static native
-    GtkStyle.ByReference gtk_widget_get_style(Pointer widget);
+    public static
+    GtkStyle.ByReference gtk_widget_get_style(Pointer widget) {
+        return Gtk2.gtk_widget_get_style(widget);
+    }
 
     /**
      * Finds all matching RC styles for a given widget, composites them together, and then creates a GtkStyle representing the composite
      * appearance. (GTK+ actually keeps a cache of previously created styles, so a new style may not be created.)
      */
-    public static native
-    Pointer gtk_rc_get_style(Pointer widget);
+    public static
+    Pointer gtk_rc_get_style(Pointer widget)  {
+        return Gtk2.gtk_rc_get_style(widget);
+    }
 
     /**
      * Looks up color_name in the style’s logical color mappings, filling in color and returning TRUE if found, otherwise returning
@@ -859,8 +865,10 @@ class Gtk {
      *
      * @since 2.10
      */
-    public static native
-    boolean gtk_style_lookup_color(Pointer widgetStyle, String color_name, Pointer color);
+    public static
+    boolean gtk_style_lookup_color(Pointer widgetStyle, String color_name, Pointer color)  {
+        return Gtk2.gtk_style_lookup_color(widgetStyle, color_name, color);
+    }
 
     /**
      * Adds widget to container . Typically used for simple containers such as GtkWindow, GtkFrame, or GtkButton; for more complicated
@@ -868,7 +876,60 @@ class Gtk {
      * consider functions such as gtk_box_pack_start() and gtk_table_attach() as an alternative to gtk_container_add() in those cases.
      * A widget may be added to only one container at a time; you can't place the same widget inside two different containers.
      */
-    public static native
-    void gtk_container_add(Pointer offscreen, Pointer widget);
+    public static
+    void gtk_container_add(Pointer offscreen, Pointer widget)  {
+        Gtk2.gtk_container_add(offscreen, widget);
+    }
+
+    /**
+     * Get's the child from a GTK Bin object
+     */
+    public static
+    Pointer gtk_bin_get_child(Pointer bin)  {
+        return Gtk2.gtk_bin_get_child(bin);
+    }
+
+    /**
+     * Gets the PangoLayout used to display the label. The layout is useful to e.g. convert text positions to pixel positions, in
+     * combination with gtk_label_get_layout_offsets(). The returned layout is owned by the label so need not be freed by the caller.
+     *
+     * The label is free to recreate its layout at any time, so it should be considered read-only.
+     */
+    public static
+    Pointer gtk_label_get_layout(Pointer label)  {
+        return Gtk2.gtk_label_get_layout(label);
+    }
+
+    /**
+     * Computes the logical and ink extents of layout in device units. This function just calls pango_layout_get_extents() followed
+     * by two pango_extents_to_pixels() calls, rounding ink_rect and logical_rect such that the rounded rectangles fully contain the
+     * unrounded one (that is, passes them as first argument to pango_extents_to_pixels()).
+     *
+     * @param layout a PangoLayout
+     * @param ink_rect rectangle used to store the extents of the layout as drawn or NULL to indicate that the result is not needed.
+     * @param logical_rect rectangle used to store the logical extents of the layout or NULL to indicate that the result is not needed.
+     */
+    public static
+    void pango_layout_get_pixel_extents(Pointer layout, Pointer ink_rect, Pointer logical_rect)  {
+        Gtk2.pango_layout_get_pixel_extents(layout, ink_rect, logical_rect);
+    }
+
+    /**
+     * Creates a toplevel container widget that is used to retrieve snapshots of widgets without showing them on the screen.
+     *
+     * @since 2.20
+     */
+    public static
+    Pointer	gtk_offscreen_window_new()  {
+        return Gtk2.gtk_offscreen_window_new();
+    }
+
+    /**
+     * Retrieves the border width of the container. See gtk_container_set_border_width().
+     */
+    public static
+    int gtk_container_get_border_width(Pointer container)  {
+        return Gtk2.gtk_container_get_border_width(container);
+    }
 }
 
