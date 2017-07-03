@@ -39,7 +39,7 @@ import dorkbox.util.jna.JnaHelper;
  * <p>
  * Direct-mapping, See: https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md
  */
-@SuppressWarnings({"Duplicates", "SameParameterValue", "DeprecatedIsStillUsed", "WeakerAccess", "deprecation"})
+@SuppressWarnings({"Duplicates", "SameParameterValue", "DeprecatedIsStillUsed", "WeakerAccess"})
 public
 class Gtk {
     // objdump -T /usr/lib/x86_64-linux-gnu/libgtk-x11-2.0.so.0 | grep gtk
@@ -67,6 +67,15 @@ class Gtk {
         public static final int FLAG_BACKDROP = 1 << 6;
     }
 
+    public static class IconSize {
+        public static final int INVALID = 0; // Invalid size.
+        public static final int MENU = 1; // Size appropriate for menus (16px).
+        public static final int SMALL_TOOLBAR = 2; // Size appropriate for small toolbars (16px).
+        public static final int LARGE_TOOLBAR = 3; // Size appropriate for large toolbars (24px)
+        public static final int BUTTON = 4; // Size appropriate for buttons (16px)
+        public static final int DND = 5; // Size appropriate for drag and drop (32px)
+        public static final int DIALOG = 6; // Size appropriate for dialogs (48px)
+    }
 
 
     // NOTE: AppIndicator uses this info to figure out WHAT VERSION OF appindicator to use: GTK2 -> appindicator1, GTK3 -> appindicator3
@@ -925,11 +934,37 @@ class Gtk {
     }
 
     /**
-     * Retrieves the border width of the container. See gtk_container_set_border_width().
+     * This function is typically used when implementing a GtkContainer subclass. Obtains the preferred size of a widget. The
+     * container uses this information to arrange its child widgets and decide what size allocations to give them with
+     * gtk_widget_size_allocate().
+     *
+     * You can also call this function from an application, with some caveats. Most notably, getting a size request requires the
+     * widget to be associated with a screen, because font information may be needed. Multihead-aware applications should keep this in mind.
+     *
+     * Also remember that the size request is not necessarily the size a widget will actually be allocated.
      */
     public static
-    int gtk_container_get_border_width(Pointer container)  {
-        return Gtk2.gtk_container_get_border_width(container);
+    void gtk_widget_size_request(final Pointer widget, final Pointer requisition) {
+        if (isGtk2) {
+            Gtk2.gtk_widget_size_request(widget, requisition);
+        }
+        else {
+            Gtk3.gtk_widget_get_preferred_size(widget, requisition, null);
+        }
+    }
+
+    /**
+     * Creates a new GtkImageMenuItem containing the image and text from a stock item. Some stock ids have preprocessor macros
+     * like GTK_STOCK_OK and GTK_STOCK_APPLY.
+     *
+     * @param stock_id the name of the stock item.
+     * @param accel_group the GtkAccelGroup to add the menu items accelerator to, or NULL.
+     *
+     * @return a new GtkImageMenuItem.
+     */
+    public static
+    Pointer gtk_image_menu_item_new_from_stock(String stock_id, Pointer accel_group) {
+        return Gtk2.gtk_image_menu_item_new_from_stock(stock_id, accel_group);
     }
 }
 

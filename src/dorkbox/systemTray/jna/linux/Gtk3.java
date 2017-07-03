@@ -89,7 +89,6 @@ class Gtk3 {
      */
     public static native Pointer gtk_widget_get_style_context(Pointer widget);
 
-
     /**
      * Saves the context state, so temporary modifications done through gtk_style_context_add_class(), gtk_style_context_remove_class(),
      * gtk_style_context_set_state(), etc. can quickly be reverted in one go through gtk_style_context_restore().
@@ -148,4 +147,23 @@ class Gtk3 {
      */
     public static native
     int gdk_window_get_scale_factor (Pointer window);
+
+    /**
+     * Retrieves the minimum and natural size of a widget, taking into account the widget’s preference for height-for-width management.
+     *
+     * This is used to retrieve a suitable size by container widgets which do not impose any restrictions on the child placement.
+     * It can be used to deduce toplevel window and menu sizes as well as child widgets in free-form containers such as GtkLayout.
+     *
+     * Handle with care. Note that the natural height of a height-for-width widget will generally be a smaller size than the minimum
+     * height, since the required height for the natural width is generally smaller than the required height for the minimum width.
+     *
+     * Use gtk_widget_get_preferred_height_and_baseline_for_width() if you want to support baseline alignment.
+     *
+     *
+     * @param widget a GtkWidget instance
+     * @param minimum_size location for storing the minimum size, or NULL.
+     * @param natural_size location for storing the natural size, or NULL.
+     */
+    public static native
+    void gtk_widget_get_preferred_size(final Pointer widget, final Pointer minimum_size, final Pointer natural_size);
 }

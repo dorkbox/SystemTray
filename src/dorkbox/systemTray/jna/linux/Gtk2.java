@@ -381,8 +381,28 @@ class Gtk2 {
     Pointer	gtk_offscreen_window_new ();
 
     /**
-     * Retrieves the border width of the container. See gtk_container_set_border_width().
+     * This function is typically used when implementing a GtkContainer subclass. Obtains the preferred size of a widget. The
+     * container uses this information to arrange its child widgets and decide what size allocations to give them with
+     * gtk_widget_size_allocate().
+     *
+     * You can also call this function from an application, with some caveats. Most notably, getting a size request requires the
+     * widget to be associated with a screen, because font information may be needed. Multihead-aware applications should keep this in mind.
+     *
+     * Also remember that the size request is not necessarily the size a widget will actually be allocated.
+     */
+    @Deprecated
+    public static native
+    void gtk_widget_size_request(final Pointer widget, final Pointer requisition);
+
+    /**
+     * Creates a new GtkImageMenuItem containing the image and text from a stock item. Some stock ids have preprocessor macros
+     * like GTK_STOCK_OK and GTK_STOCK_APPLY.
+     *
+     * @param stock_id the name of the stock item.
+     * @param accel_group the GtkAccelGroup to add the menu items accelerator to, or NULL.
+     *
+     * @return a new GtkImageMenuItem.
      */
     public static native
-    int gtk_container_get_border_width(Pointer container);
+    Pointer gtk_image_menu_item_new_from_stock(String stock_id, Pointer accel_group);
 }
