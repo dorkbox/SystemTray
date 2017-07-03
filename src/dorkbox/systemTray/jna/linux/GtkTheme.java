@@ -414,7 +414,7 @@ class GtkTheme {
                 // see if we can get the info via CSS properties (> GTK+ 3.2 uses an API, GTK2 gets it from disk).
                 // This is often the BEST way to get information, since GTK **DOES NOT** make it easy to get widget information BEFORE
                 // the widget is realized -- which in our case, we must do.
-                c = getFromCss();
+                c = getColorFromCss();
                 if (c != null) {
                     if (DEBUG) {
                         System.err.println("Got from CSS");
@@ -565,7 +565,7 @@ class GtkTheme {
      * @return the color string, parsed from CSS,
      */
     private static
-    Color getFromCss() {
+    Color getColorFromCss() {
         Css css = getCss();
         if (css != null) {
             if (DEBUG_SHOW_CSS) {
