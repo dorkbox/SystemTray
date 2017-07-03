@@ -17,6 +17,7 @@ class CssParser {
     private static final boolean DEBUG = false;
     private static final boolean DEBUG_NODES = false;
     private static final boolean DEBUG_GETTING_ATTRIBUTE_FROM_NODES = false;
+    private static final boolean DEBUG_VERBOSE = false;
 
     private static
     String trim(String s) {
@@ -30,11 +31,56 @@ class CssParser {
     }
 
     public static
-    class CssNode {
-        public final String label;
-        public final List<CssAttribute> attributes;
+    class Css {
+        List<Entry> colorDefinitions;
+        List<CssNode> cssNodes;
 
-        CssNode(final String label, final List<CssAttribute> attributes) {
+        Css(final List<Entry> colorDefinitions, final List<CssNode> cssNodes) {
+            this.colorDefinitions = colorDefinitions;
+            this.cssNodes = cssNodes;
+        }
+
+        @Override
+        public
+        String toString() {
+            StringBuilder def = new StringBuilder();
+            for (Entry attribute : colorDefinitions) {
+                def.append(attribute.key)
+                   .append(" : ")
+                   .append(attribute.value)
+                   .append(OS.LINE_SEPARATOR);
+            }
+
+
+            StringBuilder nodes = new StringBuilder();
+            for (CssNode node : cssNodes) {
+                nodes.append(OS.LINE_SEPARATOR)
+                     .append(node.toString())
+                     .append(OS.LINE_SEPARATOR);
+            }
+
+            return nodes.toString() + "\n\n" + nodes.toString();
+        }
+
+        public
+        String getColorDefinition(final String colorString) {
+            for (Entry definition : colorDefinitions) {
+                if (definition.key.equals(colorString)) {
+                    return definition.value;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static
+    class CssNode {
+        public String label;
+        public List<Entry> attributes;
+
+        CssNode(final String label, final List<Entry> attributes) {
             this.label = trim(label);
             this.attributes = attributes;
         }
@@ -43,7 +89,7 @@ class CssParser {
         public
         String toString() {
             StringBuilder builder = new StringBuilder();
-            for (CssAttribute attribute : attributes) {
+            for (Entry attribute : attributes) {
                 builder.append("\t")
                        .append(attribute.key)
                        .append(" : ")
@@ -56,12 +102,13 @@ class CssParser {
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static
-    class CssAttribute {
-        public final String key;
-        public final String value;
+    class Entry {
+        public String key;
+        public String value;
 
-        CssAttribute(final String key, final String value) {
+        Entry(final String key, final String value) {
             this.key = trim(key);
             this.value = trim(value);
         }
@@ -69,9 +116,10 @@ class CssParser {
         @Override
         public
         String toString() {
-            return key + ':' + value;
+            return key + " : " + value;
         }
 
+        @SuppressWarnings("SimplifiableIfStatement")
         @Override
         public
         boolean equals(final Object o) {
@@ -82,7 +130,7 @@ class CssParser {
                 return false;
             }
 
-            final CssAttribute attribute = (CssAttribute) o;
+            final Entry attribute = (Entry) o;
 
             if (key != null ? !key.equals(attribute.key) : attribute.key != null) {
                 return false;
@@ -102,126 +150,20 @@ class CssParser {
     /**
      * Gets the sections of text, of the specified CSS nodes.
      *
-     * @param css the css text, in it's raw form
+     * @param css the css
      * @param nodes the section nodes we are interested in (ie: .menuitem, *)
      * @param states the section state we are interested in (ie: focus, hover, active). Null (or empty list) means no state.
      */
     public static
-    List<CssNode> getSections(String css, String[] nodes, String[] states) {
+    List<CssNode> getSections(Css css, String[] nodes, String[] states) {
         if (states == null) {
             states = new String[0];
         }
 
-        // collect a list of all of the sections that have what we are interested in
-        List<CssNode> sections = new ArrayList<CssNode>();
-
-        // now check the css nodes to see if they contain a combination of what we are looking for.
-        for (String node : nodes) {
-            int i = 0;
-            while (i != -1) {
-                i = css.indexOf(node, i);
-                if (i > -1) {
-                    int endOfNodeLabels = css.indexOf("{", i);
-                    int endOfSection = css.indexOf("}", endOfNodeLabels + 1) + 1;
-                    int endOfSectionTest = css.indexOf("}", i) + 1;
-
-                    // this makes sure that weird parsing errors don't happen as a result of node keywords appearing in node sections
-                    if (endOfSection != endOfSectionTest) {
-                        // advance the index
-                        i = endOfSection;
-                        continue;
-                    }
-
-                    String nodeLabel = css.substring(i, endOfNodeLabels);
-
-                    List<CssAttribute> attributes = new ArrayList<CssAttribute>();
-
-                    // split the section into an arrayList, one per item. Split by attribute element
-                    String nodeSection = css.substring(endOfNodeLabels, endOfSection);
-                    int sectionStart = nodeSection.indexOf('{') + 1;
-                    int sectionEnd = nodeSection.indexOf('}');
-
-                    while (sectionStart != -1) {
-                        int end = nodeSection.indexOf(';', sectionStart);
-                        if (end != -1) {
-                            int separator = nodeSection.indexOf(':', sectionStart);
-                            // String.charAt() is a bit slow because of all the extra range checking it performes
-                            if (separator < end) {
-                                // the parenthesis must be balanced for the value
-                                short parenCount = 0;
-
-                                int j = separator;
-                                while (j < end) {
-                                    j++;
-
-                                    if (nodeSection.charAt(j) == '(') {
-                                        parenCount++;
-                                    }
-                                    else if (nodeSection.charAt(j) == ')') {
-                                        parenCount--;
-                                    }
-                                }
-
-                                j--;
-
-                                if (parenCount > 0) {
-                                    do {
-                                        // find the extended balancing paren
-                                        if (nodeSection.charAt(j) == ')') {
-                                            parenCount--;
-                                        }
-
-                                        j++;
-                                    } while (parenCount > 0 && j < sectionEnd);
-                                    end = j;
-                                } else {
-                                    end = j+1;
-                                }
-
-                                String key = nodeSection.substring(sectionStart, separator);
-                                String value = nodeSection.substring(separator + 1, end);
-                                attributes.add(new CssAttribute(key, value));
-                            }
-                            sectionStart = end + 1;
-                        }
-                        else {
-                            break;
-                        }
-                    }
-
-                    // if the label contains ',' this means that MORE that one CssNode has the same attributes. We want to split that up.
-                    int multiIndex = nodeLabel.indexOf(',');
-                    if (multiIndex != -1) {
-                        multiIndex = 0;
-                        while (multiIndex != -1) {
-                            int multiEndIndex = nodeLabel.indexOf(',', multiIndex);
-                            if (multiEndIndex != -1) {
-                                String newLabel = nodeLabel.substring(multiIndex, multiEndIndex);
-
-                                sections.add(new CssNode(newLabel, attributes));
-                                multiIndex = multiEndIndex+1;
-                            } else {
-                                // now add the last part of the label.
-                                String newLabel = nodeLabel.substring(multiIndex);
-                                sections.add(new CssNode(newLabel, attributes));
-                                multiIndex = -1;
-                            }
-                        }
-
-                    } else {
-                        // we are the only one with these attributes
-                        sections.add(new CssNode(nodeLabel, attributes));
-                    }
-
-                    // advance the index
-                    i = endOfSection;
-                }
-            }
-        }
+        List<CssNode> sections = new ArrayList<CssNode>(css.cssNodes.size());
 
         // our sections can ONLY contain what we are looking for, as a word.
-        for (Iterator<CssNode> iterator = sections.iterator(); iterator.hasNext(); ) {
-            final CssNode section = iterator.next();
+        for (final CssNode section : css.cssNodes) {
             String label = section.label;
             boolean canSave = false;
 
@@ -254,12 +196,11 @@ class CssParser {
                     }
                 }
 
-
                 if (canSave) {
                     // if this section is for a state we DO NOT care about, remove it
                     int stateIndex = label.lastIndexOf(':');
                     if (stateIndex != -1) {
-                        String stateValue = label.substring(stateIndex+1);
+                        String stateValue = label.substring(stateIndex + 1);
                         boolean saveState = false;
                         for (String state : states) {
                             if (stateValue.equals(state)) {
@@ -276,59 +217,8 @@ class CssParser {
                 }
             }
 
-            if (!canSave) {
-                iterator.remove();
-            }
-        }
-
-
-        // now merge all nodes that have the same labels.
-        for (Iterator<CssNode> iterator = sections.iterator(); iterator.hasNext(); ) {
-            final CssNode section = iterator.next();
-
-            if (section != null) {
-                String label = section.label;
-
-                for (int i = 0; i < sections.size(); i++) {
-                    final CssNode section2 = sections.get(i);
-                    if (section != section2 && section2 != null && label.equals(section2.label)) {
-                        sections.set(i, null);
-
-                        // now merge both lists.
-                        for (CssAttribute attribute : section.attributes) {
-                            for (Iterator<CssAttribute> iterator2 = section2.attributes.iterator(); iterator2.hasNext(); ) {
-                                final CssAttribute attribute2 = iterator2.next();
-
-                                if (attribute.equals(attribute2)) {
-                                    iterator2.remove();
-                                }
-                            }
-                        }
-
-                        // now both lists are unique.
-                        section.attributes.addAll(section2.attributes);
-                    }
-                }
-            } else {
-                // clean up the (possible) null entries.
-                iterator.remove();
-            }
-        }
-
-        // final cleanup loop
-        for (Iterator<CssNode> iterator = sections.iterator(); iterator.hasNext(); ) {
-            final CssNode section = iterator.next();
-
-            if (section.attributes.isEmpty()) {
-                iterator.remove();
-            } else {
-                for (Iterator<CssAttribute> iterator1 = section.attributes.iterator(); iterator1.hasNext(); ) {
-                    final CssAttribute attribute = iterator1.next();
-
-                    if (attribute == null) {
-                        iterator1.remove();
-                    }
-                }
+            if (canSave) {
+                sections.add(section);
             }
         }
 
@@ -349,7 +239,6 @@ class CssParser {
      * them on WHO has the attribute we are looking for.
      *
      * @param sections the css sections
-     * @param nodes the nodes (array) of strings (in descending importance) of the section titles we are looking for
      * @param attributeName the name of the attribute we are looking for.
      * @param equalsOrContained true if we want to EXACT match, false if the attribute key can contain what we are looking for.
      *
@@ -357,23 +246,20 @@ class CssParser {
      */
     @SuppressWarnings("Duplicates")
     public static
-    String getAttributeFromSections(final List<CssNode> sections,
-                                    final String[] nodes,
-                                    final String attributeName,
-                                    boolean equalsOrContained) {
+    List<Entry> getAttributeFromSections(final List<CssNode> sections, final String attributeName, boolean equalsOrContained) {
 
         // a list of sections that contains the exact attribute we are looking for
-        List<CssNode> sectionsWithAttribute = new ArrayList<CssNode>();
+        List<Entry> sectionsWithAttribute = new ArrayList<Entry>();
         for (CssNode cssNode : sections) {
-            for (CssAttribute attribute : cssNode.attributes) {
+            for (Entry attribute : cssNode.attributes) {
                 if (equalsOrContained) {
                     if (attribute.key.equals(attributeName)) {
-                        sectionsWithAttribute.add(cssNode);
+                        sectionsWithAttribute.add(new Entry(cssNode.label, attribute.value));
                     }
                 }
                 else {
                     if (attribute.key.contains(attributeName)) {
-                        sectionsWithAttribute.add(cssNode);
+                        sectionsWithAttribute.add(new Entry(cssNode.label, attribute.value));
                     }
                 }
             }
@@ -383,84 +269,14 @@ class CssParser {
             System.err.println("--------------");
             System.err.println("Cleaned Sections");
             System.err.println("--------------");
-            for (CssNode section : sectionsWithAttribute) {
+            for (Entry section : sectionsWithAttribute) {
                 System.err.println("--------------");
                 System.err.println(section);
                 System.err.println("--------------");
             }
         }
 
-        // if we only have 1, then return that one
-        if (sectionsWithAttribute.size() == 1) {
-            CssNode cssNode = sectionsWithAttribute.get(0);
-            for (CssAttribute attribute : cssNode.attributes) {
-                if (equalsOrContained) {
-                    if (attribute.key.equals(attributeName)) {
-                        return attribute.value;
-                    }
-                }
-                else {
-                    if (attribute.key.contains(attributeName)) {
-                        return attribute.value;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        // now we need to narrow down which sections have the attribute.
-        // This is because a section can override another, and we want to reflect that info.
-        // If a section has more than one node as it's label, then it has a higher priority, and overrides ones that only have a single label.
-        // IE:  "GtkPopover .entry"  overrides   ".entry"
-
-
-        int maxValue = -1;
-        CssNode maxNode = null;
-
-        // not the CLEANEST way to do this, but it works by only choosing css nodes that are important
-        for (CssNode cssNode : sectionsWithAttribute) {
-            int count = 0;
-            for (String node : nodes) {
-                String label = cssNode.label;
-                boolean startsWith = label.startsWith(node);
-                // make sure the . version (if we don't have it specified) isn't counted twice.
-                boolean contains = label.contains(node) && !label.contains('.' + node);
-
-                if (startsWith) {
-                    count++;
-                }
-                else if (contains) {
-                    // if it has MORE than just one node label (that we care about), it's more important that one that is by itself.
-                    count++;
-                }
-            }
-
-            if (count > maxValue) {
-                maxValue = count;
-                maxNode = cssNode;
-            }
-        }
-
-
-        // get the attribute from the highest scoring node
-        //noinspection ConstantConditions
-        if (maxNode != null) {
-            for (CssAttribute attribute : maxNode.attributes) {
-                if (equalsOrContained) {
-                    if (attribute.key.equals(attributeName)) {
-                        return attribute.value;
-                    }
-                }
-                else {
-                    if (attribute.key.contains(attributeName)) {
-                        return attribute.value;
-                    }
-                }
-            }
-        }
-
-        return null;
+        return sectionsWithAttribute;
     }
 
     public static
@@ -575,5 +391,310 @@ class CssParser {
                 }
             }
         }
+    }
+
+    /**
+     * @return the parsed out CSS, or NULL
+     */
+    public static
+    Css parse(final String css) {
+        if (css == null) {
+            return null;
+        }
+
+        // extract the color definitions
+        List<Entry> colorDefinitions = getColorDefinition(css);
+
+
+        int endOfColorDefinitions = css.indexOf("{");
+        // find the start of the line.
+        for (int lineStart = endOfColorDefinitions; lineStart > 0; lineStart--) {
+            if (css.charAt(lineStart) == '\n') {
+                endOfColorDefinitions = lineStart + 1;
+                break;
+            }
+        }
+
+
+        // collect a list of all of the sections that have what we are interested in.
+        List<CssNode> sections = new ArrayList<CssNode>();
+
+        int index = endOfColorDefinitions;
+        int length = css.length();
+
+        // now create a list of the CSS nodes
+        do {
+            int endOfNodeLabels = css.indexOf("{", index);
+            if (endOfNodeLabels == -1) {
+                break;
+            }
+
+            int endOfSection = css.indexOf("}", endOfNodeLabels + 1) + 1;
+            int endOfSectionTest = css.indexOf("}", index) + 1;
+
+
+            // this makes sure that weird parsing errors don't happen as a result of node keywords appearing in node sections
+            if (endOfSection != endOfSectionTest) {
+                // advance the index
+                index = endOfSection;
+                continue;
+            }
+
+            // find the start of the line.
+            for (int lineStart = index; lineStart > 0; lineStart--) {
+                if (css.charAt(lineStart) == '\n') {
+                    index = lineStart + 1;
+                    break;
+                }
+            }
+
+            String nodeLabel = css.substring(index, endOfNodeLabels)
+                                  .trim();
+
+            List<Entry> attributes = new ArrayList<Entry>();
+
+            // split the section into an arrayList, one per item. Split by attribute element
+            String nodeSection = css.substring(endOfNodeLabels, endOfSection);
+            int sectionStart = nodeSection.indexOf('{') + 1;
+            int sectionEnd = nodeSection.indexOf('}');
+
+            while (sectionStart != -1) {
+                int end = nodeSection.indexOf(';', sectionStart);
+                if (end != -1) {
+                    int separator = nodeSection.indexOf(':', sectionStart);
+
+                    // String.charAt() is a bit slow because of all the extra range checking it performs
+                    if (separator < end) {
+                        // the parenthesis must be balanced for the value
+                        short parenCount = 0;
+
+                        int j = separator;
+                        while (j < end) {
+                            j++;
+
+                            char c = nodeSection.charAt(j);
+                            if (c == '(') {
+                                parenCount++;
+                            }
+                            else if (c == ')') {
+                                parenCount--;
+                            }
+                        }
+
+                        j--;
+                        if (parenCount > 0) {
+                            do {
+                                // find the extended balancing paren
+                                if (nodeSection.charAt(j) == ')') {
+                                    parenCount--;
+                                }
+
+                                j++;
+                            } while (parenCount > 0 && j < sectionEnd);
+                        }
+
+                        end = j + 1;
+
+                        String key = nodeSection.substring(sectionStart, separator);
+                        String value = nodeSection.substring(separator + 1, end);
+                        attributes.add(new Entry(key, value));
+                    }
+                    sectionStart = end + 1;
+                }
+                else {
+                    break;
+                }
+            }
+
+            // if the label contains ',' this means that MORE than that one CssNode has the same attributes. We want to split it up and duplicate it.
+            int multiIndex = nodeLabel.indexOf(',');
+            if (multiIndex != -1) {
+                multiIndex = 0;
+                while (multiIndex != -1) {
+                    int multiEndIndex = nodeLabel.indexOf(',', multiIndex);
+                    if (multiEndIndex != -1) {
+                        String newLabel = nodeLabel.substring(multiIndex, multiEndIndex);
+
+                        sections.add(new CssNode(newLabel, attributes));
+                        multiIndex = multiEndIndex + 1;
+                    }
+                    else {
+                        // now add the last part of the label.
+                        String newLabel = nodeLabel.substring(multiIndex);
+                        sections.add(new CssNode(newLabel, attributes));
+                        multiIndex = -1;
+                    }
+                }
+
+            }
+            else {
+                // we are the only one with these attributes
+                sections.add(new CssNode(nodeLabel, attributes));
+            }
+
+            // advance the index
+            index = endOfSection;
+        } while (index < length);
+
+        // now merge all nodes that have the same labels.
+        for (Iterator<CssNode> iterator = sections.iterator(); iterator.hasNext(); ) {
+            final CssNode section = iterator.next();
+
+            if (section != null) {
+                String label = section.label;
+
+                for (int i = 0; i < sections.size(); i++) {
+                    final CssNode section2 = sections.get(i);
+                    if (section != section2 && section2 != null && label.equals(section2.label)) {
+                        sections.set(i, null);
+
+                        // now merge both lists.
+                        for (Entry attribute : section.attributes) {
+                            for (Iterator<Entry> iterator2 = section2.attributes.iterator(); iterator2.hasNext(); ) {
+                                final Entry attribute2 = iterator2.next();
+
+                                if (attribute.equals(attribute2)) {
+                                    iterator2.remove();
+                                    break;
+                                }
+                            }
+                        }
+
+                        // now both lists are unique.
+                        section.attributes.addAll(section2.attributes);
+                    }
+                }
+            } else {
+                // clean up the (possible) null entries.
+                iterator.remove();
+            }
+        }
+
+        // final cleanup loop for empty CSS sections
+        for (Iterator<CssNode> iterator = sections.iterator(); iterator.hasNext(); ) {
+            final CssNode section = iterator.next();
+
+            for (Iterator<Entry> iterator1 = section.attributes.iterator(); iterator1.hasNext(); ) {
+                final Entry attribute = iterator1.next();
+
+                if (attribute == null) {
+                    iterator1.remove();
+                }
+            }
+
+            if (section.attributes.isEmpty()) {
+                iterator.remove();
+            }
+        }
+
+        return new Css(colorDefinitions, sections);
+    }
+
+
+    /**
+     * Gets the color definitions (which exists at the beginnning of the CSS/gtkrc files) as a list of key/value attributes. The values
+     * are also recursively resolved.
+     */
+    private static
+    List<Entry> getColorDefinition(final String css) {
+        // have to setup the "define color" section
+        String colorDefine = "@define-color";
+        int start = css.indexOf(colorDefine);
+        int end = css.lastIndexOf(colorDefine);
+        end = css.lastIndexOf(";", end) + 1; // include the ;
+        String colorDefines = css.substring(start, end);
+
+        if (DEBUG_VERBOSE) {
+            System.err.println("+++++++++++++++++++++++");
+            System.err.println(colorDefines);
+            System.err.println("+++++++++++++++++++++++");
+        }
+
+
+        // since it's a color definition, it will start a very specific way. This will recursively get the defined colors.
+        String[] split = colorDefines.split(colorDefine);
+        List<Entry> defines = new ArrayList<Entry>(split.length);
+
+        for (String s : split) {
+            s = s.trim();
+            int endDefine = s.indexOf(" ");
+            if (endDefine > -1) {
+                String label = s.substring(0, endDefine);
+                String value = s.substring(endDefine + 1);
+
+                // remove the trailing ;
+                int endOfValue = value.length() - 1;
+                if (value.charAt(endOfValue) == ';') {
+                    value = value.substring(0, endOfValue);
+                }
+
+                Entry attribute = new Entry(label, value);
+                defines.add(attribute);
+            }
+        }
+
+
+        // now to recursively figure out the color definitions
+        boolean allClean = false;
+        while (!allClean) {
+            allClean = true;
+
+            for (Entry d : defines) {
+                String value = d.value;
+                int i = value.indexOf('@');
+                if (i > -1) {
+                    // where is the last letter?
+                    int lastLetter;
+                    for (lastLetter = i+1; lastLetter < value.length(); lastLetter++) {
+                        char c = value.charAt(lastLetter);
+                        if (!Character.isLetter(c) && c != '_') {
+                            allClean = false;
+                            break;
+                        }
+                    }
+
+                    String replacement = d.value.substring(i+1, lastLetter);
+
+                    // the target value for replacement will ALWAYS be earlier in the list.
+                    for (Entry d2 : defines) {
+                        if (d2.key.equals(replacement)) {
+                            d.value = value.replace("@" + replacement, d2.value);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return defines;
+    }
+
+    /**
+     * Select the most relevant CSS attribute based on the input cssNodes
+     *
+     * @param cssNodes the list of in-order cssNodes we care about
+     * @param entries a list of key/value pairs, where the key is the CSS Node label, and the value is the attribute value
+     *
+     * @return the most relevant attribute or NULL
+     */
+    public static
+    String selectMostRelevantAttribute(final String[] cssNodes, final List<Entry> entries) {
+        // we care about 'cssNodes' IN ORDER, so if the first one has what we are looking for, that is what we choose.
+        for (String node : cssNodes) {
+            for (Entry s : entries) {
+                if (s.key.equals(node)) {
+                    return s.value;
+                }
+            }
+
+            // check now if one of the children has it
+            for (Entry s : entries) {
+                if (s.key.contains(node)) {
+                    return s.value;
+                }
+            }
+        }
+
+        return null;
     }
 }
