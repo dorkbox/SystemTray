@@ -17,7 +17,6 @@ package dorkbox.systemTray.jna.linux;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
-import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
@@ -117,73 +116,6 @@ class AppIndicator {
             }
         }
 
-        // whoops. Symbolic links are bugged out. Look manually for it...
-        // Super hacky way to do this.
-        if (!_isLoaded) {
-            if (Gtk.isGtk2) {
-                if (SystemTray.DEBUG) {
-                    logger.debug("Checking GTK2 first for appIndicator");
-                }
-
-                // have to check gtk2 first
-                for (int i = 0; i <= 10; i++) {
-                    if (!_isLoaded) {
-                        try {
-                            final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
-                            String s = library.getFile().getName();
-
-                            if (SystemTray.DEBUG) {
-                                logger.debug("Loading library: '{}'", s);
-                            }
-
-                            // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
-                            if (i == 3 || s.contains("appindicator3")) {
-                                _isVersion3 = true;
-                                if (SystemTray.DEBUG) {
-                                    logger.debug("Unloading library: '{}'", s);
-                                }
-                                Native.unregister(AppIndicator.class);
-                            }
-
-                            _isLoaded = true;
-                            break;
-                        } catch (Throwable e) {
-                            if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: '{}'. \n{}", "appindicator" + i, e.getMessage());
-                            }
-                        }
-                    }
-                }
-
-            } else {
-                // have to check gtk3 first (maybe it's there?)
-                for (int i = 10; i >= 0; i--) {
-                    if (!_isLoaded) {
-                        try {
-                            final NativeLibrary library = JnaHelper.register("appindicator" + i, AppIndicator.class);
-                            String s = library.getFile().getName();
-
-                            if (SystemTray.DEBUG) {
-                                logger.debug("Loading library: '{}'", s);
-                            }
-
-                            // version 3 WILL NOT work with icons in the menu. This allows us to show a warning (in the System tray initialization)
-                            if (i == 3 || s.contains("appindicator3")) {
-                                _isVersion3 = true;
-                            }
-
-                            _isLoaded = true;
-                            break;
-                        } catch (Throwable e) {
-                            if (SystemTray.DEBUG) {
-                                logger.debug("Error loading library: '{}'. \n{}", "appindicator" + i, e.getMessage());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // maybe it's really GTK2 version? who knows...
         if (!_isLoaded) {
             try {
@@ -231,6 +163,7 @@ class AppIndicator {
             }
         }
 
+        // We fall back to GtkStatusIndicator or Swing if this cannot load
         if (shouldLoadAppIndicator && _isLoaded) {
             isLoaded = true;
             isVersion3 = _isVersion3;
