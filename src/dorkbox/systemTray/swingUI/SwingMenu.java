@@ -73,6 +73,12 @@ class SwingMenu implements MenuPeer {
             @Override
             public
             void run() {
+                // don't add this entry if it's already been added via another method. Because of threading via swing/gtk, entries can
+                // POSSIBLY get added twice. Once via add() and once via bind().
+                if (entry.hasPeer()) {
+                    return;
+                }
+
                 if (entry instanceof Menu) {
                     SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
                     ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());

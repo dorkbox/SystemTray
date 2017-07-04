@@ -124,7 +124,6 @@ class Menu extends MenuItem {
             copy = new ArrayList<Entry>(menuEntries);
         }
 
-
         for (int i = 0, menuEntriesSize = copy.size(); i < menuEntriesSize; i++) {
             final Entry menuEntry = copy.get(i);
             peer.add(this, menuEntry, i);
@@ -145,7 +144,6 @@ class Menu extends MenuItem {
     @SuppressWarnings("Duplicates")
     public final
     Menu add(final JMenu entry) {
-
         Menu menu = new Menu();
         menu.setEnabled(entry.isEnabled());
 
@@ -267,7 +265,7 @@ class Menu extends MenuItem {
      * Adds a menu entry, separator, or sub-menu to this menu.
      */
     public
-    <T extends Entry> T  add(final T entry, int index) {
+    <T extends Entry> T add(final T entry, int index) {
         synchronized (menuEntries) {
             // access on this object must be synchronized for object visibility
             if (index == -1) {
@@ -279,10 +277,10 @@ class Menu extends MenuItem {
                 }
                 menuEntries.add(index, entry);
             }
-        }
 
-        if (peer != null) {
-            ((MenuPeer) peer).add(this, entry, index);
+            if (peer != null) {
+                ((MenuPeer) peer).add(this, entry, index);
+            }
         }
 
         return entry;
@@ -351,7 +349,7 @@ class Menu extends MenuItem {
     }
 
     /**
-     *  This removes a menu entry from the dropdown menu.
+     *  This removes a menu entry from the menu.
      *
      * @param entry This is the menu entry to remove
      */

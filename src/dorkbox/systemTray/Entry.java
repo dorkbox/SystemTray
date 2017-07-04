@@ -57,6 +57,14 @@ class Entry {
 
 
     /**
+     * @return true if this entry has a peer assigned to it.
+     */
+    public final
+    boolean hasPeer() {
+        return peer != null;
+    }
+
+    /**
      * @return the parent menu (of this entry or menu) or null if we are the root menu
      */
     public final
