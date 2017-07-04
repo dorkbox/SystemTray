@@ -116,7 +116,8 @@ class SystemTrayFixes {
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
      */
-    public static void fixWindows(int trayIconSize) {
+    public static
+    void fixWindows(int trayIconSize) {
         if (isOracleVM()) {
             // not fixing things that are not broken.
             return;
@@ -249,7 +250,8 @@ class SystemTrayFixes {
      *
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/macosx/classes/sun/lwawt/macosx/CTrayIcon.java
      */
-    public static void fixMacOS() {
+    public static
+    void fixMacOS() {
         if (isOracleVM()) {
             // not fixing things that are not broken.
             return;
@@ -464,22 +466,31 @@ class SystemTrayFixes {
             byte[] eFrameBytes;
             byte[] trayIconBytes;
             byte[] trayPeerBytes;
+            byte[] runnableBytes;
+            byte[] iconCanvasBytes;
 
             {
                 CtClass trayIconClass = pool.get(className);
                 CtClass eFrameClass = null;
+                CtClass iconCanvasClass = null;
                 CtClass trayPeerClass;
 
                 CtClass[] nestedClasses = trayIconClass.getNestedClasses();
+                String xEmbedFrameName = className + "$XTrayIconEmbeddedFrame";
+                String iconCanvasName = className + "$IconCanvas";
                 for (CtClass nestedClass : nestedClasses) {
                     String name = nestedClass.getName();
 
-                    if (name.equals(className + "$XTrayIconEmbeddedFrame")) {
+                    if (name.equals(xEmbedFrameName)) {
                         eFrameClass = nestedClass;
+                    }
+
+                    if (name.equals(iconCanvasName)) {
+                        iconCanvasClass = nestedClass;
                     }
                 }
 
-                if (eFrameClass == null) {
+                if (eFrameClass == null || iconCanvasClass == null) {
                     throw new RuntimeException("Unable to find required classes to fix. Unable to continue initialization.");
                 }
 
@@ -492,6 +503,13 @@ class SystemTrayFixes {
                 ctField.setModifiers(Modifier.STATIC);
                 trayIconClass.addField(ctField);
 
+                ctField = new CtField(pool.get("java.awt.image.BufferedImage"), "image", trayIconClass);
+                ctField.setModifiers(Modifier.STATIC);
+                trayIconClass.addField(ctField);
+
+                ctField = new CtField(pool.get("java.awt.Rectangle"), "rectangle", trayIconClass);
+                ctField.setModifiers(Modifier.STATIC);
+                trayIconClass.addField(ctField);
 
                 // fix other classes for icon size.
                 trayPeerClass = pool.get("sun.awt.X11.XSystemTrayPeer");
@@ -513,52 +531,171 @@ class SystemTrayFixes {
                 method1.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());
                 method2.getMethodInfo().rebuildStackMapForME(trayPeerClass.getClassPool());
 
-                trayIconBytes = trayIconClass.toBytecode();
-                trayPeerBytes = trayPeerClass.toBytecode();
 
-                // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
-                // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
-                // time). This means we cannot take a screen shot because before the window is placed, another icon is in this
-                // spot; and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
-                // the pixel color, so at least we can fake transparency (this is what we do). This only works if the notification area
-                // is a solid color, and not an image or gradient.
-                CtMethod methodVisible = CtNewMethod.make(
-                "public void setVisible(boolean b) " +
+
+                // The screenshot we capture, is just a 1-pixel wide strip, that we stretch to the correct size. This is so we can
+                // have the correct background when there is a gradient panel (which happens on Ubuntu and possibly others).
+                // NOTE: This method doesn't work for panel background images that are not a gradient, and there is no easy way to solve that problem.
+
+                // make our custom runnable (cannot do anonymous inner classes via javassist.
+                {
+                    CtClass runnable = pool.makeClass("sun.awt.X11.RunnableImpl");
+                    runnable.addInterface(pool.get("java.lang.Runnable"));
+
+                    ctField = new CtField(pool.get(xEmbedFrameName), "frame", runnable);
+                    ctField.setModifiers(Modifier.PROTECTED);
+                    runnable.addField(ctField);
+
+                    ctField = new CtField(pool.get("java.awt.Rectangle"), "size", runnable);
+                    ctField.setModifiers(Modifier.PROTECTED);
+                    runnable.addField(ctField);
+
+                    ctField = new CtField(CtClass.intType, "attempts", runnable);
+                    ctField.setModifiers(Modifier.PROTECTED);
+                    runnable.addField(ctField);
+
+                    CtMethod method = CtNewMethod.make("public void run() { " +
+                        "java.awt.Point loc = frame.getLocationOnScreen();" +
+
+                        "if (loc.x == 0 && loc.y == 0 && attempts < 10) {" +
+                            // we still don't know! Reschedule.
+                            "attempts++;" +
+                            "java.awt.EventQueue.invokeLater(this);" +
+                            // "System.err.println(\"Reschedule: \" + loc.x + \" : \" + loc.y);" +
+                            "return;" +
+                        "}" +
+
+                        // "System.err.println(\"Actual location: \" + loc.x + \" : \" + loc.y);" +
+
+                        // offset the pixel grabbing location, if possible. If we go negative, weird colors happen.
+                        // which ever is the larger dimension (usually) is the orientation of the bar.
+                        "java.awt.Rectangle rect;" +
+                        "if (loc.x > loc.y) {" +
+                            // horizontal panel.
+                            "rect = new java.awt.Rectangle(loc.x-1, loc.y, 1, size.height);" +
+
+                            // Sometimes the parent panel is LARGER than the icon, so we grab the color at the correct spot so there aren't any "weird" strips of color at the bottom of the icon.
+                            "if (loc.y < 300) {" +
+                                // panel is at the top of the screen (guessing...)
+                                className + ".color = " + className + ".robot.getPixelColor(rect.x, rect.y + rect.height-1);" +
+                            "} else {" +
+                                // panel is at the bottom of the screen (guessing)
+                                className + ".color = " + className + ".robot.getPixelColor(rect.x, rect.y);" +
+                            "}" +
+                        "} else {" +
+                            // vertical panel (don't think this will happen much, but in case it does...)
+                            "rect = new java.awt.Rectangle(loc.x, loc.y-1, size.width, 1);" +
+                            className + ".color = " + className + ".robot.getPixelColor(rect.x, rect.y);" +
+                        "}" +
+
+                        // screen shot a strip, that we then modify the background of the tray icon
+                        className + ".image = " + className + ".robot.createScreenCapture(rect);" +
+
+                        // keeps track of the capture size, which can be DIFFERENT than the icon size
+                        className + ".rectangle = rect;" +
+
+                        // "System.err.println(\"capture location: \" + rect);" +
+
+                        // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur)
+                        "frame.setBackground(" + className + ".color);" +
+                    "}", runnable);
+                    runnable.addMethod(method);
+
+                    runnableBytes = runnable.toBytecode();
+                }
+
+
+                {
+                    // gets the pixel color just to the side of the icon. The CRITICAL thing to notice, is that this happens before the
+                    // AWT window is positioned, so there can be a different system tray icon at this position (at this exact point in
+                    // time). This means we cannot take a screen shot because before the window is placed, another icon is in this
+                    // spot; and when the window is placed, it's too late to take a screenshot. The second best option is to take a sample of
+                    // the pixel color, so at least we can fake transparency (this is what we do). This only works if the notification area
+                    // is a solid color, and not an image or gradient.
+                    CtMethod methodVisible = CtNewMethod.make("public void setVisible(boolean b) " +
                     "{ " +
                         "if (b) {" +
                             "if (" + className + ".robot == null) {" +
                                 className + ".robot = new java.awt.Robot();" +
+
+                                "sun.awt.X11.RunnableImpl r = new sun.awt.X11.RunnableImpl();" +
+                                "r.frame = this;" +
+                                "r.size = getBoundsPrivate();" +
+
+                                // run our custom runnable on the event queue, so that we can get the location after it's been placed
+                                "java.awt.EventQueue.invokeLater(r);" +
                             "}" +
 
+                            // the problem here is that on SOME linux OSes, the location is invalid! So we check again on the EDT
                             "java.awt.Point loc = getPeer().getLocationOnScreen();" +
-                            // "java.lang.System.err.println(\"Pixel location: \" + loc.x + \" : \" + loc.y);" +
 
                             "int locX = loc.x;" +
                             "int locY = loc.y;" +
 
-                            // offset the pixel grabbing location, if possible. If we go negative, weird colors happen.
-                            "if (locX > 0) locX -= 1;" +
-                            "if (locY > 0) locY -= 1;" +
+                            "if (!(locX == 0 && locY == 0)) {" +
+                                // offset the pixel grabbing location, if possible. If we go negative, weird colors happen.
+                                "if (locX > 0) locX -= 1;" +
+                                "if (locY > 0) locY -= 1;" +
 
-                            className + ".color = " + className + ".robot.getPixelColor(locX, locY);" +
-                            // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur)
-                            "setBackground(" + className + ".color);" +
+                                className + ".color = " + className + ".robot.getPixelColor(locX, locY);" +
+
+                                // this sets the background of the native component, NOT THE ICON (otherwise weird "grey" flashes occur)
+                              "setBackground(" + className + ".color);" +
+                            "}" +
                         "}" +
-
                         "super.setVisible(b);" +
-                    " }",
-                eFrameClass);
-                eFrameClass.addMethod(methodVisible);
+                    "}", eFrameClass);
+                    eFrameClass.addMethod(methodVisible);
+                    methodVisible.getMethodInfo()
+                                 .rebuildStackMapForME(eFrameClass.getClassPool());
 
-                methodVisible.getMethodInfo().rebuildStackMapForME(eFrameClass.getClassPool());
+                    eFrameBytes = eFrameClass.toBytecode();
+                }
 
-                eFrameBytes = eFrameClass.toBytecode();
+                {
+                    CtMethod ctMethodPaint = iconCanvasClass.getDeclaredMethod("paint");
+                    String body = "{" + "java.awt.Graphics g = $1;" +
+                        "if (g != null && curW > 0 && curH > 0) {" +
+                            "java.awt.image.BufferedImage bufImage = new java.awt.image.BufferedImage(curW, curH, java.awt.image.BufferedImage.TYPE_INT_ARGB);" +
+                            "java.awt.Graphics2D gr = bufImage.createGraphics();" +
+
+                            "if (gr != null) {" +
+                                "try {" +
+                                    // this will render the image "nicely"
+                                    "gr.addRenderingHints(new java.awt.RenderingHints(java.awt.RenderingHints.KEY_RENDERING," +
+                                    "java.awt.RenderingHints.VALUE_RENDER_QUALITY));" +
+
+                                    "gr.setColor(getBackground());" +
+                                    "gr.fillRect(0, 0, curW, curH);" +
+
+                                    "if (" + className + ".image != null) {" +
+                                        "gr.drawImage(" + className + ".image, 0, 0, curW, curH, null);" +
+                                    "}" +
+
+                                    "gr.drawImage(image, 0, 0, curW, curH, observer);" +
+                                    "gr.dispose();" +
+                                    "g.drawImage(bufImage, 0, 0, curW, curH, null);" +
+                                "} finally {" +
+                                    "g.dispose();" +
+                                "}" +
+                            "}" +
+                        "}" +
+                    "}";
+                    ctMethodPaint.setBody(body);
+
+                    iconCanvasBytes = iconCanvasClass.toBytecode();
+                }
+
+                trayIconBytes = trayIconClass.toBytecode();
+                trayPeerBytes = trayPeerClass.toBytecode();
             }
 
             // whoosh, past the classloader and directly into memory.
+            BootStrapClassLoader.defineClass(runnableBytes);
+            BootStrapClassLoader.defineClass(eFrameBytes);
+            BootStrapClassLoader.defineClass(iconCanvasBytes);
             BootStrapClassLoader.defineClass(trayIconBytes);
             BootStrapClassLoader.defineClass(trayPeerBytes);
-            BootStrapClassLoader.defineClass(eFrameBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon background color");
