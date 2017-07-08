@@ -48,13 +48,13 @@ class ImageResizeUtil {
         // NOTE: this does not need to be called on the EDT
         try {
             final File newFile = CacheUtil.create(imageSize + "_empty.png");
-            return ImageUtil.getTransparentImage(imageSize, newFile);
+            return ImageUtil.createImage(imageSize, newFile, null);
         } catch (IOException e) {
             throw new RuntimeException("Unable to generate transparent image! Something is severely wrong!");
         }
     }
 
-    private static
+    public static
     File getErrorImage(int size) {
         if (size == 0) {
             // default size
@@ -83,8 +83,7 @@ class ImageResizeUtil {
             File resizedFile = resizeFileNoCheck(size, imageStream);
 
             // now cache that file
-            File save = CacheUtil.save(cacheName, resizedFile);
-            return save;
+            return CacheUtil.save(cacheName, resizedFile);
         } catch (Exception e) {
             // this must be thrown
             throw new RuntimeException("Serious problems! Unable to extract error image, this should NEVER happen!", e);
