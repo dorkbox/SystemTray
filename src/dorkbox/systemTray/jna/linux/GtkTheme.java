@@ -5,8 +5,11 @@ import static dorkbox.systemTray.util.CssParser.removeComments;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,11 +24,11 @@ import dorkbox.systemTray.util.CssParser;
 import dorkbox.systemTray.util.CssParser.Css;
 import dorkbox.systemTray.util.CssParser.CssNode;
 import dorkbox.systemTray.util.CssParser.Entry;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.util.FileUtil;
 import dorkbox.util.MathUtil;
 import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
+import dorkbox.util.process.ShellProcessBuilder;
 
 /**
  * Class to contain all of the methods needed to get the text color from the AppIndicator/GtkStatusIcon menu entry. This is primarily
@@ -150,75 +153,249 @@ class GtkTheme {
      */
     public static
     int getIndicatorSize(final Class<? extends Tray> trayType) {
-//        double scalingFactor = getLinuxScalingFactor();
-//
-//        if (scalingFactor > 1) {
-//            return scalingFactor;
-//        }
-//
-//        // fedora 23+ has a different size for the indicator (NOT default 16px)
-//        int fedoraVersion = OSUtil.Linux.getFedoraVersion();
-//
-//        if (fedoraVersion >= 23) {
-//            System.err.println("FEDORA SCALE? ");
-////                    if (SystemTray.DEBUG) {
-////                        SystemTray.logger.debug("Adjusting tray/menu scaling for FEDORA " + fedoraVersion);
-////                    }
-//
-//            return 2;
-////                    trayScalingFactor = 2;
-//        }
-//
-//        return 0;
+        // Linux is similar enough, that it just uses this method
+        // https://wiki.archlinux.org/index.php/HiDPI
+
+        // 96 DPI is the default
+        final double defaultDPI = 96.0;
+
+        final AtomicReference<Double> screenScale = new AtomicReference<Double>();
+        final AtomicInteger screenDPI = new AtomicInteger();
+
+        Gtk.dispatchAndWait(new Runnable() {
+            @Override
+            public
+            void run() {
+                // screen DPI
+                Pointer screen = Gtk.gdk_screen_get_default();
+                if (screen != null) {
+                    // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
+                    screenDPI.set((int) Gtk.gdk_screen_get_resolution(screen));
+                }
+
+                if (Gtk.isGtk3) {
+                    Pointer window = Gtk.gdk_get_default_root_window();
+                    if (window != null) {
+                        screenScale.set((double) Gtk3.gdk_window_get_scale_factor(window));
+                    }
+                }
+            }
+        });
+
+        // fallback
+        if (screenDPI.get() == 0) {
+            // GET THE DPI IN LINUX
+            // https://wiki.archlinux.org/index.php/Talk:GNOME
+            Object detectedValue = Toolkit.getDefaultToolkit().getDesktopProperty("gnome.Xft/DPI");
+            if (detectedValue instanceof Integer) {
+                int dpi = ((Integer) detectedValue) / 1024;
+                if (dpi == -1) {
+                    screenDPI.set((int) defaultDPI);
+                }
+                if (dpi < 50) {
+                    // 50 dpi is the minimum value gnome allows
+                    screenDPI.set(50);
+                }
+            }
+        }
+
+
+        // check system ENV variables.
+        if (screenScale.get() == 0) {
+            String envVar = System.getenv("QT_AUTO_SCREEN_SCALE_FACTOR");
+            if (envVar != null) {
+                try {
+                    screenScale.set(Double.parseDouble(envVar));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // check system ENV variables.
+        if (screenScale.get() == 0) {
+            String envVar = System.getenv("QT_SCALE_FACTOR");
+            if (envVar != null) {
+                try {
+                    screenScale.set(Double.parseDouble(envVar));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // check system ENV variables.
+        if (screenScale.get() == 0) {
+            String envVar = System.getenv("GDK_SCALE");
+            if (envVar != null) {
+                try {
+                    screenScale.set(Double.parseDouble(envVar));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // check system ENV variables.
+        if (screenScale.get() == 0) {
+            String envVar = System.getenv("ELM_SCALE");
+            if (envVar != null) {
+                try {
+                    screenScale.set(Double.parseDouble(envVar));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+
+
+        OSUtil.DesktopEnv.Env env = OSUtil.DesktopEnv.get();
+        // sometimes the scaling-factor is set
+        if (env == OSUtil.DesktopEnv.Env.Gnome) {
+            try {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
+                PrintStream outputStream = new PrintStream(byteArrayOutputStream);
+
+                // gsettings get org.gnome.desktop.interface scaling-factor
+                final ShellProcessBuilder shellVersion = new ShellProcessBuilder(outputStream);
+                shellVersion.setExecutable("gsettings");
+                shellVersion.addArgument("get");
+                shellVersion.addArgument("org.gnome.desktop.interface");
+                shellVersion.addArgument("scaling-factor");
+                shellVersion.start();
+
+                String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+
+                if (!output.isEmpty()) {
+                    // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
+                    // should be: uint32 0  or something
+                    if (output.contains("uint32")) {
+                        String value = output.substring(output.indexOf("uint") + 7, output.length());
+
+                        // 0 is disabled (no scaling)
+                        // 1 is enabled (default scale)
+                        // 2 is 2x scale
+                        // 3 is 3x scale
+                        // etc
+
+                        double scalingFactor = Double.parseDouble(value);
+                        if (scalingFactor >= 1) {
+                            screenScale.set(scalingFactor);
+                        }
+
+                        // A setting of 2, 3, etc, which is all you can do with scaling-factor
+                        // To enable HiDPI, use gsettings:
+                        // gsettings set org.gnome.desktop.interface scaling-factor 2
+                    }
+                }
+            } catch (Throwable ignore) {
+            }
+        }
+        else if (OSUtil.DesktopEnv.isKDE()) {
+            // check the custom KDE override file
+            try {
+                File customSettings = new File("/usr/bin/startkde-custom");
+                if (customSettings.canRead()) {
+                    List<String> lines = FileUtil.readLines(customSettings);
+                    for (String line : lines) {
+                        String str = "export GDK_SCALE=";
+                        int i = line.indexOf(str);
+                        if (i > -1) {
+                            String scale = line.substring(i + str.length());
+                            double scalingFactor = Double.parseDouble(scale);
+                            if (scalingFactor >= 1) {
+                                screenScale.set(scalingFactor);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+//        System.err.println("screen scale: " + screenScale.get());
+//        System.err.println("screen DPI: " + screenDPI.get());
 
         if (OSUtil.DesktopEnv.isKDE()) {
-            // KDE
             /*
-             *   Tray icons with fixed size
-             *   If the tray icons are not scaled with the rest of the desktop, the size can be set editing the default value for iconSize
-             *   in /usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml
-             *   (e.g. the value 2 may be fine):
              *
-             *   /usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml
-             *      <entry name="iconSize" type="Int">
-             *          <label>Default icon size for the systray icons, it's an enum which values mean,
-             *                  Small, SmallMedium, Medium, Large, Huge, Enormous respectively.   On low DPI systems they correspond to
-             *                  16, 22, 32, 48, 64, 128 pixels. On high DPI systems those values would be scaled up, depending on the DPI.
-             *          </label>
-             *          <default>2</default>
-             *     </entry>
+             * Looking in  plasma-framework/src/declarativeimports/core/units.cpp:
+    // Scale the icon sizes up using the devicePixelRatio
+    // This function returns the next stepping icon size
+    // and multiplies the global settings with the dpi ratio.
+    const qreal ratio = devicePixelRatio();
+
+    if (ratio < 1.5) {
+        return size;
+    } else if (ratio < 2.0) {
+        return size * 1.5;
+    } else if (ratio < 2.5) {
+        return size * 2.0;
+    } else if (ratio < 3.0) {
+        return size * 2.5;
+    } else if (ratio < 3.5) {
+        return size * 3.0;
+    } else {
+        return size * ratio;
+    }
+My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 factor existing. Is it reasonable? Wouldn't it make more sense to use the factor the closest to the ratio rather than  what is done here?
+
              */
+
+            File mainFile = new File("/usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml");
+            if (mainFile.canRead()) {
+                List<String> lines = FileUtil.readLines(mainFile);
+                boolean found = false;
+                int index = 0;
+                for (final String line : lines) {
+                    if (line.contains("<entry name=\"iconSize\" type=\"Int\">")) {
+                        found = true;
+                        // have to get the "default" line value
+                    }
+
+                    String str = "<default>";
+                    if (found && (index = line.indexOf(str)) > -1) {
+                        // this is our line. now get the value.
+                        String substring = line.substring(index + str.length(), line.indexOf("</default>", index));
+
+                        if (MathUtil.isInteger(substring)) {
+                            // Default icon size for the systray icons, it's an enum which values mean,
+                            // Small, SmallMedium, Medium, Large, Huge, Enormous respectively.
+                            // On low DPI systems they correspond to :
+                            //    16, 22, 32, 48, 64, 128 pixels.
+                            // On high DPI systems those values would be scaled up, depending on the DPI.
+                            int imageSize = 0;
+                            int imageSizeEnum = Integer.parseInt(substring);
+                            switch (imageSizeEnum) {
+                                case 0:
+                                    imageSize = 16;
+                                    break;
+                                case 1:
+                                    imageSize = 22;
+                                    break;
+                                case 2:
+                                    imageSize = 32;
+                                    break;
+                                case 3:
+                                    imageSize = 48;
+                                    break;
+                                case 4:
+                                    imageSize = 64;
+                                    break;
+                                case 5:
+                                    imageSize = 128;
+                                    break;
+                            }
+
+                            if (imageSize > 0) {
+                                double scaleRatio = screenDPI.get() / defaultDPI;
+
+                                return (int) (scaleRatio * imageSize);
+                            }
+                        }
+                    }
+                }
+            }
         }
         else {
-
-            double linuxScalingFactor = SizeAndScalingUtil.getLinuxScalingFactor();
-
-//            final AtomicInteger screenScale = new AtomicInteger();
-//            final AtomicReference<Double> screenDPI = new AtomicReference<Double>();
-//
-//            Gtk.dispatchAndWait(new Runnable() {
-//                @Override
-//                public
-//                void run() {
-//                    // screen DPI
-//                    Pointer screen = Gtk.gdk_screen_get_default();
-//                    if (screen != null) {
-//                        // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
-//                        screenDPI.set(Gtk.gdk_screen_get_resolution(screen));
-//                    }
-//
-//                    if (Gtk.isGtk3) {
-//                        Pointer window = Gtk.gdk_get_default_root_window();
-//                        if (window != null) {
-//                            screenScale.set(Gtk3.gdk_window_get_scale_factor(window));
-//                        }
-//                    }
-//                }
-//            });
-
-            // TODO: what to do with screen DPI? 72 is default? 96 is default (yes, i think)?
-            OSUtil.DesktopEnv.Env env = OSUtil.DesktopEnv.get();
-
             if (OSUtil.Linux.isUbuntu() && env == OSUtil.DesktopEnv.Env.Unity) {
                 // if we measure on ubuntu unity using a screen shot (using swing, so....) , the max size was 24, HOWEVER this goes from
                 // the top->bottom of the indicator bar -- and since it was swing, it uses a different rendering method and it (honestly)
@@ -299,77 +476,11 @@ class GtkTheme {
                 });
 
                 int i = traySize.get();
-                System.err.println("TRAY SIZE: " + traySize.get());
-//                System.err.println("SCREEN DPI: " + screenDPI.get());
-//                System.err.println("SCREEN SCALE: " + screenScale.get());
                 if (i != 0) {
                     return i;
                 }
             }
         }
-
-//        void
-//        gtk_widget_get_preferred_height (GtkWidget *widget,
-//                                         gint *minimum_height,
-//                                         gint *natural_height);
-
-//                g_param_spec_int ("check-icon-size",
-//                                  "Check icon size",
-//                                  "Check icon size",
-//                                  -1, G_MAXINT, 40,
-//                                  G_PARAM_READWRITE));
-
-
-//                    -GtkCheckButton-indicator-size: 15;
-//                    -GtkCheckMenuItem-indicator-size: 14;
-
-
-// https://wiki.gnome.org/HowDoI/HiDpi
-
-//                String css = getCss();
-//            -GtkCheckButton-indicator-size: 16;
-//            -GtkCheckMenuItem-indicator-size: 16;
-
-//            xdpyinfo | grep dots reported 96x96 dots
-
-        // else it's an app indicator
-
-        // if we can get the theme path, the theme path will (almost always) have size info as part of the path name!
-//            app_indicator_get_icon_theme_path ()
-//
-//const gchar *       app_indicator_get_icon_theme_path   (AppIndicator *self);
-//            Wrapper function for property "icon-theme-path".
-//
-//                                                          self :
-//
-//            The AppIndicator object to use
-//            Returns :
-//
-//            The current icon theme path.
-
-
-
-
-
-//                g_param_spec_int ("check-icon-size",
-//                                  "Check icon size",
-//                                  "Check icon size",
-//                                  -1, G_MAXINT, 40,
-//                                  G_PARAM_READWRITE));
-
-
-//                    -GtkCheckButton-indicator-size: 15;
-//                    -GtkCheckMenuItem-indicator-size: 14;
-
-            // GdMainIconView.content-view {
-            //   -GdMainIconView-icon-size: 40;
-            //}
-
-
-        // no idea? check scaling? base it off of CSS values????
-        // what about KDE or elementary OS or unix? or arch?
-//        return 32;
-
 
         // sane default
         return 22;
