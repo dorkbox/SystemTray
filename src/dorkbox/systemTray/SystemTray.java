@@ -746,10 +746,10 @@ class SystemTray {
 
             // initialize tray/menu image sizes. This must be BEFORE the system tray has been created
             int trayImageSize = SizeAndScalingUtil.getTrayImageSize(trayType);
-            SizeAndScalingUtil.getMenuImageSize(trayType);
+            int menuImageSize = SizeAndScalingUtil.getMenuImageSize(trayType);
 
-
-
+            logger.debug("Tray indicator image size: {}", trayImageSize);
+            logger.debug("Tray menu image size: {}", menuImageSize);
 
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after GTK is started (if applicable)
