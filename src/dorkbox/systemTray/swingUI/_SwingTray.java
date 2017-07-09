@@ -49,7 +49,7 @@ class _SwingTray extends Tray implements SwingUI {
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File imageFile;
-    private volatile String tooltipText = null;
+    private volatile String tooltipText = "";
 
     // Called in the EDT
     public
@@ -202,6 +202,9 @@ class _SwingTray extends Tray implements SwingUI {
     @Override
     protected
     void setTooltip_(final String tooltipText) {
+        if (this.tooltipText.equals(tooltipText)){
+            return;
+        }
         this.tooltipText = tooltipText;
 
         SwingUtil.invokeLater(new Runnable() {

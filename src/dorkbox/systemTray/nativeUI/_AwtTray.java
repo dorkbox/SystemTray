@@ -49,7 +49,7 @@ class _AwtTray extends Tray implements NativeUI {
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File imageFile;
-    private volatile String tooltipText = null;
+    private volatile String tooltipText = "";
 
     private final Object keepAliveLock = new Object[0];
     private Thread keepAliveThread;
@@ -212,6 +212,9 @@ class _AwtTray extends Tray implements NativeUI {
     @Override
     protected
     void setTooltip_(final String tooltipText) {
+        if (this.tooltipText.equals(tooltipText)){
+            return;
+        }
         this.tooltipText = tooltipText;
 
         SwingUtil.invokeLater(new Runnable() {

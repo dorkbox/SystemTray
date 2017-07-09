@@ -54,6 +54,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File imageFile;
+    private volatile String tooltipText = "";
 
     private final GtkMenu gtkMenu;
 
@@ -205,6 +206,11 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
     @Override
     protected
     void setTooltip_(final String tooltipText) {
+        if (this.tooltipText.equals(tooltipText)){
+            return;
+        }
+        this.tooltipText = tooltipText;
+
         Gtk.dispatch(new Runnable() {
             @Override
             public
