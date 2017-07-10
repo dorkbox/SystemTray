@@ -20,6 +20,11 @@ import com.sun.jna.ptr.PointerByReference;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.jna.linux.structs.GdkColor;
+import dorkbox.systemTray.jna.linux.structs.GdkRGBAColor;
+import dorkbox.systemTray.jna.linux.structs.GtkRequisition;
+import dorkbox.systemTray.jna.linux.structs.GtkStyle;
+import dorkbox.systemTray.jna.linux.structs.PangoRectangle;
 import dorkbox.systemTray.util.CssParser;
 import dorkbox.systemTray.util.CssParser.Css;
 import dorkbox.systemTray.util.CssParser.CssNode;

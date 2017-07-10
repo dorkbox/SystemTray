@@ -1,4 +1,4 @@
-package dorkbox.systemTray.jna.linux;
+package dorkbox.systemTray.jna.linux.structs;
 
 import java.awt.Color;
 import java.util.Arrays;

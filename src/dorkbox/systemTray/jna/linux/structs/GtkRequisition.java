@@ -1,4 +1,4 @@
-package dorkbox.systemTray.jna.linux;
+package dorkbox.systemTray.jna.linux.structs;
 
 import java.util.Arrays;
 import java.util.List;

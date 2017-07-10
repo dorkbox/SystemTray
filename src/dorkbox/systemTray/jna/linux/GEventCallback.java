@@ -18,6 +18,7 @@ package dorkbox.systemTray.jna.linux;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.jna.linux.structs.GdkEventButton;
 import dorkbox.util.Keep;
 
 @Keep

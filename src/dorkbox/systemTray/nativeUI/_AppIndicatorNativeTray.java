@@ -25,9 +25,9 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.AppIndicator;
-import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
+import dorkbox.systemTray.jna.linux.structs.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**

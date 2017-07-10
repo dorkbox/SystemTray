@@ -25,10 +25,10 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.GEventCallback;
-import dorkbox.systemTray.jna.linux.GdkEventButton;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
+import dorkbox.systemTray.jna.linux.structs.GdkEventButton;
 
 /**
  * Class for handling all system tray interactions via GTK.

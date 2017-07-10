@@ -22,6 +22,7 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.jna.linux.structs.GtkStyle;
 import dorkbox.util.OS;
 import dorkbox.util.jna.JnaHelper;
 

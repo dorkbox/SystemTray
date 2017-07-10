@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.jna.linux;
+package dorkbox.systemTray.jna.linux.structs;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,20 +25,22 @@ import dorkbox.util.Keep;
 
 @Keep
 public
-class GTypeInstanceStruct extends Structure {
+class GObjectStruct extends Structure {
     public
-    class ByValue extends GTypeInstanceStruct implements Structure.ByValue {}
+    class ByValue extends GObjectStruct implements Structure.ByValue {}
 
 
     public
-    class ByReference extends GTypeInstanceStruct implements Structure.ByReference {}
+    class ByReference extends GObjectStruct implements Structure.ByReference {}
 
 
-    public Pointer g_class;
+    public GTypeInstanceStruct g_type_instance;
+    public int ref_count;
+    public Pointer qdata;
 
     @Override
     protected
     List<String> getFieldOrder() {
-        return Arrays.asList("g_class");
+        return Arrays.asList("g_type_instance", "ref_count", "qdata");
     }
 }

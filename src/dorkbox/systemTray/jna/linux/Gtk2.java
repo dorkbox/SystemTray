@@ -18,6 +18,8 @@ package dorkbox.systemTray.jna.linux;
 import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 
+import dorkbox.systemTray.jna.linux.structs.GtkStyle;
+
 /**
  * Bindings for GTK+ 2. Bindings that are exclusively for GTK+ 3 are in that respective class
  *

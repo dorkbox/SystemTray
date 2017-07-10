@@ -13,36 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.jna.linux;
+package dorkbox.systemTray.jna.linux.structs;
 
 import java.util.Arrays;
 import java.util.List;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
 import dorkbox.util.Keep;
 
 @Keep
 public
-class GParamSpecStruct extends Structure {
+class GTypeInstanceStruct extends Structure {
     public
-    class ByValue extends GParamSpecStruct implements Structure.ByValue {}
+    class ByValue extends GTypeInstanceStruct implements Structure.ByValue {}
 
 
     public
-    class ByReference extends GParamSpecStruct implements Structure.ByReference {}
+    class ByReference extends GTypeInstanceStruct implements Structure.ByReference {}
 
 
-    public GTypeInstanceStruct g_type_instance;
-
-    public String name;          /* interned string */
-//    Pointer flags;
-//    double 		 value_type;
-//    double		 owner_type; /* class or interface using this property */
+    public Pointer g_class;
 
     @Override
     protected
     List<String> getFieldOrder() {
-        return Arrays.asList("g_type_instance", "name");
+        return Arrays.asList("g_class");
     }
 }

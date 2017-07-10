@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.jna.linux;
+package dorkbox.systemTray.jna.linux.structs;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,23 +25,13 @@ import dorkbox.util.Keep;
 
 @Keep
 public
-class GdkEventButton extends Structure {
-    public int type;
-    public Pointer window;
-    public int send_event;
-    public int time;
-    public double x;
-    public double y;
-    public Pointer axes;
-    public int state;
-    public int button;
-    public Pointer device;
-    public double x_root;
-    public double y_root;
+class AppIndicatorInstanceStruct extends Structure {
+    public GObjectStruct parent;
+    public Pointer priv;
 
     @Override
     protected
     List<String> getFieldOrder() {
-        return Arrays.asList("type", "window", "send_event", "time", "x", "y", "axes", "state", "button", "device", "x_root", "y_root");
+        return Arrays.asList("parent", "priv");
     }
 }

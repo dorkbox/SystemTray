@@ -21,6 +21,7 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.jna.linux.structs.AppIndicatorInstanceStruct;
 import dorkbox.util.OS;
 import dorkbox.util.jna.JnaHelper;
 
@@ -187,7 +188,8 @@ class AppIndicator {
 //    public static final int STATUS_ATTENTION = 2;
 
 
-    public static native AppIndicatorInstanceStruct app_indicator_new(String id, String icon_name, int category);
+    public static native
+    AppIndicatorInstanceStruct app_indicator_new(String id, String icon_name, int category);
 
     public static native void app_indicator_set_title(AppIndicatorInstanceStruct self, String title);
     public static native void app_indicator_set_status(AppIndicatorInstanceStruct self, int status);
