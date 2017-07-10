@@ -269,6 +269,7 @@ class Menu extends MenuItem {
         synchronized (menuEntries) {
             // access on this object must be synchronized for object visibility
             if (index == -1) {
+                index = menuEntries.size();
                 menuEntries.add(entry);
             } else {
                 if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
