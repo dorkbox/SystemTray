@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
@@ -739,8 +740,8 @@ class SystemTray {
 
             if (isNix) {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
-                Gtk.startGui();
-                Gtk.waitForEventsToComplete();
+                GtkEventDispatch.startGui();
+                GtkEventDispatch.waitForEventsToComplete();
             }
 
 
@@ -753,15 +754,15 @@ class SystemTray {
 
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after GTK is started (if applicable)
-                if (OS.isWindows()) {
+                if (OS.isWindows() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
                     // windows hard-codes the image size
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
-                else if (OS.isMacOsX()) {
+                else if (OS.isMacOsX() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
                     // macosx doesn't respond to all buttons (but should)
                     SystemTrayFixes.fixMacOS();
                 }
-                else if (isNix) {
+                else if (isNix && isTrayType(trayType, TrayType.Swing)) {
                     // linux/mac doesn't have transparent backgrounds for swing and hard-codes the image size
                     SystemTrayFixes.fixLinux(trayImageSize);
                 }
@@ -790,7 +791,6 @@ class SystemTray {
                 ) {
                 try {
                     reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
-
                 } catch (Exception e) {
                     logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
                 }
