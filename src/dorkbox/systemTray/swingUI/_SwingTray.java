@@ -28,7 +28,7 @@ import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
@@ -191,7 +191,7 @@ class _SwingTray extends Tray implements SwingUI {
                 if (OS.isLinux() || OS.isUnix()) {
                     // does not need to be called on the dispatch (it does that). Startup happens in the SystemTray (in a special block),
                     // because we MUST startup the system tray BEFORE to access GTK before we create the swing version (to get size info)
-                    Gtk.shutdownGui();
+                    GtkEventDispatch.shutdownGui();
                 }
             }
         };

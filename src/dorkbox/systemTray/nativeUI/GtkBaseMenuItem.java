@@ -21,6 +21,7 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
 
@@ -102,7 +103,7 @@ class GtkBaseMenuItem implements EntryPeer {
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {

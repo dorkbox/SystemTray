@@ -24,6 +24,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.MenuItemPeer;
 
 class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
@@ -58,7 +59,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             final ActionListener cb = menuItemForActionCallback.getCallback();
             if (cb != null) {
                 try {
-                    Gtk.proxyClick(menuItemForActionCallback, cb);
+                    GtkEventDispatch.proxyClick(menuItemForActionCallback, cb);
                 } catch (Exception e) {
                     SystemTray.logger.error("Error calling menu entry {} click event.", menuItemForActionCallback.getText(), e);
                 }
@@ -77,7 +78,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     void setImage(final MenuItem menuItem) {
         setLegitImage(menuItem.getImage() != null);
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -104,7 +105,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -141,7 +142,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             textWithMnemonic = menuItem.getText();
         }
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -169,7 +170,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {

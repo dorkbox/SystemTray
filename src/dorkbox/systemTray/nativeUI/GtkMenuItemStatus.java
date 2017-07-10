@@ -17,6 +17,7 @@ package dorkbox.systemTray.nativeUI;
 
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.StatusPeer;
 
 // you might wonder WHY this extends MenuEntryItem -- the reason is that an AppIndicator "status" will be offset from everyone else,
@@ -40,7 +41,7 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -59,7 +60,7 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {

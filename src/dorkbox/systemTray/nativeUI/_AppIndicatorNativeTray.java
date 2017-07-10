@@ -27,7 +27,7 @@ import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.jna.linux.AppIndicator;
 import dorkbox.systemTray.jna.linux.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**
@@ -133,7 +133,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                Gtk.dispatch(new Runnable() {
+                GtkEventDispatch.dispatch(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -160,7 +160,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
                     return;
                 }
 
-                Gtk.dispatch(new Runnable() {
+                GtkEventDispatch.dispatch(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -195,7 +195,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
                     final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
                     appIndicator = null;
 
-                    Gtk.dispatch(new Runnable() {
+                    GtkEventDispatch.dispatch(new Runnable() {
                         @Override
                         public
                         void run() {
@@ -209,12 +209,12 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
                     super.remove();
 
                     // does not need to be called on the dispatch (it does that)
-                    Gtk.shutdownGui();
+                    GtkEventDispatch.shutdownGui();
                 }
             }
         };
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -226,7 +226,7 @@ class _AppIndicatorNativeTray extends Tray implements NativeUI {
             }
         });
 
-        Gtk.waitForEventsToComplete();
+        GtkEventDispatch.waitForEventsToComplete();
 
         bind(gtkMenu, null, systemTray);
     }

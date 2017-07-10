@@ -114,7 +114,7 @@ class GtkTheme {
     int getMenuEntryImageSize() {
         final AtomicReference<Integer> imageHeight = new AtomicReference<Integer>();
 
-        Gtk.dispatchAndWait(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -162,7 +162,7 @@ class GtkTheme {
         final AtomicReference<Double> screenScale = new AtomicReference<Double>();
         final AtomicInteger screenDPI = new AtomicInteger();
 
-        Gtk.dispatchAndWait(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -431,7 +431,7 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
                 // try to use GTK to get the tray icon size
                 final AtomicInteger traySize = new AtomicInteger();
 
-                Gtk.dispatchAndWait(new Runnable() {
+                GtkEventDispatch.dispatchAndWait(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -498,7 +498,7 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
         // these methods are from most accurate (but limited in support) to compatible across Linux OSes.. Strangely enough, GTK makes
         // this information insanely difficult to get.
         final AtomicReference<Color> color = new AtomicReference<Color>(null);
-        Gtk.dispatchAndWait(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @SuppressWarnings("UnusedAssignment")
             @Override
             public
@@ -700,7 +700,7 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
         if (Gtk.isLoaded && Gtk.isGtk3) {
             final AtomicReference<String> css_ = new AtomicReference<String>(null);
 
-            Gtk.dispatchAndWait(new Runnable() {
+            GtkEventDispatch.dispatchAndWait(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -1218,7 +1218,7 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
     String getThemeName() {
         final AtomicReference<String> themeName = new AtomicReference<String>(null);
 
-        Gtk.dispatchAndWait(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {

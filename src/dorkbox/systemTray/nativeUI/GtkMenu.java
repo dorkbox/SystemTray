@@ -28,6 +28,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.MenuPeer;
 
 @SuppressWarnings("deprecation")
@@ -196,7 +197,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the GTK dispatch. This must be dispatchAndWait
-        Gtk.dispatchAndWait(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
@@ -250,7 +251,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         // is overridden by system tray
         setLegitImage(menuItem.getImage() != null);
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -279,7 +280,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     public
     void setEnabled(final MenuItem menuItem) {
         // is overridden by system tray
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -318,7 +319,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             textWithMnemonic = menuItem.getText();
         }
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -362,7 +363,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {

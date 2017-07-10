@@ -27,6 +27,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.jna.linux.GtkTheme;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.HeavyCheckMark;
@@ -127,7 +128,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     int callback(final Pointer instance, final Pointer data) {
         if (callback != null) {
             // this will redispatch to our created callback via `setCallback`
-            Gtk.proxyClick(null, callback);
+            GtkEventDispatch.proxyClick(null, callback);
         }
 
         return Gtk.TRUE;
@@ -148,7 +149,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void setEnabled(final Checkbox menuItem) {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -180,7 +181,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             textWithMnemonic = menuItem.getText();
         }
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -227,7 +228,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         if (checked != this.isChecked) {
             this.isChecked = checked;
 
-            Gtk.dispatch(new Runnable() {
+            GtkEventDispatch.dispatch(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -283,7 +284,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {

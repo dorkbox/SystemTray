@@ -16,6 +16,7 @@
 package dorkbox.systemTray.nativeUI;
 
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.EntryPeer;
 
 class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
@@ -35,7 +36,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
     @Override
     public
     void remove() {
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -46,11 +47,13 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
         });
     }
 
+    @Override
     public
     boolean hasImage() {
         return false;
     }
 
+    @Override
     public
     void setSpacerImage(final boolean everyoneElseHasImages) {
         // no op

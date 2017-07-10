@@ -28,6 +28,7 @@ import dorkbox.systemTray.jna.linux.GEventCallback;
 import dorkbox.systemTray.jna.linux.GdkEventButton;
 import dorkbox.systemTray.jna.linux.Gobject;
 import dorkbox.systemTray.jna.linux.Gtk;
+import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -68,7 +69,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                Gtk.dispatch(new Runnable() {
+                GtkEventDispatch.dispatch(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -94,7 +95,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
                     return;
                 }
 
-                Gtk.dispatch(new Runnable() {
+                GtkEventDispatch.dispatch(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -125,7 +126,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
-                    Gtk.dispatch(new Runnable() {
+                    GtkEventDispatch.dispatch(new Runnable() {
                         @Override
                         public
                         void run() {
@@ -142,12 +143,12 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
                     super.remove();
 
                     // does not need to be called on the dispatch (it does that)
-                    Gtk.shutdownGui();
+                    GtkEventDispatch.shutdownGui();
                 }
             }
         };
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -169,10 +170,10 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
             }
         });
 
-        Gtk.waitForEventsToComplete();
+        GtkEventDispatch.waitForEventsToComplete();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -211,7 +212,7 @@ class _GtkStatusIconNativeTray extends Tray implements NativeUI {
         }
         this.tooltipText = tooltipText;
 
-        Gtk.dispatch(new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
