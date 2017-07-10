@@ -28,7 +28,7 @@ class AwtMenuItem implements MenuItemPeer {
     private final AwtMenu parent;
     private final java.awt.MenuItem _native = new java.awt.MenuItem();
 
-    private volatile ActionListener swingCallback;
+    private volatile ActionListener callback;
 
     // this is ALWAYS called on the EDT.
     AwtMenuItem(final AwtMenu parent) {
@@ -70,12 +70,12 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void setCallback(final dorkbox.systemTray.MenuItem menuItem) {
-        if (swingCallback != null) {
-            _native.removeActionListener(swingCallback);
+        if (callback != null) {
+            _native.removeActionListener(callback);
         }
 
         if (menuItem.getCallback() != null) {
-            swingCallback = new ActionListener() {
+            callback = new ActionListener() {
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
@@ -91,10 +91,10 @@ class AwtMenuItem implements MenuItemPeer {
                 }
             };
 
-            _native.addActionListener(swingCallback);
+            _native.addActionListener(callback);
         }
         else {
-            swingCallback = null;
+            callback = null;
         }
     }
 
@@ -125,9 +125,9 @@ class AwtMenuItem implements MenuItemPeer {
                 _native.deleteShortcut();
                 _native.setEnabled(false);
 
-                if (swingCallback != null) {
-                    _native.removeActionListener(swingCallback);
-                    swingCallback = null;
+                if (callback != null) {
+                    _native.removeActionListener(callback);
+                    callback = null;
                 }
                 parent._native.remove(_native);
 

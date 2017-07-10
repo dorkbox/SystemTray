@@ -16,7 +16,6 @@
 package dorkbox.systemTray.nativeUI;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,7 +33,7 @@ import dorkbox.systemTray.peer.MenuPeer;
 @SuppressWarnings("deprecation")
 class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
-    private final List<GtkBaseMenuItem> menuEntries = new LinkedList<GtkBaseMenuItem>();
+    private final List<GtkBaseMenuItem> menuEntries = new ArrayList<GtkBaseMenuItem>();
 
     private final GtkMenu parent;
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
@@ -67,18 +66,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
     GtkMenu getParent() {
         return parent;
-    }
-
-    /**
-     * ALWAYS CALLED ON THE EDT
-     */
-    private
-    void add(final GtkBaseMenuItem item, final int index) {
-        if (index > 0) {
-            menuEntries.add(index, item);
-        } else {
-            menuEntries.add(item);
-        }
     }
 
     /**
@@ -221,27 +208,27 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
                     // see: https://bugs.launchpad.net/glipper/+bug/1203888
                     GtkMenu item = new GtkMenu(GtkMenu.this);
-                    add(item, index);
+                    menuEntries.add(index, item);
                     ((Menu) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Separator) {
                     GtkMenuItemSeparator item = new GtkMenuItemSeparator(GtkMenu.this);
-                    add(item, index);
+                    menuEntries.add(index, item);
                     entry.bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Checkbox) {
                     GtkMenuItemCheckbox item = new GtkMenuItemCheckbox(GtkMenu.this);
-                    add(item, index);
+                    menuEntries.add(index, item);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Status) {
                     GtkMenuItemStatus item = new GtkMenuItemStatus(GtkMenu.this);
-                    add(item, index);
+                    menuEntries.add(index, item);
                     ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof MenuItem) {
                     GtkMenuItem item = new GtkMenuItem(GtkMenu.this);
-                    add(item, index);
+                    menuEntries.add(index, item);
                     ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
 
