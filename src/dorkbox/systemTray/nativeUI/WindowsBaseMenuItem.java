@@ -16,8 +16,8 @@
 package dorkbox.systemTray.nativeUI;
 
 import static com.sun.jna.platform.win32.WinDef.HMENU;
-import static dorkbox.systemTray.jna.windows.User32.MF_BYPOSITION;
 import static dorkbox.systemTray.nativeUI.WindowsMenu.MFT_OWNERDRAW;
+import static dorkbox.util.jna.windows.User32.MF_BYPOSITION;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
@@ -33,12 +33,12 @@ import javax.swing.ImageIcon;
 import com.sun.jna.platform.win32.BaseTSD;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.jna.windows.GDI32;
-import dorkbox.systemTray.jna.windows.GetLastErrorException;
-import dorkbox.systemTray.jna.windows.HBITMAPWrap;
-import dorkbox.systemTray.jna.windows.User32;
-import dorkbox.systemTray.jna.windows.structs.MENUITEMINFO;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.jna.windows.GDI32;
+import dorkbox.util.jna.windows.GetLastErrorException;
+import dorkbox.util.jna.windows.HBITMAPWrap;
+import dorkbox.util.jna.windows.User32;
+import dorkbox.util.jna.windows.structs.MENUITEMINFO;
 
 public class WindowsBaseMenuItem {
 

@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.nativeUI;
 
-
 import static com.sun.jna.platform.win32.WinDef.HBITMAP;
 import static com.sun.jna.platform.win32.WinDef.HDC;
 import static com.sun.jna.platform.win32.WinDef.HFONT;
@@ -30,10 +29,10 @@ import static com.sun.jna.platform.win32.WinUser.AC_SRC_ALPHA;
 import static com.sun.jna.platform.win32.WinUser.AC_SRC_OVER;
 import static com.sun.jna.platform.win32.WinUser.SIZE;
 import static com.sun.jna.platform.win32.WinUser.SM_CYMENUCHECK;
-import static dorkbox.systemTray.jna.windows.WindowsEventDispatch.MF_POPUP;
-import static dorkbox.systemTray.jna.windows.WindowsEventDispatch.WM_COMMAND;
-import static dorkbox.systemTray.jna.windows.WindowsEventDispatch.WM_DRAWITEM;
-import static dorkbox.systemTray.jna.windows.WindowsEventDispatch.WM_MEASUREITEM;
+import static dorkbox.util.jna.windows.WindowsEventDispatch.MF_POPUP;
+import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_COMMAND;
+import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_DRAWITEM;
+import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_MEASUREITEM;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,17 +46,17 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.jna.windows.GDI32;
-import dorkbox.systemTray.jna.windows.GetLastErrorException;
-import dorkbox.systemTray.jna.windows.Listener;
-import dorkbox.systemTray.jna.windows.MsImg32;
-import dorkbox.systemTray.jna.windows.User32;
-import dorkbox.systemTray.jna.windows.WindowsEventDispatch;
-import dorkbox.systemTray.jna.windows.structs.BLENDFUNCTION;
-import dorkbox.systemTray.jna.windows.structs.DRAWITEMSTRUCT;
-import dorkbox.systemTray.jna.windows.structs.MEASUREITEMSTRUCT;
-import dorkbox.systemTray.jna.windows.structs.NONCLIENTMETRICS;
 import dorkbox.systemTray.peer.MenuPeer;
+import dorkbox.util.jna.windows.GDI32;
+import dorkbox.util.jna.windows.GetLastErrorException;
+import dorkbox.util.jna.windows.Listener;
+import dorkbox.util.jna.windows.MsImg32;
+import dorkbox.util.jna.windows.User32;
+import dorkbox.util.jna.windows.WindowsEventDispatch;
+import dorkbox.util.jna.windows.structs.BLENDFUNCTION;
+import dorkbox.util.jna.windows.structs.DRAWITEMSTRUCT;
+import dorkbox.util.jna.windows.structs.MEASUREITEMSTRUCT;
+import dorkbox.util.jna.windows.structs.NONCLIENTMETRICS;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
