@@ -44,6 +44,7 @@ import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
 import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
+import dorkbox.systemTray.nativeUI._WindowsNativeTray;
 import dorkbox.systemTray.swingUI.SwingUIFactory;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -83,6 +84,7 @@ class SystemTray {
         AutoDetect,
         GtkStatusIcon,
         AppIndicator,
+        WindowsNotifyIcon,
         Swing,
         AWT
     }
@@ -173,6 +175,7 @@ class SystemTray {
         switch (trayType) {
             case GtkStatusIcon: return tray == _GtkStatusIconNativeTray.class;
             case AppIndicator: return tray == _AppIndicatorNativeTray.class;
+            case WindowsNotifyIcon: return tray == _WindowsNativeTray.class;
             case Swing: return tray == _SwingTray.class;
             case AWT: return tray == _AwtTray.class;
         }
@@ -187,6 +190,9 @@ class SystemTray {
         }
         else if (trayType == TrayType.AppIndicator) {
             return _AppIndicatorNativeTray.class;
+        }
+        else if (trayType == TrayType.WindowsNotifyIcon) {
+            return _WindowsNativeTray.class;
         }
         else if (trayType == TrayType.Swing) {
             return _SwingTray.class;
@@ -216,7 +222,7 @@ class SystemTray {
     Class<? extends Tray> getAutoDetectTrayType() {
         if (OS.isWindows()) {
             try {
-                return selectType(TrayType.Swing);
+                return selectType(TrayType.WindowsNotifyIcon);
             } catch (Throwable e) {
                 logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.", e);
             }
@@ -426,7 +432,7 @@ class SystemTray {
                 // windows MUST use swing only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
-                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to Swing");
+                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to native implementation");
             }
         }
         else if (OS.isMacOsX()) {
@@ -811,6 +817,12 @@ class SystemTray {
                         }
                     }
                 });
+            } else if (isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+                try {
+                    reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
+                } catch (Exception e) {
+                    logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
+                }
             } else {
                 logger.error("Unable to create tray type: '{}'. Aborting!", trayType.getSimpleName());
             }
