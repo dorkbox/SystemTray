@@ -122,9 +122,7 @@ class _WindowsNativeTray extends Tray implements NativeUI {
 
                 super.remove();
 
-                WPARAM wparam = new WPARAM(0);
-                LPARAM lparam = new LPARAM(0);
-                User32.IMPL.PostMessage(WindowsEventDispatch.get(), WM_QUIT, wparam, lparam);
+                User32.IMPL.PostMessage(WindowsEventDispatch.get(), WM_QUIT, new WPARAM(0), new LPARAM(0));
             }
         };
 

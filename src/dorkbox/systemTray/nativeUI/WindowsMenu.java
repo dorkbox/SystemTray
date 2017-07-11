@@ -450,7 +450,7 @@ class WindowsMenu extends WindowsBaseMenuItem implements MenuPeer {
                     }
 
                     // close the previous popup menu
-                    User32.IMPL.SendMessage(hWnd, WM_KEYDOWN, new WPARAM(VK_ESCAPE), null);
+                    User32.IMPL.SendMessage(hWnd, WM_KEYDOWN, new WPARAM(VK_ESCAPE), new LPARAM(0));
                 }
 
                 return;
@@ -459,9 +459,7 @@ class WindowsMenu extends WindowsBaseMenuItem implements MenuPeer {
             }
         }
 
-        WPARAM wparam = new WPARAM(0);
-        LPARAM lparam = new LPARAM(0);
-        User32.IMPL.PostMessage(mainHwnd, WM_NULL, wparam, lparam);
+        User32.IMPL.PostMessage(mainHwnd, WM_NULL, new WPARAM(0), new LPARAM(0));
     }
 
 
