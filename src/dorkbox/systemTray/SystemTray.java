@@ -48,9 +48,11 @@ import dorkbox.systemTray.swingUI.SwingUIFactory;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.JavaFX;
+import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.Swt;
 import dorkbox.systemTray.util.SystemTrayFixes;
+import dorkbox.systemTray.util.WindowsSwingUI;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.OS;
@@ -742,6 +744,17 @@ class SystemTray {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
                 GtkEventDispatch.startGui();
                 GtkEventDispatch.waitForEventsToComplete();
+            }
+
+
+            // have to make adjustments BEFORE the tray/menu image size calculations
+            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null && SwingUtil.isDefaultLookAndFeel()) {
+                if (isNix) {
+                    SystemTray.SWING_UI = new LinuxSwingUI();
+                }
+                else if (OS.isWindows()) {
+                    SystemTray.SWING_UI = new WindowsSwingUI();
+                }
             }
 
 
