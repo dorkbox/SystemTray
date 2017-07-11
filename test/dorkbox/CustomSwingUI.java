@@ -16,13 +16,11 @@
 package dorkbox;
 
 import java.awt.Color;
-import java.awt.Insets;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
-import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.MenuItemUI;
 import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.SeparatorUI;
@@ -68,12 +66,6 @@ class CustomSwingUI implements SwingUIFactory {
             public
             void installUI(final JComponent c) {
                 super.installUI(c);
-
-                JPopupMenu popupMenu = (JPopupMenu) c;
-
-                // borderUI resource border type will get changed internally!
-                // setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0));
-                popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
             }
         };
     }
@@ -94,12 +86,6 @@ class CustomSwingUI implements SwingUIFactory {
             public
             void installUI(final JComponent c) {
                 super.installUI(c);
-
-
-                JMenuItem menuItem = (JMenuItem) c;
-                menuItem.setIconTextGap(8);
-                menuItem.setMargin(new Insets(2, -2, 2, 4));
-                c.setBorder(new EmptyBorder(1, 1, 1, 1));
             }
         };
     }
