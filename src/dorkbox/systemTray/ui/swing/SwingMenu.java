@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.nativeUI;
+package dorkbox.systemTray.ui.swing;
 
+import java.io.File;
 
-import java.awt.MenuShortcut;
-import java.awt.PopupMenu;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
@@ -25,27 +28,40 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.util.SwingUtil;
 
-// this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
+// this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
 @SuppressWarnings("ForLoopReplaceableByForEach")
-class AwtMenu implements MenuPeer {
+class SwingMenu implements MenuPeer {
 
-    volatile java.awt.Menu _native;
-    private final AwtMenu parent;
+    final JComponent _native;
+    private final SwingMenu parent;
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    AwtMenu(final AwtMenu parent) {
+    SwingMenu(final SwingMenu parent, final Menu entry) {
         this.parent = parent;
 
         if (parent == null) {
-            this._native = new PopupMenu();
+            TrayPopup trayPopup = new TrayPopup();
+            if (SystemTray.SWING_UI != null) {
+                trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
+            }
+            this._native = trayPopup;
         }
         else {
-            this._native = new java.awt.Menu();
-            parent._native.add(this._native);
+            JMenu jMenu = new JMenu();
+            JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
+
+            if (SystemTray.SWING_UI != null) {
+                jMenu.setUI(SystemTray.SWING_UI.getItemUI(jMenu, entry));
+                popupMenu.setUI(SystemTray.SWING_UI.getMenuUI(popupMenu, entry));
+            }
+
+            this._native = jMenu;
+            parent._native.add(jMenu);
         }
     }
 
@@ -57,24 +73,30 @@ class AwtMenu implements MenuPeer {
             @Override
             public
             void run() {
+                // don't add this entry if it's already been added via another method. Because of threading via swing/gtk, entries can
+                // POSSIBLY get added twice. Once via add() and once via bind().
+                if (entry.hasPeer()) {
+                    return;
+                }
+
                 if (entry instanceof Menu) {
-                    AwtMenu swingMenu = new AwtMenu(AwtMenu.this);
+                    SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
                     ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Separator) {
-                    AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
+                    SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this);
                     entry.bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Checkbox) {
-                    AwtMenuItemCheckbox item = new AwtMenuItemCheckbox(AwtMenu.this);
+                    SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
                     ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Status) {
-                    AwtMenuItemStatus item = new AwtMenuItemStatus(AwtMenu.this);
+                    SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
                     ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof MenuItem) {
-                    AwtMenuItem item = new AwtMenuItem(AwtMenu.this);
+                    SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
                     ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
                 }
             }
@@ -85,7 +107,20 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        // no op. You can't have images in an awt menu
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                File imageFile = menuItem.getImage();
+                if (imageFile != null) {
+                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
+                    ((JMenu) _native).setIcon(origIcon);
+                }
+                else {
+                    ((JMenu) _native).setIcon(null);
+                }
+            }
+        });
     }
 
     // is overridden in tray impl
@@ -101,6 +136,7 @@ class AwtMenu implements MenuPeer {
         });
     }
 
+
     // is overridden in tray impl
     @Override
     public
@@ -109,7 +145,7 @@ class AwtMenu implements MenuPeer {
             @Override
             public
             void run() {
-                _native.setLabel(menuItem.getText());
+                ((JMenu) _native).setText(menuItem.getText());
             }
         });
     }
@@ -124,32 +160,38 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setShortcut(final MenuItem menuItem) {
+        char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
-                _native.setShortcut(new MenuShortcut(vKey));
+                ((JMenu) _native).setMnemonic(vKey);
             }
         });
     }
 
+    /**
+     * This removes all menu entries from this menu AND this menu from it's parent
+     */
     @Override
-    public
+    public synchronized
     void remove() {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
+                _native.setVisible(false);
                 _native.removeAll();
-                _native.deleteShortcut();
-                _native.setEnabled(false);
-                _native.removeNotify();
 
                 if (parent != null) {
                     parent._native.remove(_native);
+                }
+                else {
+                    // have to dispose of the tray popup hidden frame, otherwise the app will never close (because this will hold it open)
+                    ((TrayPopup) _native).close();
                 }
             }
         });

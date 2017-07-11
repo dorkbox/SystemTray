@@ -13,36 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.ui.awt;
 
 import java.awt.AWTException;
 import java.awt.Image;
+import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 
 import javax.swing.ImageIcon;
-import javax.swing.JPopupMenu;
 
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 /**
- * Class for handling all system tray interaction, via Swing.
+ * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
+ * looks good and works correctly.
  *
- * It doesn't work well AT ALL on linux. See bugs:
+ * It doesn't work well on linux. See bugs:
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
+ *
+ * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open. MacOS does not have this problem.
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public final
-class _SwingTray extends Tray implements SwingUI {
+class _AwtTray extends Tray {
     private volatile SystemTray tray;
     private volatile TrayIcon trayIcon;
 
@@ -51,9 +51,12 @@ class _SwingTray extends Tray implements SwingUI {
     private volatile File imageFile;
     private volatile String tooltipText = "";
 
+    private final Object keepAliveLock = new Object[0];
+    private Thread keepAliveThread;
+
     // Called in the EDT
     public
-    _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
+    _AwtTray(final dorkbox.systemTray.SystemTray systemTray) {
         super();
 
         if (!SystemTray.isSupported()) {
@@ -62,7 +65,7 @@ class _SwingTray extends Tray implements SwingUI {
         }
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null, null) {
+        final AwtMenu awtMenu = new AwtMenu(null) {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
@@ -75,6 +78,35 @@ class _SwingTray extends Tray implements SwingUI {
                         }
 
                         boolean enabled = menuItem.getEnabled();
+
+                        if (OS.isMacOsX()) {
+                            if (keepAliveThread != null) {
+                                synchronized (keepAliveLock) {
+                                    keepAliveLock.notifyAll();
+                                }
+                            }
+                            keepAliveThread = null;
+
+                            if (visible && !enabled) {
+                                // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
+                                // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
+                                keepAliveThread = new Thread(new Runnable() {
+                                    @Override
+                                    public
+                                    void run() {
+                                        synchronized (keepAliveLock) {
+                                            keepAliveLock.notifyAll();
+
+                                            try {
+                                                keepAliveLock.wait();
+                                            } catch (InterruptedException ignored) {
+                                            }
+                                        }
+                                    }
+                                }, "TrayKeepAliveThread");
+                                keepAliveThread.start();
+                            }
+                        }
 
                         if (visible && !enabled) {
                             tray.remove(trayIcon);
@@ -120,22 +152,7 @@ class _SwingTray extends Tray implements SwingUI {
                             // here we init. everything
                             trayIcon = new TrayIcon(trayImage);
 
-                            JPopupMenu popupMenu = (JPopupMenu) _native;
-                            popupMenu.pack();
-                            popupMenu.setFocusable(true);
-
-                            // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-                            //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                            // trayIcon.setToolTip("app name");
-
-                            trayIcon.addMouseListener(new MouseAdapter() {
-                                @Override
-                                public
-                                void mousePressed(MouseEvent e) {
-                                    TrayPopup popupMenu = (TrayPopup) _native;
-                                    popupMenu.doShow(e.getPoint(), 0);
-                                }
-                            });
+                            trayIcon.setPopupMenu((PopupMenu) _native);
 
                             try {
                                 tray.add(trayIcon);
@@ -149,8 +166,6 @@ class _SwingTray extends Tray implements SwingUI {
                         // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
                         // want to make sure keep the tooltip text the same as before.
                         trayIcon.setToolTip(tooltipText);
-
-                        ((TrayPopup) _native).setTitleBarImage(imageFile);
                     }
                 });
             }
@@ -158,7 +173,7 @@ class _SwingTray extends Tray implements SwingUI {
             @Override
             public
             void setText(final MenuItem menuItem) {
-                // no op
+                // no op.
             }
 
             @Override
@@ -175,9 +190,11 @@ class _SwingTray extends Tray implements SwingUI {
                     public
                     void run() {
                         if (trayIcon != null) {
+                            trayIcon.setPopupMenu(null);
                             if (tray != null) {
                                 tray.remove(trayIcon);
                             }
+
                             trayIcon = null;
                         }
 
@@ -186,17 +203,10 @@ class _SwingTray extends Tray implements SwingUI {
                 });
 
                 super.remove();
-
-
-                if (OS.isLinux() || OS.isUnix()) {
-                    // does not need to be called on the dispatch (it does that). Startup happens in the SystemTray (in a special block),
-                    // because we MUST startup the system tray BEFORE to access GTK before we create the swing version (to get size info)
-                    GtkEventDispatch.shutdownGui();
-                }
             }
         };
 
-        bind(swingMenu, null, systemTray);
+        bind(awtMenu, null, systemTray);
     }
 
     @Override
@@ -211,6 +221,10 @@ class _SwingTray extends Tray implements SwingUI {
             @Override
             public
             void run() {
+                if (tray == null) {
+                    tray = SystemTray.getSystemTray();
+                }
+
                 // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
                 // want to make sure keep the tooltip text the same as before.
                 if (trayIcon != null) {

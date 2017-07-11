@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.ui.swing;
 
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -89,14 +89,17 @@ class TrayPopup extends JPopupMenu {
         hiddenDialog.setBounds(0,0,0,0);
 
         addPopupMenuListener(new PopupMenuListener() {
+            @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
             }
 
+            @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 hiddenDialog.setVisible(false);
                 hiddenDialog.toBack();
             }
 
+            @Override
             public void popupMenuCanceled(PopupMenuEvent e) {
             }
         });

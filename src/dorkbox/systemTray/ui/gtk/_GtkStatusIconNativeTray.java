@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.nativeUI;
+package dorkbox.systemTray.ui.gtk;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +37,7 @@ import dorkbox.systemTray.jna.linux.structs.GdkEventButton;
  */
 @SuppressWarnings("Duplicates")
 public final
-class _GtkStatusIconNativeTray extends Tray implements NativeUI {
+class _GtkStatusIconNativeTray extends Tray {
     private volatile Pointer trayIcon;
 
     // http://code.metager.de/source/xref/gnome/Platform/gtk%2B/gtk/deprecated/gtkstatusicon.c

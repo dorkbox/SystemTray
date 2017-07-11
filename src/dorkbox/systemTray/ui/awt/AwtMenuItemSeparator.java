@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.ui.awt;
 
-import javax.swing.JSeparator;
 
-import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemSeparator implements EntryPeer {
+class AwtMenuItemSeparator implements EntryPeer {
 
-    private final SwingMenu parent;
-    private final JSeparator _native = new JSeparator(JSeparator.HORIZONTAL);
+    private final AwtMenu parent;
+    private final java.awt.MenuItem _native = new java.awt.MenuItem("-");
+
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItemSeparator(final SwingMenu parent) {
+    AwtMenuItemSeparator(final AwtMenu parent) {
         this.parent = parent;
-
-        if (SystemTray.SWING_UI != null) {
-            _native.setUI(SystemTray.SWING_UI.getSeparatorUI(_native));
-        }
-
         parent._native.add(_native);
     }
 
@@ -45,7 +39,6 @@ class SwingMenuItemSeparator implements EntryPeer {
             public
             void run() {
                 parent._native.remove(_native);
-                _native.removeAll();
             }
         });
     }

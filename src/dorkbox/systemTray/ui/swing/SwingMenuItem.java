@@ -13,34 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.swingUI;
+package dorkbox.systemTray.ui.swing;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 
-import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
+import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.systemTray.util.HeavyCheckMark;
-import dorkbox.util.FontUtil;
+import dorkbox.systemTray.peer.MenuItemPeer;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
-class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
+class SwingMenuItem implements MenuItemPeer {
 
-    // these have to be volatile, because they can be changed from any thread
-    private volatile boolean isChecked = false;
+    // necessary to have the correct scaling + padding for the menu entries.
+    protected static ImageIcon transparentIcon;
 
-    private static volatile ImageIcon checkedIcon;
+    protected final SwingMenu parent;
+    protected final JMenuItem _native = new JMenuItem();
+
+    protected volatile ActionListener callback;
+
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
-        super(parent, entry);
+    SwingMenuItem(final SwingMenu parent, Entry entry) {
+        this.parent = parent;
 
-        if (checkedIcon == null) {
+        if (SystemTray.SWING_UI != null) {
+            _native.setUI(SystemTray.SWING_UI.getItemUI(_native, entry));
+        }
+
+        _native.setHorizontalAlignment(SwingConstants.LEFT);
+        parent._native.add(_native);
+
+        if (transparentIcon == null) {
             try {
                 JMenuItem jMenuItem = new JMenuItem();
 
@@ -49,30 +61,42 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                     jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
                 }
 
-                // Having the checkmark size the same size as the letter X is a reasonably nice size.
-                int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
-
                 // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
                 int menuImageSize = SystemTray.get()
                                               .getMenuImageSize();
 
-                String checkmarkPath;
-                if (SystemTray.SWING_UI != null) {
-                    checkmarkPath = SystemTray.SWING_UI.getCheckMarkIcon(jMenuItem.getForeground(), size, menuImageSize);
-                } else {
-                    checkmarkPath = HeavyCheckMark.get(jMenuItem.getForeground(), size, menuImageSize);
-                }
-
-                checkedIcon = new ImageIcon(checkmarkPath);
-            } catch(Exception e) {
-                SystemTray.logger.error("Error creating check-mark image.", e);
+                transparentIcon = new ImageIcon(ImageResizeUtil.getTransparentImage(menuImageSize)
+                                                               .getAbsolutePath());
+            } catch (Exception e) {
+                SystemTray.logger.error("Error creating transparent image.", e);
             }
         }
+
+        _native.setIcon(transparentIcon);
     }
 
     @Override
     public
-    void setEnabled(final Checkbox menuItem) {
+    void setImage(final MenuItem menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                File imageFile = menuItem.getImage();
+                if (imageFile != null) {
+                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
+                    _native.setIcon(origIcon);
+                }
+                else {
+                    _native.setIcon(transparentIcon);
+                }
+            }
+        });
+    }
+
+    @Override
+    public
+    void setEnabled(final MenuItem menuItem) {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
@@ -84,7 +108,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
     @Override
     public
-    void setText(final Checkbox menuItem) {
+    void setText(final MenuItem menuItem) {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
@@ -97,21 +121,16 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @SuppressWarnings("Duplicates")
     @Override
     public
-    void setCallback(final Checkbox menuItem) {
+    void setCallback(final MenuItem menuItem) {
         if (callback != null) {
             _native.removeActionListener(callback);
         }
 
-        callback = menuItem.getCallback(); // can be set to null
-
-        if (callback != null) {
+        if (menuItem.getCallback() != null) {
             callback = new ActionListener() {
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
-                    // this will run on the EDT, since we are calling it from the EDT
-                    menuItem.setChecked(!isChecked);
-
                     // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
                     ActionListener cb = menuItem.getCallback();
                     if (cb != null) {
@@ -126,11 +145,14 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
             _native.addActionListener(callback);
         }
+        else {
+            callback = null;
+        }
     }
 
     @Override
     public
-    void setShortcut(final Checkbox menuItem) {
+    void setShortcut(final MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
         final int vKey = SwingUtil.getVirtualKey(shortcut);
@@ -146,25 +168,19 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
     @Override
     public
-    void setChecked(final Checkbox menuItem) {
-        boolean checked = menuItem.getChecked();
-
-        // only dispatch if it's actually different
-        if (checked != this.isChecked) {
-            this.isChecked = checked;
-
-            SwingUtil.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    if (isChecked) {
-                        _native.setIcon(checkedIcon);
-                    }
-                    else {
-                        _native.setIcon(SwingMenuItem.transparentIcon);
-                    }
+    void remove() {
+        //noinspection Duplicates
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                if (callback != null) {
+                    _native.removeActionListener(callback);
+                    callback = null;
                 }
-            });
-        }
+                parent._native.remove(_native);
+                _native.removeAll();
+            }
+        });
     }
 }

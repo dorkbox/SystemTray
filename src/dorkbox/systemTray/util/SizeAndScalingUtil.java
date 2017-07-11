@@ -39,7 +39,7 @@ import com.sun.jna.ptr.IntByReference;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.jna.linux.GtkTheme;
-import dorkbox.systemTray.swingUI._SwingTray;
+import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
 import dorkbox.util.SwingUtil;

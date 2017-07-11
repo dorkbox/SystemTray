@@ -13,35 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.nativeUI;
+package dorkbox.systemTray.ui.awt;
 
 import java.awt.MenuShortcut;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.peer.CheckboxPeer;
+import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.util.SwingUtil;
 
-class AwtMenuItemCheckbox implements CheckboxPeer {
+class AwtMenuItem implements MenuItemPeer {
 
     private final AwtMenu parent;
-    private final java.awt.CheckboxMenuItem _native = new java.awt.CheckboxMenuItem();
+    private final java.awt.MenuItem _native = new java.awt.MenuItem();
 
-    // these have to be volatile, because they can be changed from any thread
     private volatile ActionListener callback;
-    private volatile boolean isChecked = false;
 
     // this is ALWAYS called on the EDT.
-    AwtMenuItemCheckbox(final AwtMenu parent) {
+    AwtMenuItem(final AwtMenu parent) {
         this.parent = parent;
         parent._native.add(_native);
     }
 
     @Override
     public
-    void setEnabled(final Checkbox menuItem) {
+    void setImage(final dorkbox.systemTray.MenuItem menuItem) {
+        // no op. (awt menus cannot show images)
+    }
+
+    @Override
+    public
+    void setEnabled(final dorkbox.systemTray.MenuItem menuItem) {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
@@ -53,7 +56,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
 
     @Override
     public
-    void setText(final Checkbox menuItem) {
+    void setText(final dorkbox.systemTray.MenuItem menuItem) {
         SwingUtil.invokeLater(new Runnable() {
             @Override
             public
@@ -66,40 +69,38 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @SuppressWarnings("Duplicates")
     @Override
     public
-    void setCallback(final Checkbox menuItem) {
+    void setCallback(final dorkbox.systemTray.MenuItem menuItem) {
         if (callback != null) {
             _native.removeActionListener(callback);
         }
 
-        callback = menuItem.getCallback();  // can be set to null
-
-        if (callback != null) {
+        if (menuItem.getCallback() != null) {
             callback = new ActionListener() {
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
-                    // this will run on the EDT, since we are calling it from the EDT
-                    menuItem.setChecked(!isChecked);
-
-                    // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
-                    ActionListener cb = menuItem.getCallback();
-                    if (cb != null) {
-                        try {
-                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                        } catch (Throwable throwable) {
-                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
-                        }
+                // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
+                ActionListener cb = menuItem.getCallback();
+                if (cb != null) {
+                    try {
+                        cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                    } catch (Throwable throwable) {
+                        SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
                     }
+                }
                 }
             };
 
             _native.addActionListener(callback);
         }
+        else {
+            callback = null;
+        }
     }
 
     @Override
     public
-    void setShortcut(final Checkbox menuItem) {
+    void setShortcut(final dorkbox.systemTray.MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
         final int vKey = SwingUtil.getVirtualKey(shortcut);
@@ -111,25 +112,6 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
                 _native.setShortcut(new MenuShortcut(vKey));
             }
         });
-    }
-
-    @Override
-    public
-    void setChecked(final Checkbox menuItem) {
-        boolean checked = menuItem.getChecked();
-
-        // only dispatch if it's actually different
-        if (checked != this.isChecked) {
-            this.isChecked = checked;
-
-            SwingUtil.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    _native.setState(isChecked);
-                }
-            });
-        }
     }
 
     @SuppressWarnings("Duplicates")

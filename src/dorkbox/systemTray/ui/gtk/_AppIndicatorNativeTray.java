@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.systemTray.nativeUI;
+package dorkbox.systemTray.ui.gtk;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,7 +77,7 @@ import dorkbox.systemTray.util.ImageResizeUtil;
  */
 @SuppressWarnings("Duplicates")
 public final
-class _AppIndicatorNativeTray extends Tray implements NativeUI {
+class _AppIndicatorNativeTray extends Tray {
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
 
