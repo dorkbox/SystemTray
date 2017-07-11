@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox;
+package dorkbox.systemTray.util;
 
 import java.awt.Color;
 
@@ -28,7 +28,6 @@ import javax.swing.plaf.SeparatorUI;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.swingUI.SwingUIFactory;
-import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.util.swing.DefaultMenuItemUI;
 import dorkbox.util.swing.DefaultPopupMenuUI;
 import dorkbox.util.swing.DefaultSeparatorUI;
@@ -48,7 +47,7 @@ import dorkbox.util.swing.DefaultSeparatorUI;
  *       myTextField.putClientProperty("JComponent.sizeVariant", "large");
  */
 public
-class CustomSwingUI implements SwingUIFactory {
+class WindowsSwingUI implements SwingUIFactory {
 
     /**
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)

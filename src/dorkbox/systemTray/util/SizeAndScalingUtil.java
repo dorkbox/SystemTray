@@ -15,8 +15,11 @@
  */
 package dorkbox.systemTray.util;
 
-import static dorkbox.util.jna.windows.Gdi32.GetDeviceCaps;
-import static dorkbox.util.jna.windows.Gdi32.LOGPIXELSX;
+import static com.sun.jna.platform.win32.WinDef.HDC;
+import static com.sun.jna.platform.win32.WinDef.POINT;
+import static com.sun.jna.platform.win32.WinUser.SM_CYMENUCHECK;
+import static dorkbox.util.jna.windows.GDI32.GetDeviceCaps;
+import static dorkbox.util.jna.windows.GDI32.LOGPIXELSX;
 
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
@@ -36,12 +39,10 @@ import com.sun.jna.ptr.IntByReference;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.jna.linux.GtkTheme;
-import dorkbox.systemTray.nativeUI._AwtTray;
 import dorkbox.systemTray.swingUI._SwingTray;
 import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.jna.windows.POINT;
 import dorkbox.util.jna.windows.ShCore;
 import dorkbox.util.jna.windows.User32;
 
@@ -108,9 +109,9 @@ class SizeAndScalingUtil {
     public static
     int getWindowsLogicalDPI() {
         // get the logical resolution
-        Pointer screen = User32.GetDC(null);
+        HDC screen = User32.IMPL.GetDC(null);
         int logical_dpiX = GetDeviceCaps(screen, LOGPIXELSX);
-        User32.ReleaseDC(null, screen);
+        User32.IMPL.ReleaseDC(null, screen);
 
         if (SystemTray.DEBUG) {
             SystemTray.logger.debug("Windows logical DPI: '{}'", logical_dpiX);
@@ -128,7 +129,7 @@ class SizeAndScalingUtil {
 
             IntByReference hardware_dpiX = new IntByReference();
             // get the primary monitor handle
-            Pointer pointer = User32.MonitorFromPoint(new POINT(0, 0).asValue(), 1);// MONITOR_DEFAULTTOPRIMARY -> 1
+            Pointer pointer = User32.IMPL.MonitorFromPoint(new POINT(0, 0), 1);// MONITOR_DEFAULTTOPRIMARY -> 1
 
             ShCore.GetDpiForMonitor(pointer, 1, hardware_dpiX, new IntByReference()); // don't care about y
 
@@ -164,6 +165,8 @@ class SizeAndScalingUtil {
                     SystemTray.logger.debug("Windows version: '{}'", Arrays.toString(version));
                 }
 
+                // http://kynosarges.org/WindowsDpi.html
+
                 // 96 DPI = 100% scaling
                 // 120 DPI = 125% scaling
                 // 144 DPI = 150% scaling
@@ -180,15 +183,16 @@ class SizeAndScalingUtil {
                 int windowsLogicalDPI = getWindowsLogicalDPI();
 
                 if (!OSUtil.Windows.isWindows8_1_plus()) {
+                    // < Windows 8.1 doesn't do scaling + DPI changes, they just "magnify" (but not scale w/ DPI) the icon + change the font size.
                     // 96 DPI = 16
                     // 120 DPI = 20 (16 * 1.25)
                     // 144 DPI = 24 (16 * 1.5)
-                    TRAY_SIZE = (int) (16 * (windowsLogicalDPI / defaultDPI));
+                    TRAY_SIZE = 16;
                     return TRAY_SIZE;
                 }
                 else {
-                    // WINDOWS 8.1+ ONLY! Parts of this API were added in Windows 8.1, so this will not work at all for < 8.1
-                    int windowsPrimaryMonitorHardwareDPI = getWindowsPrimaryMonitorHardwareDPI();
+                    // Windows 8.1+ does proper scaling, so an icon at a higher resolution is drawn, instead of drawing the "original"
+                    // resolution image and scaling it up to the new size
 
                     // 96 DPI = 16
                     // 120 DPI = 20 (16 * 1.25)
@@ -249,13 +253,8 @@ class SizeAndScalingUtil {
 
                 // https://msdn.microsoft.com/en-us/library/dn742495.aspx
                 // Use an icon with 16x16, 20x20, and 24x24 pixel versions. The larger versions are used in high-dpi display mode
-
-
-
-                // no idea?
-//                TRAY_SIZE = 32;
             } else {
-                // no idea?
+                // reasonable default
                 TRAY_SIZE = 32;
             }
         }
@@ -263,7 +262,6 @@ class SizeAndScalingUtil {
         return TRAY_SIZE;
 }
 
-// http://kynosarges.org/WindowsDpi.html
     public static
     int getMenuImageSize(final Class<? extends Tray> trayType) {
         if (TRAY_MENU_SIZE == 0) {
@@ -277,48 +275,53 @@ class SizeAndScalingUtil {
                     TRAY_MENU_SIZE = 16;
                 }
             }
-            else if ((trayType == _SwingTray.class || trayType == _AwtTray.class)) {
-                // this covers windows (entirely) and 2 of the 4 options in linux
+            else if ((trayType == _SwingTray.class)) {
                 // Java does not scale the menu item IMAGE **AT ALL**, we must provide the correct size to begin with
 
-                // Swing or AWT. While not "normal", this is absolutely a possible combination.
-                final AtomicInteger iconSize = new AtomicInteger();
+                if (OS.isWindows()) {
+                    // http://kynosarges.org/WindowsDpi.html
 
-                SwingUtil.invokeAndWaitQuietly(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        JMenuItem jMenuItem = new JMenuItem();
 
-                        // do the same modifications that would also happen (if specified) for the actual displayed menu items
-                        if (SystemTray.SWING_UI != null) {
-                            jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                    //                     image-size/menu-height
+                    //  96 DPI = 100% actual size: 14/17
+                    // 144 DPI = 150% actual size: 24/29
+
+                    // gets the height of the default checkmark size, adjusted
+                    // This is the closest image size we can get to the actual size programmatically. This is a LOT closer that checking the
+                    // largest size a JMenu image can be before the menu size changes.
+                    TRAY_MENU_SIZE = User32.IMPL.GetSystemMetrics(SM_CYMENUCHECK) - 1;
+
+                    //                   image-size/menu-height
+                    //  96 DPI = 100% mark size: 14/20
+                    // 144 DPI = 150% mark size: 24/30
+                } else {
+                    final AtomicInteger iconSize = new AtomicInteger();
+
+                    SwingUtil.invokeAndWaitQuietly(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            JMenuItem jMenuItem = new JMenuItem();
+
+                            // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                            if (SystemTray.SWING_UI != null) {
+                                jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                            }
+
+                            // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+                            int height = SwingUtil.getLargestIconHeightForButton(jMenuItem);
+                            iconSize.set(height);
                         }
-
-                        // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                        int height = SwingUtil.getLargestIconHeightForButton(jMenuItem);
-
-                        if (OSUtil.Windows.isWindows8_1_plus()) {
-                            // windows 8.1 adjusts the menu differently that XP/Vista/Win7, which do not adjust the menu beyond a basic test
-
-                            // 96 DPI = 100% scaling
-                            // 120 DPI = 125% scaling
-                            // 144 DPI = 150% scaling
-                            // 192 DPI = 200% scaling
-                            final double defaultDPI = 96.0;
-                            int windowsLogicalDPI = getWindowsLogicalDPI();
-
-                            height = (int) (height * (windowsLogicalDPI / defaultDPI));
-                        }
-
-                        iconSize.set(height);
-                    }
-                });
-                TRAY_MENU_SIZE = iconSize.get();
+                    });
+                    TRAY_MENU_SIZE = iconSize.get();
+                }
             }
             else if (OS.isLinux()) {
                 // AppIndicator or GtkStatusIcon
                 TRAY_MENU_SIZE = GtkTheme.getMenuEntryImageSize();
+            } else {
+                // reasonable default
+                TRAY_MENU_SIZE = 16;
             }
         }
 

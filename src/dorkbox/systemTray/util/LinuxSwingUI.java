@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox;
+package dorkbox.systemTray.util;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Insets;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.MenuItemUI;
 import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.SeparatorUI;
+import javax.swing.plaf.metal.MetalBorders;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.swingUI.SwingUIFactory;
-import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.util.swing.DefaultMenuItemUI;
 import dorkbox.util.swing.DefaultPopupMenuUI;
 import dorkbox.util.swing.DefaultSeparatorUI;
@@ -48,7 +51,23 @@ import dorkbox.util.swing.DefaultSeparatorUI;
  *       myTextField.putClientProperty("JComponent.sizeVariant", "large");
  */
 public
-class CustomSwingUI implements SwingUIFactory {
+class LinuxSwingUI implements SwingUIFactory {
+
+    public static class Metal_MenuItemBorder extends MetalBorders.MenuItemBorder {
+        private final int verticalPadding;
+
+        public
+        Metal_MenuItemBorder(int verticalPadding) {
+            this.verticalPadding = verticalPadding;
+        }
+
+        @Override
+        public
+        Insets getBorderInsets(final Component c, final Insets newInsets) {
+            newInsets.set(verticalPadding, 2, verticalPadding, 2);
+            return newInsets;
+        }
+    }
 
     /**
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)
@@ -66,6 +85,12 @@ class CustomSwingUI implements SwingUIFactory {
             public
             void installUI(final JComponent c) {
                 super.installUI(c);
+
+                JPopupMenu popupMenu = (JPopupMenu) c;
+
+                // borderUI resource border type will get changed internally!
+                // setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0));
+                popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
             }
         };
     }
@@ -86,6 +111,12 @@ class CustomSwingUI implements SwingUIFactory {
             public
             void installUI(final JComponent c) {
                 super.installUI(c);
+
+                JMenuItem menuItem = (JMenuItem) c;
+                menuItem.setIconTextGap(8);
+                // the original is hardcoded to always be 2 (top/bottom). We want this to be larger, so the vertical spacing looks like
+                // other menus
+                c.setBorder(new Metal_MenuItemBorder(4));
             }
         };
     }
