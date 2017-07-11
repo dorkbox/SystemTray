@@ -36,6 +36,7 @@ import javax.swing.ImageIcon;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
+import dorkbox.util.ImageUtil;
 import dorkbox.util.jna.windows.HBITMAPWrap;
 import dorkbox.util.jna.windows.HICONWrap;
 import dorkbox.util.jna.windows.Kernel32;
@@ -263,7 +264,7 @@ class _WindowsNativeTray extends Tray implements NativeUI {
             // fully loads the image and returns when it's done loading the image
             imageIcon = new ImageIcon(imageIcon.getImage());
 
-            HBITMAPWrap hbitmapTrayIcon = new HBITMAPWrap(WindowsBaseMenuItem.createBitmap(imageIcon));
+            HBITMAPWrap hbitmapTrayIcon = new HBITMAPWrap(ImageUtil.getBufferedImage(imageIcon));
             return new HICONWrap(hbitmapTrayIcon);
         }
 

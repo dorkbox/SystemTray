@@ -107,16 +107,6 @@ public class WindowsBaseMenuItem {
         }
     }
 
-    static
-    BufferedImage createBitmap(Icon icon) {
-        BufferedImage bi = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = bi.createGraphics();
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
-        icon.paintIcon(null, g, 0, 0);
-        g.dispose();
-        return bi;
-    }
-
     private static HBITMAPWrap convertMenuImage(Icon icon) {
 //        BufferedImage img = createBitmap(icon);
 
