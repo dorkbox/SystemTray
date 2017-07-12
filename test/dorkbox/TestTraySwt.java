@@ -30,6 +30,8 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.CacheUtil;
+import dorkbox.util.SwingUtil;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -72,7 +74,8 @@ class TestTraySwt {
         helloWorldTest.setText("Hello World SWT  .................  ");
         helloWorldTest.pack();
 
-//        SwingUtil.setLookAndFeel(null);
+        CacheUtil.clear(); // for test apps, make sure the cache is always reset
+        SwingUtil.setLookAndFeel(null);
 //        SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();
@@ -174,6 +177,7 @@ class TestTraySwt {
                 systemTray.shutdown();
                 // necessary to shut down SWT
                 display.asyncExec(new Runnable() {
+                    @Override
                     public void run() {
                         shell.dispose();
                     }

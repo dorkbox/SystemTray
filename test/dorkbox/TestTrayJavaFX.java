@@ -25,7 +25,9 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.JavaFX;
+import dorkbox.util.CacheUtil;
 import dorkbox.util.OS;
+import dorkbox.util.SwingUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -114,7 +116,8 @@ class TestTrayJavaFX {
         primaryStage.show();
 
 
-//        SwingUtil.setLookAndFeel(null);
+        CacheUtil.clear(); // for test apps, make sure the cache is always reset
+        SwingUtil.setLookAndFeel(null);
 //        SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();
