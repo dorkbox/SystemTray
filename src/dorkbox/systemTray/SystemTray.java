@@ -318,6 +318,10 @@ class SystemTray {
                     // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
+                case Unity7: {
+                    // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
+                    return selectTypeQuietly(TrayType.AppIndicator);
+                }
                 case XFCE: {
                     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
                     // see: https://ask.fedoraproject.org/en/question/23116/how-to-fix-missing-icons-in-program-menus-and-context-menus/
@@ -621,30 +625,34 @@ class SystemTray {
         // fix various incompatibilities
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
-            if (isTrayType(trayType, TrayType.GtkStatusIcon) && OSUtil.DesktopEnv.get() == OSUtil.DesktopEnv.Env.Unity && OSUtil.Linux.isUbuntu()) {
-                if (AUTO_FIX_INCONSISTENCIES) {
-                    // GTK2 does not support AppIndicators!
-                    if (Gtk.isGtk2) {
-                        trayType = selectTypeQuietly(TrayType.Swing);
-                        logger.warn("Forcing Swing Tray type because Ubuntu Unity display environment removed support for GtkStatusIcons " +
-                                    "and GTK2+ was specified.");
+            if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
+                OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
+
+                if (de == OSUtil.DesktopEnv.Env.Unity || de == OSUtil.DesktopEnv.Env.Unity7  && OSUtil.Linux.isUbuntu()) {
+                    if (AUTO_FIX_INCONSISTENCIES) {
+                        // GTK2 does not support AppIndicators!
+                        if (Gtk.isGtk2) {
+                            trayType = selectTypeQuietly(TrayType.Swing);
+                            logger.warn("Forcing Swing Tray type because Ubuntu Unity display environment removed support for GtkStatusIcons " +
+                                        "and GTK2+ was specified.");
+                        }
+                        else {
+                            // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
+                            SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
+                            trayType = selectTypeQuietly(TrayType.AppIndicator);
+
+                            logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
+                        }
                     }
                     else {
-                        // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
-                        SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
-                        trayType = selectTypeQuietly(TrayType.AppIndicator);
+                        logger.error("Unable to use the GtkStatusIcons when running on Ubuntu with the Unity display environment, and thus" +
+                                     " the SystemTray will not work. " +
+                                     "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
 
-                        logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
+                        systemTrayMenu = null;
+                        systemTray = null;
+                        return;
                     }
-                }
-                else {
-                    logger.error("Unable to use the GtkStatusIcons when running on Ubuntu with the Unity display environment, and thus" +
-                                 " the SystemTray will not work. " +
-                                 "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
-
-                    systemTrayMenu = null;
-                    systemTray = null;
-                    return;
                 }
             }
 
@@ -759,7 +767,7 @@ class SystemTray {
 
 
             // initialize tray/menu image sizes. This must be BEFORE the system tray has been created
-            int trayImageSize = SizeAndScalingUtil.getTrayImageSize(trayType);
+            int trayImageSize = SizeAndScalingUtil.getTrayImageSize();
             int menuImageSize = SizeAndScalingUtil.getMenuImageSize(trayType);
 
             logger.debug("Tray indicator image size: {}", trayImageSize);
@@ -1141,7 +1149,7 @@ class SystemTray {
      */
     public
     int getTrayImageSize() {
-        return SizeAndScalingUtil.getTrayImageSize(systemTrayMenu.getClass());
+        return SizeAndScalingUtil.getTrayImageSize();
     }
 
 
