@@ -40,14 +40,7 @@ import dorkbox.util.OSUtil;
 import dorkbox.util.process.ShellProcessBuilder;
 
 /**
- * Class to contain all of the methods needed to get the text color from the AppIndicator/GtkStatusIcon menu entry. This is primarily
- * used to get the color needed for the checkmark icon. In GTK, the checkmark icon can be defined to be it's OWN color and
- * shape, however getting/parsing that would be even significantly more difficult -- so we decided to make the icon the same color
- * as the text.
- * <p>
- * Additionally, CUSTOM, user theme modifications in ~/.gtkrc-2.0 (for example), will be ignored.
- *
- * Also note: not all themes have CSS or Theme files!!!
+ * Class to contain all of the various methods needed to get information set by a GTK theme.
  */
 @SuppressWarnings({"deprecation", "WeakerAccess"})
 public
