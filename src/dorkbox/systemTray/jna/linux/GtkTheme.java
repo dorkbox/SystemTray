@@ -52,7 +52,7 @@ import dorkbox.util.process.ShellProcessBuilder;
 @SuppressWarnings({"deprecation", "WeakerAccess"})
 public
 class GtkTheme {
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static
     Rectangle getPixelTextHeight(String text) {
@@ -496,7 +496,6 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
                     Gtk2.gtk_widget_realize(menu);
                     Gtk2.gtk_widget_realize(item);
                     Gtk2.gtk_widget_show_all(menu);
-
 
                     GtkStyle style = Gtk.gtk_rc_get_style(item);
                     style.read();
