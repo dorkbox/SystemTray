@@ -325,7 +325,7 @@ class Gtk2 {
      * appearance. (GTK+ actually keeps a cache of previously created styles, so a new style may not be created.)
      */
     public static native
-    Pointer gtk_rc_get_style(Pointer widget);
+    GtkStyle gtk_rc_get_style(Pointer widget);
 
     /**
      * Looks up color_name in the style’s logical color mappings, filling in color and returning TRUE if found, otherwise returning
@@ -365,14 +365,28 @@ class Gtk2 {
      * by two pango_extents_to_pixels() calls, rounding ink_rect and logical_rect such that the rounded rectangles fully contain the
      * unrounded one (that is, passes them as first argument to pango_extents_to_pixels()).
      *
-     *
      * @param layout a PangoLayout
      * @param ink_rect  rectangle used to store the extents of the layout as drawn or NULL to indicate that the result is not needed.
      * @param logical_rect rectangle used to store the logical extents of the layout or NULL to indicate that the result is not needed.
      *
      */
     public static native
-    void pango_layout_get_pixel_extents (Pointer layout, Pointer ink_rect, Pointer logical_rect);
+    void pango_layout_get_pixel_extents(Pointer layout, Pointer ink_rect, Pointer logical_rect);
+
+    /**
+     * Creates the GDK (windowing system) resources associated with a widget. For example, widget->window will be created when a widget
+     * is realized. Normally realization happens implicitly; if you show a widget and all its parent containers, then the widget will
+     * be realized and mapped automatically.
+     *
+     * Realizing a widget requires all the widget’s parent widgets to be realized; calling gtk_widget_realize() realizes the widget’s
+     * parents in addition to widget itself. If a widget is not yet inside a toplevel window when you realize it, bad things will happen.
+     *
+     * This function is primarily used in widget implementations, and isn’t very useful otherwise. Many times when you think you might
+     * need it, a better approach is to connect to a signal that will be called after the widget is realized automatically, such as
+     * “draw”. Or simply g_signal_connect() to the “realize” signal.
+     */
+    public static native
+    void gtk_widget_realize(Pointer widget);
 
     /**
      * Creates a toplevel container widget that is used to retrieve snapshots of widgets without showing them on the screen.

@@ -3,11 +3,11 @@
 #include <libappindicator/app-indicator.h>
 
 
-//  gcc example.c `pkg-config --cflags --libs gtk+-2.0 appindicator-0.1` -I/usr/include/libappindicator-0.1/ -o example
+//  gcc example.c `pkg-config --cflags --libs gtk+-2.0 appindicator-0.1` -I/usr/include/libappindicator-0.1/ -o example && ./example
 
 // apt libgtk-3-dev install libappindicator3-dev
 // NOTE: there will be warnings, but the file will build and run. NOTE: this will not run as root on ubuntu (no dbus connection back to the normal user)
-//  gcc example.c `pkg-config --cflags --libs gtk+-3.0 appindicator3-0.1` -I/usr/include/libappindicator3-0.1/ -o example
+//  gcc example.c `pkg-config --cflags --libs gtk+-3.0 appindicator3-0.1` -I/usr/include/libappindicator3-0.1/ -o example && ./example
 
 
 static void activate_action (GtkAction *action);
@@ -278,6 +278,15 @@ int main (int argc, char **argv)
 
 
     menuItem1 = gtk_image_menu_item_new_with_label("menu1");
+
+    // double check color info
+    GtkStyle *style;
+    style = gtk_rc_get_style(gtk_image_menu_item_new_with_mnemonic("xxx"));
+
+    GdkColor color = style->fg[GTK_STATE_NORMAL];
+
+    fprintf(stderr, "COLOR %s\n", gdk_color_to_string(&color));
+
 //    g_signal_connect(menuItem1, "button_press_event", G_CALLBACK (gtkCallback), NULL);
     gtk_menu_shell_insert(GTK_MENU_SHELL(indicator_menu), menuItem1, 0);
     gtk_widget_show(menuItem1);

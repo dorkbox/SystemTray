@@ -541,7 +541,7 @@ class Gtk {
      * appearance. (GTK+ actually keeps a cache of previously created styles, so a new style may not be created.)
      */
     public static
-    Pointer gtk_rc_get_style(Pointer widget)  {
+    GtkStyle gtk_rc_get_style(Pointer widget)  {
         return Gtk2.gtk_rc_get_style(widget);
     }
 

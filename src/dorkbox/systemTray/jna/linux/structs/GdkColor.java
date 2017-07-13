@@ -42,7 +42,7 @@ class GdkColor extends Structure {
     public short blue;
 
     /**
-     * Convert to positive int (value between 0 and 65535, these are 16 bits per pixel) that is from 0-255
+     * Convert from positive int (value between 0 and 65535, these are 16 bits per pixel) to values from 0-255
      */
     private static int convert(int inputColor) {
         return (inputColor & 0x0000FFFF >> 8) & 0xFF;

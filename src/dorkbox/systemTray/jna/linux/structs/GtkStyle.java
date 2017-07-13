@@ -46,18 +46,22 @@ class GtkStyle extends Structure {
      */
 
     public static
-    class ByReference extends GtkStyle implements Structure.ByReference {}
+    class ByReference extends GtkStyle implements Structure.ByReference {
+    }
 
     public
-    class ByValue extends GtkStyle implements Structure.ByValue {}
+    class ByValue extends GtkStyle implements Structure.ByValue {
+    }
 
-    // only list public fields
+    // required, even though it's "private" in the corresponding C code. OTHERWISE the memory offsets are INCORRECT.
+    public GObjectStruct parent_instance;
 
     /** fg: foreground for drawing GtkLabel */
     public GdkColor fg[] = new GdkColor[5];
 
     /** bg: the usual background color, gray by default */
     public GdkColor bg[] = new GdkColor[5];
+
     public GdkColor light[] = new GdkColor[5];
     public GdkColor dark[] = new GdkColor[5];
     public GdkColor mid[] = new GdkColor[5];
@@ -69,7 +73,10 @@ class GtkStyle extends Structure {
 
     /** base: background when using text, colored white in the default theme. */
     public GdkColor base[] = new GdkColor[5];
-    public GdkColor text_aa[] = new GdkColor[5]; /* Halfway between text/base */
+
+    /** Halfway between text/base */
+    public GdkColor text_aa[] = new GdkColor[5];
+
     public GdkColor black;
     public GdkColor white;
     public Pointer /*PangoFontDescription*/ font_desc;
@@ -77,10 +84,21 @@ class GtkStyle extends Structure {
     public int ythickness;
     public Pointer /*cairo_pattern_t*/  background[] = new Pointer[5];
 
+    public
+    void debug(final int gtkState) {
+        System.err.println("base " + base[gtkState].getColor());
+        System.err.println("text " + text[gtkState].getColor());
+        System.err.println("text_aa " + text_aa[gtkState].getColor());
+        System.err.println("bg " + bg[gtkState].getColor());
+        System.err.println("fg " + fg[gtkState].getColor());
+    }
+
+
     @Override
     protected
     List<String> getFieldOrder() {
-        return Arrays.asList("fg",
+        return Arrays.asList("parent_instance",
+                             "fg",
                              "bg",
                              "light",
                              "dark",
