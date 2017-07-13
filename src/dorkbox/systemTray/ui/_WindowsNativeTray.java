@@ -24,6 +24,7 @@ import static dorkbox.util.jna.windows.Shell32.NIM_ADD;
 import static dorkbox.util.jna.windows.Shell32.NIM_DELETE;
 import static dorkbox.util.jna.windows.Shell32.NIM_MODIFY;
 import static dorkbox.util.jna.windows.Shell32.Shell_NotifyIcon;
+import static dorkbox.util.jna.windows.User32.User32;
 import static dorkbox.util.jna.windows.User32.WM_LBUTTONUP;
 import static dorkbox.util.jna.windows.User32.WM_RBUTTONUP;
 import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_SHELLNOTIFY;
@@ -41,7 +42,6 @@ import dorkbox.util.jna.windows.HICONWrap;
 import dorkbox.util.jna.windows.Kernel32;
 import dorkbox.util.jna.windows.Listener;
 import dorkbox.util.jna.windows.Shell32;
-import dorkbox.util.jna.windows.User32;
 import dorkbox.util.jna.windows.WindowsEventDispatch;
 import dorkbox.util.jna.windows.structs.NOTIFYICONDATA;
 
@@ -164,14 +164,14 @@ class _WindowsNativeTray extends Tray {
                 int lp = lParam.intValue();
                 switch (lp) {
                     case WM_LBUTTONUP:
-                        if (User32.IMPL.GetCursorPos(mousePosition)) {
+                        if (User32.GetCursorPos(mousePosition)) {
                             // this should be a swing menu, not a "native" menu, which will not be themed to match the OS style. It looks
                             // marginally better than AWT. This was verified via a completely native menu system (not the AWT menu system).
                             // windowsMenu.showContextMenu(mousePosition);
                         }
                         break;
                     case WM_RBUTTONUP:
-                        if (User32.IMPL.GetCursorPos(mousePosition)) {
+                        if (User32.GetCursorPos(mousePosition)) {
                             // this should be a swing menu, not a "native" menu, which will not be themed to match the OS style. It looks
                             // marginally better than AWT. This was verified via a completely native menu system (not the AWT menu system).
                             // windowsMenu.showContextMenu(mousePosition);
