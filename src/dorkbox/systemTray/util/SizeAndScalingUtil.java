@@ -45,7 +45,7 @@ class SizeAndScalingUtil {
 
     public static
     double getMacOSScaleFactor() {
-        // apple will ALWAYS return 2.0 on (apple) retina displays. If it's a non-standard, then who knows...
+        // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
 
         // java6 way of getting it...
         if (OS.javaVersion == 6) {
@@ -88,10 +88,10 @@ class SizeAndScalingUtil {
 
 
     public static
-    int getTrayImageSize(final Class<? extends Tray> trayType) {
+    int getTrayImageSize() {
         if (TRAY_SIZE == 0) {
             if (OS.isLinux()) {
-                TRAY_SIZE = GtkTheme.getIndicatorSize(trayType);
+                TRAY_SIZE = GtkTheme.getIndicatorSize();
             }
             else if (OS.isMacOsX()) {
                 // these are the standard icon sizes. From what I can tell, they are Apple defined, and cannot be changed.
