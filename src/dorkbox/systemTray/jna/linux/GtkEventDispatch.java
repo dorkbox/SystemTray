@@ -16,6 +16,7 @@
 package dorkbox.systemTray.jna.linux;
 
 import static dorkbox.systemTray.SystemTray.logger;
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -65,7 +66,7 @@ class GtkEventDispatch {
             // startup the GTK GUI event loop. There can be multiple/nested loops.
 
 
-            if (!Gtk.alreadyRunningGTK) {
+            if (!GtkLoader.alreadyRunningGTK) {
                 // If JavaFX/SWT is used, this is UNNECESSARY (we can detect if the GTK main_loop is running)
 
                 gtkUpdateThread = new Thread() {
@@ -207,7 +208,7 @@ class GtkEventDispatch {
      */
     public static
     void dispatch(final Runnable runnable) {
-        if (Gtk.alreadyRunningGTK) {
+        if (GtkLoader.alreadyRunningGTK) {
             if (SystemTray.isJavaFxLoaded) {
                 // JavaFX only
                 if (JavaFX.isEventThread()) {
@@ -254,7 +255,7 @@ class GtkEventDispatch {
                         isDispatch.set(false);
                     }
 
-                    return Gtk.FALSE; // don't want to call this again
+                    return Gtk2.FALSE; // don't want to call this again
                 }
             };
 
@@ -274,7 +275,7 @@ class GtkEventDispatch {
             public
             void run() {
                 // If JavaFX/SWT is used, this is UNNECESSARY (and will break SWT/JavaFX shutdown)
-                if (!Gtk.alreadyRunningGTK) {
+                if (!GtkLoader.alreadyRunningGTK) {
                     Gtk2.gtk_main_quit();
                 }
 

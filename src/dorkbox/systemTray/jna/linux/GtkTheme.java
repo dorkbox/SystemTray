@@ -15,6 +15,9 @@
  */
 package dorkbox.systemTray.jna.linux;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk3;
+
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -55,29 +58,29 @@ class GtkTheme {
         Pointer item = null;
 
         try {
-            menu = Gtk.gtk_menu_new();
-            item = Gtk.gtk_image_menu_item_new_with_mnemonic(text);
+            menu = Gtk2.gtk_menu_new();
+            item = Gtk2.gtk_image_menu_item_new_with_mnemonic(text);
 
-            Gtk.gtk_container_add(menu, item);
+            Gtk2.gtk_container_add(menu, item);
 
             Gtk2.gtk_widget_realize(menu);
             Gtk2.gtk_widget_realize(item);
             Gtk2.gtk_widget_show_all(menu);
 
             // get the text widget (GtkAccelLabel/GtkLabel) from inside the GtkMenuItem
-            Pointer textLabel = Gtk.gtk_bin_get_child(item);
-            Pointer pangoLayout = Gtk.gtk_label_get_layout(textLabel);
+            Pointer textLabel = Gtk2.gtk_bin_get_child(item);
+            Pointer pangoLayout = Gtk2.gtk_label_get_layout(textLabel);
 
             // ink pixel size is how much exact space it takes on the screen
             PangoRectangle ink = new PangoRectangle();
 
-            Gtk.pango_layout_get_pixel_extents(pangoLayout, ink.getPointer(), null);
+            Gtk2.pango_layout_get_pixel_extents(pangoLayout, ink.getPointer(), null);
             ink.read();
 
             return new Rectangle(ink.width, ink.height);
         } finally {
-            Gtk.gtk_widget_destroy(item);
-            Gtk.gtk_widget_destroy(menu);
+            Gtk2.gtk_widget_destroy(item);
+            Gtk2.gtk_widget_destroy(menu);
         }
     }
 
@@ -92,19 +95,19 @@ class GtkTheme {
             @Override
             public
             void run() {
-                Pointer offscreen = Gtk.gtk_offscreen_window_new();
+                Pointer offscreen = Gtk2.gtk_offscreen_window_new();
 
                 // get the default icon size for the "paste" icon.
-                Pointer item = Gtk.gtk_image_menu_item_new_from_stock("gtk-paste", null);
+                Pointer item = Gtk2.gtk_image_menu_item_new_from_stock("gtk-paste", null);
 
-                Gtk.gtk_container_add(offscreen, item);
+                Gtk2.gtk_container_add(offscreen, item);
 
                 PointerByReference r = new PointerByReference();
                 Gobject.g_object_get(item, "image", r.getPointer(), null);
 
                 Pointer imageWidget = r.getValue();
                 GtkRequisition gtkRequisition = new GtkRequisition();
-                Gtk.gtk_widget_size_request(imageWidget, gtkRequisition.getPointer());
+                Gtk2.gtk_widget_size_request(imageWidget, gtkRequisition.getPointer());
                 gtkRequisition.read();
 
                 imageHeight.set(gtkRequisition.height);
@@ -143,14 +146,14 @@ class GtkTheme {
             public
             void run() {
                 // screen DPI
-                Pointer screen = Gtk.gdk_screen_get_default();
+                Pointer screen = Gtk2.gdk_screen_get_default();
                 if (screen != null) {
                     // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
-                    screenDPI.set((int) Gtk.gdk_screen_get_resolution(screen));
+                    screenDPI.set((int) Gtk2.gdk_screen_get_resolution(screen));
                 }
 
-                if (Gtk.isGtk3) {
-                    Pointer window = Gtk.gdk_get_default_root_window();
+                if (Gtk2.isGtk3) {
+                    Pointer window = Gtk2.gdk_get_default_root_window();
                     if (window != null) {
                         double scale = Gtk3.gdk_window_get_scale_factor(window);
                         screenScale.set(scale);
@@ -411,11 +414,11 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
                     @Override
                     public
                     void run() {
-                        Pointer screen = Gtk.gdk_screen_get_default();
+                        Pointer screen = Gtk2.gdk_screen_get_default();
                         Pointer settings = null;
 
                         if (screen != null) {
-                            settings = Gtk.gtk_settings_get_for_screen(screen);
+                            settings = Gtk2.gtk_settings_get_for_screen(screen);
                         }
 
                         if (settings != null) {
@@ -481,26 +484,26 @@ My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 fac
                 Pointer item = null;
 
                 try {
-                    menu = Gtk.gtk_menu_new();
-                    item = Gtk.gtk_image_menu_item_new_with_mnemonic("a");
+                    menu = Gtk2.gtk_menu_new();
+                    item = Gtk2.gtk_image_menu_item_new_with_mnemonic("a");
 
-                    Gtk.gtk_container_add(menu, item);
+                    Gtk2.gtk_container_add(menu, item);
 
                     Gtk2.gtk_widget_realize(menu);
                     Gtk2.gtk_widget_realize(item);
                     Gtk2.gtk_widget_show_all(menu);
 
-                    GtkStyle style = Gtk.gtk_rc_get_style(item);
+                    GtkStyle style = Gtk2.gtk_rc_get_style(item);
                     style.read();
 
                     // this is the same color chromium uses (fg)
                     // https://chromium.googlesource.com/chromium/src/+/b3ca230ddd7d1238ee96ed26ea23e369f10dd655/chrome/browser/ui/libgtk2ui/gtk2_ui.cc#873
-                    c = style.fg[Gtk.State.NORMAL].getColor();
+                    c = style.fg[GtkState.NORMAL].getColor();
 
                     color.set(c);
                 } finally {
-                    Gtk.gtk_widget_destroy(item);
-                    Gtk.gtk_widget_destroy(menu);
+                    Gtk2.gtk_widget_destroy(item);
+                    Gtk2.gtk_widget_destroy(menu);
                 }
             }
         });

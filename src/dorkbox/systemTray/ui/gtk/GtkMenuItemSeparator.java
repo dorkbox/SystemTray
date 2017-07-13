@@ -15,7 +15,8 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import dorkbox.systemTray.jna.linux.Gtk;
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.EntryPeer;
 
@@ -28,7 +29,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItemSeparator(final GtkMenu parent) {
-        super(Gtk.gtk_separator_menu_item_new());
+        super(Gtk2.gtk_separator_menu_item_new());
         this.parent = parent;
     }
 
@@ -40,7 +41,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
                 parent.remove(GtkMenuItemSeparator.this);
             }

@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +29,6 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.MenuPeer;
 
@@ -61,7 +62,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @SuppressWarnings("IncompleteCopyConstructor")
     private
     GtkMenu(final GtkMenu parent) {
-        super(Gtk.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
+        super(Gtk2.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
         this.parent = parent;
     }
 
@@ -102,7 +103,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 menuEntry__.onDeleteMenu(_nativeMenu);
             }
 
-            Gtk.gtk_widget_destroy(_nativeMenu);
+            Gtk2.gtk_widget_destroy(_nativeMenu);
         }
 
         if (parent != null) {
@@ -110,11 +111,11 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         }
 
         // makes a new one
-        _nativeMenu = Gtk.gtk_menu_new();
+        _nativeMenu = Gtk2.gtk_menu_new();
 
         // binds sub-menu to entry (if it exists! it does not for the root menu)
         if (parent != null) {
-            Gtk.gtk_menu_item_set_submenu(_native, _nativeMenu);
+            Gtk2.gtk_menu_item_set_submenu(_native, _nativeMenu);
         }
     }
 
@@ -158,7 +159,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             }
         }
 
-        Gtk.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
+        Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
         onMenuAdded(_nativeMenu);
     }
 
@@ -186,7 +187,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             }
             menuEntriesCopy.clear();
 
-            Gtk.gtk_widget_destroy(_nativeMenu);
+            Gtk2.gtk_widget_destroy(_nativeMenu);
             _nativeMenu = null;
 
             obliterateInProgress.set(false);
@@ -256,21 +257,21 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             public
             void run() {
                 if (image != null) {
-                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
-                    Gtk.gtk_widget_show_all(_native);
+                    Gtk2.gtk_widget_show_all(_native);
                 }
 
                 if (menuItem.getImage() != null) {
-                    image = Gtk.gtk_image_new_from_file(menuItem.getImage()
-                                                                .getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(_native, image);
+                    image = Gtk2.gtk_image_new_from_file(menuItem.getImage()
+                                                                 .getAbsolutePath());
+                    Gtk2.gtk_image_menu_item_set_image(_native, image);
 
                     //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
+                    Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
                 }
 
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_widget_show_all(_native);
             }
         });
     }
@@ -284,7 +285,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
+                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
             }
         });
     }
@@ -323,8 +324,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+                Gtk2.gtk_widget_show_all(_native);
             }
         });
     }
@@ -379,7 +380,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
                 if (parent != null) {
                     // remove the gtk entry item from our menu NATIVE components
-                    Gtk.gtk_menu_item_set_submenu(_native, null);
+                    Gtk2.gtk_menu_item_set_submenu(_native, null);
 
                     // have to rebuild the menu now...
                     parent.deleteMenu();  // must be on EDT

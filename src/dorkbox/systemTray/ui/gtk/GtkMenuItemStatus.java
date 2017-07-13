@@ -15,8 +15,9 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.StatusPeer;
 
@@ -31,7 +32,7 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItemStatus(final GtkMenu parent) {
-        super(Gtk.gtk_image_menu_item_new_with_mnemonic(""));
+        super(Gtk2.gtk_image_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
         // need that extra space so it matches windows/mac
@@ -48,10 +49,10 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
                 // AppIndicator strips out markup text.
                 // https://mail.gnome.org/archives/commits-list/2016-March/msg05444.html
 
-                Gtk.gtk_menu_item_set_label(_native, menuItem.getText());
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_menu_item_set_label(_native, menuItem.getText());
+                Gtk2.gtk_widget_show_all(_native);
 
-                Gtk.gtk_widget_set_sensitive(_native, false);
+                Gtk2.gtk_widget_set_sensitive(_native, false);
             }
         });
     }
@@ -64,7 +65,7 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 GtkMenuItemStatus.super.remove();
 

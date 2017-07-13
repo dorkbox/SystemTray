@@ -102,7 +102,7 @@ class SizeAndScalingUtil {
                 }
             }
             else if (OS.isWindows()) {
-                TRAY_SIZE = User32.IMPL.GetSystemMetrics(SM_CYSMICON);
+                TRAY_SIZE = User32.User32.GetSystemMetrics(SM_CYSMICON);
                 return TRAY_SIZE;
             } else {
                 // reasonable default
@@ -139,7 +139,7 @@ class SizeAndScalingUtil {
                     // gets the height of the default checkmark size, adjusted
                     // This is the closest image size we can get to the actual size programmatically. This is a LOT closer that checking the
                     // largest size a JMenu image can be before the menu size changes.
-                    TRAY_MENU_SIZE = User32.IMPL.GetSystemMetrics(SM_CYMENUCHECK) - 1;
+                    TRAY_MENU_SIZE = User32.User32.GetSystemMetrics(SM_CYMENUCHECK) - 1;
 
                     //                   image-size/menu-height
                     //  96 DPI = 100% mark size: 14/20

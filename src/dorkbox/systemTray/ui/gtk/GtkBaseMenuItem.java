@@ -15,12 +15,13 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import java.io.File;
 
 import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -64,20 +65,20 @@ class GtkBaseMenuItem implements EntryPeer {
         }
 
         if (spacerImage != null) {
-            Gtk.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
+            Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
             spacerImage = null;
-            Gtk.gtk_widget_show_all(_native);
+            Gtk2.gtk_widget_show_all(_native);
         }
 
         if (everyoneElseHasImages) {
-            spacerImage = Gtk.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
-            Gtk.gtk_image_menu_item_set_image(_native, spacerImage);
+            spacerImage = Gtk2.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
+            Gtk2.gtk_image_menu_item_set_image(_native, spacerImage);
 
             //  must always re-set always-show after setting the image
-            Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
+            Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
         }
 
-        Gtk.gtk_widget_show_all(_native);
+        Gtk2.gtk_widget_show_all(_native);
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
@@ -85,7 +86,7 @@ class GtkBaseMenuItem implements EntryPeer {
     // always on EDT
     void onDeleteMenu(final Pointer parentNative) {
         Gobject.g_object_force_floating(_native);  // makes it a floating reference
-        Gtk.gtk_container_remove(parentNative, _native);
+        Gtk2.gtk_container_remove(parentNative, _native);
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
@@ -95,9 +96,9 @@ class GtkBaseMenuItem implements EntryPeer {
         setSpacerImage(hasImagesInMenu);
 
         // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
-        Gtk.gtk_menu_shell_append(parentNative, _native);
+        Gtk2.gtk_menu_shell_append(parentNative, _native);
         Gobject.g_object_ref_sink(_native);  // undoes "floating"
-        Gtk.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible
+        Gtk2.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible
     }
 
     @Override
@@ -108,7 +109,7 @@ class GtkBaseMenuItem implements EntryPeer {
             public
             void run() {
                 if (spacerImage != null) {
-                    Gtk.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
+                    Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
                     spacerImage = null;
                 }
             }

@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import java.awt.event.ActionListener;
 
 import com.sun.jna.Pointer;
@@ -23,7 +25,6 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.MenuItemPeer;
 
@@ -44,7 +45,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
      * this is a FLOATING reference. See: https://developer.gnome.org/gobject/stable/gobject-The-Base-Object-Type.html#floating-ref
      */
     GtkMenuItem(final GtkMenu parent) {
-        super(Gtk.gtk_image_menu_item_new_with_mnemonic(""));
+        super(Gtk2.gtk_image_menu_item_new_with_mnemonic(""));
 
         this.parent = parent;
         Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
@@ -66,7 +67,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             }
         }
 
-        return Gtk.TRUE;
+        return Gtk2.TRUE;
     }
 
     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
@@ -83,21 +84,21 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             public
             void run() {
                 if (image != null) {
-                    Gtk.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
+                    Gtk2.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
                     image = null;
-                    Gtk.gtk_widget_show_all(_native);
+                    Gtk2.gtk_widget_show_all(_native);
                 }
 
                 if (menuItem.getImage() != null) {
-                    image = Gtk.gtk_image_new_from_file(menuItem.getImage()
-                                                                .getAbsolutePath());
-                    Gtk.gtk_image_menu_item_set_image(_native, image);
+                    image = Gtk2.gtk_image_new_from_file(menuItem.getImage()
+                                                                 .getAbsolutePath());
+                    Gtk2.gtk_image_menu_item_set_image(_native, image);
 
                     //  must always re-set always-show after setting the image
-                    Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
+                    Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
                 }
 
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_widget_show_all(_native);
             }
         });
     }
@@ -109,7 +110,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             @Override
             public
             void run() {
-                Gtk.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
+                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
             }
         });
     }
@@ -146,8 +147,8 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             @Override
             public
             void run() {
-                Gtk.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+                Gtk2.gtk_widget_show_all(_native);
             }
         });
     }
@@ -174,13 +175,13 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 GtkMenuItem.super.remove();
 
                 menuItemForActionCallback = null;
                 if (image != null) {
-                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
                 }
 

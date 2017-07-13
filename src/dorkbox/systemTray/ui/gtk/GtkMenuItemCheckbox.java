@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
+import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -26,7 +28,6 @@ import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.jna.linux.GCallback;
 import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.Gtk;
 import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.jna.linux.GtkTheme;
 import dorkbox.systemTray.peer.CheckboxPeer;
@@ -91,7 +92,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
      * show this as a GTK Status Icon (not an AppIndicator), this way the "proper" checkbox is shown.
      */
     GtkMenuItemCheckbox(final GtkMenu parent) {
-        super(useFakeCheckMark ? Gtk.gtk_image_menu_item_new_with_mnemonic("") : Gtk.gtk_check_menu_item_new_with_mnemonic(""));
+        super(useFakeCheckMark ? Gtk2.gtk_image_menu_item_new_with_mnemonic("") : Gtk2.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
         handlerId = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
@@ -117,7 +118,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             setCheckedIconForFakeCheckMarks();
         } else {
             Gobject.g_signal_handler_block(_native, handlerId);
-            Gtk.gtk_check_menu_item_set_active(_native, false);
+            Gtk2.gtk_check_menu_item_set_active(_native, false);
             Gobject.g_signal_handler_unblock(_native, handlerId);
         }
     }
@@ -131,7 +132,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             GtkEventDispatch.proxyClick(null, callback);
         }
 
-        return Gtk.TRUE;
+        return Gtk2.TRUE;
     }
 
     @Override
@@ -153,7 +154,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             @Override
             public
             void run() {
-                Gtk.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
+                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
             }
         });
     }
@@ -185,8 +186,8 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             @Override
             public
             void run() {
-                Gtk.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk.gtk_widget_show_all(_native);
+                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+                Gtk2.gtk_widget_show_all(_native);
             }
         });
     }
@@ -240,7 +241,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                         // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
                         // this disables the signal handler, then enables it
                         Gobject.g_signal_handler_block(_native, handlerId);
-                        Gtk.gtk_check_menu_item_set_active(_native, isChecked);
+                        Gtk2.gtk_check_menu_item_set_active(_native, isChecked);
                         Gobject.g_signal_handler_unblock(_native, handlerId);
                     }
                 }
@@ -252,24 +253,24 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     private
     void setCheckedIconForFakeCheckMarks() {
         if (checkedImage != null) {
-            Gtk.gtk_container_remove(_native, checkedImage);  // will automatically get destroyed if no other references to it
+            Gtk2.gtk_container_remove(_native, checkedImage);  // will automatically get destroyed if no other references to it
             checkedImage = null;
-            Gtk.gtk_widget_show_all(_native);
+            Gtk2.gtk_widget_show_all(_native);
         }
 
 
         if (this.isChecked) {
-            checkedImage = Gtk.gtk_image_new_from_file(checkedFile);
+            checkedImage = Gtk2.gtk_image_new_from_file(checkedFile);
         } else {
-            checkedImage = Gtk.gtk_image_new_from_file(uncheckedFile);
+            checkedImage = Gtk2.gtk_image_new_from_file(uncheckedFile);
         }
 
-        Gtk.gtk_image_menu_item_set_image(_native, checkedImage);
+        Gtk2.gtk_image_menu_item_set_image(_native, checkedImage);
 
         //  must always re-set always-show after setting the image
-        Gtk.gtk_image_menu_item_set_always_show_image(_native, true);
+        Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
 
-        Gtk.gtk_widget_show_all(_native);
+        Gtk2.gtk_widget_show_all(_native);
     }
 
     @Override
@@ -288,12 +289,12 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             @Override
             public
             void run() {
-                Gtk.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
                 GtkMenuItemCheckbox.super.remove();
 
                 if (image != null) {
-                    Gtk.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;
                 }
 
