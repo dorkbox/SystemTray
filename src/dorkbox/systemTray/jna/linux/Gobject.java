@@ -62,16 +62,14 @@ class Gobject {
     public static native void g_value_init(Pointer gvalue, double type);
 
     /**
-     * Clears the current value in value (if any) and "unsets" the type, this releases all resources associated with this GValue. An unset value is the same as an uninitialized (zero-filled) GValue structure.
-     * @param gvalue
+     * Clears the current value in value (if any) and "unsets" the type, this releases all resources associated with this GValue.
+     * An unset value is the same as an uninitialized (zero-filled) GValue structure.
      */
     public static native void g_value_unset(Pointer gvalue);
 
     public static native String g_value_get_string(Pointer gvalue);
     public static native int g_value_get_int(Pointer gvalue);
 
-
     public static native Pointer g_type_class_ref(Pointer widgetType);
     public static native void g_type_class_unref(Pointer widgetClass);
-
 }
