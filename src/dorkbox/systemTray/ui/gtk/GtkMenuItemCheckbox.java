@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+import static dorkbox.util.jna.linux.Gtk.Gtk2;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -26,14 +26,14 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.jna.linux.GCallback;
-import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
-import dorkbox.systemTray.jna.linux.GtkTheme;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.OSUtil;
+import dorkbox.util.jna.linux.GCallback;
+import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.util.jna.linux.GtkTheme;
 
 @SuppressWarnings("deprecation")
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
@@ -52,7 +52,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             (SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray) && OSUtil.Linux.isUbuntu()) {
             useFakeCheckMark = true;
         } else {
-            useFakeCheckMark = true;
+            useFakeCheckMark = false;
         }
 
         if (SystemTray.DEBUG) {
@@ -99,7 +99,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
         if (useFakeCheckMark) {
             if (checkedFile == null) {
-                final Color color = GtkTheme.getTextColor();
+                Color color = GtkTheme.getTextColor();
+                if (color == null) {
+                    SystemTray.logger.error("Unable to determine the text color in use by your system. Please create an issue and include your " +
+                                            "full OS configuration and desktop environment, including theme details, such as the theme name, color " +
+                                            "variant, and custom theme options (if any).");
+                    color = Color.BLACK;
+                }
 
                 if (checkedFile == null) {
                     Rectangle size = GtkTheme.getPixelTextHeight("X");

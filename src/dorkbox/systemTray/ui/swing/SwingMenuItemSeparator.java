@@ -19,7 +19,7 @@ import javax.swing.JSeparator;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.EntryPeer;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 class SwingMenuItemSeparator implements EntryPeer {
 
@@ -40,7 +40,7 @@ class SwingMenuItemSeparator implements EntryPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

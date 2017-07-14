@@ -21,7 +21,7 @@ import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 class AwtMenuItem implements MenuItemPeer {
 
@@ -45,7 +45,7 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void setEnabled(final dorkbox.systemTray.MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -57,7 +57,7 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void setText(final dorkbox.systemTray.MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -103,9 +103,9 @@ class AwtMenuItem implements MenuItemPeer {
     void setShortcut(final dorkbox.systemTray.MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        final int vKey = Swing.getVirtualKey(shortcut);
 
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -118,7 +118,7 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

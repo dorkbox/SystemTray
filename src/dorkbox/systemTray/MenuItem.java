@@ -25,7 +25,7 @@ import javax.imageio.stream.ImageInputStream;
 
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -336,7 +336,7 @@ class MenuItem extends Entry {
      */
     public
     void setShortcut(final int key) {
-        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
+        this.mnemonicKey = Swing.getFromVirtualKey(key);
 
         if (peer != null) {
             ((MenuItemPeer) peer).setShortcut(this);

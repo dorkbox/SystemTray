@@ -27,7 +27,7 @@ import javax.swing.ImageIcon;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.util.OS;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 /**
  * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
@@ -69,7 +69,7 @@ class _AwtTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                SwingUtil.invokeLater(new Runnable() {
+                Swing.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -136,7 +136,7 @@ class _AwtTray extends Tray {
                     return;
                 }
 
-                SwingUtil.invokeLater(new Runnable() {
+                Swing.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -185,7 +185,7 @@ class _AwtTray extends Tray {
             @Override
             public
             void remove() {
-                SwingUtil.invokeLater(new Runnable() {
+                Swing.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -217,7 +217,7 @@ class _AwtTray extends Tray {
         }
         this.tooltipText = tooltipText;
 
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

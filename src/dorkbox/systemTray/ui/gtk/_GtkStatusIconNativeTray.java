@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+import static dorkbox.util.jna.linux.Gtk.Gtk2;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,10 +26,11 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
-import dorkbox.systemTray.jna.linux.GEventCallback;
-import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
-import dorkbox.systemTray.jna.linux.structs.GdkEventButton;
+import dorkbox.util.Framework;
+import dorkbox.util.jna.linux.GEventCallback;
+import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.util.jna.linux.structs.GdkEventButton;
 
 /**
  * Class for handling all system tray interactions via GTK.
@@ -193,7 +194,7 @@ class _GtkStatusIconNativeTray extends Tray {
                 //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
                 //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
                 //           we appear broken.
-                if (SystemTray.isJavaFxLoaded || Tray.usingGnome) {
+                if (Framework.isJavaFxLoaded || Tray.usingGnome) {
                     Gtk2.gtk_status_icon_set_name(trayIcon, Extension.DEFAULT_NAME);
                 }
             }

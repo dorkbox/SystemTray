@@ -24,11 +24,11 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
-import dorkbox.systemTray.jna.linux.AppIndicator;
-import dorkbox.systemTray.jna.linux.Gobject;
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
-import dorkbox.systemTray.jna.linux.structs.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.util.jna.linux.AppIndicator;
+import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.util.jna.linux.structs.AppIndicatorInstanceStruct;
 
 /**
  * Class for handling all system tray interactions.

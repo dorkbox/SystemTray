@@ -30,7 +30,7 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
 @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -69,7 +69,7 @@ class SwingMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -107,7 +107,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -127,7 +127,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -141,7 +141,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -162,9 +162,9 @@ class SwingMenu implements MenuPeer {
     void setShortcut(final MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        final int vKey = Swing.getVirtualKey(shortcut);
 
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -179,7 +179,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public synchronized
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

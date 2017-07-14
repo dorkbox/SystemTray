@@ -18,7 +18,7 @@ package dorkbox.systemTray;
 import java.awt.event.ActionListener;
 
 import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 /**
  * This represents a common menu-checkbox entry, that is cross platform in nature
@@ -189,7 +189,7 @@ class Checkbox extends Entry {
      */
     public
     void setShortcut(final int key) {
-        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
+        this.mnemonicKey = Swing.getFromVirtualKey(key);
 
         if (peer != null) {
             ((CheckboxPeer) peer).setShortcut(this);

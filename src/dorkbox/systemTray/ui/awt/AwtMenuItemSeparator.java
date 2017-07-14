@@ -17,7 +17,7 @@ package dorkbox.systemTray.ui.awt;
 
 
 import dorkbox.systemTray.peer.EntryPeer;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 class AwtMenuItemSeparator implements EntryPeer {
 
@@ -34,7 +34,7 @@ class AwtMenuItemSeparator implements EntryPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

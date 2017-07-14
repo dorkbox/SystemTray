@@ -30,7 +30,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.CacheUtil;
+import dorkbox.util.Cache;
 import dorkbox.util.IO;
 import dorkbox.util.ImageUtil;
 
@@ -47,7 +47,7 @@ class ImageResizeUtil {
     File getTransparentImage(final int imageSize) {
         // NOTE: this does not need to be called on the EDT
         try {
-            final File newFile = CacheUtil.create(imageSize + "_empty.png");
+            final File newFile = Cache.create(imageSize + "_empty.png");
             return ImageUtil.createImage(imageSize, newFile, null);
         } catch (IOException e) {
             throw new RuntimeException("Unable to generate transparent image! Something is severely wrong!");
@@ -69,12 +69,12 @@ class ImageResizeUtil {
             imageStream.mark(0);
 
             // check if we already have this file information saved to disk, based on size + hash of data
-            final String cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
+            final String cacheName = size + "_" + Cache.createNameAsHash(imageStream);
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 
             // if we already have this fileName, reuse it
-            final File check = CacheUtil.check(cacheName);
+            final File check = Cache.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -83,7 +83,7 @@ class ImageResizeUtil {
             File resizedFile = resizeFileNoCheck(size, imageStream);
 
             // now cache that file
-            return CacheUtil.save(cacheName, resizedFile);
+            return Cache.save(cacheName, resizedFile);
         } catch (Exception e) {
             // this must be thrown
             throw new RuntimeException("Serious problems! Unable to extract error image, this should NEVER happen!", e);
@@ -130,12 +130,12 @@ class ImageResizeUtil {
             imageStream.mark(0);
 
             // check if we already have this file information saved to disk, based on size + hash of data
-            cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
+            cacheName = size + "_" + Cache.createNameAsHash(imageStream);
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 
             // if we already have this fileName, reuse it
-            final File check = CacheUtil.check(cacheName);
+            final File check = Cache.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -165,7 +165,7 @@ class ImageResizeUtil {
 
                 // now cache that file
                 try {
-                    return CacheUtil.save(cacheName, resizedFile);
+                    return Cache.save(cacheName, resizedFile);
                 } catch (Exception e) {
                     // have to serve up the error image instead.
                     SystemTray.logger.error("Error caching image. Using error icon instead", e);
@@ -181,7 +181,7 @@ class ImageResizeUtil {
         } else {
             // no resize necessary, just cache as is.
             try {
-                return CacheUtil.save(cacheName, imageStream);
+                return Cache.save(cacheName, imageStream);
             } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error caching image. Using error icon instead", e);
@@ -216,7 +216,7 @@ class ImageResizeUtil {
     File resizeFileNoCheck(final int size, InputStream inputStream) throws IOException {
         // have to resize the file (and return the new path)
 
-        File newFile = CacheUtil.create("temp_resize.png");
+        File newFile = Cache.create("temp_resize.png");
         // if it's already there, we have to delete it
         newFile.delete();
 
@@ -288,7 +288,7 @@ class ImageResizeUtil {
 
                 return file;
             } else {
-                return CacheUtil.save(imageUrl);
+                return Cache.save(imageUrl);
             }
         } catch (Exception e) {
             // have to serve up the error image instead.
@@ -307,7 +307,7 @@ class ImageResizeUtil {
             return ImageResizeUtil.resizeAndCache(getSize(isTrayImage), imageStream);
         } else {
             try {
-                return CacheUtil.save(imageStream);
+                return Cache.save(imageStream);
             } catch (IOException e) {
                 SystemTray.logger.error("Error checking cache for information. Using error icon instead", e);
                 return getErrorImage(0);
@@ -337,7 +337,7 @@ class ImageResizeUtil {
 
                 return file;
             } else {
-                File file = CacheUtil.save(imageInputStream);
+                File file = Cache.save(imageInputStream);
                 imageInputStream.close(); // BAOS doesn't do anything, but here for completeness + documentation
 
                 return file;
@@ -362,7 +362,7 @@ class ImageResizeUtil {
             if (SystemTray.AUTO_SIZE) {
                 return resizeAndCache(getSize(isTrayImage), fileStream);
             } else {
-                return CacheUtil.save(fileStream);
+                return Cache.save(fileStream);
             }
         } catch (Exception e) {
             // have to serve up the error image instead.

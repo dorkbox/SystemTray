@@ -28,7 +28,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.SwingUtil;
+import dorkbox.util.Swing;
 
 class SwingMenuItem implements MenuItemPeer {
 
@@ -78,7 +78,7 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -97,7 +97,7 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -109,7 +109,7 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -155,9 +155,9 @@ class SwingMenuItem implements MenuItemPeer {
     void setShortcut(final MenuItem menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        final int vKey = Swing.getVirtualKey(shortcut);
 
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -170,7 +170,7 @@ class SwingMenuItem implements MenuItemPeer {
     public
     void remove() {
         //noinspection Duplicates
-        SwingUtil.invokeLater(new Runnable() {
+        Swing.invokeLater(new Runnable() {
             @Override
             public
             void run() {

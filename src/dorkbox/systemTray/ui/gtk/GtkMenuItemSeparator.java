@@ -15,10 +15,10 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.systemTray.jna.linux.Gtk.Gtk2;
+import static dorkbox.util.jna.linux.Gtk.Gtk2;
 
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.peer.EntryPeer;
+import dorkbox.util.jna.linux.GtkEventDispatch;
 
 class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
 
