@@ -19,7 +19,6 @@ import static dorkbox.systemTray.SystemTray.logger;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -27,7 +26,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,7 +35,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
 import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
-import dorkbox.util.process.ShellProcessBuilder;
+import dorkbox.util.process.ShellExecutor;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
 public
@@ -61,19 +59,15 @@ class Extension {
 
     public static
     List<String> getEnabledExtensions() {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-
         // gsettings get org.gnome.shell enabled-extensions
-        final ShellProcessBuilder gsettings = new ShellProcessBuilder(outputStream);
+        final ShellExecutor gsettings = new ShellExecutor();
         gsettings.setExecutable("gsettings");
         gsettings.addArgument("get");
         gsettings.addArgument("org.gnome.shell");
         gsettings.addArgument("enabled-extensions");
         gsettings.start();
 
-        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+        String output = gsettings.getOutput();
 
         // now we have to enable us if we aren't already enabled
 
@@ -137,9 +131,6 @@ class Extension {
 
     public static
     void setEnabledExtensions(List<String> extensions) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
         StringBuilder stringBuilder = new StringBuilder("[");
 
         for (int i = 0, extensionsSize = extensions.size(), limit = extensionsSize-1; i < extensionsSize; i++) {
@@ -166,7 +157,7 @@ class Extension {
         // gsettings set org.gnome.shell enabled-extensions "['SystemTray@Dorkbox']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@Dorkbox']"
-        final ShellProcessBuilder setGsettings = new ShellProcessBuilder(outputStream);
+        final ShellExecutor setGsettings = new ShellExecutor();
         setGsettings.setExecutable("gsettings");
         setGsettings.addArgument("set");
         setGsettings.addArgument("org.gnome.shell");
@@ -188,7 +179,7 @@ class Extension {
             }
 
             // now we have to restart the gnome shell via bash
-            final ShellProcessBuilder restartShell = new ShellProcessBuilder();
+            final ShellExecutor restartShell = new ShellExecutor();
             // restart shell in background process
             restartShell.addArgument(SHELL_RESTART_COMMAND);
             restartShell.start();
