@@ -3,8 +3,8 @@ SystemTray
 Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications on Java 6+.  
 
 
-This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment, and if AutoDetect (the default) is set. Linux/Unix will automatically choose *Nativ*e menus, Windows will choose *Swing*, and MacOS will choose *AWT*. 
- - Please note that *Native* menus, follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms and environments.
+This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment, and if AutoDetect (the default) is set. Linux/Unix will automatically choose *Native* (*GtkStatusIcon*, and *AppIndicator*) menus, Windows will choose *Swing*, and MacOS will choose *AWT*. 
+ - Please note that the *Native* adn *AWT* menus follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms and environments.
 
 &nbsp;  
 
@@ -31,7 +31,7 @@ Problems and Restrictions
  
  - **SWT** can use *GTK2* or *GTK3*. If you want to use *GTK2* you must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized and only if there are problems with the autodetection, you can also set `SystemTray.FORCE_GTK2=true;`.
  
- - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager -- and this cannot happen between different user accounts. **There is no workaround.**
+ - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager -- and this cannot happen between different user accounts. We attempt to detect this, and fallback to using Swing.
  
  - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together (see the `Notes` below for the details.)
  
@@ -52,6 +52,7 @@ OS | Java/Swing | JavaFX | SWT
 XUbuntu 16.04 | ✓ | ✓ | ✓ |
 Ubuntu 16.04 | ✓ | + | ✓ |
 UbuntuGnome 16.04 | ✓ | + | ✓ |
+UbuntuGnome 17.04 | ✓ | + | ✓ |
 Fedora 23 | ✓ | ✓ | ✓ |
 Fedora 24 | ✓ | ✓ | ✓ |
 Fedora 25 | ✓ | ✓ | ✓ |
@@ -71,7 +72,7 @@ Win 10  | ✓ | ✓ | ✓ |
 
 Notes:
 -------
-- Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532).  
+- Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
 
  - MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See [issue details](https://bugs.openjdk.java.net/browse/JDK-8116017).
      - To fix this do one of the following
