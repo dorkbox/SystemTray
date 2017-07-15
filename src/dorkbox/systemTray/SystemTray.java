@@ -48,14 +48,14 @@ import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.systemTray.util.WindowsSwingUI;
-import dorkbox.util.Cache;
-import dorkbox.util.Framework;
+import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.JavaFX;
 import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
+import dorkbox.util.Swt;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkEventDispatch;
@@ -410,7 +410,7 @@ class SystemTray {
             // cannot mix Swing/AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
             // https://bugs.openjdk.java.net/browse/JDK-8116017
             // https://bugs.openjdk.java.net/browse/JDK-8118714
-            if (Framework.isJavaFxLoaded && OS.javaVersion <= 7 && !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
+            if (JavaFX.isLoaded && OS.javaVersion <= 7 && !System.getProperty("javafx.macosx.embedded", "false").equals("true")) {
 
                 logger.error("MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See issue: " +
                              "'https://bugs.openjdk.java.net/browse/JDK-8116017'  and 'https://bugs.openjdk.java.net/browse/JDK-8118714'\n" +
@@ -428,7 +428,7 @@ class SystemTray {
 
             // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
             // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
-            if (Framework.isSwtLoaded && FORCE_TRAY_TYPE == TrayType.Swing) {
+            if (Swt.isLoaded && FORCE_TRAY_TYPE == TrayType.Swing) {
                 if (AUTO_FIX_INCONSISTENCIES) {
                     logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
 
@@ -456,7 +456,7 @@ class SystemTray {
 
             // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux, this will cause GTK2 to get loaded first,
             // which will cause conflicts if one tries to use GTK3
-            if (!FORCE_GTK2 && !Framework.isJavaFxLoaded && !Framework.isSwtLoaded) {
+            if (!FORCE_GTK2 && !JavaFX.isLoaded && !Swt.isLoaded) {
 
                 String currentUI = UIManager.getLookAndFeel()
                                             .getClass()
@@ -493,11 +493,11 @@ class SystemTray {
                     }
                 }
             }
-            else if (Framework.isSwtLoaded) {
+            else if (Swt.isLoaded) {
                 // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                 // System.setProperty("SWT_GTK3", "0");
 
-                if (Framework.isSwtGtk3 && FORCE_GTK2) {
+                if (Swt.isGtk3 && FORCE_GTK2) {
                     logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
                                  "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
                                  "initialized, or set `SystemTray.FORCE_GTK2=false;`");
@@ -505,21 +505,21 @@ class SystemTray {
                     systemTrayMenu = null;
                     systemTray = null;
                     return;
-                } else if (!Framework.isSwtGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                } else if (!Swt.isGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                     // we must use GTK2, because SWT is GTK2
                     FORCE_GTK2 = true;
 
                     logger.warn("Forcing GTK2 because SWT is GTK2");
                 }
             }
-            else if (Framework.isJavaFxLoaded) {
+            else if (JavaFX.isLoaded) {
                 // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                 // see
                 // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
                 // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
                 // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                if (Framework.isJavaFxGtk3 && FORCE_GTK2) {
+                if (JavaFX.isGtk3 && FORCE_GTK2) {
                     // if we are java9, then we can change it -- otherwise we cannot.
                     if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
                         FORCE_GTK2 = false;
@@ -536,7 +536,7 @@ class SystemTray {
                         systemTray = null;
                         return;
                     }
-                } else if (!Framework.isJavaFxGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                } else if (!JavaFX.isGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                     // we must use GTK2, because JavaFX is GTK2
                     FORCE_GTK2 = true;
 
@@ -558,8 +558,8 @@ class SystemTray {
 
 
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
-            logger.debug("Is JavaFX detected? {}", Framework.isJavaFxLoaded);
-            logger.debug("Is SWT detected? {}", Framework.isSwtLoaded);
+            logger.debug("Is JavaFX detected? {}", JavaFX.isLoaded);
+            logger.debug("Is SWT detected? {}", Swt.isLoaded);
             logger.debug("Java Swing L&F: {}", UIManager.getLookAndFeel().getID());
             if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
                 logger.debug("Auto-detecting tray type");
@@ -645,10 +645,7 @@ class SystemTray {
 
         // - appIndicator/gtk require strings (which is the path)
         // - swing version loads as an image (which can be stream or path, we use path)
-        Cache.tempDir = "SystemTrayImages";
-
-        // This will initialize javaFX/SWT event dispatch methods
-        Framework.initDispatch();
+        CacheUtil.tempDir = "SystemTrayImages";
 
 
         try {
@@ -717,7 +714,7 @@ class SystemTray {
 
 
             // have to make adjustments BEFORE the tray/menu image size calculations
-            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null && Swing.isDefaultLookAndFeel()) {
+            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null && SwingUtil.isDefaultLookAndFeel()) {
                 if (isNix) {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
@@ -753,7 +750,7 @@ class SystemTray {
 
 
 
-            if ((Framework.isJavaFxLoaded || Framework.isSwtLoaded) && SwingUtilities.isEventDispatchThread()) {
+            if ((JavaFX.isLoaded || Swt.isLoaded) && SwingUtilities.isEventDispatchThread()) {
                 // This WILL NOT WORK. Let the dev know
                 logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
                              "(EDT). Something is seriously wrong.");
@@ -768,7 +765,7 @@ class SystemTray {
             // linux + GTK/AppIndicator menus must not start on the EDT!
 
             // AWT/Swing must be constructed on the EDT however...
-            if (Framework.isJavaFxLoaded || Framework.isSwtLoaded ||
+            if (JavaFX.isLoaded || Swt.isLoaded ||
                 (isNix && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator)))
                 ) {
                 try {
@@ -782,7 +779,7 @@ class SystemTray {
 
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
-                Swing.invokeAndWait(new Runnable() {
+                SwingUtil.invokeAndWait(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -811,7 +808,7 @@ class SystemTray {
 
         // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
         if (ENABLE_SHUTDOWN_HOOK) {
-            if (Framework.isJavaFxLoaded) {
+            if (JavaFX.isLoaded) {
                 // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
                 // Also, it's nice to have us shutdown at the same time as the main application
                 JavaFX.onShutdown(new Runnable() {
@@ -824,7 +821,7 @@ class SystemTray {
                     }
                 });
             }
-            else if (Framework.isSwtLoaded) {
+            else if (Swt.isLoaded) {
                 // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
                 // Also, it's nice to have us shutdown at the same time as the main application
                 dorkbox.util.Swt.onShutdown(new Runnable() {
