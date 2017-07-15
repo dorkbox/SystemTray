@@ -29,7 +29,7 @@ import javax.swing.JPopupMenu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.util.OS;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
 /**
@@ -66,7 +66,7 @@ class _SwingTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                Swing.invokeLater(new Runnable() {
+                SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -104,7 +104,7 @@ class _SwingTray extends Tray {
                     return;
                 }
 
-                Swing.invokeLater(new Runnable() {
+                SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -170,7 +170,7 @@ class _SwingTray extends Tray {
             @Override
             public
             void remove() {
-                Swing.invokeLater(new Runnable() {
+                SwingUtil.invokeLater(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -207,7 +207,7 @@ class _SwingTray extends Tray {
         }
         this.tooltipText = tooltipText;
 
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {

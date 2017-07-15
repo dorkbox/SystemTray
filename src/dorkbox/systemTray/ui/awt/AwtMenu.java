@@ -26,7 +26,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
 @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -53,7 +53,7 @@ class AwtMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -92,7 +92,7 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -105,7 +105,7 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setText(final MenuItem menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -125,9 +125,9 @@ class AwtMenu implements MenuPeer {
     public
     void setShortcut(final MenuItem menuItem) {
         // yikes...
-        final int vKey = Swing.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -139,7 +139,7 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void remove() {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {

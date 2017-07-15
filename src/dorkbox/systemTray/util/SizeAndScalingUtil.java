@@ -33,7 +33,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.util.OS;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.GtkTheme;
 import dorkbox.util.jna.windows.User32;
 
@@ -147,7 +147,7 @@ class SizeAndScalingUtil {
                 } else {
                     final AtomicInteger iconSize = new AtomicInteger();
 
-                    Swing.invokeAndWaitQuietly(new Runnable() {
+                    SwingUtil.invokeAndWaitQuietly(new Runnable() {
                         @Override
                         public
                         void run() {
@@ -159,7 +159,7 @@ class SizeAndScalingUtil {
                             }
 
                             // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                            int height = Swing.getLargestIconHeightForButton(jMenuItem);
+                            int height = SwingUtil.getLargestIconHeightForButton(jMenuItem);
                             iconSize.set(height);
                         }
                     });

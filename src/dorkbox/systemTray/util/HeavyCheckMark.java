@@ -11,7 +11,7 @@ import java.io.File;
 import javax.imageio.ImageIO;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.Cache;
+import dorkbox.util.CacheUtil;
 
 public class HeavyCheckMark {
     private static final double SVG_ORIG_SIZE_Y = 222.0D;
@@ -51,7 +51,7 @@ public class HeavyCheckMark {
             targetImageSize = checkMarkSize;
         }
 
-        final File newFile = Cache.create(name);
+        final File newFile = CacheUtil.create(name);
         if (newFile.canRead() || newFile.length() == 0) {
             try {
                 BufferedImage img = HeavyCheckMark.draw(color, checkMarkSize, targetImageSize);

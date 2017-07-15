@@ -24,10 +24,10 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.Cache;
+import dorkbox.util.CacheUtil;
 import dorkbox.util.JavaFX;
 import dorkbox.util.OS;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -120,9 +120,9 @@ class TestTrayJavaFX {
         primaryStage.show();
 
 
-        Cache.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
+        CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
-        Swing.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
+        SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();

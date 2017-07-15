@@ -22,7 +22,7 @@ import java.awt.event.ActionListener;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 
 class AwtMenuItemCheckbox implements CheckboxPeer {
 
@@ -42,7 +42,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setEnabled(final Checkbox menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -54,7 +54,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setText(final Checkbox menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -102,9 +102,9 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     void setShortcut(final Checkbox menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = Swing.getVirtualKey(shortcut);
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -122,7 +122,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
         if (checked != this.isChecked) {
             this.isChecked = checked;
 
-            Swing.invokeLater(new Runnable() {
+            SwingUtil.invokeLater(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -136,7 +136,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void remove() {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {

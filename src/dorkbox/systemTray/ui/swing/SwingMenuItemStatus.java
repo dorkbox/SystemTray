@@ -24,7 +24,7 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.StatusPeer;
-import dorkbox.util.Swing;
+import dorkbox.util.SwingUtil;
 
 class SwingMenuItemStatus implements StatusPeer {
 
@@ -54,7 +54,7 @@ class SwingMenuItemStatus implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -66,7 +66,7 @@ class SwingMenuItemStatus implements StatusPeer {
     @Override
     public
     void remove() {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {

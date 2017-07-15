@@ -26,8 +26,8 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.HeavyCheckMark;
-import dorkbox.util.Font;
-import dorkbox.util.Swing;
+import dorkbox.util.FontUtil;
+import dorkbox.util.SwingUtil;
 
 class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
@@ -50,7 +50,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 }
 
                 // Having the checkmark size the same size as the letter X is a reasonably nice size.
-                int size = Font.getFontHeight(jMenuItem.getFont(), "X");
+                int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
 
                 // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
                 int menuImageSize = SystemTray.get()
@@ -73,7 +73,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @Override
     public
     void setEnabled(final Checkbox menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -85,7 +85,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @Override
     public
     void setText(final Checkbox menuItem) {
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -133,9 +133,9 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     void setShortcut(final Checkbox menuItem) {
         char shortcut = menuItem.getShortcut();
         // yikes...
-        final int vKey = Swing.getVirtualKey(shortcut);
+        final int vKey = SwingUtil.getVirtualKey(shortcut);
 
-        Swing.invokeLater(new Runnable() {
+        SwingUtil.invokeLater(new Runnable() {
             @Override
             public
             void run() {
@@ -153,7 +153,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
         if (checked != this.isChecked) {
             this.isChecked = checked;
 
-            Swing.invokeLater(new Runnable() {
+            SwingUtil.invokeLater(new Runnable() {
                 @Override
                 public
                 void run() {
