@@ -17,6 +17,7 @@
 package dorkbox;
 
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.net.URL;
 
 import dorkbox.systemTray.Checkbox;
@@ -25,6 +26,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
+import dorkbox.util.Desktop;
 import dorkbox.util.JavaFX;
 import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
@@ -184,6 +186,17 @@ class TestTrayJavaFX {
 
         mainMenu.add(new Separator());
 
+        mainMenu.add(new MenuItem("About", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final java.awt.event.ActionEvent e) {
+                try {
+                    Desktop.browseURL("https://github.com/dorkbox/SystemTray");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }));
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
