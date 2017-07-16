@@ -129,9 +129,7 @@ class TestTray {
             public
             void actionPerformed(final ActionEvent e) {
                 try {
-//                    Desktop.browseURL("https://github.com/dorkbox/SystemTray");
-//                    Desktop.browseDirectory("/");
-                    Desktop.launchEmail("foo@example.com");
+                    Desktop.browseURL("https://github.com/dorkbox/SystemTray");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
