@@ -56,7 +56,6 @@ class LinuxSwingUI implements SwingUIFactory {
     public static class Metal_MenuItemBorder extends MetalBorders.MenuItemBorder {
         private final int verticalPadding;
 
-        public
         Metal_MenuItemBorder(int verticalPadding) {
             this.verticalPadding = verticalPadding;
         }
@@ -69,6 +68,10 @@ class LinuxSwingUI implements SwingUIFactory {
         }
     }
 
+    private static PopupMenuUI popupMenuUI = null;
+    private static MenuItemUI menuItemUI = null;
+    private static SeparatorUI separatorUI = null;
+
     /**
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)
      *
@@ -80,19 +83,23 @@ class LinuxSwingUI implements SwingUIFactory {
     @Override
     public
     PopupMenuUI getMenuUI(final JPopupMenu jPopupMenu, final Menu entry) {
-        return new DefaultPopupMenuUI(jPopupMenu) {
-            @Override
-            public
-            void installUI(final JComponent c) {
-                super.installUI(c);
+        if (popupMenuUI == null) {
+            popupMenuUI = new DefaultPopupMenuUI(jPopupMenu) {
+                @Override
+                public
+                void installUI(final JComponent c) {
+                    super.installUI(c);
 
-                JPopupMenu popupMenu = (JPopupMenu) c;
+                    JPopupMenu popupMenu = (JPopupMenu) c;
 
-                // borderUI resource border type will get changed internally!
-                // setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0));
-                popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
-            }
-        };
+                    // borderUI resource border type will get changed internally!
+                    // setBorder(new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0));
+                    popupMenu.setBorder(new EmptyBorder(1, 1, 1, 1));
+                }
+            };
+        }
+
+        return popupMenuUI;
     }
 
     /**
@@ -106,19 +113,23 @@ class LinuxSwingUI implements SwingUIFactory {
     @Override
     public
     MenuItemUI getItemUI(final JMenuItem jMenuItem, final Entry entry) {
-        return new DefaultMenuItemUI(jMenuItem) {
-            @Override
-            public
-            void installUI(final JComponent c) {
-                super.installUI(c);
+        if (menuItemUI == null) {
+            menuItemUI = new DefaultMenuItemUI(jMenuItem) {
+                @Override
+                public
+                void installUI(final JComponent c) {
+                    super.installUI(c);
 
-                JMenuItem menuItem = (JMenuItem) c;
-                menuItem.setIconTextGap(8);
-                // the original is hardcoded to always be 2 (top/bottom). We want this to be larger, so the vertical spacing looks like
-                // other menus
-                c.setBorder(new Metal_MenuItemBorder(4));
-            }
-        };
+                    JMenuItem menuItem = (JMenuItem) c;
+                    menuItem.setIconTextGap(8);
+                    // the original is hardcoded to always be 2 (top/bottom). We want this to be larger, so the vertical spacing looks like
+                    // other menus
+                    c.setBorder(new Metal_MenuItemBorder(4));
+                }
+            };
+        }
+
+        return menuItemUI;
     }
 
     /**
@@ -131,9 +142,12 @@ class LinuxSwingUI implements SwingUIFactory {
     @Override
     public
     SeparatorUI getSeparatorUI(final JSeparator jSeparator) {
-        return new DefaultSeparatorUI(jSeparator);
-    }
+        if (separatorUI == null) {
+            separatorUI = new DefaultSeparatorUI(jSeparator);
+        }
 
+        return separatorUI;
+    }
 
     /**
      * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize
