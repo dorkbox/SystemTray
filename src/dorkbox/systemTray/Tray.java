@@ -22,47 +22,13 @@ import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
 
-import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.OSUtil;
 
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
 class Tray extends Menu {
     // true if we are using gnome (and things depend on it) or false
     public static volatile boolean usingGnome = false;
-
-    protected static
-    void installExtension() {
-        // do we need to install the GNOME extension??
-        if (Tray.usingGnome) {
-            boolean showInfo = false;
-            if (OSUtil.Linux.isDebian()) {
-                showInfo = !Extension.isInstalled();
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Running Debian.");
-                }
-
-            }
-            if (OSUtil.Linux.isArch()) {
-                showInfo = !Extension.isInstalled();
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Running Arch Linux.");
-                }
-            }
-
-            if (showInfo) {
-                SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                       "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                       "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                       "of the screen to the menu panel next to the clock.");
-                return;
-            }
-
-            // Automatically install the extension for everyone except Arch/Debian. It's bonkers.
-            Extension.install();
-        }
-    }
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!

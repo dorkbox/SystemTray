@@ -38,6 +38,7 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
@@ -95,6 +96,10 @@ class SystemTray {
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static boolean FORCE_GTK2 = false;
+
+    @Property
+    /** Prefer to load GTK3 before trying to load GTK2. */
+    public static boolean PREFER_GTK3 = true;
 
     @Property
     /**
@@ -259,9 +264,14 @@ class SystemTray {
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
 
-                        if (OSUtil.Linux.isDebian()) {
-                            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
-                            logger.warn("Debian with Gnome detected. SystemTray support is not known to work.");
+                        if (OSUtil.Linux.isDebian() && Extension.ENABLE_EXTENSION_INSTALL) {
+                            logger.warn("Debian with Gnome detected. SystemTray works, but will only show via SUPER+M.");
+
+                            if (DEBUG) {
+                                logger.debug("Disabling the extension install. It won't work.");
+                            }
+
+                            Extension.ENABLE_EXTENSION_INSTALL = false;
                         }
 
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
@@ -456,19 +466,27 @@ class SystemTray {
             }
         }
         else if (isNix) {
-            // linux/unix can use all of the tray types. GTK versions are really sensitive...
+            // linux/unix can use all of the tray types. AWT looks horrid. GTK versions are really sensitive...
 
             // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux and it's the GtkLookAndFeel,
             // this will cause GTK2 to get loaded first, which will cause conflicts if one tries to use GTK3
             if (!FORCE_GTK2 && !JavaFX.isLoaded && !Swt.isLoaded) {
-                if (SwingUtil.getLoadedGtkVersion() == 2) {
+                int loadedGtkVersion = SwingUtil.getLoadedGtkVersion();
+                if (loadedGtkVersion == 2) {
                     // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
                     // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
 
-                    // we must use GTK2 because Swing is configured to use GTK2
+                    // we must use GTK2 because Java is configured to use GTK2
                     FORCE_GTK2 = true;
                     if (DEBUG) {
-                        logger.debug("Forcing GTK2 because Swing has already loaded GTK2");
+                        logger.debug("Forcing GTK2 because Java has already loaded GTK2");
+                    }
+                }
+                else if (loadedGtkVersion == 3 && !PREFER_GTK3) {
+                    PREFER_GTK3 = true;
+
+                    if (DEBUG) {
+                        logger.debug("Preferring GTK3 even though specified otherwise, because Java has already loaded GTK3");
                     }
                 }
             }
@@ -476,15 +494,33 @@ class SystemTray {
                 // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                 // System.setProperty("SWT_GTK3", "0");
 
-                if (Swt.isGtk3 && FORCE_GTK2) {
-                    logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
-                                 "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
-                                 "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+                if (Swt.isGtk3) {
+                    if (FORCE_GTK2) {
+                        if (AUTO_FIX_INCONSISTENCIES) {
+                            FORCE_GTK2 = false;
 
-                    systemTrayMenu = null;
-                    systemTray = null;
-                    return;
-                } else if (!Swt.isGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+                            logger.warn("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
+                                        "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
+                                        "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+                        } else {
+                            logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
+                                         "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
+                                         "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+
+                            systemTrayMenu = null;
+                            systemTray = null;
+                            return;
+                        }
+                    }
+
+                    if (!PREFER_GTK3) {
+                        PREFER_GTK3 = true;
+
+                        if (DEBUG) {
+                            logger.debug("Preferring GTK3 even though specified otherwise, because SWT is GTK3");
+                        }
+                    }
+                } else if (!FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                     // we must use GTK2, because SWT is GTK2
                     FORCE_GTK2 = true;
 
@@ -500,24 +536,36 @@ class SystemTray {
                 // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
                 // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                if (JavaFX.isGtk3 && FORCE_GTK2) {
-                    // if we are java9, then we can change it -- otherwise we cannot.
-                    if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
-                        FORCE_GTK2 = false;
+                if (JavaFX.isGtk3) {
+                    if (FORCE_GTK2) {
+                        // if we are java9, then we can change it -- otherwise we cannot.
+                        if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
+                            FORCE_GTK2 = false;
 
-                        logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
-                                    "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
-                                    "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
+                            logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
+                                        "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                        "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
 
-                    } else {
-                        logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
-                                     "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
+                        }
+                        else {
+                            logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
+                                         "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                            systemTrayMenu = null;
+                            systemTray = null;
+                            return;
+                        }
                     }
-                } else if (!JavaFX.isGtk3 && !FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
+
+                    if (!PREFER_GTK3) {
+                        PREFER_GTK3 = true;
+
+                        if (DEBUG) {
+                            logger.debug("Preferring GTK3 even though specified otherwise, because JavaFX is GTK3");
+                        }
+                    }
+                }
+                else if (!FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
                     // we must use GTK2, because JavaFX is GTK2
                     FORCE_GTK2 = true;
 
@@ -550,7 +598,8 @@ class SystemTray {
             else {
                 logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
             }
-            logger.debug("FORCE_GTK2: {}", FORCE_GTK2);
+            logger.debug("Force GTK2: {}", FORCE_GTK2);
+            logger.debug("Prefer GTK3: {}", FORCE_GTK2);
         }
 
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
@@ -567,7 +616,7 @@ class SystemTray {
         }
 
 
-        // fix various incompatibilities
+        // fix various incompatibilities with selected tray types
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
             if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
@@ -597,6 +646,15 @@ class SystemTray {
                         systemTrayMenu = null;
                         systemTray = null;
                         return;
+                    }
+                }
+
+                if (de == OSUtil.DesktopEnv.Env.Gnome && (OSUtil.Linux.isKali() || OSUtil.Linux.isFedora())) {
+                    // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
+                    PREFER_GTK3 = false;
+
+                    if (DEBUG) {
+                        logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
                     }
                 }
             }
@@ -637,7 +695,7 @@ class SystemTray {
 
             if (isNix) {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
-                GtkEventDispatch.startGui(FORCE_GTK2, DEBUG);
+                GtkEventDispatch.startGui(FORCE_GTK2, PREFER_GTK3, DEBUG);
                 GtkEventDispatch.waitForEventsToComplete();
 
                 if (DEBUG) {
@@ -671,6 +729,15 @@ class SystemTray {
                             logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
                                          "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. " +
                                          "Using the Swing Tray type instead."); // GTK3
+                        }
+                    } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
+                        if (!Extension.isInstalled()) {
+                            // Automatically install the extension for everyone except Arch. They are bonkers.
+                            Extension.ENABLE_EXTENSION_INSTALL = false;
+                            SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
+                                                   "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
+                                                   "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
+                                                   "of the screen to the menu panel next to the clock.");
                         }
                     }
                 }
