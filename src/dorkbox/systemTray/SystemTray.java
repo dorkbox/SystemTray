@@ -57,6 +57,7 @@ import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.Swt;
+import dorkbox.util.Version;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkEventDispatch;
@@ -902,8 +903,8 @@ class SystemTray {
      * Gets the version number.
      */
     public static
-    String getVersion() {
-        return "3.1";
+    Version getVersion() {
+        return new Version("3.1");
     }
 
     /**
