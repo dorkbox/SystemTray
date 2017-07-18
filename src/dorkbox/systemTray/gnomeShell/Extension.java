@@ -35,6 +35,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
 import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
+import dorkbox.util.process.ShellAsyncExecutor;
 import dorkbox.util.process.ShellExecutor;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
@@ -170,7 +171,8 @@ class Extension {
     void restartShell() {
         if (ENABLE_SHELL_RESTART) {
             if (SystemTray.DEBUG) {
-                logger.debug("DEBUG mode enabled. You need to manually restart the shell via '{}'", SHELL_RESTART_COMMAND);
+                logger.debug("DEBUG mode enabled. You need to log-in/out or manually restart the shell via '{}' to apply the changes.",
+                             SHELL_RESTART_COMMAND);
                 return;
             }
 
@@ -178,11 +180,8 @@ class Extension {
                 logger.debug("Restarting gnome-shell so tray notification changes can be applied.");
             }
 
-            // now we have to restart the gnome shell via bash
-            final ShellExecutor restartShell = new ShellExecutor();
-            // restart shell in background process
-            restartShell.addArgument(SHELL_RESTART_COMMAND);
-            restartShell.start();
+            // now we have to restart the gnome shell via bash in a background process
+            ShellAsyncExecutor.runShell(SHELL_RESTART_COMMAND);
 
             // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
         }
@@ -206,10 +205,13 @@ class Extension {
      */
     public static
     void install() {
-        boolean isGnome = OSUtil.DesktopEnv.isGnome();
-        if (!ENABLE_EXTENSION_INSTALL || !isGnome || (OSUtil.Linux.isDebian())) {
-            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
+        if (!ENABLE_EXTENSION_INSTALL) {
+            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs).
             return;
+        }
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Installing Gnome extension.");
         }
 
         boolean hasTopIcons;
@@ -217,6 +219,7 @@ class Extension {
 
         // should just be 3.14.1 or 3.20 or similar
         String gnomeVersion = OSUtil.DesktopEnv.getGnomeVersion();
+        System.err.println("GNOME VER " + gnomeVersion);
         if (gnomeVersion == null) {
             return;
         }

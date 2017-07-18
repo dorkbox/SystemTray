@@ -36,20 +36,31 @@ class Tray extends Menu {
     void installExtension() {
         // do we need to install the GNOME extension??
         if (Tray.usingGnome) {
+            boolean showInfo = false;
+            if (OSUtil.Linux.isDebian()) {
+                showInfo = !Extension.isInstalled();
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.debug("Running Debian.");
+                }
+
+            }
             if (OSUtil.Linux.isArch()) {
+                showInfo = !Extension.isInstalled();
                 if (SystemTray.DEBUG) {
                     SystemTray.logger.debug("Running Arch Linux.");
                 }
-                if (!Extension.isInstalled()) {
-                    SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                           "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                           "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                           "of the screen to the menu panel next to the clock.");
-                }
-            } else {
-                // Automatically install the extension for everyone except Arch. It's bonkers.
-                Extension.install();
             }
+
+            if (showInfo) {
+                SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
+                                       "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
+                                       "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
+                                       "of the screen to the menu panel next to the clock.");
+                return;
+            }
+
+            // Automatically install the extension for everyone except Arch/Debian. It's bonkers.
+            Extension.install();
         }
     }
 
