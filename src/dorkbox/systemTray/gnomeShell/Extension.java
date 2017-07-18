@@ -219,7 +219,6 @@ class Extension {
 
         // should just be 3.14.1 or 3.20 or similar
         String gnomeVersion = OSUtil.DesktopEnv.getGnomeVersion();
-        System.err.println("GNOME VER " + gnomeVersion);
         if (gnomeVersion == null) {
             return;
         }
