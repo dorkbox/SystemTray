@@ -45,26 +45,30 @@ Problems and Restrictions
 
 Compatibility Matrix
 ------------------
-`✓`=supported, `-`= not supported, `+`= see notes     
+`✓`=supported, `-`= not supported     
 
 OS | Java/Swing | JavaFX | SWT
 --- | --- | --- | --- |
-XUbuntu 16.04 | ✓ | ✓ | ✓ |
-Ubuntu 16.04 | ✓ | + | ✓ |
-UbuntuGnome 16.04 | ✓ | + | ✓ |
-UbuntuGnome 17.04 | ✓ | + | ✓ |
+Arch Linux + Gnome3 | ✓ | ✓ | ✓ |
+Debian 8.5 + Gnome3 | - | - | - |
+Debian 8.6 + Gnome3 | - | - | - |
+Elementary OS 0.3.2 | - | ✓ | ✓ |
+Elementary OS 0.4 | - | ✓ | ✓ |
 Fedora 23 | ✓ | ✓ | ✓ |
 Fedora 24 | ✓ | ✓ | ✓ |
 Fedora 25 | ✓ | ✓ | ✓ |
 Fedora 25 KDE | ✓ | ✓ | ✓ |
-LinuxMint 18 | ✓ | ✓ | ✓ |
-Elementary OS 0.3.2 | - | ✓ | ✓ |
-Elementary OS 0.4 | - | ✓ | ✓ |
-Arch Linux + Gnome3 | ✓ | ✓ | ✓ |
 FreeBSD 11 + Gnome3 | ✓ | ✓ | + |
-Debian 8.5 + Gnome3 | - | - | - |
-Debian 8.6 + Gnome3 | - | - | - |
-MacOSx  | ✓ | + | ✓ |
+Kali 2016 | ✓ | ✓ | ✓ |
+Kali 2017 | ✓ | ✓ | ✓ |
+LinuxMint 18 | ✓ | ✓ | ✓ |
+Ubuntu 12.04 | ✓ | ✓ | ✓ |
+Ubuntu 14.04 | ✓ | ✓ | ✓ |
+Ubuntu 16.04 | ✓ | ✓ | ✓ |
+UbuntuGnome 16.04 | ✓ | ✓ | ✓ |
+UbuntuGnome 17.04 | ✓ | ✓ | ✓ |
+XUbuntu 16.04 | ✓ | ✓ | ✓ |
+MacOSx  | ✓ | ✓ | ✓ |
 Win XP  | ✓ | ✓ | ✓ |
 Win 7   | ✓ | ✓ | ✓ |
 Win 8.1 | ✓ | ✓ | ✓ |
@@ -72,7 +76,9 @@ Win 10  | ✓ | ✓ | ✓ |
 
 Notes:
 -------
-- Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
+ - Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
+
+ - Ubuntu 17.04+ Java only supports the X11 backend. MIR and Wayland are not supported.
 
  - MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See [issue details](https://bugs.openjdk.java.net/browse/JDK-8116017).
      - To fix this do one of the following
