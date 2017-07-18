@@ -28,7 +28,6 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
-import dorkbox.util.SwingUtil;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -62,7 +61,7 @@ class TestTray {
     TestTray() {
         CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
-        SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
+        // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();

@@ -29,7 +29,6 @@ import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
 import dorkbox.util.JavaFX;
 import dorkbox.util.OS;
-import dorkbox.util.SwingUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -124,7 +123,7 @@ class TestTrayJavaFX {
 
         CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
-        SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
+        // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();
