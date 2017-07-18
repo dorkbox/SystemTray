@@ -59,7 +59,6 @@ import dorkbox.util.Swt;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkEventDispatch;
-import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -253,7 +252,12 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("default".equalsIgnoreCase(GDM)) {
-                        // this can be gnome3 on debian
+                        Tray.usingGnome = true;
+                        // this can be gnome3 on debian/kali
+
+                        if (OSUtil.Linux.isKali()) {
+                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        }
 
                         if (OSUtil.Linux.isDebian()) {
                             // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
@@ -452,44 +456,19 @@ class SystemTray {
             }
         }
         else if (isNix) {
-            // linux/unix can use all of the tray types
+            // linux/unix can use all of the tray types. GTK versions are really sensitive...
 
-            // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux, this will cause GTK2 to get loaded first,
-            // which will cause conflicts if one tries to use GTK3
+            // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux and it's the GtkLookAndFeel,
+            // this will cause GTK2 to get loaded first, which will cause conflicts if one tries to use GTK3
             if (!FORCE_GTK2 && !JavaFX.isLoaded && !Swt.isLoaded) {
-
-                String currentUI = UIManager.getLookAndFeel()
-                                            .getClass()
-                                            .getName();
-
-                boolean mustForceGtk2 = false;
-
-                // GTKLookAndFeel.class.getCanonicalName()
-                if (currentUI.equals("com.sun.java.swing.plaf.gtk.GTKLookAndFeel")) {
-                    // this means our look and feel is the GTK look and feel... THIS CREATES PROBLEMS!
-
-                    // THIS IS NOT DOCUMENTED ANYWHERE...
-                    String swingGtkVersion = java.security.AccessController.doPrivileged(new GetPropertyAction("swing.gtk.version"));
-                    mustForceGtk2 = swingGtkVersion == null || swingGtkVersion.startsWith("2");
-                }
-
-                if (mustForceGtk2) {
+                if (SwingUtil.getLoadedGtkVersion() == 2) {
                     // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
                     // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
 
-                    if (AUTO_FIX_INCONSISTENCIES) {
-                        // we must use GTK2 because Swing is configured to use GTK2
-                        FORCE_GTK2 = true;
-
-                        logger.warn("Forcing GTK2 because the Swing UIManager is GTK2");
-                    } else {
-                        logger.error("Unable to use the SystemTray when the Swing UIManager is configured to use the native L&F, which " +
-                                     "uses GTK2. This is incompatible with GTK3.   " +
-                                     "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
-
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                    // we must use GTK2 because Swing is configured to use GTK2
+                    FORCE_GTK2 = true;
+                    if (DEBUG) {
+                        logger.debug("Forcing GTK2 because Swing has already loaded GTK2");
                     }
                 }
             }
@@ -509,7 +488,9 @@ class SystemTray {
                     // we must use GTK2, because SWT is GTK2
                     FORCE_GTK2 = true;
 
-                    logger.warn("Forcing GTK2 because SWT is GTK2");
+                    if (DEBUG) {
+                        logger.debug("Forcing GTK2 because SWT is GTK2");
+                    }
                 }
             }
             else if (JavaFX.isLoaded) {
@@ -540,7 +521,9 @@ class SystemTray {
                     // we must use GTK2, because JavaFX is GTK2
                     FORCE_GTK2 = true;
 
-                    logger.warn("Forcing GTK2 because JavaFX is GTK2");
+                    if (DEBUG) {
+                        logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                    }
                 }
             }
         }
@@ -714,7 +697,7 @@ class SystemTray {
 
 
             // have to make adjustments BEFORE the tray/menu image size calculations
-            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null && SwingUtil.isDefaultLookAndFeel()) {
+            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null) {
                 if (isNix) {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
