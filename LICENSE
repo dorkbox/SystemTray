@@ -1,7 +1,7 @@
     - Dorkbox SystemTray - Apache 2.0 License
       https://github.com/dorkbox
       Copyright 2014, dorkbox, llc
-        Cross-platform SystemTray, GtkStatusIcon, and AppIndicator support for applications for Java 6+
+        Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+
 
 
     - Dorkbox Utils - Apache 2.0 License

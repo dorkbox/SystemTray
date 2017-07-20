@@ -1,6 +1,6 @@
 SystemTray
 ==========
-Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* system-tray types for java applications on Java 6+.  
+Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 6+.  
 
 
 This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment and if AutoDetect (the default) is enabled. 
