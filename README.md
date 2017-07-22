@@ -271,6 +271,7 @@ https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/
 
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
+https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
 https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
 https://repo1.maven.org/maven2/org/javassist/javassist/  
 
