@@ -22,7 +22,7 @@
     - QZTray - Apache 2.0 License
       https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java
       Copyright (C) 2016 Tres Finocchiaro, QZ Industries, LLC
-        Partial code released as Apache 2.0 for exclusive use by dorkbox, llc
+        Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.
 
 
     - SLF4J - MIT License
