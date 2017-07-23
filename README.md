@@ -258,11 +258,14 @@ This project includes some utility classes that are a small subset of a much lar
 Maven Info
 ---------
 ````
-<dependency>
-  <groupId>com.dorkbox</groupId>
-  <artifactId>SystemTray</artifactId>
-  <version>3.1</version>
-</dependency>
+<dependencies>
+    ...
+    <dependency>
+      <groupId>com.dorkbox</groupId>
+      <artifactId>SystemTray</artifactId>
+      <version>3.1</version>
+    </dependency>
+</dependencies>
 ````
 
 
