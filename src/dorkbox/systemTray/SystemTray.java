@@ -397,8 +397,6 @@ class SystemTray {
             return;
         }
 
-        systemTray = new SystemTray();
-
 //        if (DEBUG) {
 //            Properties properties = System.getProperties();
 //            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
@@ -899,6 +897,7 @@ class SystemTray {
 
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator menus must not start on the EDT!
+            systemTray = new SystemTray();
 
             // AWT/Swing must be constructed on the EDT however...
             if (JavaFX.isLoaded || Swt.isLoaded ||
