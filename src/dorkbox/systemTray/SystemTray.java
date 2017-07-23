@@ -328,6 +328,12 @@ class SystemTray {
                     // With eOS, we CANNOT show the spacer image. It does not work.
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
+                case ChromeOS:
+                    // ChromeOS cannot use the swing tray (ChromeOS is not supported!), nor AppIndicaitor/GtkStatusIcon, as those
+                    // libraries do not exist on ChromeOS. Additionally, Java cannot load external libraries unless they are in /bin,
+                    // BECAUSE of the `noexec` bit set. If JNA is moved into /bin, and the JNA library is specified to load from that
+                    // location, we can use JNA.
+                    return null;
             }
 
             // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
@@ -687,6 +693,14 @@ class SystemTray {
             trayType = selectTypeQuietly(SystemTray.FORCE_TRAY_TYPE);
         }
 
+        if (trayType == null && OSUtil.DesktopEnv.isChromeOS()) {
+            logger.error("ChromeOS detected and it is not supported. Aborting.");
+
+            systemTrayMenu = null;
+            systemTray = null;
+            return;
+        }
+
 
         // fix various incompatibilities with selected tray types
         if (isNix) {
@@ -765,7 +779,7 @@ class SystemTray {
             // at this point, the tray type is what it should be. If there are failures or special cases, all types will fall back to
             // Swing.
 
-            if (isNix) {
+            if (isNix && !isTrayType(trayType, TrayType.Swing)) {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
                 GtkEventDispatch.startGui(FORCE_GTK2, PREFER_GTK3, DEBUG);
                 GtkEventDispatch.waitForEventsToComplete();

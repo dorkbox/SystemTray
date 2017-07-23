@@ -57,6 +57,8 @@ OS | Supported
 --- | --- | 
 Arch Linux + Gnome3 | ✓ |
  | |
+ChromeOS | - |
+ | |
 Debian 8.5 + Gnome3 | ✓ |
 Debian 8.6 + Gnome3 | ✓ |
  | | 
