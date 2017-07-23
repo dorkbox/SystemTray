@@ -60,6 +60,7 @@ import dorkbox.util.Swt;
 import dorkbox.util.Version;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gtk;
+import dorkbox.util.jna.linux.GtkCheck;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
 
@@ -469,41 +470,162 @@ class SystemTray {
         else if (isNix) {
             // linux/unix can use all of the tray types. AWT looks horrid. GTK versions are really sensitive...
 
-            // NOTE: if the UI uses the 'getSystemLookAndFeelClassName' and is on Linux and it's the GtkLookAndFeel,
-            // this will cause GTK2 to get loaded first, which will cause conflicts if one tries to use GTK3
-            if (!FORCE_GTK2 && !JavaFX.isLoaded && !Swt.isLoaded) {
-                int loadedGtkVersion = SwingUtil.getLoadedGtkVersion();
-                if (loadedGtkVersion == 2) {
-                    // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
-                    // JavaFX/SWT can be GTK3, but Swing can not be GTK3.
+            // this checks to see if Swing/SWT/JavaFX has loaded GTK yet, and if so, what version they loaded.
+            int loadedGtkVersion = GtkCheck.getLoadedGtkVersion();
+            if (loadedGtkVersion == 2) {
+                if (AUTO_FIX_INCONSISTENCIES) {
+                    if (!FORCE_GTK2) {
+                        if (JavaFX.isLoaded) {
+                            // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
+                            // see
+                            // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+                            // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
+                            // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                    // we must use GTK2 because Java is configured to use GTK2
-                    FORCE_GTK2 = true;
-                    if (DEBUG) {
-                        logger.debug("Forcing GTK2 because Java has already loaded GTK2");
+                            // we must use GTK2, because JavaFX is GTK2
+                            FORCE_GTK2 = true;
+                            if (DEBUG) {
+                                logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                            }
+                        }
+                        else if (Swt.isLoaded) {
+                            // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
+                            // System.setProperty("SWT_GTK3", "0");
+
+                            // we must use GTK2, because SWT is GTK2
+                            FORCE_GTK2 = true;
+                            if (DEBUG) {
+                                logger.debug("Forcing GTK2 because SWT is GTK2");
+                            }
+                        }
+                        else {
+                            // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
+                            // JavaFX/SWT can be GTK3, but Swing is not GTK3.
+
+                            // we must use GTK2 because Java is configured to use GTK2
+                            FORCE_GTK2 = true;
+                            if (DEBUG) {
+                                logger.debug("Forcing GTK2 because Java has already loaded GTK2");
+                            }
+                        }
+                    } else {
+                        // we are already forcing GTK2, so no extra actions necessary
                     }
-                }
-                else if (loadedGtkVersion == 3 && !PREFER_GTK3) {
-                    PREFER_GTK3 = true;
+                } else {
+                    // !AUTO_FIX_INCONSISTENCIES
 
-                    if (DEBUG) {
-                        logger.debug("Preferring GTK3 even though specified otherwise, because Java has already loaded GTK3");
+                    if (!FORCE_GTK2) {
+                        // clearly the app developer did not want us to automatically fix anything, and have not correctly specified how
+                        // to load GTK, so abort with an error message.
+                        logger.error("Unable to use the SystemTray when there is a mismatch for GTK loaded preferences. Please correctly " +
+                                     "set `SystemTray.FORCE_GTK2=true` or set `SystemTray.AUTO_FIX_INCONSISTENCIES=true`.  Aborting...");
+
+                        systemTrayMenu = null;
+                        systemTray = null;
+                        return;
                     }
                 }
             }
-            else if (Swt.isLoaded) {
-                // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
-                // System.setProperty("SWT_GTK3", "0");
+            else if (loadedGtkVersion == 3) {
+                if (AUTO_FIX_INCONSISTENCIES) {
+                    if (JavaFX.isLoaded) {
+                        // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
+                        // see
+                        // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+                        // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
+                        // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                if (Swt.isGtk3) {
-                    if (FORCE_GTK2) {
-                        if (AUTO_FIX_INCONSISTENCIES) {
+                        if (FORCE_GTK2) {
+                            // if we are java9, then we can change it -- otherwise we cannot.
+                            if (OS.javaVersion == 9) {
+                                FORCE_GTK2 = false;
+                                logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
+                                            "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                            "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
+
+                            }
+                        }
+
+                        if (!PREFER_GTK3) {
+                            // we should use GTK3, since that is what is already loaded
+                            PREFER_GTK3 = true;
+                            if (DEBUG) {
+                                logger.debug("Preferring GTK3 even though specified otherwise, because JavaFX is GTK3");
+                            }
+                        }
+                    }
+                    else if (Swt.isLoaded) {
+                        // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
+                        // System.setProperty("SWT_GTK3", "0");
+
+                        if (FORCE_GTK2) {
                             FORCE_GTK2 = false;
-
                             logger.warn("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
                                         "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
                                         "initialized, or set `SystemTray.FORCE_GTK2=false;`");
-                        } else {
+                        }
+
+                        if (!PREFER_GTK3) {
+                            // we should use GTK3, since that is what is already loaded
+                            PREFER_GTK3 = true;
+                            if (DEBUG) {
+                                logger.debug("Preferring GTK3 even though specified otherwise, because SWT is GTK3");
+                            }
+                        }
+                    }
+                    else {
+                        // we are NOT using javaFX/SWT and our UI is GTK3 and we want GTK3
+                        // JavaFX/SWT can be GTK3, but Swing is (maybe in the future?) GTK3.
+
+                        if (FORCE_GTK2) {
+                            FORCE_GTK2 = false;
+                            logger.warn("Unable to use the SystemTray when Swing is configured to use GTK3 and the SystemTray is " +
+                                        "configured to use GTK2. Undoing `FORCE_GTK2.");
+                        }
+
+                        if (!PREFER_GTK3) {
+                            // we should use GTK3, since that is what is already loaded
+                            PREFER_GTK3 = true;
+                            if (DEBUG) {
+                                logger.debug("Preferring GTK3 even though specified otherwise, because Java has already loaded GTK3");
+                            }
+                        }
+                    }
+
+                } else {
+                    // !AUTO_FIX_INCONSISTENCIES
+
+                    if (JavaFX.isLoaded) {
+                        // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
+                        // see
+                        // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
+                        // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
+                        // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
+
+                        if (FORCE_GTK2) {
+                            // if we are java9, then we can change it -- otherwise we cannot.
+                            if (OS.javaVersion == 9) {
+                                logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
+                                            "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                            "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Aborting.");
+
+                            }
+                            else {
+                                logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
+                                             "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  Aborting.");
+                            }
+
+                            systemTrayMenu = null;
+                            systemTray = null;
+                            return;
+                        }
+
+                    }
+                    else if (Swt.isLoaded) {
+                        // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
+                        // System.setProperty("SWT_GTK3", "0");
+
+                        if (FORCE_GTK2) {
                             logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
                                          "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
                                          "initialized, or set `SystemTray.FORCE_GTK2=false;`");
@@ -514,64 +636,13 @@ class SystemTray {
                         }
                     }
 
-                    if (!PREFER_GTK3) {
-                        PREFER_GTK3 = true;
+                    else if (FORCE_GTK2) {
+                        logger.error("Unable to use the SystemTray when Swing is configured to use GTK3 and the SystemTray is " +
+                                    "configured to use GTK2. Aborting.");
 
-                        if (DEBUG) {
-                            logger.debug("Preferring GTK3 even though specified otherwise, because SWT is GTK3");
-                        }
-                    }
-                } else if (!FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
-                    // we must use GTK2, because SWT is GTK2
-                    FORCE_GTK2 = true;
-
-                    if (DEBUG) {
-                        logger.debug("Forcing GTK2 because SWT is GTK2");
-                    }
-                }
-            }
-            else if (JavaFX.isLoaded) {
-                // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
-                // see
-                // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
-                // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
-                // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
-
-                if (JavaFX.isGtk3) {
-                    if (FORCE_GTK2) {
-                        // if we are java9, then we can change it -- otherwise we cannot.
-                        if (OS.javaVersion == 9 && AUTO_FIX_INCONSISTENCIES) {
-                            FORCE_GTK2 = false;
-
-                            logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
-                                        "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
-                                        "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Undoing `FORCE_GTK2`.");
-
-                        }
-                        else {
-                            logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is configured to use " +
-                                         "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  if that is not possible then it will not work.");
-
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
-                        }
-                    }
-
-                    if (!PREFER_GTK3) {
-                        PREFER_GTK3 = true;
-
-                        if (DEBUG) {
-                            logger.debug("Preferring GTK3 even though specified otherwise, because JavaFX is GTK3");
-                        }
-                    }
-                }
-                else if (!FORCE_GTK2 && AUTO_FIX_INCONSISTENCIES) {
-                    // we must use GTK2, because JavaFX is GTK2
-                    FORCE_GTK2 = true;
-
-                    if (DEBUG) {
-                        logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                        systemTrayMenu = null;
+                        systemTray = null;
+                        return;
                     }
                 }
             }
