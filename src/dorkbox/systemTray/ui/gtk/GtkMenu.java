@@ -349,7 +349,15 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @Override
     public
     void setTooltip(final MenuItem menuItem) {
-
+        GtkEventDispatch.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // NOTE: this will not work for AppIndicator tray types!
+                // null will remove the tooltip
+                Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
+            }
+        });
     }
 
     /**
