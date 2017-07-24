@@ -167,7 +167,7 @@ Extension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
  - Permit the gnome-shell to be restarted when the extension is installed.
   
   
-Extension.SHELL_RESTART_COMMAND    (type String, default value 'nome-shell --replace &')
+Extension.SHELL_RESTART_COMMAND    (type String, default value 'gnome-shell --replace &')
  - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
   
   
