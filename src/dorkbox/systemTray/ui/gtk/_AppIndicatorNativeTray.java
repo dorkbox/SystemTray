@@ -188,6 +188,12 @@ class _AppIndicatorNativeTray extends Tray {
 
             @Override
             public
+            void setTooltip(final MenuItem menuItem) {
+                // no op. see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
+            }
+
+            @Override
+            public
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
@@ -229,12 +235,6 @@ class _AppIndicatorNativeTray extends Tray {
         GtkEventDispatch.waitForEventsToComplete();
 
         bind(gtkMenu, null, systemTray);
-    }
-
-    @Override
-    protected
-    void setTooltip_(final String tooltipText) {
-        // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
     }
 
     @Override

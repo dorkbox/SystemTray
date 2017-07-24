@@ -90,32 +90,6 @@ class Tray extends Menu {
         }
     }
 
-    // method that is meant to be overridden by the tray implementations
-    protected
-    void setTooltip_(final String tooltipText) {
-        // default is NO OP
-    }
-
-    /**
-     * Specifies the tooltip text, usually this is used to brand the SystemTray icon with your product's name.
-     * <p>
-     * The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop
-     * Environments.
-     * <p>
-     * For more details on Linux see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12.
-     *
-     * @param tooltipText the text to use as tooltip for the tray icon, null to remove
-     */
-    final
-    void setTooltip(final String tooltipText) {
-        // this is a safety precaution, since the behavior of really long text is undefined.
-        if (tooltipText.length() > 64) {
-            throw new RuntimeException("Tooltip text cannot be longer than 64 characters.");
-        }
-
-        setTooltip_(tooltipText);
-    }
-
     /**
      * Specifies the new image to set for the tray icon.
      * <p>

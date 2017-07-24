@@ -19,6 +19,7 @@ import java.awt.MenuShortcut;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.util.SwingUtil;
@@ -112,6 +113,12 @@ class AwtMenuItem implements MenuItemPeer {
                 _native.setShortcut(new MenuShortcut(vKey));
             }
         });
+    }
+
+    @Override
+    public
+    void setTooltip(final MenuItem menuItem) {
+        // no op. (awt menus cannot show tooltips)
     }
 
     @SuppressWarnings("Duplicates")

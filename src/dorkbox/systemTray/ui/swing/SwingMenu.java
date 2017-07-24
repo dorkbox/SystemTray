@@ -173,6 +173,12 @@ class SwingMenu implements MenuPeer {
         });
     }
 
+    @Override
+    public
+    void setTooltip(final MenuItem menuItem) {
+
+    }
+
     /**
      * This removes all menu entries from this menu AND this menu from it's parent
      */

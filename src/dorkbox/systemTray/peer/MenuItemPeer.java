@@ -31,4 +31,6 @@ interface MenuItemPeer extends EntryPeer {
     void setCallback(MenuItem menuItem);
 
     void setShortcut(MenuItem menuItem);
+
+    void setTooltip(MenuItem menuItem);
 }

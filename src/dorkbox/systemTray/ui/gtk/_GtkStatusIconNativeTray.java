@@ -125,6 +125,27 @@ class _GtkStatusIconNativeTray extends Tray {
 
             @Override
             public
+            void setTooltip(final MenuItem menuItem) {
+                final String text = menuItem.getTooltip();
+
+                if (tooltipText != null && tooltipText.equals(text) ||
+                    tooltipText == null && text != null) {
+                    return;
+                }
+
+                tooltipText = text;
+
+                GtkEventDispatch.dispatch(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        Gtk2.gtk_status_icon_set_tooltip_text(trayIcon, text);
+                    }
+                });
+            }
+
+            @Override
+            public
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
@@ -206,23 +227,6 @@ class _GtkStatusIconNativeTray extends Tray {
         if (Tray.usingGnome) {
             Extension.install();
         }
-    }
-
-    @Override
-    protected
-    void setTooltip_(final String tooltipText) {
-        if (this.tooltipText.equals(tooltipText)){
-            return;
-        }
-        this.tooltipText = tooltipText;
-
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_status_icon_set_tooltip_text(trayIcon, tooltipText);
-            }
-        });
     }
 
     @Override

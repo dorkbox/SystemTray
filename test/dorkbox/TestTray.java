@@ -102,12 +102,14 @@ class TestTray {
                 entry.setCallback(callbackGray);
                 entry.setImage(BLACK_MAIL);
                 entry.setText("Delete Mail");
+                entry.setTooltip(null); // remove the tooltip
 //                systemTray.remove(menuEntry);
             }
         });
         greenEntry.setImage(GREEN_MAIL);
         // case does not matter
         greenEntry.setShortcut('G');
+        greenEntry.setTooltip("This means you have green mail!");
         mainMenu.add(greenEntry);
 
 

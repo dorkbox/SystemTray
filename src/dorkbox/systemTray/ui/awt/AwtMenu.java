@@ -138,6 +138,18 @@ class AwtMenu implements MenuPeer {
 
     @Override
     public
+    void setTooltip(final MenuItem menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                _native.setLabel(menuItem.getTooltip());
+            }
+        });
+    }
+
+    @Override
+    public
     void remove() {
         SwingUtil.invokeLater(new Runnable() {
             @Override

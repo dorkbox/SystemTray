@@ -169,6 +169,31 @@ class _SwingTray extends Tray {
 
             @Override
             public
+            void setTooltip(final MenuItem menuItem) {
+                final String text = menuItem.getTooltip();
+
+                if (tooltipText != null && tooltipText.equals(text) ||
+                    tooltipText == null && text != null) {
+                    return;
+                }
+
+                tooltipText = text;
+
+                SwingUtil.invokeLater(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                        // want to make sure keep the tooltip text the same as before.
+                        if (trayIcon != null) {
+                            trayIcon.setToolTip(text);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public
             void remove() {
                 SwingUtil.invokeLater(new Runnable() {
                     @Override
@@ -197,27 +222,6 @@ class _SwingTray extends Tray {
         };
 
         bind(swingMenu, null, systemTray);
-    }
-
-    @Override
-    protected
-    void setTooltip_(final String tooltipText) {
-        if (this.tooltipText.equals(tooltipText)){
-            return;
-        }
-        this.tooltipText = tooltipText;
-
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                // want to make sure keep the tooltip text the same as before.
-                if (trayIcon != null) {
-                    trayIcon.setToolTip(tooltipText);
-                }
-            }
-        });
     }
 
     @Override

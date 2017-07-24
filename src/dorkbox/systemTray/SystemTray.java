@@ -675,7 +675,7 @@ class SystemTray {
                 logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
             }
             logger.debug("Force GTK2: {}", FORCE_GTK2);
-            logger.debug("Prefer GTK3: {}", FORCE_GTK2);
+            logger.debug("Prefer GTK3: {}", PREFER_GTK3);
         }
 
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
@@ -777,8 +777,9 @@ class SystemTray {
             // at this point, the tray type is what it should be. If there are failures or special cases, all types will fall back to
             // Swing.
 
-            if (isNix && !isTrayType(trayType, TrayType.Swing)) {
+            if (isNix) {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
+                // Swing gets the image size info VIA gtk, so this is important as well.
                 GtkEventDispatch.startGui(FORCE_GTK2, PREFER_GTK3, DEBUG);
                 GtkEventDispatch.waitForEventsToComplete();
 
@@ -788,62 +789,62 @@ class SystemTray {
                     logger.debug("Is the system already running GTK? {}", Gtk.alreadyRunningGTK);
                 }
 
-                // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
-                // appindicator3 doesn't support menu icons via GTK2!!
-                if (!Gtk.isLoaded) {
-                    trayType = selectTypeQuietly(TrayType.Swing);
-
-                    logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
-                }
-                else if (OSUtil.Linux.isArch()) {
-                    // arch linux is fun!
-
-                    if (isTrayType(trayType, TrayType.AppIndicator) && !AppIndicator.isLoaded) {
-                        // appindicators
-
-                        // requires the install of libappindicator which is GTK2 (as of 25DEC2016)
-                        // requires the install of libappindicator3 which is GTK3 (as of 25DEC2016)
+                if (!isTrayType(trayType, TrayType.Swing)) {
+// NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
+                    // appindicator3 doesn't support menu icons via GTK2!!
+                    if (!Gtk.isLoaded) {
                         trayType = selectTypeQuietly(TrayType.Swing);
 
-                        if (Gtk.isGtk2) {
-                            logger.warn("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
-                                        "Please install libappindicator, for example: 'sudo pacman -S libappindicator'. " +
+                        logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
+                    }
+                    else if (OSUtil.Linux.isArch()) {
+                        // arch linux is fun!
+
+                        if (isTrayType(trayType, TrayType.AppIndicator) && !AppIndicator.isLoaded) {
+                            // appindicators
+
+                            // requires the install of libappindicator which is GTK2 (as of 25DEC2016)
+                            // requires the install of libappindicator3 which is GTK3 (as of 25DEC2016)
+                            trayType = selectTypeQuietly(TrayType.Swing);
+
+                            if (Gtk.isGtk2) {
+                                logger.warn("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
+                                            "Please install libappindicator, for example: 'sudo pacman -S libappindicator'. " +
+                                            "Using the Swing Tray type instead.");
+                            } else {
+                                logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
+                                             "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. " +
+                                             "Using the Swing Tray type instead."); // GTK3
+                            }
+                        } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
+                            if (!Extension.isInstalled()) {
+                                // Automatically install the extension for everyone except Arch. They are bonkers.
+                                Extension.ENABLE_EXTENSION_INSTALL = false;
+                                SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
+                                                       "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
+                                                       "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
+                                                       "of the screen to the menu panel next to the clock.");
+                            }
+                        }
+                    }
+                    else if (isTrayType(trayType, TrayType.AppIndicator)) {
+                        if (Gtk.isGtk2 && AppIndicator.isVersion3) {
+                            trayType = selectTypeQuietly(TrayType.Swing);
+
+                            logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
+                                        "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'. " +
                                         "Using the Swing Tray type instead.");
-                        } else {
-                            logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
-                                         "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. " +
-                                         "Using the Swing Tray type instead."); // GTK3
+
                         }
-                    } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
-                        if (!Extension.isInstalled()) {
-                            // Automatically install the extension for everyone except Arch. They are bonkers.
-                            Extension.ENABLE_EXTENSION_INSTALL = false;
-                            SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                                   "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                                   "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                                   "of the screen to the menu panel next to the clock.");
+                        else if (!AppIndicator.isLoaded) {
+                            // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
+                            trayType = selectTypeQuietly(TrayType.Swing);
+
+                            logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
                         }
-                    }
-                }
-                else if (isTrayType(trayType, TrayType.AppIndicator)) {
-                    if (Gtk.isGtk2 && AppIndicator.isVersion3) {
-                        trayType = selectTypeQuietly(TrayType.Swing);
-
-                        logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
-                                    "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'. " +
-                                    "Using the Swing Tray type instead.");
-
-                    }
-                    else if (!AppIndicator.isLoaded) {
-                        // YIKES. Try to fallback to GtkStatusIndicator, since AppIndicator couldn't load.
-                        trayType = selectTypeQuietly(TrayType.Swing);
-
-                        logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
                     }
                 }
             }
-
-
 
 
 

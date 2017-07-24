@@ -346,6 +346,12 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         setText(menuItem);
     }
 
+    @Override
+    public
+    void setTooltip(final MenuItem menuItem) {
+
+    }
+
     /**
      * called when a child removes itself from the parent menu. Does not work for sub-menus
      *

@@ -168,6 +168,18 @@ class SwingMenuItem implements MenuItemPeer {
 
     @Override
     public
+    void setTooltip(final MenuItem menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                _native.setToolTipText(menuItem.getTooltip());
+            }
+        });
+    }
+
+    @Override
+    public
     void remove() {
         //noinspection Duplicates
         SwingUtil.invokeLater(new Runnable() {
