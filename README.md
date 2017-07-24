@@ -216,12 +216,10 @@ Note: Gnome-shell users can install an extension to support placing the tray ico
       is initially hidden. 
 ````
 ````
-Note: AppIndicator environments (mostly, just Ubuntu) might notice the menu 
-      getting constructed (it starts out small, then fills the space). Sometimes 
-      even the small menu will get stuck, and be slightly visible behind the 
-      larger menu.  
-        If this happens to you, please let us know in an issue, with detailed 
-        system info, please!
+Note: We have fixed the Swing notificat tray on Linux (it no longer has a greyish background), however
+      to facilitate this, a screen-shot is grabbed where the icon is. Because this must happen after the
+      icon is placed, *sometimes* you can see this happen. Unfortunately this is the only way to fix
+      this problem, and there are no other known workarounds outside of writing an X11 wrapper from scratch.
       
 ````
 &nbsp;  
