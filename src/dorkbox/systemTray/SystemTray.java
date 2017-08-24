@@ -140,7 +140,7 @@ class SystemTray {
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
 
     private static volatile SystemTray systemTray = null;
@@ -989,7 +989,7 @@ class SystemTray {
      */
     public static
     Version getVersion() {
-        return new Version("3.2");
+        return new Version("3.3");
     }
 
     /**
