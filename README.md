@@ -23,6 +23,7 @@ The following unique problems are also solved by this library:
  1. Windows *native* menus **do not** support images attached to menu entries  
  1. Windows menus **do not** support a different L&F from the running application  
  1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
+ 1. java.awt.Desktop.getDesktop() is **broken** when using GTK3, or on MacOS.
 
 
 
@@ -49,6 +50,9 @@ Problems and Restrictions
  - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Specifically, Swing and GtkStatusIcon types support tray tooltips and menu tooltips. AWT and AppIndicator types do not support tooltips of any kind. Please note that **Ubuntu** uses AppIndicators!
                      
  - **Linux/Unix Menus** Some linux environments only support right-click to display the menu, and it is not possible to change the behavior.
+ 
+ - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will 
+ intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
 
 AutoDetect Compatibility List
 ------------------
