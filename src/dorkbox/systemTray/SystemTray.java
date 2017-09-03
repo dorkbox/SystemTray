@@ -991,7 +991,7 @@ class SystemTray {
      */
     public static
     Version getVersion() {
-        return new Version("3.3");
+        return new Version("3.4");
     }
 
     /**
