@@ -28,6 +28,7 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
+import dorkbox.util.OS;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -136,6 +137,20 @@ class TestTray {
                 }
             }
         }));
+
+
+        mainMenu.add(new MenuItem("Temp Directory", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                try {
+                    Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }));
+
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');

@@ -199,6 +199,18 @@ class TestTrayJavaFX {
             }
         }));
 
+        mainMenu.add(new MenuItem("Temp Directory", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final java.awt.event.ActionEvent e) {
+                try {
+                    Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }));
+
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
         mainMenu.add(submenu);
