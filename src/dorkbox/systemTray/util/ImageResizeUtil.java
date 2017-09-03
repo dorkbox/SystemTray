@@ -223,28 +223,14 @@ class ImageResizeUtil {
         // resize the image, keep aspect ratio
         Image image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
 
-        int height = image.getHeight(null);
-        int width = image.getWidth(null);
-
-        if (width > height) {
-            // fit on the width
-            image = image.getScaledInstance(size, -1, Image.SCALE_SMOOTH);
-        } else {
-            // fit on the height
-            image = image.getScaledInstance(-1, size, Image.SCALE_SMOOTH);
-        }
+        // the smaller dimension have padding, so the larger dimension is the size of this image.
+        BufferedImage bufferedImage = ImageUtil.getSquareBufferedImage(image);
 
         // now write out the new one
-        BufferedImage bufferedImage = ImageUtil.getSquareBufferedImage(image);
         ImageIO.write(bufferedImage, "png", newFile); // made up extension
 
         return newFile;
     }
-
-
-
-
-
 
 
     public static
@@ -324,8 +310,8 @@ class ImageResizeUtil {
 
         try {
             final Image trayImage =  ImageUtil.getImageImmediate(image);
-
             BufferedImage bufferedImage = ImageUtil.getBufferedImage(trayImage);
+
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "png", os);
             InputStream imageInputStream = new ByteArrayInputStream(os.toByteArray());
