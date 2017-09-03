@@ -706,7 +706,7 @@ class SystemTray {
             if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
                 OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
-                if (de == OSUtil.DesktopEnv.Env.Unity || de == OSUtil.DesktopEnv.Env.Unity7  && OSUtil.Linux.isUbuntu()) {
+                if (OSUtil.DesktopEnv.isUnity(de) && OSUtil.Linux.isUbuntu()) {
                     if (AUTO_FIX_INCONSISTENCIES) {
                         // GTK2 does not support AppIndicators!
                         if (Gtk.isGtk2) {
@@ -790,7 +790,7 @@ class SystemTray {
                 }
 
                 if (!isTrayType(trayType, TrayType.Swing)) {
-// NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
+                    // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
                     // appindicator3 doesn't support menu icons via GTK2!!
                     if (!Gtk.isLoaded) {
                         trayType = selectTypeQuietly(TrayType.Swing);
