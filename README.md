@@ -14,8 +14,8 @@ This library provides **OS Native** menus and **Swing/AWT** menus, depending on 
 &nbsp;  
 
 The following unique problems are also solved by this library:  
- 1. *Sun/Oracle* system-tray icons on gnu/linux **do not** support images with transparent backgrounds  
- 1. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of gnu/linux and unix
+ 1. *Sun/Oracle* system-tray icons on Linux/Unix **do not** support images with transparent backgrounds  
+ 1. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of Linux/Unix
  1. *GtkStatusIcons* on GNOME3 desktop environments are hidden by default  
  1. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
  1. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
@@ -45,11 +45,11 @@ Problems and Restrictions
  
   - **MacOSX** *native* menus cannot display images attached to menu entries. If desired, one could override the default for MacOSX so that it uses *Swing* instead of *AWT*, however this will result the SystemTray no-longer supporting the OS theme and transparency. The default of *AWT* was chosen because it looks much, much better than *Swing*. 
  
- - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
+ - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch Linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
  
  - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Specifically, Swing and GtkStatusIcon types support tray tooltips and menu tooltips. AWT and AppIndicator types do not support tooltips of any kind. Please note that **Ubuntu** uses AppIndicators!
                      
- - **Linux/Unix Menus** Some linux environments only support right-click to display the menu, and it is not possible to change the behavior.
+ - **Linux/Unix Menus** Some Linux environments only support right-click to display the menu, and it is not possible to change the behavior.
  
  - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will 
  intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
