@@ -76,6 +76,7 @@ class TestTraySwt {
         helloWorldTest.setText("Hello World SWT  .................  ");
         helloWorldTest.pack();
 
+        SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
         CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
@@ -168,7 +169,7 @@ class TestTraySwt {
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
-        mainMenu.add(submenu);
+
 
         MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, new ActionListener() {
             @Override
@@ -213,7 +214,7 @@ class TestTraySwt {
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         })).setShortcut('q'); // case does not matter
-
+        mainMenu.add(submenu);
 
         shell.pack();
         shell.open();

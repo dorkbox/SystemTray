@@ -120,7 +120,7 @@ class TestTrayJavaFX {
         primaryStage.setScene(new Scene(root, 300, 250));
         primaryStage.show();
 
-
+        SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
         CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
@@ -213,7 +213,7 @@ class TestTrayJavaFX {
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
-        mainMenu.add(submenu);
+
 
         MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, new ActionListener() {
             @Override
@@ -241,7 +241,7 @@ class TestTrayJavaFX {
                 source.getParent().remove();
             }
         }));
-
+        mainMenu.add(submenu);
 
         systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
             @Override
