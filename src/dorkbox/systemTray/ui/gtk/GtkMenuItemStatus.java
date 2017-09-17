@@ -61,7 +61,7 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -71,6 +71,13 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
 
                 parent.remove(GtkMenuItemStatus.this);
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 }

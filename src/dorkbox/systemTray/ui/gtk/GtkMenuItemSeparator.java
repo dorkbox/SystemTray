@@ -37,7 +37,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -45,7 +45,14 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
 
                 parent.remove(GtkMenuItemSeparator.this);
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 
     @Override

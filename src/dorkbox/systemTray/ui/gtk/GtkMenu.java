@@ -252,7 +252,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         // is overridden by system tray
         setLegitImage(menuItem.getImage() != null);
 
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -273,7 +273,14 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
                 Gtk2.gtk_widget_show_all(_native);
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 
     // is overridden in tray impl
@@ -378,7 +385,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -401,6 +408,13 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     parent.createMenu();  // must be on EDT
                 }
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 }

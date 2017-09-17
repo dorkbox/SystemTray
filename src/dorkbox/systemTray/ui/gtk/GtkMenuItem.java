@@ -185,7 +185,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -201,6 +201,13 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
 
                 parent.remove(GtkMenuItem.this);
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 }

@@ -291,7 +291,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public
             void run() {
@@ -306,6 +306,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 parent.remove(GtkMenuItemCheckbox.this);
             }
-        });
+        };
+
+        if (GtkEventDispatch.isDispatch.get()) {
+            runnable.run();
+        }
+        else {
+            GtkEventDispatch.dispatch(runnable);
+        }
     }
 }
