@@ -115,6 +115,8 @@ Notes:
 
   - SWT builds for FreeBSD do not exist.
   
+  - Linux/Unix: If you want to run this library as a different user, you will need to launch your application via `sudo su username /bin/sh -c "DBUS_SESSION_BUS_ADDRESS='unix:abstract=/tmp/dbus-cLtEoBPmgC' XDG_CURRENT_DESKTOP=$XDG_CURRENT_DESKTOP program-name"`, where `unix:abstract=/tmp/dbus-cLtEoBPmgC` from `/run/user/{uid}/dbus-session`. You will also want to disable the root check + warnings via `SystemTray.ENABLE_ROOT_CHECK=false;` See [issue](https://github.com/dorkbox/SystemTray/issues/63) for more details.
+  
   
 &nbsp;  
 &nbsp;  
@@ -230,7 +232,6 @@ Note: We have fixed the Swing notification tray on Linux (it no longer has a gre
       to facilitate this, a screen-shot is grabbed where the icon is. Because this must happen after the
       icon is placed, *sometimes* you can see this happen. Unfortunately this is the only way to fix
       this problem, and there are no other known workarounds outside of writing an X11 wrapper from scratch.
-      
 ````
 &nbsp;  
 &nbsp;  

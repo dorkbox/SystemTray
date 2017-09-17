@@ -757,11 +757,12 @@ class SystemTray {
                     trayType = selectTypeQuietly(TrayType.Swing);
 
                     logger.warn("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
-                                 "restrictions. Using the Swing Tray type instead.");
+                                 "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
+                                "how to work around this.");
 
                 } else {
                     logger.error("Attempting to load the SystemTray as the 'root/sudo' user. This will likely NOT WORK because of dbus " +
-                                 "restrictions.");
+                                 "restrictions. Please refer to the readme notes or issue #63 on how to work around this.");
                 }
             }
         }
