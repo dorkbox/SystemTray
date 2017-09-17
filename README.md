@@ -149,6 +149,12 @@ SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
  
 SystemTray.AUTO_FIX_INCONSISTENCIES    (type boolean, default value 'true')
  -  Allows the SystemTray logic to resolve various OS inconsistencies for the SystemTray in different combinations
+
+ 
+SystemTray.ENABLE_ROOT_CHECK    (type boolean, default value 'true')
+ -  Allows the SystemTray logic to ignore if root is detected. Usually when running as root it won't work (because of 
+    how DBUS operates), but in rare situations, it might work.
+    This is an advanced feature, and it is recommended to leave as true 
  
  
 SystemTray.SWING_UI    (type SwingUIFactory, default value 'null')
@@ -265,7 +271,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SystemTray</artifactId>
-      <version>3.6</version>
+      <version>3.7</version>
     </dependency>
 </dependencies>
 ````

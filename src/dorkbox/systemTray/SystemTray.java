@@ -131,6 +131,15 @@ class SystemTray {
 
     @Property
     /**
+     * Allows the SystemTray logic to ignore if root is detected. Usually when running as root it won't work (because of how DBUS
+     * operates), but in rare situations, it might work.
+     * <p>
+     * This is an advanced feature, and it is recommended to leave as true
+     */
+    public static boolean ENABLE_ROOT_CHECK = true;
+
+    @Property
+    /**
      * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
      */
     public static SwingUIFactory SWING_UI = null;
@@ -742,7 +751,7 @@ class SystemTray {
                 }
             }
 
-            if (isTrayType(trayType, TrayType.AppIndicator) && OSUtil.Linux.isRoot()) {
+            if (SystemTray.ENABLE_ROOT_CHECK && isTrayType(trayType, TrayType.AppIndicator) && OSUtil.Linux.isRoot()) {
                 // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
                 if (AUTO_FIX_INCONSISTENCIES) {
                     trayType = selectTypeQuietly(TrayType.Swing);
@@ -990,7 +999,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "3.6";
+        return "3.7";
     }
 
     /**
