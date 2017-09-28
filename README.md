@@ -101,6 +101,11 @@ Notes:
 -------
  - The compatibility list only applies while the SystemTray is in `AutoDetect` mode. Not all OSes support forcing a custom tray type.
  
+ - The menu item callbacks occur on **their own dispatch thread** (instead of being on whatever OS's event dispatch thread), in order to 
+    provide consistent actions across all platforms. It is critical to make sure that access to Swing/etc that depend on running events
+    inside their own EDT, are properly called. IE: `SwingUtilities.invokeLater()`. Do not use `invokeAndWait()` as weird GUI anomalies 
+    can happen.
+ 
  - Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
 
  - Ubuntu 17.04+ Java only supports the X11 backend. MIR and Wayland are not supported.
