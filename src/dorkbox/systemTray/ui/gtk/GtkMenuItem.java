@@ -17,6 +17,7 @@ package dorkbox.systemTray.ui.gtk;
 
 import static dorkbox.util.jna.linux.Gtk.Gtk2;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import com.sun.jna.Pointer;
@@ -24,6 +25,7 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
+import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.util.jna.linux.GCallback;
 import dorkbox.util.jna.linux.Gobject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
@@ -32,7 +34,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     private final GtkMenu parent;
 
     // these have to be volatile, because they can be changed from any thread
-    private volatile MenuItem menuItemForActionCallback;
+    private volatile ActionListener callback;
     private volatile Pointer image;
 
     // The mnemonic will ONLY show-up once a menu entry is selected. IT WILL NOT show up before then!
@@ -56,15 +58,9 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     int callback(final Pointer instance, final Pointer data) {
-        if (menuItemForActionCallback != null) {
-            final ActionListener cb = menuItemForActionCallback.getCallback();
-            if (cb != null) {
-                try {
-                    GtkEventDispatch.proxyClick(menuItemForActionCallback, cb);
-                } catch (Exception e) {
-                    SystemTray.logger.error("Error calling menu entry {} click event.", menuItemForActionCallback.getText(), e);
-                }
-            }
+        ActionListener callback = this.callback;
+        if (callback != null) {
+            GtkEventDispatch.proxyClick(callback);
         }
 
         return Gtk2.TRUE;
@@ -153,10 +149,34 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
         });
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public
     void setCallback(final MenuItem menuItem) {
-        this.menuItemForActionCallback = menuItem;
+        callback = menuItem.getCallback();  // can be set to null
+
+        if (callback != null) {
+            callback = new ActionListener() {
+                final ActionListener cb = menuItem.getCallback();
+
+                @Override
+                public
+                void actionPerformed(ActionEvent e) {
+                    // we want it to run on our own with our own action event info (so it is consistent across all platforms)
+                    EventDispatch.runLater(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            try {
+                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                            } catch (Throwable throwable) {
+                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
+                            }
+                        }
+                    });
+                }
+            };
+        }
     }
 
     @Override
@@ -193,7 +213,6 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
 
                 GtkMenuItem.super.remove();
 
-                menuItemForActionCallback = null;
                 if (image != null) {
                     Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
                     image = null;

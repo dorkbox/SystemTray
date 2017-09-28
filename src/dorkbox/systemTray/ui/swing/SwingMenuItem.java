@@ -27,6 +27,7 @@ import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
+import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
@@ -126,27 +127,31 @@ class SwingMenuItem implements MenuItemPeer {
             _native.removeActionListener(callback);
         }
 
-        if (menuItem.getCallback() != null) {
+        callback = menuItem.getCallback();  // can be set to null
+
+        if (callback != null) {
             callback = new ActionListener() {
+                final ActionListener cb = menuItem.getCallback();
+
                 @Override
                 public
                 void actionPerformed(ActionEvent e) {
-                    // we want it to run on the EDT, but with our own action event info (so it is consistent across all platforms)
-                    ActionListener cb = menuItem.getCallback();
-                    if (cb != null) {
-                        try {
-                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                        } catch (Throwable throwable) {
-                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
+                    // we want it to run on our own with our own action event info (so it is consistent across all platforms)
+                    EventDispatch.runLater(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            try {
+                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                            } catch (Throwable throwable) {
+                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
+                            }
                         }
-                    }
+                    });
                 }
             };
 
             _native.addActionListener(callback);
-        }
-        else {
-            callback = null;
         }
     }
 
