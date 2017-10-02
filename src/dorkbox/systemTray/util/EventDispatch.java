@@ -3,7 +3,7 @@ package dorkbox.systemTray.util;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import dorkbox.util.DaemonThreadFactory;
+import dorkbox.util.NamedThreadFactory;
 
 /**
  * Adds events to a single thread event dispatch, so that regardless of OS, all event callbacks happen on the same thread -- which is NOT
@@ -12,7 +12,7 @@ import dorkbox.util.DaemonThreadFactory;
  */
 public
 class EventDispatch {
-    private static final Executor eventDispatchExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("SystemTray"));
+    private static final Executor eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTray", true));
 
     /**
      * Schedule an event to occur sometime in the future.
