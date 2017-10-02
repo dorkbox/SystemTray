@@ -1000,7 +1000,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "3.10";
+        return "3.11";
     }
 
     /**
