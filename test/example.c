@@ -5,7 +5,7 @@
 
 //  gcc example.c `pkg-config --cflags --libs gtk+-2.0 appindicator-0.1` -I/usr/include/libappindicator-0.1/ -o example && ./example
 
-// apt libgtk-3-dev install libappindicator3-dev
+// apt-get install libgtk-3-dev libappindicator3-dev
 // NOTE: there will be warnings, but the file will build and run. NOTE: this will not run as root on ubuntu (no dbus connection back to the normal user)
 //  gcc example.c `pkg-config --cflags --libs gtk+-3.0 appindicator3-0.1` -I/usr/include/libappindicator3-0.1/ -o example && ./example
 
