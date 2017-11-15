@@ -73,6 +73,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void setImage(final MenuItem menuItem) {
+        final boolean hadImage = hasImage();
         setLegitImage(menuItem.getImage() != null);
 
         GtkEventDispatch.dispatch(new Runnable() {
@@ -86,12 +87,20 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
                 }
 
                 if (menuItem.getImage() != null) {
+                    // always remove the spacer image in case it's there. The spacer image will correctly added when the menu is created.
+                    removeSpacerImage();
+
                     image = Gtk2.gtk_image_new_from_file(menuItem.getImage()
                                                                  .getAbsolutePath());
                     Gtk2.gtk_image_menu_item_set_image(_native, image);
 
                     //  must always re-set always-show after setting the image
                     Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
+                }
+                else if (hadImage) {
+                    // if at one point, we had an image, we should set the spacer image back, so that menu spacing looks correct.
+                    // since we USED to have an image, it is safe to assume that we should have a spacer image.
+                    addSpacerImage();
                 }
 
                 Gtk2.gtk_widget_show_all(_native);
@@ -205,13 +214,15 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void remove() {
-        Runnable runnable = new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
-
                 GtkMenuItem.super.remove();
+
+                callback = null;
+
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 if (image != null) {
                     Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
@@ -220,13 +231,6 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
 
                 parent.remove(GtkMenuItem.this);
             }
-        };
-
-        if (GtkEventDispatch.isDispatch.get()) {
-            runnable.run();
-        }
-        else {
-            GtkEventDispatch.dispatch(runnable);
-        }
+        });
     }
 }

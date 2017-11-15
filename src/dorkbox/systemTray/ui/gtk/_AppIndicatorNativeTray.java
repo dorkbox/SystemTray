@@ -197,25 +197,24 @@ class _AppIndicatorNativeTray extends Tray {
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
-                    // must happen asap, so our hook properly notices we are in shutdown mode
-                    final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
-                    appIndicator = null;
+                    super.remove();
 
                     GtkEventDispatch.dispatch(new Runnable() {
                         @Override
                         public
                         void run() {
+                            // must happen asap, so our hook properly notices we are in shutdown mode
+                            final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
+                            appIndicator = null;
+
                             // STATUS_PASSIVE hides the indicator
                             AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
                             Pointer p = savedAppIndicator.getPointer();
                             Gobject.g_object_unref(p);
+
+                            GtkEventDispatch.shutdownGui();
                         }
                     });
-
-                    super.remove();
-
-                    // does not need to be called on the dispatch (it does that)
-                    GtkEventDispatch.shutdownGui();
                 }
             }
         };

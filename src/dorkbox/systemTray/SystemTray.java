@@ -44,6 +44,7 @@ import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.systemTray.ui.swing._SwingTray;
+import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
@@ -226,7 +227,7 @@ class SystemTray {
             OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
             if (DEBUG) {
-                logger.debug("Currently using the '{}' desktop environment", de);
+                logger.debug("Currently using the '{}' desktop environment" + OS.LINE_SEPARATOR + OSUtil.Linux.getInfo(), de);
             }
 
             switch (de) {
@@ -310,6 +311,19 @@ class SystemTray {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
                 }
                 case Unity: {
+                    try {
+                        String ubuntuVersion = OSUtil.Linux.getUbuntuVersion();
+                        String[] split = ubuntuVersion.split(".");
+                        int major = Integer.parseInt(split[0]);
+                        int minor = Integer.parseInt(split[1]);
+
+                        // <=16.04 it is better to use GtkStatusIcons.
+                        if (major < 16 || (major == 16 && minor <= 4)) {
+                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        }
+                    } catch (Exception ignored) {
+                    }
+
                     // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
@@ -391,6 +405,19 @@ class SystemTray {
             } catch (Throwable e) {
                 if (DEBUG) {
                     logger.error("Error detecting gnome version", e);
+                }
+            }
+
+            if (OS.isLinux()) {
+                // now just blanket query what we are to guess...
+                if (OSUtil.Linux.isUbuntu()) {
+                    return selectTypeQuietly(TrayType.AppIndicator);
+                }
+                else if (OSUtil.Linux.isFedora()) {
+                    return selectTypeQuietly(TrayType.AppIndicator);
+                } else {
+                    // AppIndicators are now the "default" for most linux distro's.
+                    return selectTypeQuietly(TrayType.AppIndicator);
                 }
             }
         }
@@ -1025,13 +1052,14 @@ class SystemTray {
      */
     public
     void shutdown() {
-        // this will call "dispatchAndWait()" behind the scenes, so it is thread-safe
+        // this is thread-safe
         final Menu menu = systemTrayMenu;
         if (menu != null) {
             menu.remove();
         }
 
         systemTrayMenu = null;
+        EventDispatch.shutdown();
     }
 
     /**

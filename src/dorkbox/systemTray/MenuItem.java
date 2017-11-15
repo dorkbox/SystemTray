@@ -387,16 +387,4 @@ class MenuItem extends Entry {
     String getTooltip() {
         return this.tooltip;
     }
-
-    @Override
-    public
-    void remove() {
-        if (peer != null) {
-            setImage_(null);
-            setText(null);
-            setCallback(null);
-        }
-
-        super.remove();
-    }
 }

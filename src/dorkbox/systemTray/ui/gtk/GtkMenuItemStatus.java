@@ -61,23 +61,16 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void remove() {
-        Runnable runnable = new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
-
                 GtkMenuItemStatus.super.remove();
+
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
                 parent.remove(GtkMenuItemStatus.this);
             }
-        };
-
-        if (GtkEventDispatch.isDispatch.get()) {
-            runnable.run();
-        }
-        else {
-            GtkEventDispatch.dispatch(runnable);
-        }
+        });
     }
 }

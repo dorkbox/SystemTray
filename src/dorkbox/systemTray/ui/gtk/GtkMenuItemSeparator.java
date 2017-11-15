@@ -17,10 +17,10 @@ package dorkbox.systemTray.ui.gtk;
 
 import static dorkbox.util.jna.linux.Gtk.Gtk2;
 
-import dorkbox.systemTray.peer.EntryPeer;
+import dorkbox.systemTray.peer.SeparatorPeer;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
-class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
+class GtkMenuItemSeparator extends GtkBaseMenuItem implements SeparatorPeer {
 
     private final GtkMenu parent;
 
@@ -37,7 +37,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
     @Override
     public
     void remove() {
-        Runnable runnable = new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
@@ -45,14 +45,7 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements EntryPeer {
 
                 parent.remove(GtkMenuItemSeparator.this);
             }
-        };
-
-        if (GtkEventDispatch.isDispatch.get()) {
-            runnable.run();
-        }
-        else {
-            GtkEventDispatch.dispatch(runnable);
-        }
+        });
     }
 
     @Override

@@ -297,13 +297,15 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void remove() {
-        Runnable runnable = new Runnable() {
+        GtkEventDispatch.dispatch(new Runnable() {
             @Override
             public
             void run() {
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
-
                 GtkMenuItemCheckbox.super.remove();
+
+                callback = null;
+
+                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
                 if (image != null) {
                     Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
@@ -312,13 +314,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 parent.remove(GtkMenuItemCheckbox.this);
             }
-        };
-
-        if (GtkEventDispatch.isDispatch.get()) {
-            runnable.run();
-        }
-        else {
-            GtkEventDispatch.dispatch(runnable);
-        }
+        });
     }
 }

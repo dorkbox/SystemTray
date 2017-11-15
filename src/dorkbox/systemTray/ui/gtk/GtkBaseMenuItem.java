@@ -30,7 +30,7 @@ abstract
 class GtkBaseMenuItem implements EntryPeer {
     // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
     private static final File transparentIcon = ImageResizeUtil.getTransparentImage();
-    private volatile boolean hasLegitImage = true;
+    private volatile boolean hasLegitImage = false; // default is to not have an image assigned
 
     // these have to be volatile, because they can be changed from any thread
     private volatile Pointer spacerImage;
@@ -52,6 +52,39 @@ class GtkBaseMenuItem implements EntryPeer {
     }
 
     /**
+     * always remove a spacer image.
+     * <p>
+     * called on the DISPATCH thread
+     */
+    protected
+    void removeSpacerImage() {
+        if (spacerImage != null) {
+            Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
+            spacerImage = null;
+            Gtk2.gtk_widget_show_all(_native);
+        }
+    }
+
+
+    /**
+     * always add a spacer image.
+     * <p>
+     * called on the DISPATCH thread
+     */
+    protected
+    void addSpacerImage() {
+        if (spacerImage == null) {
+            spacerImage = Gtk2.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
+            Gtk2.gtk_image_menu_item_set_image(_native, spacerImage);
+
+            //  must always re-set always-show after setting the image
+            Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
+        }
+    }
+
+
+
+    /**
      * the menu entry looks FUNKY when there are a mis-match of entries WITH and WITHOUT images.
      * This is primarily only with AppIndicators, although not always.
      * <p>
@@ -64,18 +97,10 @@ class GtkBaseMenuItem implements EntryPeer {
             return;
         }
 
-        if (spacerImage != null) {
-            Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
-            spacerImage = null;
-            Gtk2.gtk_widget_show_all(_native);
-        }
+        removeSpacerImage();
 
         if (everyoneElseHasImages) {
-            spacerImage = Gtk2.gtk_image_new_from_file(transparentIcon.getAbsolutePath());
-            Gtk2.gtk_image_menu_item_set_image(_native, spacerImage);
-
-            //  must always re-set always-show after setting the image
-            Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
+            addSpacerImage();
         }
 
         Gtk2.gtk_widget_show_all(_native);
