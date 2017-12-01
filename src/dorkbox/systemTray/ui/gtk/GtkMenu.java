@@ -159,8 +159,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             }
         }
 
-        Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
         onMenuAdded(_nativeMenu);
+        Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
     }
 
     /**

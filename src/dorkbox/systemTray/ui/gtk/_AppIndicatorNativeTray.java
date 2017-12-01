@@ -23,7 +23,6 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gobject;
@@ -91,7 +90,7 @@ class _AppIndicatorNativeTray extends Tray {
     // has the name already been set for the indicator?
     private volatile boolean setName = false;
 
-    // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
+    // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!!
     //  https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
@@ -110,7 +109,7 @@ class _AppIndicatorNativeTray extends Tray {
             protected final
             void onMenuAdded(final Pointer menu) {
                 // see: https://code.launchpad.net/~mterry/libappindicator/fix-menu-leak/+merge/53247
-                AppIndicator.app_indicator_set_menu(appIndicator, menu);
+                appIndicator.app_indicator_set_menu(menu);
 
                 if (!setName) {
                     setName = true;
@@ -126,7 +125,7 @@ class _AppIndicatorNativeTray extends Tray {
                     //  in extension.js, so don't change it
 
                     // additionally, this is required to be set HERE (not somewhere else)
-                    AppIndicator.app_indicator_set_title(appIndicator, Extension.DEFAULT_NAME);
+                    // appIndicator.app_indicator_set_title(Extension.DEFAULT_NAME);
                 }
             }
 
@@ -141,11 +140,11 @@ class _AppIndicatorNativeTray extends Tray {
 
                         if (visible && !enabled) {
                             // STATUS_PASSIVE hides the indicator
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_PASSIVE);
+                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
                             visible = false;
                         }
                         else if (!visible && enabled) {
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
                             visible = true;
                         }
                     }
@@ -164,11 +163,11 @@ class _AppIndicatorNativeTray extends Tray {
                     @Override
                     public
                     void run() {
-                        AppIndicator.app_indicator_set_icon(appIndicator, imageFile.getAbsolutePath());
+                        appIndicator.app_indicator_set_icon(imageFile.getAbsolutePath());
 
                         if (!isActive) {
                             isActive = true;
-                            AppIndicator.app_indicator_set_status(appIndicator, AppIndicator.STATUS_ACTIVE);
+                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
                         }
                     }
                 });
@@ -208,7 +207,7 @@ class _AppIndicatorNativeTray extends Tray {
                             appIndicator = null;
 
                             // STATUS_PASSIVE hides the indicator
-                            AppIndicator.app_indicator_set_status(savedAppIndicator, AppIndicator.STATUS_PASSIVE);
+                            savedAppIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
                             Pointer p = savedAppIndicator.getPointer();
                             Gobject.g_object_unref(p);
 
