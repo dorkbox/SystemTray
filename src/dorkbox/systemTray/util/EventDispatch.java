@@ -31,7 +31,9 @@ class EventDispatch {
      */
     public static synchronized
     void shutdown() {
-        eventDispatchExecutor.shutdownNow();
-        eventDispatchExecutor = null;
+        if (eventDispatchExecutor != null) {
+            eventDispatchExecutor.shutdownNow();
+            eventDispatchExecutor = null;
+        }
     }
 }
