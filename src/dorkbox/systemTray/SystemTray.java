@@ -311,24 +311,11 @@ class SystemTray {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
                 }
                 case Unity: {
-                    try {
-                        String ubuntuVersion = OSUtil.Linux.getUbuntuVersion();
-                        String[] split = ubuntuVersion.split(".");
-                        int major = Integer.parseInt(split[0]);
-                        int minor = Integer.parseInt(split[1]);
-
-                        // <=16.04 it is better to use GtkStatusIcons.
-                        if (major < 16 || (major == 16 && minor <= 4)) {
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
-                        }
-                    } catch (Exception ignored) {
-                    }
-
                     // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
                 case Unity7: {
-                    // Ubuntu Unity7 is a weird combination. It's "Gnome", but it's not "Gnome Shell".
+                    // Ubuntu Unity7 (17.04+, which has MIR) is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
                 case XFCE: {
