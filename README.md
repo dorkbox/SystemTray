@@ -277,7 +277,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SystemTray</artifactId>
-      <version>3.11</version>
+      <version>3.12</version>
     </dependency>
 </dependencies>
 ````
@@ -286,7 +286,7 @@ Maven Info
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
 https://github.com/dorkbox/SystemTray/releases  
 
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ShellExecutor/    
 
 
