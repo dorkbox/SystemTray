@@ -294,6 +294,13 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                        // ubuntu 17.10 uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now proper Gnome
+                        int[] version = OSUtil.Linux.getUbuntuVersion();
+                        if (version[0] > 17 || (version[0] == 17 && version[1] == 10)) {
+                            // this is gnome 3.26.1
+                            logger.debug("This Ubuntu 17.10 is not yet supported!");
+                        }
+
                         return selectTypeQuietly(TrayType.AppIndicator);
                     }
                     break;
