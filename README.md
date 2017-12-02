@@ -23,7 +23,7 @@ The following unique problems are also solved by this library:
  1. Windows *native* menus **do not** support images attached to menu entries  
  1. Windows menus **do not** support a different L&F from the running application  
  1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
- 1. java.awt.Desktop.getDesktop() is **broken** when using GTK3, or on MacOS.
+ 1. java.awt.Desktop.getDesktop() is **broken** when using GTK3 or on MacOS.
 
 
 
