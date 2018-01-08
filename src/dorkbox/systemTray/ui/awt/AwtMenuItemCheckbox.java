@@ -18,6 +18,8 @@ package dorkbox.systemTray.ui.awt;
 import java.awt.MenuShortcut;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
@@ -31,7 +33,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     private final java.awt.CheckboxMenuItem _native = new java.awt.CheckboxMenuItem();
 
     // these have to be volatile, because they can be changed from any thread
-    private volatile ActionListener callback;
+    private volatile ItemListener callback;
     private volatile boolean isChecked = false;
 
     // this is ALWAYS called on the EDT.
@@ -68,19 +70,20 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
     @Override
     public
     void setCallback(final Checkbox menuItem) {
+        // of critical note: AWT only works with ItemListener -- but we use ActionListener for everything, so here we make things compatible
         if (callback != null) {
-            _native.removeActionListener(callback);
+            _native.removeItemListener(callback);
         }
 
-        callback = menuItem.getCallback();  // can be set to null
+        ActionListener callback = menuItem.getCallback();  // can be set to null
 
         if (callback != null) {
-            callback = new ActionListener() {
+            this.callback = new ItemListener() {
                 final ActionListener cb = menuItem.getCallback();
 
                 @Override
                 public
-                void actionPerformed(ActionEvent e) {
+                void itemStateChanged(final ItemEvent e) {
                     // this will run on the EDT, since we are calling it from the EDT
                     menuItem.setChecked(!isChecked);
 
@@ -99,7 +102,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
                 }
             };
 
-            _native.addActionListener(callback);
+            _native.addItemListener(this.callback);
         }
     }
 
@@ -150,7 +153,7 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
                 _native.setEnabled(false);
 
                 if (callback != null) {
-                    _native.removeActionListener(callback);
+                    _native.removeItemListener(callback);
                     callback = null;
                 }
                 parent._native.remove(_native);
