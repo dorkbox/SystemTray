@@ -81,7 +81,7 @@ class Entry {
     }
 
     /**
-     * Removes this menu entry from the menu and releases all system resources associated with this menu entry
+     * Removes this menu entry from the menu and releases all system resources associated with this menu entry.
      */
     public
     void remove() {

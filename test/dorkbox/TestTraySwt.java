@@ -18,6 +18,7 @@ package dorkbox;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.net.URL;
 
 import org.eclipse.swt.SWT;
@@ -30,6 +31,9 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.CacheUtil;
+import dorkbox.util.Desktop;
+import dorkbox.util.OS;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -72,8 +76,11 @@ class TestTraySwt {
         helloWorldTest.setText("Hello World SWT  .................  ");
         helloWorldTest.pack();
 
-//        SwingUtil.setLookAndFeel(null);
-//        SystemTray.SWING_UI = new CustomSwingUI();
+        SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
+        CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
+
+        // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
+        // SystemTray.SWING_UI = new CustomSwingUI();
 
         this.systemTray = SystemTray.get();
         if (systemTray == null) {
@@ -113,12 +120,14 @@ class TestTraySwt {
                 entry.setCallback(callbackGray);
                 entry.setImage(BLACK_MAIL);
                 entry.setText("Delete Mail");
+                entry.setTooltip(null); // remove the tooltip
 //                systemTray.remove(menuEntry);
             }
         });
         greenEntry.setImage(GREEN_MAIL);
         // case does not matter
         greenEntry.setShortcut('G');
+        greenEntry.setTooltip("This means you have green mail!");
         mainMenu.add(greenEntry);
 
 
@@ -134,10 +143,33 @@ class TestTraySwt {
 
         mainMenu.add(new Separator());
 
+        mainMenu.add(new MenuItem("About", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                try {
+                    Desktop.browseURL("https://github.com/dorkbox/SystemTray");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }));
+
+        mainMenu.add(new MenuItem("Temp Directory", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                try {
+                    Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }));
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
         submenu.setShortcut('t');
-        mainMenu.add(submenu);
+
 
         MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, new ActionListener() {
             @Override
@@ -174,6 +206,7 @@ class TestTraySwt {
                 systemTray.shutdown();
                 // necessary to shut down SWT
                 display.asyncExec(new Runnable() {
+                    @Override
                     public void run() {
                         shell.dispose();
                     }
@@ -181,7 +214,7 @@ class TestTraySwt {
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         })).setShortcut('q'); // case does not matter
-
+        mainMenu.add(submenu);
 
         shell.pack();
         shell.open();

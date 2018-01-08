@@ -22,36 +22,13 @@ import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
 
-import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.OSUtil;
 
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
 class Tray extends Menu {
     // true if we are using gnome (and things depend on it) or false
     public static volatile boolean usingGnome = false;
-
-    protected static
-    void installExtension() {
-        // do we need to install the GNOME extension??
-        if (Tray.usingGnome) {
-            if (OSUtil.Linux.isArch()) {
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Running Arch Linux.");
-                }
-                if (!Extension.isInstalled()) {
-                    SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                           "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                           "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                           "of the screen to the menu panel next to the clock.");
-                }
-            } else {
-                // Automatically install the extension for everyone except Arch. It's bonkers.
-                Extension.install();
-            }
-        }
-    }
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
@@ -111,32 +88,6 @@ class Tray extends Menu {
             // also calls the hook to add it, so we don't need anything special
             add(status, 0);
         }
-    }
-
-    // method that is meant to be overridden by the tray implementations
-    protected
-    void setTooltip_(final String tooltipText) {
-        // default is NO OP
-    }
-
-    /**
-     * Specifies the tooltip text, usually this is used to brand the SystemTray icon with your product's name.
-     * <p>
-     * The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop
-     * Environments.
-     * <p>
-     * For more details on Linux see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12.
-     *
-     * @param tooltipText the text to use as tooltip for the tray icon, null to remove
-     */
-    final
-    void setTooltip(final String tooltipText) {
-        // this is a safety precaution, since the behavior of really long text is undefined.
-        if (tooltipText.length() > 64) {
-            throw new RuntimeException("Tooltip text cannot be longer than 64 characters.");
-        }
-
-        setTooltip_(tooltipText);
     }
 
     /**

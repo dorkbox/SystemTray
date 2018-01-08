@@ -31,7 +31,7 @@ import javax.swing.plaf.metal.MetalBorders;
 
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.swingUI.SwingUIFactory;
+import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.util.swing.DefaultMenuItemUI;
 import dorkbox.util.swing.DefaultPopupMenuUI;
 import dorkbox.util.swing.DefaultSeparatorUI;
@@ -56,7 +56,6 @@ class LinuxSwingUI implements SwingUIFactory {
     public static class Metal_MenuItemBorder extends MetalBorders.MenuItemBorder {
         private final int verticalPadding;
 
-        public
         Metal_MenuItemBorder(int verticalPadding) {
             this.verticalPadding = verticalPadding;
         }
@@ -68,6 +67,10 @@ class LinuxSwingUI implements SwingUIFactory {
             return newInsets;
         }
     }
+
+    private static PopupMenuUI popupMenuUI = null;
+    private static MenuItemUI menuItemUI = null;
+    private static SeparatorUI separatorUI = null;
 
     /**
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)
@@ -133,7 +136,6 @@ class LinuxSwingUI implements SwingUIFactory {
     SeparatorUI getSeparatorUI(final JSeparator jSeparator) {
         return new DefaultSeparatorUI(jSeparator);
     }
-
 
     /**
      * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize

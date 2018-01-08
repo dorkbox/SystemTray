@@ -33,6 +33,8 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public
 class MenuItem extends Entry {
+    private static boolean alreadyEmittedTooltipWarning = false;
+
     private volatile String text;
     private volatile File imageFile;
     private volatile ActionListener callback;
@@ -40,6 +42,7 @@ class MenuItem extends Entry {
     // default enabled is always true
     private volatile boolean enabled = true;
     private volatile char mnemonicKey;
+    private volatile String tooltip;
 
     public
     MenuItem() {
@@ -133,6 +136,7 @@ class MenuItem extends Entry {
         peer.setText(this);
         peer.setCallback(this);
         peer.setShortcut(this);
+        peer.setTooltip(this);
     }
 
     protected
@@ -343,15 +347,44 @@ class MenuItem extends Entry {
         }
     }
 
-    @Override
+    /**
+     * Specifies the tooltip text, usually this is used to brand the SystemTray icon with your product's name, or to provide extra
+     * information during mouse-over for menu entries.
+     * <p>
+     * NOTE: Maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments.
+     * <p>
+     * For more details on Linux see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12.
+     *
+     * @param tooltipText the text to use as a mouse-over tooltip for the tray icon or menu entry, null to remove.
+     */
     public
-    void remove() {
-        if (peer != null) {
-            setImage_(null);
-            setText(null);
-            setCallback(null);
+    void setTooltip(final String tooltipText) {
+        if (tooltipText != null) {
+            // this is a safety precaution, since the behavior of really long text is undefined.
+            if (tooltipText.length() > 64) {
+                throw new RuntimeException("Tooltip text cannot be longer than 64 characters.");
+            }
+
+            if (!alreadyEmittedTooltipWarning) {
+                alreadyEmittedTooltipWarning = true;
+                SystemTray.logger.warn("Tooltips are not consistent across all platforms and tray types.");
+            }
         }
 
-        super.remove();
+        this.tooltip = tooltipText;
+
+        if (peer != null) {
+            ((MenuItemPeer) peer).setTooltip(this);
+        }
+    }
+
+    /**
+     * Gets the mouse-over tooltip for the meme entry.
+     *
+     * NOTE: This is not consistent across all platforms and tray types.
+     */
+    public
+    String getTooltip() {
+        return this.tooltip;
     }
 }

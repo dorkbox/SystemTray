@@ -19,7 +19,6 @@ import static dorkbox.systemTray.SystemTray.logger;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -27,17 +26,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import dorkbox.executor.ShellAsyncExecutor;
+import dorkbox.executor.ShellExecutor;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
 import dorkbox.util.OSUtil;
 import dorkbox.util.Property;
-import dorkbox.util.process.ShellProcessBuilder;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
 public
@@ -61,19 +60,15 @@ class Extension {
 
     public static
     List<String> getEnabledExtensions() {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
-
         // gsettings get org.gnome.shell enabled-extensions
-        final ShellProcessBuilder gsettings = new ShellProcessBuilder(outputStream);
+        final ShellExecutor gsettings = new ShellExecutor();
         gsettings.setExecutable("gsettings");
         gsettings.addArgument("get");
         gsettings.addArgument("org.gnome.shell");
         gsettings.addArgument("enabled-extensions");
         gsettings.start();
 
-        String output = ShellProcessBuilder.getOutput(byteArrayOutputStream);
+        String output = gsettings.getOutput();
 
         // now we have to enable us if we aren't already enabled
 
@@ -137,9 +132,6 @@ class Extension {
 
     public static
     void setEnabledExtensions(List<String> extensions) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(8196);
-        PrintStream outputStream = new PrintStream(byteArrayOutputStream);
-
         StringBuilder stringBuilder = new StringBuilder("[");
 
         for (int i = 0, extensionsSize = extensions.size(), limit = extensionsSize-1; i < extensionsSize; i++) {
@@ -166,7 +158,7 @@ class Extension {
         // gsettings set org.gnome.shell enabled-extensions "['SystemTray@Dorkbox']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@Dorkbox']"
-        final ShellProcessBuilder setGsettings = new ShellProcessBuilder(outputStream);
+        final ShellExecutor setGsettings = new ShellExecutor();
         setGsettings.setExecutable("gsettings");
         setGsettings.addArgument("set");
         setGsettings.addArgument("org.gnome.shell");
@@ -179,7 +171,8 @@ class Extension {
     void restartShell() {
         if (ENABLE_SHELL_RESTART) {
             if (SystemTray.DEBUG) {
-                logger.debug("DEBUG mode enabled. You need to manually restart the shell via '{}'", SHELL_RESTART_COMMAND);
+                logger.debug("DEBUG mode enabled. You need to log-in/out or manually restart the shell via '{}' to apply the changes.",
+                             SHELL_RESTART_COMMAND);
                 return;
             }
 
@@ -187,11 +180,8 @@ class Extension {
                 logger.debug("Restarting gnome-shell so tray notification changes can be applied.");
             }
 
-            // now we have to restart the gnome shell via bash
-            final ShellProcessBuilder restartShell = new ShellProcessBuilder();
-            // restart shell in background process
-            restartShell.addArgument(SHELL_RESTART_COMMAND);
-            restartShell.start();
+            // now we have to restart the gnome shell via bash in a background process
+            ShellAsyncExecutor.runShell(SHELL_RESTART_COMMAND);
 
             // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
         }
@@ -215,10 +205,13 @@ class Extension {
      */
     public static
     void install() {
-        boolean isGnome = OSUtil.DesktopEnv.isGnome();
-        if (!ENABLE_EXTENSION_INSTALL || !isGnome || (OSUtil.Linux.isDebian())) {
-            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs)
+        if (!ENABLE_EXTENSION_INSTALL) {
+            // note: Debian Gnome3 does NOT work! (tested on Debian 8.5 and 8.6 default installs).
             return;
+        }
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Installing Gnome extension.");
         }
 
         boolean hasTopIcons;

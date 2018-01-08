@@ -15,11 +15,8 @@
  */
 package dorkbox.systemTray.util;
 
-import static com.sun.jna.platform.win32.WinDef.HDC;
-import static com.sun.jna.platform.win32.WinDef.POINT;
 import static com.sun.jna.platform.win32.WinUser.SM_CYMENUCHECK;
-import static dorkbox.util.jna.windows.GDI32.GetDeviceCaps;
-import static dorkbox.util.jna.windows.GDI32.LOGPIXELSX;
+import static com.sun.jna.platform.win32.WinUser.SM_CYSMICON;
 
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
@@ -28,22 +25,16 @@ import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JMenuItem;
 
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.IntByReference;
-
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.jna.linux.GtkTheme;
-import dorkbox.systemTray.swingUI._SwingTray;
+import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.util.OS;
-import dorkbox.util.OSUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.jna.windows.ShCore;
+import dorkbox.util.jna.linux.GtkTheme;
 import dorkbox.util.jna.windows.User32;
 
 public
@@ -52,15 +43,9 @@ class SizeAndScalingUtil {
     static int TRAY_SIZE = 0;
     static int TRAY_MENU_SIZE = 0;
 
-    static {
-//        if (OSUtil.Windows.isWindows8_1_plus()) {
-//            ShCore.SetProcessDpiAwareness(ProcessDpiAwareness.PROCESS_SYSTEM_DPI_AWARE);
-//        }
-    }
-
-    private static
+    public static
     double getMacOSScaleFactor() {
-        // apple will ALWAYS return 2.0 on (apple) retina displays. If it's a non-standard, then who knows...
+        // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
 
         // java6 way of getting it...
         if (OS.javaVersion == 6) {
@@ -102,54 +87,11 @@ class SizeAndScalingUtil {
     }
 
 
-    /**
-     * Number of pixels per logical inch along the screen width. In a system with multiple display monitors, this value is the
-     * same for all monitors.
-     */
     public static
-    int getWindowsLogicalDPI() {
-        // get the logical resolution
-        HDC screen = User32.IMPL.GetDC(null);
-        int logical_dpiX = GetDeviceCaps(screen, LOGPIXELSX);
-        User32.IMPL.ReleaseDC(null, screen);
-
-        if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("Windows logical DPI: '{}'", logical_dpiX);
-        }
-
-        return logical_dpiX;
-    }
-
-    public static
-    int getWindowsPrimaryMonitorHardwareDPI() {
-        // WINDOWS 8.1+ ONLY! Parts of this API were added in Windows 8.1, so this will not work at all for < 8.1
-        if (OSUtil.Windows.isWindows8_1_plus()) {
-            // FROM: https://blogs.msdn.microsoft.com/oldnewthing/20070809-00/?p=25643
-            // to get the **PRIMARY** monitor, pass in point 0,0
-
-            IntByReference hardware_dpiX = new IntByReference();
-            // get the primary monitor handle
-            Pointer pointer = User32.IMPL.MonitorFromPoint(new POINT(0, 0), 1);// MONITOR_DEFAULTTOPRIMARY -> 1
-
-            ShCore.GetDpiForMonitor(pointer, 1, hardware_dpiX, new IntByReference()); // don't care about y
-
-            int value = hardware_dpiX.getValue();
-
-            if (SystemTray.DEBUG) {
-                SystemTray.logger.debug("Windows hardware DPI: '{}'", value);
-            }
-
-            return value;
-        }
-
-        return 0;
-    }
-
-    public static
-    int getTrayImageSize(final Class<? extends Tray> trayType) {
+    int getTrayImageSize() {
         if (TRAY_SIZE == 0) {
             if (OS.isLinux()) {
-                TRAY_SIZE = GtkTheme.getIndicatorSize(trayType);
+                TRAY_SIZE = GtkTheme.getIndicatorSize();
             }
             else if (OS.isMacOsX()) {
                 // these are the standard icon sizes. From what I can tell, they are Apple defined, and cannot be changed.
@@ -160,99 +102,8 @@ class SizeAndScalingUtil {
                 }
             }
             else if (OS.isWindows()) {
-                int[] version = OSUtil.Windows.getVersion();
-                if (SystemTray.DEBUG) {
-                    SystemTray.logger.debug("Windows version: '{}'", Arrays.toString(version));
-                }
-
-                // http://kynosarges.org/WindowsDpi.html
-
-                // 96 DPI = 100% scaling
-                // 120 DPI = 125% scaling
-                // 144 DPI = 150% scaling
-                // 192 DPI = 200% scaling
-                final double defaultDPI = 96.0;
-
-                // windows 8/8.1/10 are the only windows OSes to do scaling properly (XP/Vista/7 do DPI scaling, which is terrible anyways)
-
-                // XP - 7.0 - only global DPI settings, no scaling
-                // 8.0 - only global DPI settings + scaling
-                // 8.1 - 10 - global + per-monitor DPI settings + scaling
-
-                // get the logical resolution
-                int windowsLogicalDPI = getWindowsLogicalDPI();
-
-                if (!OSUtil.Windows.isWindows8_1_plus()) {
-                    // < Windows 8.1 doesn't do scaling + DPI changes, they just "magnify" (but not scale w/ DPI) the icon + change the font size.
-                    // 96 DPI = 16
-                    // 120 DPI = 20 (16 * 1.25)
-                    // 144 DPI = 24 (16 * 1.5)
-                    TRAY_SIZE = 16;
-                    return TRAY_SIZE;
-                }
-                else {
-                    // Windows 8.1+ does proper scaling, so an icon at a higher resolution is drawn, instead of drawing the "original"
-                    // resolution image and scaling it up to the new size
-
-                    // 96 DPI = 16
-                    // 120 DPI = 20 (16 * 1.25)
-                    // 144 DPI = 24 (16 * 1.5)
-                    TRAY_SIZE = (int) (16 * (windowsLogicalDPI / defaultDPI));
-                    return TRAY_SIZE;
-                }
-
-// NOTE: can override DPI settings
-//         * At a 100% scaling, the DPI is 96.
-//
-//
-//        Integer winDPIScaling;
-//    if (PlatformDetector.isWin7()) {
-//            winDPIScaling = 1;
-//        } else {
-//            // Win 8 or later.
-//            winDPIScaling = RegistryUtil.getRegistryIntValue(
-//                            RegistryUtil.HKEY_CURRENT_USER,
-//                            "Control Panel\\Desktop",
-//                            "Win8DpiScaling");
-//            if(winDPIScaling == null){
-//                winDPIScaling = 0;
-//            }
-//        }
-//
-//        Integer desktopDPIOverride;
-//    if (PlatformDetector.isWin7()) {
-//            desktopDPIOverride = 0;
-//        } else {
-//            // Win 8 or later.
-//            desktopDPIOverride = RegistryUtil.getRegistryIntValue(
-//                            RegistryUtil.HKEY_CURRENT_USER,
-//                            "Control Panel\\Desktop",
-//                            "DesktopDPIOverride");
-//            if(desktopDPIOverride == null){
-//                desktopDPIOverride = 0;
-//            }
-//
-//        }
-//
-//
-//    if (winDPIScaling == 1 && desktopDPIOverride == 0){
-//            // There is scaling, but on override (magnifying glass).
-//            Integer logPixels = RegistryUtil.getRegistryIntValue(
-//                            RegistryUtil.HKEY_CURRENT_USER,
-//                            "Control Panel\\Desktop",
-//                            "LogPixels");
-//
-//            if (logPixels != null && logPixels != WIN_DEFAULT_DPI){
-//                this.scalingFactor = ((float)logPixels)/WIN_DEFAULT_DPI;
-//            }
-//        }
-
-
-                // https://msdn.microsoft.com/en-us/library/bb773352(v=vs.85).aspx
-                // provide both a 16x16 pixel icon and a 32x32 icon
-
-                // https://msdn.microsoft.com/en-us/library/dn742495.aspx
-                // Use an icon with 16x16, 20x20, and 24x24 pixel versions. The larger versions are used in high-dpi display mode
+                TRAY_SIZE = User32.User32.GetSystemMetrics(SM_CYSMICON);
+                return TRAY_SIZE;
             } else {
                 // reasonable default
                 TRAY_SIZE = 32;
@@ -281,7 +132,6 @@ class SizeAndScalingUtil {
                 if (OS.isWindows()) {
                     // http://kynosarges.org/WindowsDpi.html
 
-
                     //                     image-size/menu-height
                     //  96 DPI = 100% actual size: 14/17
                     // 144 DPI = 150% actual size: 24/29
@@ -289,7 +139,7 @@ class SizeAndScalingUtil {
                     // gets the height of the default checkmark size, adjusted
                     // This is the closest image size we can get to the actual size programmatically. This is a LOT closer that checking the
                     // largest size a JMenu image can be before the menu size changes.
-                    TRAY_MENU_SIZE = User32.IMPL.GetSystemMetrics(SM_CYMENUCHECK) - 1;
+                    TRAY_MENU_SIZE = User32.User32.GetSystemMetrics(SM_CYMENUCHECK) - 1;
 
                     //                   image-size/menu-height
                     //  96 DPI = 100% mark size: 14/20

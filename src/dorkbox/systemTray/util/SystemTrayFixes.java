@@ -22,7 +22,7 @@ import java.awt.AWTException;
 import java.util.Locale;
 
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.BootStrapClassLoader;
+import dorkbox.util.ClassLoaderUtil;
 import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtBehavior;
@@ -106,7 +106,7 @@ class SystemTrayFixes {
                               .toLowerCase(Locale.US);
 
         // spaces at the end to make sure we check for words
-        return !(vendor.contains("sun ") || vendor.contains("oracle "));
+        return vendor.contains("sun ") || vendor.contains("oracle ");
     }
 
 
@@ -231,8 +231,8 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            BootStrapClassLoader.defineClass(trayBytes);
-            BootStrapClassLoader.defineClass(trayIconBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(trayBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon size to: {}", trayIconSize);
@@ -412,7 +412,7 @@ class SystemTrayFixes {
             mouseEventBytes = trayClass.toBytecode();
 
             // whoosh, past the classloader and directly into memory.
-            BootStrapClassLoader.defineClass(mouseEventBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(mouseEventBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed mouse trigger for MacOSX");
@@ -691,11 +691,11 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            BootStrapClassLoader.defineClass(runnableBytes);
-            BootStrapClassLoader.defineClass(eFrameBytes);
-            BootStrapClassLoader.defineClass(iconCanvasBytes);
-            BootStrapClassLoader.defineClass(trayIconBytes);
-            BootStrapClassLoader.defineClass(trayPeerBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(runnableBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(eFrameBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(iconCanvasBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(trayIconBytes);
+            ClassLoaderUtil.Bootstrap.defineClass(trayPeerBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon background color");

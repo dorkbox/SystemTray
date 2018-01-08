@@ -15,22 +15,9 @@
  */
 package dorkbox.systemTray.peer;
 
-import dorkbox.systemTray.MenuItem;
-
 /**
  * Internal component used to bind the API to the implementation
  */
 public
-interface MenuItemPeer extends EntryPeer {
-    void setImage(MenuItem menuItem);
-
-    void setEnabled(MenuItem menuItem);
-
-    void setText(MenuItem menuItem);
-
-    void setCallback(MenuItem menuItem);
-
-    void setShortcut(MenuItem menuItem);
-
-    void setTooltip(MenuItem menuItem);
+interface SeparatorPeer extends EntryPeer {
 }

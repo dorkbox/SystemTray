@@ -220,31 +220,28 @@ class ImageResizeUtil {
         // if it's already there, we have to delete it
         newFile.delete();
 
-        // resize the image, keep aspect ratio
         Image image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
 
-        int height = image.getHeight(null);
-        int width = image.getWidth(null);
+        BufferedImage bufferedImage = ImageUtil.getBufferedImage(image);
 
+        // resize the image, keep aspect ratio
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
         if (width > height) {
-            // fit on the width
-            image = image.getScaledInstance(size, -1, Image.SCALE_SMOOTH);
-        } else {
-            // fit on the height
-            image = image.getScaledInstance(-1, size, Image.SCALE_SMOOTH);
+            bufferedImage = ImageUtil.resizeImage(bufferedImage, size, -1);
+        }
+        else {
+            bufferedImage = ImageUtil.resizeImage(bufferedImage, -1, size);
         }
 
+        // make the image "square" so there is padding on the sides that are smaller
+        bufferedImage = ImageUtil.getSquareBufferedImage(bufferedImage);
+
         // now write out the new one
-        BufferedImage bufferedImage = ImageUtil.getSquareBufferedImage(image);
         ImageIO.write(bufferedImage, "png", newFile); // made up extension
 
         return newFile;
     }
-
-
-
-
-
 
 
     public static
@@ -324,8 +321,8 @@ class ImageResizeUtil {
 
         try {
             final Image trayImage =  ImageUtil.getImageImmediate(image);
-
             BufferedImage bufferedImage = ImageUtil.getBufferedImage(trayImage);
+
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "png", os);
             InputStream imageInputStream = new ByteArrayInputStream(os.toByteArray());

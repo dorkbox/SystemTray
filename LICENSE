@@ -1,7 +1,7 @@
     - Dorkbox SystemTray - Apache 2.0 License
       https://github.com/dorkbox
       Copyright 2014, dorkbox, llc
-        Cross-platform SystemTray, GtkStatusIcon, and AppIndicator support for applications for Java 6+
+        Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+
 
 
     - Dorkbox Utils - Apache 2.0 License
@@ -17,6 +17,12 @@
     - Lantern - Apache 2.0 License
       https://github.com/getlantern/lantern
       Copyright 2010, Brave New Software Project, Inc.
+
+
+    - QZTray - Apache 2.0 License
+      https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java
+      Copyright (C) 2016 Tres Finocchiaro, QZ Industries, LLC
+        Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.
 
 
     - SLF4J - MIT License

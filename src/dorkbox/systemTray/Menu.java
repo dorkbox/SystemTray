@@ -409,32 +409,14 @@ class Menu extends MenuItem {
     }
 
     /**
-     *  This removes all menu entries from this menu
-     */
-    public
-    void clear() {
-        List<Entry> copy;
-        synchronized (menuEntries) {
-            // access on this object must be synchronized for object visibility
-            // a copy is made to prevent deadlocks from occurring when operating in different threads
-            // have to make copy because we are deleting all of them, and sub-menus remove themselves from parents
-            copy = new ArrayList<Entry>(menuEntries);
-            menuEntries.clear();
-        }
-
-        for (Entry entry : copy) {
-            entry.remove();
-        }
-    }
-
-
-    /**
      *  This removes all menu entries from this menu AND this menu from it's parent
      */
     @Override
     public
     void remove() {
-        clear();
+        synchronized (menuEntries) {
+            menuEntries.clear();
+        }
 
         super.remove();
     }

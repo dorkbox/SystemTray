@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray;
 
+import dorkbox.systemTray.peer.SeparatorPeer;
+
 /**
  * This represents a common menu-spacer entry, that is cross platform in nature.
  * <p>
@@ -38,5 +40,15 @@ class Separator extends Entry {
     public
     Separator() {
         super();
+    }
+
+    /**
+     * @param peer the platform specific implementation for all actions for this type
+     * @param parent the parent of this menu, null if the parent is the system tray
+     * @param systemTray the system tray (which is the object that sits in the system tray)
+     */
+    public
+    void bind(final SeparatorPeer peer, final Menu parent, final SystemTray systemTray) {
+        super.bind(peer, parent, systemTray);
     }
 }
