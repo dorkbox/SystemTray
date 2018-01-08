@@ -106,7 +106,7 @@ class SystemTrayFixes {
                               .toLowerCase(Locale.US);
 
         // spaces at the end to make sure we check for words
-        return !(vendor.contains("sun ") || vendor.contains("oracle "));
+        return vendor.contains("sun ") || vendor.contains("oracle ");
     }
 
 
