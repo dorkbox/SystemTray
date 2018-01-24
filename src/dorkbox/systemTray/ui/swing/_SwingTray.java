@@ -124,9 +124,10 @@ class _SwingTray extends Tray {
                             popupMenu.pack();
                             popupMenu.setFocusable(true);
 
-                            // appindicators DO NOT support anything other than PLAIN gtk-menus (which we hack to support swing menus)
-                            //   they ALSO do not support tooltips, so we cater to the lowest common denominator
-                            // trayIcon.setToolTip("app name");
+                            // appindicators DO NOT support anything other than PLAIN gtk-menus, which do not support tooltips
+                            if (tooltipText != null && !tooltipText.isEmpty()) {
+                                trayIcon.setToolTip(tooltipText);
+                            }
 
                             trayIcon.addMouseListener(new MouseAdapter() {
                                 @Override
