@@ -34,6 +34,7 @@ import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
 @SuppressWarnings("ForLoopReplaceableByForEach")
+public
 class SwingMenu implements MenuPeer {
 
     final JComponent _native;
@@ -41,6 +42,7 @@ class SwingMenu implements MenuPeer {
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
+    public
     SwingMenu(final SwingMenu parent, final Menu entry) {
         this.parent = parent;
 

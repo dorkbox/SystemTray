@@ -41,6 +41,7 @@ import dorkbox.util.ScreenUtil;
  *
  * This is our "golden standard" since we have 100% control over it on all platforms
  */
+public
 class TrayPopup extends JPopupMenu {
     private static final long serialVersionUID = 1L;
 
@@ -51,6 +52,7 @@ class TrayPopup extends JPopupMenu {
     private volatile File iconFile;
 
     @SuppressWarnings("unchecked")
+    public
     TrayPopup() {
         super();
         setFocusable(true);
@@ -108,6 +110,7 @@ class TrayPopup extends JPopupMenu {
     /**
      * Sets the image for the title-bar, so IF it shows in the task-bar, it will have the corresponding image as the SystemTray image
      */
+    public
     void setTitleBarImage(final File imageFile) {
         if (this.iconFile == null || !this.iconFile.equals(imageFile)) {
             this.iconFile = imageFile;
@@ -129,6 +132,7 @@ class TrayPopup extends JPopupMenu {
         hiddenDialog.dispatchEvent(new WindowEvent(hiddenDialog, WindowEvent.WINDOW_CLOSING));
     }
 
+    public
     void doShow(final Point point, int offset) {
         Dimension size = getPreferredSize();
         Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
