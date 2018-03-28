@@ -1,1 +1,7 @@
 /classes/
+bin/
+build/
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
