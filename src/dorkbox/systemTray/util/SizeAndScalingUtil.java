@@ -103,13 +103,15 @@ class SizeAndScalingUtil {
             }
             else if (OS.isWindows()) {
                 TRAY_SIZE = User32.User32.GetSystemMetrics(SM_CYSMICON);
-                return TRAY_SIZE;
             } else {
                 // reasonable default
                 TRAY_SIZE = 32;
             }
         }
-
+        if (TRAY_SIZE == 0) {
+            // reasonable default
+            TRAY_SIZE = 32;
+        }
         return TRAY_SIZE;
 }
 
