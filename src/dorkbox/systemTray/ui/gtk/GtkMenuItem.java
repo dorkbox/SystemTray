@@ -27,7 +27,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.util.jna.linux.GCallback;
-import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
 class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
@@ -50,7 +50,7 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
         super(Gtk2.gtk_image_menu_item_new_with_mnemonic(""));
 
         this.parent = parent;
-        Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+        GObject.g_signal_connect_object(_native, "activate", this, null, 0);
     }
 
 

@@ -32,7 +32,7 @@ import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.OSUtil;
 import dorkbox.util.jna.linux.GCallback;
-import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 import dorkbox.util.jna.linux.GtkTheme;
 
@@ -96,7 +96,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         super(useFakeCheckMark ? Gtk2.gtk_image_menu_item_new_with_mnemonic("") : Gtk2.gtk_check_menu_item_new_with_mnemonic(""));
         this.parent = parent;
 
-        handlerId = Gobject.g_signal_connect_object(_native, "activate", this, null, 0);
+        handlerId = GObject.g_signal_connect_object(_native, "activate", this, null, 0);
 
         if (useFakeCheckMark) {
             if (checkedFile == null) {
@@ -124,9 +124,9 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
             setCheckedIconForFakeCheckMarks();
         } else {
-            Gobject.g_signal_handler_block(_native, handlerId);
+            GObject.g_signal_handler_block(_native, handlerId);
             Gtk2.gtk_check_menu_item_set_active(_native, false);
-            Gobject.g_signal_handler_unblock(_native, handlerId);
+            GObject.g_signal_handler_unblock(_native, handlerId);
         }
     }
 
@@ -252,9 +252,9 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                         // we assume this is consistent across ALL versions and variants of GTK
                         // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
                         // this disables the signal handler, then enables it
-                        Gobject.g_signal_handler_block(_native, handlerId);
+                        GObject.g_signal_handler_block(_native, handlerId);
                         Gtk2.gtk_check_menu_item_set_active(_native, isChecked);
-                        Gobject.g_signal_handler_unblock(_native, handlerId);
+                        GObject.g_signal_handler_unblock(_native, handlerId);
                     }
                 }
             });

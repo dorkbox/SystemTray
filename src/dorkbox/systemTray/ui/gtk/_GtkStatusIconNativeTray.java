@@ -28,7 +28,7 @@ import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.util.JavaFX;
 import dorkbox.util.jna.linux.GEventCallback;
-import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 import dorkbox.util.jna.linux.structs.GdkEventButton;
 
@@ -155,7 +155,7 @@ class _GtkStatusIconNativeTray extends Tray {
                         void run() {
                             // this hides the indicator
                             Gtk2.gtk_status_icon_set_visible(trayIcon, false);
-                            Gobject.g_object_unref(trayIcon);
+                            GObject.g_object_unref(trayIcon);
 
                             // mark for GC
                             trayIcon = null;
@@ -189,7 +189,7 @@ class _GtkStatusIconNativeTray extends Tray {
                         }
                     }
                 };
-                Gobject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
+                GObject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
             }
         });
 

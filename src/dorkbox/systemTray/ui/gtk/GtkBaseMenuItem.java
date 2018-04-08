@@ -23,7 +23,7 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
 abstract
@@ -110,7 +110,7 @@ class GtkBaseMenuItem implements EntryPeer {
     // To work around this issue, we destroy then recreate the menu every time something is changed.
     // always on EDT
     void onDeleteMenu(final Pointer parentNative) {
-        Gobject.g_object_force_floating(_native);  // makes it a floating reference
+        GObject.g_object_force_floating(_native);  // makes it a floating reference
         Gtk2.gtk_container_remove(parentNative, _native);
     }
 
@@ -122,7 +122,7 @@ class GtkBaseMenuItem implements EntryPeer {
 
         // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
         Gtk2.gtk_menu_shell_append(parentNative, _native);
-        Gobject.g_object_ref_sink(_native);  // undoes "floating"
+        GObject.g_object_ref_sink(_native);  // undoes "floating"
         Gtk2.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible
     }
 

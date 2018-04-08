@@ -26,7 +26,7 @@ import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.jna.linux.AppIndicator;
-import dorkbox.util.jna.linux.Gobject;
+import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 import dorkbox.util.jna.linux.structs.AppIndicatorInstanceStruct;
 
@@ -210,7 +210,7 @@ class _AppIndicatorNativeTray extends Tray {
                             // STATUS_PASSIVE hides the indicator
                             savedAppIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
                             Pointer p = savedAppIndicator.getPointer();
-                            Gobject.g_object_unref(p);
+                            GObject.g_object_unref(p);
 
                             GtkEventDispatch.shutdownGui();
                         }
