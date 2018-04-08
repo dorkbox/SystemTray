@@ -116,11 +116,13 @@ class TrayPopup extends JPopupMenu {
             this.iconFile = imageFile;
 
             try {
-                Image image = new ImageIcon(ImageIO.read(imageFile)).getImage();
-                image.flush();
+                if (imageFile != null) {
+                    Image image = new ImageIcon(ImageIO.read(imageFile)).getImage();
+                    image.flush();
 
-                // we set the dialog window to have the same icon as what is on the system tray
-                hiddenDialog.setIconImage(image);
+                    // we set the dialog window to have the same icon as what is on the system tray
+                    hiddenDialog.setIconImage(image);
+                }
             } catch (IOException e) {
                 SystemTray.logger.error("Error setting the title-bar image for the popup menu task tray dialog");
             }
