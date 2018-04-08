@@ -1,0 +1,47 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+group = 'com.dorkbox'
+version = '3.13-SNAPSHOT'
+description = """Dorkbox-SystemTray"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+
+sourceSets {
+	main {
+		java { srcDirs = ['src'] }
+	}
+	test {
+		java { srcDirs = ['test'] }
+	}
+}
+
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			artifactId 'SystemTray'
+			from components.java
+		}
+	}
+}
+
+repositories {
+	mavenLocal()
+	maven { url "http://repo.maven.apache.org/maven2" }
+	maven { url "http://cfmlprojects.org/artifacts" }
+}
+
+dependencies {
+	compile group: 'com.dorkbox', name: 'ShellExecutor', version:'1.1'
+	compile('com.dorkbox:Utilities:2.21-SNAPSHOT') {  transitive = false  }
+	compile group: 'ch.qos.logback', name: 'logback-classic', version:'1.1.6'
+	compileOnly group: 'org.eclipse.swt', name: 'org.eclipse.swt.gtk.linux.x86_64', version:'4.3'
+	compile group: 'org.javassist', name: 'javassist', version:'3.21.0-GA'
+	compile group: 'net.java.dev.jna', name: 'jna', version:'4.3.0'
+	compile group: 'net.java.dev.jna', name: 'jna-platform', version:'4.3.0'
+	runtime group: 'org.slf4j', name: 'slf4j-api', version:'1.7.25'
+}
