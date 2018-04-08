@@ -277,7 +277,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SystemTray</artifactId>
-      <version>3.12</version>
+      <version>3.13</version>
     </dependency>
 </dependencies>
 ````
