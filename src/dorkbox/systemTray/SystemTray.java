@@ -38,15 +38,14 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dorkbox.systemTray.jna.linux.AppIndicator;
-import dorkbox.systemTray.jna.linux.Gtk;
-import dorkbox.systemTray.jna.linux.GtkEventDispatch;
-import dorkbox.systemTray.nativeUI._AppIndicatorNativeTray;
-import dorkbox.systemTray.nativeUI._AwtTray;
-import dorkbox.systemTray.nativeUI._GtkStatusIconNativeTray;
-import dorkbox.systemTray.nativeUI._WindowsNativeTray;
-import dorkbox.systemTray.swingUI.SwingUIFactory;
-import dorkbox.systemTray.swingUI._SwingTray;
+import dorkbox.systemTray.gnomeShell.Extension;
+import dorkbox.systemTray.ui.awt._AwtTray;
+import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
+import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
+import dorkbox.systemTray.ui.swing.SwingUIFactory;
+import dorkbox.systemTray.ui.swing._SwingTray;
+import dorkbox.systemTray.ui.swing._WindowsNativeTray;
+import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
@@ -213,7 +212,7 @@ class SystemTray {
             try {
                 return selectType(TrayType.WindowsNotifyIcon);
             } catch (Throwable e) {
-                logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.", e);
+                logger.error("Something is wrong. Please create an issue with this error message!", e);
             }
         }
         else if (OS.isMacOsX()) {
@@ -710,8 +709,11 @@ class SystemTray {
             else {
                 logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
             }
-            logger.debug("Force GTK2: {}", FORCE_GTK2);
-            logger.debug("Prefer GTK3: {}", PREFER_GTK3);
+
+            if (OS.isLinux()) {
+                logger.debug("Force GTK2: {}", FORCE_GTK2);
+                logger.debug("Prefer GTK3: {}", PREFER_GTK3);
+            }
         }
 
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
@@ -908,7 +910,8 @@ class SystemTray {
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after GTK is started (if applicable)
                 if (OS.isWindows() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
-                    // windows hard-codes the image size
+                    // Our default for windows is now a native tray icon (instead of the swing tray icon).
+                    // windows hard-codes the image size for AWT/SWING tray types
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
                 else if (OS.isMacOsX() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
