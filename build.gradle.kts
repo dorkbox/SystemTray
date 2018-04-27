@@ -256,6 +256,7 @@ task<Jar>("_javaFxExampleJar") {
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
+        attributes["Class-Path"] = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
     }
 }
 
