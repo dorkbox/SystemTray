@@ -10,7 +10,7 @@ plugins {
     java
     maven
     `maven-publish`
-    kotlin("jvm") version "1.2.40"
+    kotlin("jvm").version("1.2.40")
 }
 
 apply {
@@ -19,7 +19,6 @@ apply {
 }
 
 kotlin.experimental.coroutines = Coroutines.ENABLE
-
 
 //    version = getWPILibVersion() ?: getVersionFromGitTag(fallback = "0.0.0") // fall back to git describe if no WPILib version is set
 group = "com.dorkbox"
@@ -42,6 +41,10 @@ java {
 ////    }
 //}
 
+
+// This creates the swtExampleJar configuration usable inside dependencies and allowing us custom libs when building the SWT example jar
+val swtExampleJar = configurations.create("swtExampleJar")
+
 // make working with sourceSets easier
 val sourceSets = java.sourceSets
 fun sourceSets(block: SourceSetContainer.() -> Unit) = sourceSets.apply(block)
@@ -60,8 +63,8 @@ val SourceSetContainer.swingExample: SourceSet get() = maybeCreate("swingExample
 fun SourceSetContainer.swingExample(block: SourceSet.() -> Unit) = swingExample.apply(block)
 val org.gradle.api.tasks.SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
-//val org.gradle.api.tasks.SourceSetContainer.testSwt: SourceSet get() = maybeCreate("testSwt")
-//fun SourceSetContainer.testSwt(block: SourceSet.() -> Unit) = testSwt.apply(block)
+val org.gradle.api.tasks.SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
+fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.apply(block)
 
 //val SourceSet.kotlin: SourceDirectorySet
 //    get() = (this as HasConvention).convention.getPlugin<KotlinSourceSet>().kotlin
@@ -162,6 +165,21 @@ sourceSets {
             }
         }
     }
+
+    swtExample {
+        java {
+            sourceDirs = files("test")
+            include(javaFile("dorkbox.TestTray", "dorkbox.TestTraySwt", "dorkbox.CustomSwingUI"))
+
+            srcDir(sourceSets.main.allJava)
+            compileClasspath = sourceSets.main.compileClasspath + files(swtExampleJar)
+
+            resources {
+                sourceDirs = files("test")
+                include("dorkbox/*.png")
+            }
+        }
+    }
 }
 
 repositories {
@@ -200,6 +218,7 @@ dependencies {
     compile(group = "org.slf4j", name = "slf4j-api", version = "1.7.25")
 
     testCompileOnly(group = "org.eclipse.swt", name = "org.eclipse.swt.gtk.linux.x86_64", version = "4.3")
+    swtExampleJar(group = "org.eclipse.swt", name = "org.eclipse.swt.gtk.linux.x86_64", version = "4.3")
 }
 
 tasks.withType<JavaCompile> {
@@ -260,6 +279,31 @@ task<Jar>("_javaFxExampleJar") {
     }
 }
 
+task<Jar>("_swtExampleJar") {
+    dependsOn("compileSwtExampleJava")
+
+    baseName = "SwtExample"
+
+    from(sourceSets.swtExample.output.classesDirs)
+    from(sourceSets.swtExample.output.resourcesDir)
+
+    // makes it a fat-jar, we filter out the "Utilities" project (because we manually
+    // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
+    // One can extend this task, to skip certain files or particular types at will
+    from(configurations.runtime
+                 .filter({ it.nameWithoutExtension != "Utilities" })
+                 .map({ if (it.isDirectory) it else zipTree(it) }))
+    with(tasks["jar"] as CopySpec)
+
+    from(swtExampleJar.map({ if (it.isDirectory) it else zipTree(it) }))
+    with(tasks["jar"] as CopySpec)
+
+
+
+    manifest {
+        attributes["Main-Class"] = "dorkbox.TestTraySwt"
+    }
+}
 
 
 
@@ -273,35 +317,6 @@ task<Jar>("_javaFxExampleJar") {
 
 
 
-
-//task<JavaCompile>("Java") {
-//    source = sourceSets.main.allSource
-//    classpath = sourceSets.main.compileClasspath
-//    destinationDir = sourceSets.main.java.outputDir
-//}
-
-//
-//project(":Swing") {
-//    sourceSets {
-//        main {
-//            java {
-//                sourceDirs = files("test")
-//                include(javaFile("dorkbox.TestTray", "dorkbox.CustomSwingUI"))
-//
-////                java.srcDir(sourceSets.main.java)
-////                java.srcDir(sourceSets.utilities.java)
-//
-//                resources {
-//                    sourceDirs = files("test")
-//                    include("dorkbox/*.png")
-//                }
-//            }
-//        }
-//    }
-//    dependencies {
-////        compile(project (":"))
-//    }
-//}
 
 
 // val compileKotlin: KotlinCompile by tasks
@@ -334,118 +349,36 @@ Tasks and publishing
 //}
 
 
-
-//task<JavaCompile>("compileTestJavafx") {
-//    dependsOn("compileJava")
 //
-//    source = sourceSets.testJavafx.allSource
-//    classpath = sourceSets.main.compileClasspath
-//    destinationDir = sourceSets.testJavafx.java.outputDir
-//}
-
-//
-//task<Jar>("_testSwingJar") {
-//    dependsOn(task<JavaCompile>("compileTestSwing") {
-////        dependsOn("compileJava")
-//
-//        sourceCompatibility = "1.7"
-//        targetCompatibility = "1.7"
-//
-//        source = sourceSets.testSwing.allJava
-//        classpath = sourceSets.main.compileClasspath
-//        destinationDir = sourceSets.testSwing.java.outputDir
-//    })
-//
-//    baseName = "testSwing"
-//
-//
-//
-//    println("source")
-//    sourceSets.main.compileClasspath.forEach({ it: File? -> println("  " + it) })
-//    from(sourceSets.testSwing.output.classesDirs)
-//
-//    // makes it a fat-jar
-//    // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-//    // One can extend this task, to skip certain files or particular types at will
-//    // specifically, we filter out the "Utilities" project
-////    from(configurations.runtime
-////                 .filter({ it.nameWithoutExtension != "Utilities" })
-////                 .map({ if (it.isDirectory) it else zipTree(it) }))
-//    with(tasks["jar"] as CopySpec)
-//
-//
-//    manifest {
-//        attributes["Main-Class"] = "dorkbox.TestTray"
+//tasks {
+//    // Disable publication on root project
+//    "artifactoryPublish"(ArtifactoryTask::class) {
+//        skip = true
 //    }
 //}
-//
+
+//artifactory {
+//    setContextUrl("https://repo.gradle.org/gradle")
+//    publish(delegateClosureOf<PublisherConfig> {
+//        repository(delegateClosureOf<GroovyObject> {
+//            val targetRepoKey = "libs-${buildTagFor(project.version as String)}s-local"
+//            setProperty("repoKey", targetRepoKey)
+//            setProperty("username", project.findProperty("artifactory_user") ?: "nouser")
+//            setProperty("password", project.findProperty("artifactory_password") ?: "nopass")
+//            setProperty("maven", true)
+//        })
+//        defaults(delegateClosureOf<GroovyObject> {
+//            invokeMethod("publications", "mavenJava")
+//        })
+//    })
+//    resolve(delegateClosureOf<ResolverConfig> {
+//        setProperty("repoKey", "repo")
+//    })
+//}
 
 
 
 /*
-
-
-project(":SwingTest") {
-    sourceSets {
-
-    }
-
-
-
-
-
-//        task<JavaCompile>("compileTestSwt") {
-//            dependsOn("compileJava")
-//
-//            source = sourceSets.testSwt.allSource
-//            classpath = sourceSets.main.compileClasspath
-//            destinationDir = sourceSets.testSwt.java.outputDir
-//        }
-
-//
-//        task<Jar>("testJavaFXJar") {
-//            dependsOn("compileTestJavaFX")
-//
-//            baseName = "testJavaFx"
-//
-//            from(sourceSets.testJavaFX.resources)
-//
-//            // makes it a fat-jar
-//            // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-//            // One can extend this task, to skip certain files or particular types at will
-//            // specifically, we filter out the "Utilities" project
-//            from(configurations.runtime.filter({ it.nameWithoutExtension != "Utilities" }).map({ if (it.isDirectory) it else zipTree(it) }))
-//            with(tasks["jar"] as CopySpec)
-//
-//
-//            manifest {
-//                attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
-//            }
-//        }
-//
-//        task<Jar>("testSwtJar") {
-//            dependsOn("compileTestSwt")
-//
-//            baseName = "testSwt"
-//
-//            from(sourceSets.testSwt.resources)
-//
-//            // makes it a fat-jar
-//            // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-//            // One can extend this task, to skip certain files or particular types at will
-//            // specifically, we filter out the "Utilities" project
-//            from(configurations.runtime.filter({ it.nameWithoutExtension != "Utilities" }).map({ if (it.isDirectory) it else zipTree(it) }))
-//            with(tasks["jar"] as CopySpec)
-//
-//
-//            manifest {
-//                attributes["Main-Class"] = "dorkbox.TestTraySwt"
-//            }
-//        }
-
-//
-
-//
 
 }
 
