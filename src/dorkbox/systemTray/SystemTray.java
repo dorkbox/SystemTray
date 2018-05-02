@@ -481,21 +481,35 @@ class SystemTray {
                 return;
             }
 
-            // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
-            // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
-            if (Swt.isLoaded && FORCE_TRAY_TYPE == TrayType.Swing) {
-                if (AUTO_FIX_INCONSISTENCIES) {
-                    logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
 
-                    FORCE_TRAY_TYPE = TrayType.AWT;
-                }
-                else {
-                    logger.error("Unable to load Swing + SWT (for all versions of Java). " +
-                                 "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.\"");
+            if (Swt.isLoaded) {
+                // versions of SWT older than v4.4, are INCOMPATIBLE with us.
+                // Of note, v4.3 is the "last released" version of SWT by eclipse AND IT WILL NOT WORK!!
+                // for NEWER versions of SWT via maven, use http://maven-eclipse.github.io/maven
+                if (Swt.getVersion() < 4430) {
+                    logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+.");
 
                     systemTrayMenu = null;
                     systemTray = null;
                     return;
+                }
+
+                // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
+                // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
+                if (FORCE_TRAY_TYPE == TrayType.Swing) {
+                    if (AUTO_FIX_INCONSISTENCIES) {
+                        logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
+
+                        FORCE_TRAY_TYPE = TrayType.AWT;
+                    }
+                    else {
+                        logger.error("Unable to load Swing + SWT (for all versions of Java). " +
+                                     "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.\"");
+
+                        systemTrayMenu = null;
+                        systemTray = null;
+                        return;
+                    }
                 }
             }
 
@@ -702,6 +716,10 @@ class SystemTray {
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
             logger.debug("Is JavaFX detected? {}", JavaFX.isLoaded);
             logger.debug("Is SWT detected? {}", Swt.isLoaded);
+            if (Swt.isLoaded) {
+                logger.debug("SWT version: {}", Swt.getVersion());
+            }
+
             logger.debug("Java Swing L&F: {}", UIManager.getLookAndFeel().getID());
             if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
                 logger.debug("Auto-detecting tray type");
