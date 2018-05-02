@@ -197,7 +197,7 @@ class TestTraySwt {
                 source.getParent().remove();
             }
         }));
-
+        mainMenu.add(submenu);
 
         systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
             @Override
@@ -214,7 +214,7 @@ class TestTraySwt {
                 //System.exit(0);  not necessary if all non-daemon threads have stopped.
             }
         })).setShortcut('q'); // case does not matter
-        mainMenu.add(submenu);
+
 
         shell.pack();
         shell.open();
