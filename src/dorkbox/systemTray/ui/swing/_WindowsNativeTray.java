@@ -219,7 +219,7 @@ class _WindowsNativeTray extends Tray {
 
     private
     void setTooltip_(final String text) {
-        if (tooltipText != null && tooltipText.equals(text) || tooltipText == null && text != null) {
+        if (tooltipText != null && tooltipText.equals(text)) {
             return;
         }
 
