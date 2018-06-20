@@ -80,7 +80,7 @@ sourceSets {
         java {
             setSrcDirs Collections.singletonList('test')
             include javaFile('dorkbox.TestTray',
-                    'dorkbox.CustomSwingUI')
+                             'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -94,8 +94,8 @@ sourceSets {
         java {
             setSrcDirs Collections.singletonList('test')
             include javaFile('dorkbox.TestTray',
-                    'dorkbox.TestTrayJavaFX',
-                    'dorkbox.CustomSwingUI')
+                             'dorkbox.TestTrayJavaFX',
+                             'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -109,8 +109,8 @@ sourceSets {
         java {
             setSrcDirs Collections.singletonList('test')
             include javaFile('dorkbox.TestTray',
-                    'dorkbox.TestTraySwt',
-                    'dorkbox.CustomSwingUI')
+                             'dorkbox.TestTraySwt',
+                             'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -188,7 +188,7 @@ project('Utilities') {
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 
-    options.bootstrapClasspath = files("/jre/lib/rt.jar")
+//    options.bootstrapClasspath = files("/jre/lib/rt.jar")
     sourceCompatibility = JavaVersion.VERSION_1_6
     targetCompatibility = JavaVersion.VERSION_1_6
 }
@@ -211,26 +211,26 @@ task compileUtils(type: JavaCompile) {
 
     source = Collections.singletonList('../Utilities/src')
     include javaFile('dorkbox.util.SwingUtil',
-            'dorkbox.util.OS',
-            'dorkbox.util.OSUtil',
-            'dorkbox.util.OSType',
-            'dorkbox.util.ImageResizeUtil',
-            'dorkbox.util.ImageUtil',
-            'dorkbox.util.CacheUtil',
-            'dorkbox.util.IO',
-            'dorkbox.util.JavaFX',
-            'dorkbox.util.Property',
-            'dorkbox.util.Keep',
-            'dorkbox.util.FontUtil',
-            'dorkbox.util.ScreenUtil',
-            'dorkbox.util.ClassLoaderUtil',
-            'dorkbox.util.Swt',
-            'dorkbox.util.NamedThreadFactory',
-            'dorkbox.util.ActionHandlerLong',
-            'dorkbox.util.FileUtil',
-            'dorkbox.util.MathUtil',
-            'dorkbox.util.LocationResolver',
-            'dorkbox.util.Desktop')
+                     'dorkbox.util.OS',
+                     'dorkbox.util.OSUtil',
+                     'dorkbox.util.OSType',
+                     'dorkbox.util.ImageResizeUtil',
+                     'dorkbox.util.ImageUtil',
+                     'dorkbox.util.CacheUtil',
+                     'dorkbox.util.IO',
+                     'dorkbox.util.JavaFX',
+                     'dorkbox.util.Property',
+                     'dorkbox.util.Keep',
+                     'dorkbox.util.FontUtil',
+                     'dorkbox.util.ScreenUtil',
+                     'dorkbox.util.ClassLoaderUtil',
+                     'dorkbox.util.Swt',
+                     'dorkbox.util.NamedThreadFactory',
+                     'dorkbox.util.ActionHandlerLong',
+                     'dorkbox.util.FileUtil',
+                     'dorkbox.util.MathUtil',
+                     'dorkbox.util.LocationResolver',
+                     'dorkbox.util.Desktop')
 
     // entire packages/directories
     include('dorkbox/util/jna/**/*.java')
@@ -331,7 +331,7 @@ task jarSwtExample(type: Jar) {
 
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.compile.filter { it.name == 'Utilities.jar' ? null : it }
-            .collect { it.directory ? it : zipTree(it) }
+                               .collect { it.directory ? it : zipTree(it) }
 
     // include applicable class files from subset of Utilities project
     from compileUtils.destinationDir
@@ -486,14 +486,14 @@ signing {
 //}
 
 
-def props = new Properties()
-file('../../sonatype.properties').withInputStream { props.load(it) }
-
-task printProps {
-    doFirst {
-        println props.getProperty('developerName')
-    }
-}
+//def props = new Properties()
+//file('../../sonatype.properties').withInputStream { props.load(it) }
+//
+//task printProps {
+//    doFirst {
+//        println props.getProperty('developerName')
+//    }
+//}
 
 //
 //tasks {
