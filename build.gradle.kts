@@ -1,16 +1,17 @@
 import org.gradle.api.internal.HasConvention
 import org.gradle.internal.impldep.org.apache.http.client.methods.RequestBuilder.options
+import org.jetbrains.kotlin.contracts.model.structure.UNKNOWN_COMPUTATION.type
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.android.AndroidGradleWrapper.getTestVariants
 import org.jetbrains.kotlin.gradle.plugin.android.AndroidGradleWrapper.srcDir
+import java.util.Collections
 import java.time.Instant
 
 plugins {
     java
     maven
-    `maven-publish`
-    kotlin("jvm").version("1.2.40")
+    kotlin("jvm").version("1.2.41")
 }
 
 apply {
@@ -20,10 +21,9 @@ apply {
 
 kotlin.experimental.coroutines = Coroutines.ENABLE
 
-//    version = getWPILibVersion() ?: getVersionFromGitTag(fallback = "0.0.0") // fall back to git describe if no WPILib version is set
 group = "com.dorkbox"
 version = "3.13-SNAPSHOT"
-description = """Dorkbox-SystemTray"""
+description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+"
 
 
 java {
@@ -42,8 +42,10 @@ java {
 //}
 
 
-// This creates the swtExampleJar configuration usable inside dependencies and allowing us custom libs when building the SWT example jar
-val swtExampleJar = configurations.create("swtExampleJar")
+// This creates the configurations usable inside dependencies and allowing us custom libs when building the example jars
+val swingExampleCompile  = configurations.create("swingExampleCompile")
+val javaFxExampleCompile = configurations.create("javaFxExampleCompile")
+val swtExampleCompile    = configurations.create("swtExampleCompile")
 
 // make working with sourceSets easier
 val sourceSets = java.sourceSets
@@ -55,19 +57,13 @@ fun SourceSetContainer.main(block: SourceSet.() -> Unit) = main.apply(block)
 val SourceSetContainer.test: SourceSet get() = maybeCreate("test")
 fun SourceSetContainer.test(block: SourceSet.() -> Unit) = test.apply(block)
 
-val SourceSetContainer.utilities: SourceSet get() = maybeCreate("utilities")
-fun SourceSetContainer.utilities(block: SourceSet.() -> Unit) = utilities.apply(block)
-
-// testing jars
+// test/example jars
 val SourceSetContainer.swingExample: SourceSet get() = maybeCreate("swingExample")
 fun SourceSetContainer.swingExample(block: SourceSet.() -> Unit) = swingExample.apply(block)
 val org.gradle.api.tasks.SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
 val org.gradle.api.tasks.SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
 fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.apply(block)
-
-//val SourceSet.kotlin: SourceDirectorySet
-//    get() = (this as HasConvention).convention.getPlugin<KotlinSourceSet>().kotlin
 
 var SourceDirectorySet.sourceDirs: Iterable<File>
     get() = srcDirs
@@ -77,7 +73,7 @@ var SourceDirectorySet.sourceDirs: Iterable<File>
 
 
 fun javaFile(vararg fileNames: String): Iterable<String> {
-    var fileList = ArrayList<String>()
+    val fileList = ArrayList<String>()
 
     for (name in fileNames) {
         val fixed = name.replace('.', '/') + ".java"
@@ -88,52 +84,31 @@ fun javaFile(vararg fileNames: String): Iterable<String> {
 }
 
 sourceSets {
-    utilities {
-        java {
-            sourceDirs = files("../Utilities/src")
-            include(javaFile("dorkbox.util.SwingUtil",
-                             "dorkbox.util.OS",
-                             "dorkbox.util.OSUtil",
-                             "dorkbox.util.OSType",
-                             "dorkbox.util.ImageResizeUtil",
-                             "dorkbox.util.ImageUtil",
-                             "dorkbox.util.CacheUtil",
-                             "dorkbox.util.IO",
-                             "dorkbox.util.JavaFX",
-                             "dorkbox.util.Property",
-                             "dorkbox.util.Swt",
-                             "dorkbox.util.Keep",
-                             "dorkbox.util.FontUtil",
-                             "dorkbox.util.ScreenUtil",
-                             "dorkbox.util.ClassLoaderUtil",
-                             "dorkbox.util.NamedThreadFactory",
-                             "dorkbox.util.ActionHandlerLong",
-                             "dorkbox.util.FileUtil",
-                             "dorkbox.util.MathUtil",
-                             "dorkbox.util.LocationResolver",
-                             "dorkbox.util.Desktop"))
-
-            // entire packages/directories
-            include("dorkbox/util/jna/**/*")
-            include("dorkbox/util/windows/**/*")
-            include("dorkbox/util/swing/**/*")
-        }
-    }
-
     main {
         java {
             sourceDirs = files("src")
-            srcDir(sourceSets.utilities.java)
+
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
 
             resources {
                 sourceDirs = files("src")
-                include("dorkbox/systemTray/gnomeShell/extension.js", "dorkbox/systemTray/util/error_32.png")
+                include("dorkbox/systemTray/gnomeShell/extension.js",
+                        "dorkbox/systemTray/util/error_32.png")
             }
         }
     }
 
     test {
-        java.sourceDirs = files("test")
+        java {
+            sourceDirs = files("test")
+
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
+
+            // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
+            srcDir(sourceSets.main.allJava)
+        }
     }
 
     swingExample {
@@ -142,12 +117,11 @@ sourceSets {
             include(javaFile("dorkbox.TestTray", "dorkbox.CustomSwingUI"))
 
             srcDir(sourceSets.main.allJava)
-            compileClasspath = sourceSets.main.compileClasspath
+        }
 
-            resources {
-                sourceDirs = files("test")
-                include("dorkbox/*.png")
-            }
+        resources {
+            sourceDirs = files("test")
+            include("dorkbox/*.png")
         }
     }
 
@@ -157,12 +131,11 @@ sourceSets {
             include(javaFile("dorkbox.TestTray", "dorkbox.TestTrayJavaFX", "dorkbox.CustomSwingUI"))
 
             srcDir(sourceSets.main.allJava)
-            compileClasspath = sourceSets.main.compileClasspath
+        }
 
-            resources {
-                sourceDirs = files("test")
-                include("dorkbox/*.png")
-            }
+        resources {
+            sourceDirs = files("test")
+            include("dorkbox/*.png")
         }
     }
 
@@ -172,22 +145,66 @@ sourceSets {
             include(javaFile("dorkbox.TestTray", "dorkbox.TestTraySwt", "dorkbox.CustomSwingUI"))
 
             srcDir(sourceSets.main.allJava)
-            compileClasspath = sourceSets.main.compileClasspath + files(swtExampleJar)
+        }
 
-            resources {
-                sourceDirs = files("test")
-                include("dorkbox/*.png")
-            }
+        resources {
+            sourceDirs = files("test")
+            include("dorkbox/*.png")
         }
     }
 }
 
 repositories {
-    mavenLocal()
+    mavenLocal() // this must be first!
+
+    mavenCentral()
+
+    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
+    maven(url = "http://maven-eclipse.github.io/maven")
+    maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
     mavenCentral()
 }
 
-project(":Utilities") {
+
+dependencies {
+    compile(project("Utilities")) {
+        // don't include any of the project dependencies for anything
+        isTransitive = false
+    }
+
+    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
+    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
+    compile(group = "com.dorkbox", name = "ShellExecutor", version = "1.1+")
+    compile(group = "org.javassist", name = "javassist", version = "3.21.0-GA")
+    compile(group = "net.java.dev.jna", name = "jna", version = "4.3.0")
+    compile(group = "net.java.dev.jna", name = "jna-platform", version = "4.3.0")
+    compile(group = "org.slf4j", name = "slf4j-api", version = "1.7.25")
+
+
+    val log = runtime(group = "ch.qos.logback", name = "logback-classic", version = "1.1.6")
+
+    //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
+    //  http://maven-eclipse.github.io/maven
+    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
+    val swtDep = testCompileOnly(group = "org.eclipse.swt", name = getSwtMavenName(), version = "4.4+")
+
+    // JavaFX isn't always added to the compile classpath....
+    testCompile(files(System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"))
+
+    // dependencies for our test examples
+    swingExampleCompile(configurations.compile)
+    javaFxExampleCompile(configurations.compile)
+    swtExampleCompile(configurations.compile)
+    swtExampleCompile(swtDep)
+
+    swingExampleCompile(log)
+    javaFxExampleCompile(log)
+    swtExampleCompile(log)
+}
+
+
+
+project("Utilities") {
     tasks.withType<Test> {
         // want to remove utilities project from unit tests. It's unnecessary to run unit tests for the entire Utilities project
         exclude("**/*")
@@ -204,101 +221,167 @@ project(":Utilities") {
     }
 }
 
-dependencies {
-    compile(project(":Utilities")) {
-        // don't include any of the project dependencies for anything
-        isTransitive = false
-    }
-    compile(group = "com.dorkbox", name = "ShellExecutor", version = "1.1+")
 
-    compile(group = "ch.qos.logback", name = "logback-classic", version = "1.1.6")
-    compile(group = "org.javassist", name = "javassist", version = "3.21.0-GA")
-    compile(group = "net.java.dev.jna", name = "jna", version = "4.3.0")
-    compile(group = "net.java.dev.jna", name = "jna-platform", version = "4.3.0")
-    compile(group = "org.slf4j", name = "slf4j-api", version = "1.7.25")
 
-    testCompileOnly(group = "org.eclipse.swt", name = "org.eclipse.swt.gtk.linux.x86_64", version = "4.3")
-    swtExampleJar(group = "org.eclipse.swt", name = "org.eclipse.swt.gtk.linux.x86_64", version = "4.3")
-}
-
+///////////////////////////////
+//////    Task defaults
+///////////////////////////////
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
-//        suppressWarnings = true
-    // setup compile options. we specifically want to suppress usage of "Unsafe"
+
+//    options.bootstrapClasspath = files("/jre/lib/rt.jar")
+    sourceCompatibility = JavaVersion.VERSION_1_6.toString()
+    targetCompatibility = JavaVersion.VERSION_1_6.toString()
 }
 
 tasks.withType<Jar> {
+    setDuplicatesStrategy(DuplicatesStrategy.FAIL)
+
     manifest {
         attributes["Implementation-Version"] = version
         attributes["Built-Date"] = Instant.now().toString()
     }
 }
 
-task<Jar>("_swingExampleJar") {
-    dependsOn("compileSwingExampleJava")
 
-    baseName = "SwingExample"
+///////////////////////////////
+//////    UTILITIES COMPILE (for inclusion into jars)
+///////////////////////////////
+task<JavaCompile>("compileUtils") {
+    // we don't want the default include of **/*.java
+    includes.clear()
+
+    source = fileTree("../Utilities/src")
+    include(javaFile (
+            "dorkbox.util.SwingUtil",
+            "dorkbox.util.OS",
+            "dorkbox.util.OSUtil",
+            "dorkbox.util.OSType",
+            "dorkbox.util.ImageResizeUtil",
+            "dorkbox.util.ImageUtil",
+            "dorkbox.util.CacheUtil",
+            "dorkbox.util.IO",
+            "dorkbox.util.JavaFX",
+            "dorkbox.util.Property",
+            "dorkbox.util.Keep",
+            "dorkbox.util.FontUtil",
+            "dorkbox.util.ScreenUtil",
+            "dorkbox.util.ClassLoaderUtil",
+            "dorkbox.util.Swt",
+            "dorkbox.util.NamedThreadFactory",
+            "dorkbox.util.ActionHandlerLong",
+            "dorkbox.util.FileUtil",
+            "dorkbox.util.MathUtil",
+            "dorkbox.util.LocationResolver",
+            "dorkbox.util.Desktop"))
+
+    // entire packages/directories
+    include("dorkbox/util/jna/**/*.java")
+    include("dorkbox/util/windows/**/*.java")
+    include("dorkbox/util/swing/**/*.java")
+
+    classpath = sourceSets.main.compileClasspath
+    destinationDir = file("$rootDir/build/classes_utilities")
+}
+
+
+///////////////////////////////
+//////    Tasks to launch examples from gradle
+///////////////////////////////
+task<JavaExec>("swingExample") {
+    classpath = sourceSets.swingExample.runtimeClasspath
+    main = "dorkbox.TestTray"
+    standardInput = System.`in`
+}
+
+task<JavaExec>("javaFxExample") {
+    classpath = sourceSets.javaFxExample.runtimeClasspath
+    main = "dorkbox.TestTrayJavaFX"
+    standardInput = System.`in`
+}
+
+task<JavaExec>("swtExample") {
+    classpath = sourceSets.swtExample.runtimeClasspath
+    main = "dorkbox.TestTraySwt"
+    standardInput = System.`in`
+}
+
+
+
+///////////////////////////////
+//////    Jar Tasks
+///////////////////////////////
+val jar: Jar by tasks
+jar.apply {
+    dependsOn("compileUtils")
+
+    // include applicable class files from subset of Utilities project
+    from((tasks["compileUtils"] as JavaCompile).destinationDir)
+}
+
+task<Jar>("jarSwingExample") {
+    dependsOn("jar")
+
+    baseName = "SystemTray-SwingExample"
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, using Swing"
 
     from(sourceSets.swingExample.output.classesDirs)
     from(sourceSets.swingExample.output.resourcesDir)
 
-    // makes it a fat-jar, we filter out the "Utilities" project (because we manually
-    // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-    // One can extend this task, to skip certain files or particular types at will
-    from(configurations.runtime
-                 .filter({ it.nameWithoutExtension != "Utilities" })
-                 .map({ if (it.isDirectory) it else zipTree(it) }))
-    with(tasks["jar"] as CopySpec)
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from(configurations.compile.filter { it.nameWithoutExtension != "Utilities"}
+                               .map { if (it.isDirectory) it else zipTree(it) })
 
+    // include applicable class files from subset of Utilities project
+    from((tasks["compileUtils"] as JavaCompile).destinationDir)
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTray"
     }
 }
 
-task<Jar>("_javaFxExampleJar") {
-    dependsOn("compileJavaFxExampleJava")
 
-    baseName = "JavaFxExample"
+task<Jar>("jarJavaFxExample") {
+    dependsOn("jar")
+
+    baseName = "SystemTray-JavaFxExample"
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, using JavaFX"
 
     from(sourceSets.javaFxExample.output.classesDirs)
     from(sourceSets.javaFxExample.output.resourcesDir)
 
-    // makes it a fat-jar, we filter out the "Utilities" project (because we manually
-    // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-    // One can extend this task, to skip certain files or particular types at will
-    from(configurations.runtime
-                 .filter({ it.nameWithoutExtension != "Utilities" })
-                 .map({ if (it.isDirectory) it else zipTree(it) }))
-    with(tasks["jar"] as CopySpec)
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from(configurations.compile.filter { it.nameWithoutExtension != "Utilities" }
+                               .map { if (it.isDirectory) it else zipTree(it) })
+
+    // include applicable class files from subset of Utilities project
+    from((tasks["compileUtils"] as JavaCompile).destinationDir)
 
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
-        attributes["Class-Path"] = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
+        attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
     }
 }
 
-task<Jar>("_swtExampleJar") {
-    dependsOn("compileSwtExampleJava")
+task<Jar>("jarSwtExample") {
+    dependsOn("jar")
 
-    baseName = "SwtExample"
+    baseName = "SystemTray-SwtExample"
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, using SWT"
 
     from(sourceSets.swtExample.output.classesDirs)
     from(sourceSets.swtExample.output.resourcesDir)
 
-    // makes it a fat-jar, we filter out the "Utilities" project (because we manually
-    // This line of code recursively collects and copies all of a project's files and adds them to the JAR itself.
-    // One can extend this task, to skip certain files or particular types at will
-    from(configurations.runtime
-                 .filter({ it.nameWithoutExtension != "Utilities" })
-                 .map({ if (it.isDirectory) it else zipTree(it) }))
-    with(tasks["jar"] as CopySpec)
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from(configurations.compile.filter { it.nameWithoutExtension != "Utilities" }
+                               .map { if (it.isDirectory) it else zipTree(it) })
 
-    from(swtExampleJar.map({ if (it.isDirectory) it else zipTree(it) }))
-    with(tasks["jar"] as CopySpec)
-
-
+    // include applicable class files from subset of Utilities project
+    from((tasks["compileUtils"] as JavaCompile).destinationDir)
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTraySwt"
@@ -306,146 +389,39 @@ task<Jar>("_swtExampleJar") {
 }
 
 
+task("jarAllExamples") {
+    dependsOn("jarSwingExample")
+    dependsOn("jarJavaFxExample")
+    dependsOn("jarSwtExample")
 
-
-
-
-
-
-
-
-
-
-
-
-
-// val compileKotlin: KotlinCompile by tasks
-// compileKotlin.kotlinOptions.jvmTarget = "1.8"
-
-/* -------------------------------------------------------------------------------------------
-Tasks and publishing
-   ------------------------------------------------------------------------------------------- */
-//val sourceJar = task<Jar>("sourceJar") {
-//    description = "Creates a JAR that contains the source code."
-//    from(java.sourceSets["main"].allSource)
-//    classifier = "sources"
-//}
-//val javaDocJar = task<Jar>("javaDocJar") {
-//    dependsOn("javadoc")
-//    description = "Creates a JAR that contains the javadocs."
-//    from(java.docsDir)
-//    classifier = "javadoc"
-//}
-//
-//publishing {
-//    (publications) {
-//        "mavenJava"(MavenPublication::class) {
-//            from(components["java"])
-//            artifactId = "SystemTray"
-//            artifact(javaDocJar)
-//            artifact(sourceJar)
-//        }
-//    }
-//}
-
-
-//
-//tasks {
-//    // Disable publication on root project
-//    "artifactoryPublish"(ArtifactoryTask::class) {
-//        skip = true
-//    }
-//}
-
-//artifactory {
-//    setContextUrl("https://repo.gradle.org/gradle")
-//    publish(delegateClosureOf<PublisherConfig> {
-//        repository(delegateClosureOf<GroovyObject> {
-//            val targetRepoKey = "libs-${buildTagFor(project.version as String)}s-local"
-//            setProperty("repoKey", targetRepoKey)
-//            setProperty("username", project.findProperty("artifactory_user") ?: "nouser")
-//            setProperty("password", project.findProperty("artifactory_password") ?: "nopass")
-//            setProperty("maven", true)
-//        })
-//        defaults(delegateClosureOf<GroovyObject> {
-//            invokeMethod("publications", "mavenJava")
-//        })
-//    })
-//    resolve(delegateClosureOf<ResolverConfig> {
-//        setProperty("repoKey", "repo")
-//    })
-//}
-
-
-
-/*
-
+    group = BasePlugin.BUILD_GROUP
+    description = "Create all-in-one examples for testing, using Swing, JavaFX, and SWT"
 }
 
-*/
-
-//
-//task("hello-src-set") {
-//    var files: Set<File> = sourceSets.main.java.srcDirs
-//    println(files)
-//
-//    println("Utilities")
-//    println(sourceSets.utilities.java.filter.includes)
-//
-//    files = sourceSets.utilities.java.srcDirs
-//    println(files)
-//}
 
 
-//shadowJar {
-//    dependencies {
-//        exclude(dependency('junit:junit:3.8.2'))
-//    }
-//}
+operator fun Regex.contains(text: CharSequence): Boolean = this.matches(text)
+fun getSwtMavenName(): String {
+    var platform = System.getProperty("os.name")
+    when (platform.replace("\\s".toRegex(), "").toLowerCase()) {
+        in Regex(".*linux.*") -> platform = "linux"
+        in Regex(".*darwin.*") -> platform = "macosx"
+        in Regex(".*osx.*") -> platform = "macosx"
+        in Regex(".*win.*") -> platform = "win32"
+    }
+
+    var arch = System.getProperty("os.arch")
+    if (arch.matches(".*64.*".toRegex())) {
+        arch = "x86_64"
+    }
+    else {
+        arch = "x86"
+    }
 
 
-//tasks.create('smokeTest', SmokeTest) {
-//    SmokeTest task ->
-//    group = "Verification"
-//    description = "Runs Smoke tests"
-//    testClassesDirs = sourceSets.smokeTest.output.classesDirs
-//    classpath = sourceSets.smokeTest.runtimeClasspath
-//    maxParallelForks = 1 // those tests are pretty expensive, we shouldn't execute them concurrently
-//}
+    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
+    //  https://github.com/maven-eclipse/maven-eclipse.github.io   for the website about it
+    //  http://maven-eclipse.github.io/maven  for the maven repo
 
-
-//task copyReport (type: Copy) {
-//    from file ("${buildDir}/reports/my-report.pdf")
-//    into file ("${buildDir}/toArchive")
-//}
-
-//task copyReport2 (type: Copy) {
-//    from "${buildDir}/reports/my-report.pdf"
-//    into "${buildDir}/toArchive"
-//}
-
-//task copyReport3 (type: Copy) {
-//    from myReportTask . outputFile into archiveReportsTask . dirToArchive
-//}
-//task packageDistribution (type: Zip) {
-//    archiveName = "my-distribution.zip"
-//    destinationDir = file("${buildDir}/dist")
-//
-//    from "${buildDir}/toArchive"
-//}
-//task unpackFiles (type: Copy) {
-//    from zipTree ("src/resources/thirdPartyResources.zip")
-//    into "${buildDir}/resources"
-//}
-//task uberJar (type: Jar) {
-//    appendix = 'uber'
-//
-//    from sourceSets . main . output from configurations . runtimeClasspath . files .
-//    findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
-//}
-//task moveReports {
-//    doLast {
-//        ant.move file : "${buildDir}/reports",
-//        todir: "${buildDir}/toArchive"
-//    }
-//}
+    return "org.eclipse.swt.gtk.${platform}.${arch}"
+}
