@@ -58,12 +58,6 @@ fabric.properties
 ######################
 
 
-# gradle is used to define this project
-.idea/modules
-.idea/modules.xml
-.idea/compiler.xml
-
-
 # From https://github.com/github/gitignore/blob/master/Gradle.gitignore
 .gradle
 /build/
@@ -77,8 +71,8 @@ gradle-app.setting
 # Cache of project
 .gradletasknamecache
 
-# # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
-# gradle/wrapper/gradle-wrapper.properties
+# Work around https://youtrack.jetbrains.com/issue/IDEA-116898
+gradle/wrapper/gradle-wrapper.properties
 
 
 
