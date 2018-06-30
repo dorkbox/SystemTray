@@ -153,7 +153,7 @@ dependencies {
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
     implementation group: 'com.dorkbox', name: 'ShellExecutor', version: '1.1+'
-    implementation group: 'org.javassist', name: 'javassist', version: '3.21.0-GA'
+    implementation group: 'org.javassist', name: 'javassist', version: '3.23.0-GA'
     implementation group: 'net.java.dev.jna', name: 'jna', version: '4.3.0'
     implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '4.3.0'
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
