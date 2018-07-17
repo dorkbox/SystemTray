@@ -15,9 +15,6 @@
  */
 include("Utilities")
 
-rootProject.name = "SystemTray"
-
-
 for (project in rootProject.children) {
     project.projectDir = file("../$project.name")
     project.buildFileName = "build.gradle"
