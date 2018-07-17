@@ -15,27 +15,19 @@
  */
 import java.time.Instant
 
-buildscript {
-    repositories {
-        mavenLocal()
-    }
-    dependencies {
-        classpath 'com.dorkbox:CrossCompile:1.0.0'
-    }
-}
-
 plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
+
+    id "com.dorkbox.Licensing" version "1.1.0"
+    id "com.dorkbox.CrossCompile" version "1.0.0"
 }
 
 apply from: '../Utilities/gradle/swt.gradle'
-apply plugin: 'com.dorkbox.CrossCompile'
-apply plugin: 'signing'
 
 group = 'com.dorkbox'
-version = '3.13-SNAPSHOT'
+version = '3.14'
 description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
 
 static String[] javaFile(String... fileNames) {
@@ -391,16 +383,16 @@ publishing {
                 // remove the Utilities project from the pom (since we include the relevant source, a custom jar is not necessary)
                 // This is run AFTER the pom data is put together, and just before written to disk
                 withXml {
-                    // get the backing list of all the dependencies in the POM
-                    def depsNode = asNode().getByName('dependencies').get(0).children()
-                    for (int i = 0; i < depsNode.size(); i++) {
-                        // find and remove the 'Utilities' project from the POM
-                        if (depsNode.get(i).getByName('artifactId').get(0).children().get(0) == 'Utilities') {
-                            depsNode.remove(i)
-                            break
-                        }
+                    def root = asNode()
+
+                    root.dependencies.'*'.findAll() {
+                        it.artifactId.text() == "Utilities"
+                    }.each() {
+                        it.parent().remove(it)
                     }
                 }
+
+
 
                 url = 'https://git.dorkbox.com/dorkbox/SystemTray'
                 description = this.description
