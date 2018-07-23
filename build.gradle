@@ -13,7 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import java.nio.file.Paths
 import java.time.Instant
+
+buildscript {
+    // load properties from custom location
+    def propsFile = Paths.get("${projectDir}/../../gradle.properties").toAbsolutePath().normalize().toFile()
+    println("Loading custom property data from: ${propsFile}")
+
+    def props = new Properties()
+    propsFile.withInputStream {props.load(it)}
+    props.each {key, val -> project.ext.set(key, val)
+    }
+
+    // for plugin publishing
+    repositories {
+        mavenLocal()
+    }
+    dependencies {
+        classpath "com.dorkbox:Version:1.0.0"
+    }
+}
 
 plugins {
     id 'java'
@@ -24,6 +45,7 @@ plugins {
     id "com.dorkbox.CrossCompile" version "1.0.0"
 }
 
+apply plugin: 'com.dorkbox.Version'
 apply from: '../Utilities/gradle/swt.gradle'
 
 group = 'com.dorkbox'
@@ -50,9 +72,6 @@ sourceSets {
     main {
         java {
             setSrcDirs Collections.singletonList('src')
-
-            // only want to include java files for the source. 'setSrcDirs' resets includes...
-            include "**/*.java"
         }
 
         resources {
@@ -65,9 +84,6 @@ sourceSets {
     test {
         java {
             setSrcDirs Collections.singletonList('test')
-
-            // only want to include java fi les for the source. 'setSrcDirs' resets includes...
-            include "**/*.java"
 
             // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
             srcDir main.java
