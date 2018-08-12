@@ -24,15 +24,19 @@ buildscript {
 
     def props = new Properties()
     propsFile.withInputStream {props.load(it)}
-    props.each {key, val -> project.ext.set(key, val)
-    }
+    props.each {key, val -> project.ext.set(key, val)}
 
-    // for plugin publishing
+    // for plugin publishing and license sources
     repositories {
         mavenLocal()
+        maven {url "https://plugins.gradle.org/m2/"}
     }
     dependencies {
-        classpath "com.dorkbox:Version:1.0.0"
+        // this is the only way to also get the source code for IDE auto-complete
+        classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2"
+        classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2:sources"
+
+        classpath "com.dorkbox:VersionUpdater:1.0.0"
     }
 }
 
@@ -41,11 +45,14 @@ plugins {
     id 'maven-publish'
     id 'signing'
 
-    id "com.dorkbox.Licensing" version "1.1.0"
-    id "com.dorkbox.CrossCompile" version "1.0.0"
+    id "com.dorkbox.CrossCompile" version "1.0.1"
 }
 
-apply plugin: 'com.dorkbox.Version'
+apply plugin: 'com.dorkbox.VersionUpdater'
+
+// this is the only way to also get the source code for IDE auto-complete
+apply plugin: "com.dorkbox.Licensing"
+
 apply from: '../Utilities/gradle/swt.gradle'
 
 group = 'com.dorkbox'
@@ -160,11 +167,14 @@ dependencies {
 
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
-    implementation group: 'com.dorkbox', name: 'ShellExecutor', version: '1.1+'
+
+    compile group: 'com.dorkbox', name: 'ShellExecutor', version: '1.1+'
+    compile group: 'com.dorkbox', name: 'Version', version: '1.0'
+
     implementation group: 'org.javassist', name: 'javassist', version: '3.23.0-GA'
     implementation group: 'net.java.dev.jna', name: 'jna', version: '4.3.0'
     implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '4.3.0'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
 
     def log = runtime group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.6'
@@ -370,7 +380,107 @@ task jarAllExamples {
 }
 
 ///////////////////////////////
-//////    Publishing
+//////    Maven Publishing + Release
+///////////////////////////////
+//task sourceJar(type: Jar) {
+//    description = "Creates a JAR that contains the source code."
+//
+//    from sourceSets.main.allSource
+//
+//    classifier = "sources"
+//}
+//
+//task javaDocJar(type: Jar) {
+//    description = "Creates a JAR that contains the javadocs."
+//
+//    classifier = "javadoc"
+//}
+//
+//// for testing, we don't publish to maven central, but only to local maven
+//publishing {
+//    publications {
+//        CrossCompile(MavenPublication) {
+//            from components.java
+//
+//            artifact(javaDocJar)
+//            artifact(sourceJar)
+//
+//            groupId project.group
+//            artifactId project.ext.id
+//            version project.version
+//
+//            pom {
+//                withXml {
+//                    // eliminate logback compile dependencies (no need in maven central POMs)
+//                    def root = asNode()
+//
+//                    root.dependencies.'*'.findAll() {
+//                        it.groupId.text() == "ch.qos.logback" && it.artifactId.text() == "logback-classic"
+//                    }.each() {
+//                        it.parent().remove(it)
+//                    }
+//                }
+//
+//                name = project.ext.id
+//                url = project.ext.url
+//                description = project.description
+//
+//                issueManagement {
+//                    url = "${project.ext.url}/issues".toString()
+//                    system = 'Gitea Issues'
+//                }
+//
+//                organization {
+//                    name = 'dorkbox, llc'
+//                    url = 'https://dorkbox.com'
+//                }
+//
+//                developers {
+//                    developer {
+//                        name = 'dorkbox, llc'
+//                        email = 'email@dorkbox.com'
+//                    }
+//                }
+//
+//                scm {
+//                    url = project.ext.url
+//                    connection = "scm:${project.ext.url}.git".toString()
+//                }
+//            }
+//        }
+//    }
+//
+//    repositories {
+//        maven {
+//            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+//            credentials {
+//                username sonatypeUsername
+//                password sonatypePassword
+//            }
+//        }
+//    }
+//}
+//
+//signing {
+//    required {hasProperty('sonatypeUsername')}
+//    sign publishing.publications.CrossCompile
+//}
+//
+//// we don't use maven with the plugin (it's uploaded separately to gradle plugins)
+//tasks.withType(PublishToMavenRepository) {
+//    onlyIf {
+//        repository == publishing.repositories.maven && publication == publishing.publications.CrossCompile
+//    }
+//}
+//tasks.withType(PublishToMavenLocal) {
+//    onlyIf {
+//        publication == publishing.publications.CrossCompile
+//    }
+//}
+
+
+///////////////////////////////
+//////    OLD Publishing. NEWER IS ABOVE BUT NEEDS TWEAKING
 ///////////////////////////////
 task sourceJar(type: Jar) {
     description = "Creates a JAR that contains the source code."
