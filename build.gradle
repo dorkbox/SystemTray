@@ -28,15 +28,12 @@ buildscript {
 
     // for plugin publishing and license sources
     repositories {
-        mavenLocal()
         maven {url "https://plugins.gradle.org/m2/"}
     }
     dependencies {
         // this is the only way to also get the source code for IDE auto-complete
         classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2"
         classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2:sources"
-
-        classpath "com.dorkbox:VersionUpdater:1.0.0"
     }
 }
 
@@ -46,9 +43,8 @@ plugins {
     id 'signing'
 
     id "com.dorkbox.CrossCompile" version "1.0.1"
+    id "com.dorkbox.VersionUpdate" version "1.0"
 }
-
-apply plugin: 'com.dorkbox.VersionUpdater'
 
 // this is the only way to also get the source code for IDE auto-complete
 apply plugin: "com.dorkbox.Licensing"
