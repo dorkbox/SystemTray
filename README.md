@@ -266,7 +266,7 @@ Release Notes
 
 This project includes some utility classes that are a small subset of a much larger library. These classes are **kept in sync** with the main utilities library, so "jar hell" is not an issue, and the latest release will always include the same version of utility files as all of the other projects in the dorkbox repository at that time. 
   
-  Please note that the utility source code is included in the release and on our [GitHub](https://github.com/dorkbox/Utilities) repository.
+  Please note that the utility source code is included in the release and on our [Git Server](https://git.dorkbox.com/dorkbox/Utilities) repository.
   
   
 Maven Info
@@ -281,6 +281,18 @@ Maven Info
     </dependency>
 </dependencies>
 ````
+
+  
+Gradle Info
+---------
+````
+dependencies {
+    ...
+    api 'com.dorkbox:SystemTray:3.14'
+}
+````
+
+
 
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
