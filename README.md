@@ -150,7 +150,7 @@ SystemTray.ENABLE_SHUTDOWN_HOOK    (type boolean, default value 'true')
  -  When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also 
     closed.  Additionally, when using the Swing tray type, Windows does not always remove the tray icon if the JVM is stopped, 
     and this makes sure that the tray is also removed from the notification area. 
-    This property is available to disable this functionality in situations where you don't want this to happen.
+    This property is available to disable this functionality in situations where you do not want this to happen.
     This is an advanced feature, and it is recommended to leave as true.
  
  
@@ -159,7 +159,7 @@ SystemTray.AUTO_FIX_INCONSISTENCIES    (type boolean, default value 'true')
 
  
 SystemTray.ENABLE_ROOT_CHECK    (type boolean, default value 'true')
- -  Allows the SystemTray logic to ignore if root is detected. Usually when running as root it won't work (because of 
+ -  Allows the SystemTray logic to ignore if root is detected. Usually when running as root it will not work (because of 
     how DBUS operates), but in rare situations, it might work.
     This is an advanced feature, and it is recommended to leave as true 
  
