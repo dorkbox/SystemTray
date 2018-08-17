@@ -156,7 +156,7 @@ repositories {
 
 
 dependencies {
-    implementation(project('Utilities')) {
+    compile(project('Utilities')) {
         // don't include any of the project dependencies for anything
         transitive = false
     }
@@ -166,9 +166,9 @@ dependencies {
 
     compile 'com.dorkbox:ShellExecutor:1.1+'
 
-    implementation 'org.javassist:javassist:3.23.0-GA'
-    implementation 'net.java.dev.jna:jna:4.3.0'
-    implementation 'net.java.dev.jna:jna-platform:4.3.0'
+    compile 'org.javassist:javassist:3.23.0-GA'
+    compile 'net.java.dev.jna:jna:4.3.0'
+    compile 'net.java.dev.jna:jna-platform:4.3.0'
     compile 'org.slf4j:slf4j-api:1.7.25'
 
 
