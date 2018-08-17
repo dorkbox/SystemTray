@@ -288,7 +288,7 @@ Gradle Info
 ````
 dependencies {
     ...
-    api 'com.dorkbox:SystemTray:3.14'
+    compile 'com.dorkbox:SystemTray:3.14'
 }
 ````
 
