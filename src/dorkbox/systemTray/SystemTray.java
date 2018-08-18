@@ -107,7 +107,7 @@ class SystemTray {
 
     @Property
     /**
-     * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, Swing, or AWT.
+     * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, WindowsNotifyIcon, Swing, or AWT.
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */

@@ -142,7 +142,7 @@ SystemTray.PREFER_GTK3    (type boolean, default value 'true')
     
 
 SystemTray.FORCE_TRAY_TYPE   (type SystemTray.TrayType, default value 'AutoDetect')
- - Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, Swing, or AWT.
+ - Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, WindowsNotifyIcon, Swing, or AWT.
    This is an advanced feature, and it is recommended to leave it at AutoDetect.
 
  
