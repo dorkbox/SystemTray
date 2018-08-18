@@ -5,7 +5,7 @@ Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusI
 
 This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment and if AutoDetect (the default) is enabled. 
 
- - Linux/Unix will automatically choose *Native* (*GtkStatusIcon*, and *AppIndicator*) menus, Windows will choose *Swing*, and MacOS will choose *AWT*.
+ - Linux/Unix will automatically choose *Native* (*GtkStatusIcon*, and *AppIndicator*) menus, Windows will choose *Native* (with Swing menus), and MacOS will choose *AWT*.
   
  - Please note that the *Native* and *AWT* menus follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms and environments.
  
@@ -298,9 +298,8 @@ dependencies {
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
 https://git.dorkbox.com/dorkbox/SystemTray/releases  
 
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ShellExecutor/    
-
+https://repo1.maven.org/maven2/com/dorkbox/SystemTray/  
+https://repo1.maven.org/maven2/com/dorkbox/ShellExecutor/    
 
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
