@@ -69,7 +69,7 @@ apply from: '../Utilities/scripts/gradle/swt.gradle'
 
 project.description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
 project.group = 'com.dorkbox'
-project.version = '3.14'
+project.version = '3.15'
 
 project.ext.name = 'SystemTray'
 project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
@@ -227,7 +227,7 @@ dependencies {
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
 
-    api 'com.dorkbox:ShellExecutor:1.1+'
+    api 'com.dorkbox:ShellExecutor:1.1'
 
     api 'org.javassist:javassist:3.23.0-GA'
     api 'net.java.dev.jna:jna:4.5.2'
@@ -530,6 +530,11 @@ publishing {
             }
         }
     }
+}
+
+nexusStaging {
+    username sonatypeUsername
+    password sonatypePassword
 }
 
 signing {
