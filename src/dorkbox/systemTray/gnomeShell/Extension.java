@@ -285,7 +285,13 @@ class Extension {
             } catch (FileNotFoundException ignored) {
             } catch (IOException ignored) {
             } finally {
-                IO.close(bin, logger);
+                if (bin != null) {
+                    try {
+                        bin.close();
+                    } catch (IOException e) {
+                        logger.error("Error closing: {}", bin, e);
+                    }
+                }
             }
 
 
@@ -333,7 +339,13 @@ class Extension {
         } catch (IOException e) {
             logger.error("Error installing extension metadata file", e);
         } finally {
-            IO.close(outputWriter, logger);
+            if (outputWriter != null) {
+                try {
+                    outputWriter.close();
+                } catch (IOException e) {
+                    logger.error("Error closing: {}", outputWriter, e);
+                }
+            }
         }
 
 
@@ -357,8 +369,20 @@ class Extension {
             } catch (IOException e) {
                 logger.error("Unable to get gnome-shell extension", e);
             } finally {
-                IO.close(reader, logger);
-                IO.close(fileOutputStream, logger);
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        logger.error("Error closing: {}", reader, e);
+                    }
+                }
+                if (fileOutputStream != null) {
+                    try {
+                        fileOutputStream.close();
+                    } catch (IOException e) {
+                        logger.error("Error closing: {}", fileOutputStream, e);
+                    }
+                }
             }
 
             logger.debug("Enabling extension in gnome-shell");
