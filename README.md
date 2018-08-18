@@ -296,7 +296,7 @@ dependencies {
 
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
-https://github.com/dorkbox/SystemTray/releases  
+https://git.dorkbox.com/dorkbox/SystemTray/releases  
 
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/SystemTray/  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ShellExecutor/    
