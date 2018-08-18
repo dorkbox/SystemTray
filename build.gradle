@@ -49,11 +49,66 @@ plugins {
 // this is the only way to also get the source code for IDE auto-complete
 apply plugin: "com.dorkbox.Licensing"
 
-apply from: '../Utilities/gradle/swt.gradle'
+apply plugin: 'java-library'
 
-group = 'com.dorkbox'
-version = '3.14'
-description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
+
+// optionally let us specify which SWT to use. options are win32/mac32/linux32 and win64/mac64/linux64
+// this is needed when building the SWT test example for a different OS combinations
+//ext.swt = 'win64'
+apply from: '../Utilities/scripts/gradle/swt.gradle'
+
+
+
+project.description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
+project.group = 'com.dorkbox'
+project.version = '3.14'
+
+project.ext.name = 'SystemTray'
+project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
+
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+
+licensing {
+    license(License.APACHE_2) {
+        author 'dorkbox, llc'
+        url project.ext.url
+        note project.description
+    }
+
+    license('Dorkbox Utils', License.APACHE_2) {
+        author 'dorkbox, llc'
+        url 'https://git.dorkbox.com/dorkbox/Utilities'
+    }
+
+    license('JNA', License.APACHE_2) {
+        copyright 2011
+        author 'Timothy Wall'
+        url 'https://github.com/twall/jna'
+    }
+
+    license('Lantern', License.APACHE_2) {
+        copyright 2010
+        author 'Brave New Software Project, Inc.'
+        url 'https://github.com/getlantern/lantern'
+    }
+
+    license('QZTray', License.APACHE_2) {
+        copyright 2016
+        author 'Tres Finocchiaro, QZ Industries, LLC'
+        url 'https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java'
+        note 'Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.'
+    }
+
+    license('SLF4J', License.MIT) {
+        copyright 2008
+        author 'QOS.ch'
+        url 'http://www.slf4j.org'
+    }
+}
+
 
 static String[] javaFile(String... fileNames) {
     def fileList = [] as ArrayList
@@ -156,7 +211,7 @@ repositories {
 
 
 dependencies {
-    compile(project('Utilities')) {
+    implementation(project('Utilities')) {
         // don't include any of the project dependencies for anything
         transitive = false
     }
@@ -164,28 +219,30 @@ dependencies {
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
 
-    compile 'com.dorkbox:ShellExecutor:1.1+'
+    api 'com.dorkbox:ShellExecutor:1.1+'
 
-    compile 'org.javassist:javassist:3.23.0-GA'
-    compile 'net.java.dev.jna:jna:4.3.0'
-    compile 'net.java.dev.jna:jna-platform:4.3.0'
-    compile 'org.slf4j:slf4j-api:1.7.25'
+    api 'org.javassist:javassist:3.23.0-GA'
+    api 'net.java.dev.jna:jna:4.3.0'
+    api 'net.java.dev.jna:jna-platform:4.3.0'
+    api 'org.slf4j:slf4j-api:1.7.25'
 
 
-    def log = runtime 'ch.qos.logback:logback-classic:1.1.6'
+    def log = implementation 'ch.qos.logback:logback-classic:1.1.6'
 
     //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
     //  http://maven-eclipse.github.io/maven
     // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
-    def swtDep = testCompileOnly(group: 'org.eclipse.swt', name: "org.eclipse.swt.gtk.${swtPlatform}.${swtArch}", version: '4.4+')
+    def swtDep = swtExampleJar "org.eclipse.swt:org.eclipse.swt.${swtWindowingLibrary}.${swtPlatform}.${swtArch}:4.4+"
+
+    testCompileOnly swtDep
 
     // JavaFX isn't always added to the compile classpath....
     testImplementation files("${System.getProperty('java.home', '.')}/lib/ext/jfxrt.jar")
 
     // dependencies for our test examples
-    swingExampleImplementation configurations.compile, log
-    javaFxExampleImplementation configurations.compile, log
-    swtExampleImplementation configurations.compile, log, swtDep
+    swingExampleImplementation configurations.implementation, log
+    javaFxExampleImplementation configurations.implementation, log
+    swtExampleImplementation configurations.implementation, log, swtDep
 }
 
 project('Utilities') {
@@ -197,8 +254,6 @@ project('Utilities') {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
         options.incremental = true
-        options.fork = true
-        options.forkOptions.executable = 'javac'
 
         // setup compile options. we specifically want to suppress usage of "Unsafe"
         options.compilerArgs = ['-XDignore.symbol.file', '-Xlint:deprecation']
@@ -210,14 +265,12 @@ project('Utilities') {
 ///////////////////////////////
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
-
-//    options.bootstrapClasspath = files("/jre/lib/rt.jar")
-    sourceCompatibility = JavaVersion.VERSION_1_6
-    targetCompatibility = JavaVersion.VERSION_1_6
 }
 
 tasks.withType(Jar) {
     duplicatesStrategy DuplicatesStrategy.FAIL
+
+
 
     manifest {
         attributes['Implementation-Version'] = version
@@ -306,12 +359,13 @@ task jarSwingExample(type: Jar) {
     from sourceSets.swingExample.output.classesDirs
     from sourceSets.swingExample.output.resourcesDir
 
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.compile.filter { it.name == 'Utilities.jar' ? null : it }
-                               .collect { it.directory ? it : zipTree(it) }
-
     // include applicable class files from subset of Utilities project
     from compileUtils.destinationDir
+
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from configurations.runtimeClasspath
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .collect {zipTree(it)}
 
     manifest {
         attributes['Main-Class'] = 'dorkbox.TestTray'
@@ -329,12 +383,13 @@ task jarJavaFxExample(type: Jar) {
     from sourceSets.javaFxExample.output.classesDirs
     from sourceSets.javaFxExample.output.resourcesDir
 
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.compile.filter { it.name == 'Utilities.jar' ? null : it }
-                               .collect { it.directory ? it : zipTree(it) }
-
     // include applicable class files from subset of Utilities project
     from compileUtils.destinationDir
+
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from configurations.runtimeClasspath
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .collect {zipTree(it)}
 
     manifest {
         attributes['Main-Class'] = 'dorkbox.TestTrayJavaFX'
@@ -352,12 +407,17 @@ task jarSwtExample(type: Jar) {
     from sourceSets.swtExample.output.classesDirs
     from sourceSets.swtExample.output.resourcesDir
 
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.compile.filter { it.name == 'Utilities.jar' ? null : it }
-                               .collect { it.directory ? it : zipTree(it) }
-
     // include applicable class files from subset of Utilities project
     from compileUtils.destinationDir
+
+    // include SWT
+    from configurations.swtExampleJar
+                       .collect {zipTree(it)}
+
+    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
+    from configurations.runtimeClasspath
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .collect {zipTree(it)}
 
     manifest {
         attributes['Main-Class'] = 'dorkbox.TestTraySwt'
@@ -374,113 +434,15 @@ task jarAllExamples {
     description = 'Create all-in-one examples for testing, using Swing, JavaFX, and SWT'
 }
 
-///////////////////////////////
-//////    Maven Publishing + Release
-///////////////////////////////
-//task sourceJar(type: Jar) {
-//    description = "Creates a JAR that contains the source code."
-//
-//    from sourceSets.main.allSource
-//
-//    classifier = "sources"
-//}
-//
-//task javaDocJar(type: Jar) {
-//    description = "Creates a JAR that contains the javadocs."
-//
-//    classifier = "javadoc"
-//}
-//
-//// for testing, we don't publish to maven central, but only to local maven
-//publishing {
-//    publications {
-//        CrossCompile(MavenPublication) {
-//            from components.java
-//
-//            artifact(javaDocJar)
-//            artifact(sourceJar)
-//
-//            groupId project.group
-//            artifactId project.ext.id
-//            version project.version
-//
-//            pom {
-//                withXml {
-//                    // eliminate logback compile dependencies (no need in maven central POMs)
-//                    def root = asNode()
-//
-//                    root.dependencies.'*'.findAll() {
-//                        it.groupId.text() == "ch.qos.logback" && it.artifactId.text() == "logback-classic"
-//                    }.each() {
-//                        it.parent().remove(it)
-//                    }
-//                }
-//
-//                name = project.ext.id
-//                url = project.ext.url
-//                description = project.description
-//
-//                issueManagement {
-//                    url = "${project.ext.url}/issues".toString()
-//                    system = 'Gitea Issues'
-//                }
-//
-//                organization {
-//                    name = 'dorkbox, llc'
-//                    url = 'https://dorkbox.com'
-//                }
-//
-//                developers {
-//                    developer {
-//                        name = 'dorkbox, llc'
-//                        email = 'email@dorkbox.com'
-//                    }
-//                }
-//
-//                scm {
-//                    url = project.ext.url
-//                    connection = "scm:${project.ext.url}.git".toString()
-//                }
-//            }
-//        }
-//    }
-//
-//    repositories {
-//        maven {
-//            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-//            credentials {
-//                username sonatypeUsername
-//                password sonatypePassword
-//            }
-//        }
-//    }
-//}
-//
-//signing {
-//    required {hasProperty('sonatypeUsername')}
-//    sign publishing.publications.CrossCompile
-//}
-//
-//// we don't use maven with the plugin (it's uploaded separately to gradle plugins)
-//tasks.withType(PublishToMavenRepository) {
-//    onlyIf {
-//        repository == publishing.repositories.maven && publication == publishing.publications.CrossCompile
-//    }
-//}
-//tasks.withType(PublishToMavenLocal) {
-//    onlyIf {
-//        publication == publishing.publications.CrossCompile
-//    }
-//}
 
 
-///////////////////////////////
-//////    OLD Publishing. NEWER IS ABOVE BUT NEEDS TWEAKING
-///////////////////////////////
+/////////////////////////////
+////    Maven Publishing + Release
+/////////////////////////////
 task sourceJar(type: Jar) {
     description = "Creates a JAR that contains the source code."
 
-    from sourceSets.main.allSource
+    from sourceSets.main.java
     from compileUtils.source
 
     classifier = "sources"
@@ -492,173 +454,84 @@ task javaDocJar(type: Jar) {
     classifier = "javadoc"
 }
 
-
-
-
+// for testing, we don't publish to maven central, but only to local maven
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        SystemTray(MavenPublication) {
             from components.java
 
+            artifact(javaDocJar)
+            artifact(sourceJar)
+
+            groupId project.group
+            artifactId project.ext.name
+            version project.version
+
             pom {
-                // remove the Utilities project from the pom (since we include the relevant source, a custom jar is not necessary)
-                // This is run AFTER the pom data is put together, and just before written to disk
                 withXml {
+                    // eliminate logback and utilities (no need in maven POMs)
                     def root = asNode()
 
                     root.dependencies.'*'.findAll() {
-                        it.artifactId.text() == "Utilities"
+                        it.artifactId.text() == "logback-classic" || it.artifactId.text() == "Utilities"
                     }.each() {
                         it.parent().remove(it)
                     }
                 }
 
-
-
-                url = 'https://git.dorkbox.com/dorkbox/SystemTray'
-                description = this.description
-
-//                properties {
-////                    sourceEncoding = 'UTF-8'
-////                    ['maven.compiler.source'] = '6'
-////                    maven.compiler.target = 6
-//                }
-//
-//                properties['maven.compiler.source'] = '6'
+                name = project.ext.name
+                url = project.ext.url
+                description = project.description
 
                 issueManagement {
-                    url = 'https://git.dorkbox.com/dorkbox/SystemTray'
+                    url = "${project.ext.url}/issues".toString()
                     system = 'Gitea Issues'
                 }
 
-//                licenses {
-//                    license {
-//                        name = 'The Apache License, Version 2.0'
-//                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-//                    }
-//                }
-//                developers {
-//                    developer {
-//                        id = 'johnd'
-//                        name = 'John Doe'
-//                        email = 'john.doe@example.com'
-//                    }
-//                }
-//                scm {
-//                    connection = 'scm:git:git://example.com/my-library.git'
-//                    developerConnection = 'scm:git:ssh://example.com/my-library.git'
-//                    url = 'http://example.com/my-library/'
-//                }
+                organization {
+                    name = 'dorkbox, llc'
+                    url = 'https://dorkbox.com'
+                }
 
+                developers {
+                    developer {
+                        name = 'dorkbox, llc'
+                        email = 'email@dorkbox.com'
+                    }
+                }
 
+                scm {
+                    url = project.ext.url
+                    connection = "scm:${project.ext.url}.git".toString()
+                }
             }
+        }
+    }
 
-            /*
-
-
-<developers>
-<developer>
-<name>Dorkbox</name>
-<email>sonatype@dorkbox.com</email>
-<organization>Dorkbox</organization>
-<organizationUrl>https://github.com/dorkbox</organizationUrl>
-</developer>
-</developers>
-
-             */
-
-
-            artifactId = 'SystemTray'
-
-            artifact(javaDocJar)
-            artifact(sourceJar)
+    repositories {
+        maven {
+            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
         }
     }
 }
 
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-//        }
-//    }
-//}
-
-//
-//uploadArchives {
-//    repositories.mavenDeployer {
-//        configuration = configurations.deployerJars
-//        repository(url: "scp://<url-of-your-webserver>/<path-to-maven-directory>") {
-//            authentication(userName: "ssh-username", privateKey: "<path-to-private-key-file")
-//        }
-//    }
-//}
-
-//
 signing {
-    sign publishing.publications.mavenJava
+    required {hasProperty('sonatypeUsername')}
+    sign publishing.publications.SystemTray
 }
 
-//gradle.taskGraph.whenReady { taskGraph ->
-//    if (taskGraph.allTasks.any { it instanceof Sign }) {
-//        // Use Java 6's console to read from the console (no good for a CI environment)
-//        Console console = System.console()
-//        console.printf "\n\nWe have to sign some things in this build." +
-//                "\n\nPlease enter your signing details.\n\n"
-//
-//        def id = console.readLine("PGP Key Id: ")
-//        def file = console.readLine("PGP Secret Key Ring File (absolute path): ")
-//        def password = console.readPassword("PGP Private Key Password: ")
-//
-//        ext.signing.keyId = 24875D73
-//        signing.password = secret
-//        signing.secretKeyRingFile = '/Users/ me / . gnupg / secring.gpg'
-//
-//        allprojects { ext."signing.keyId" = id }
-//        allprojects { ext."signing.secretKeyRingFile" = file }
-//        allprojects { ext."signing.password" = password }
-//
-//        console.printf "\nThanks.\n\n"
-//    }
-//}
-//
-//signing {
-//    sign publishing.publications
-//}
-
-
-//def props = new Properties()
-//file('../../sonatype.properties').withInputStream { props.load(it) }
-//
-//task printProps {
-//    doFirst {
-//        println props.getProperty('developerName')
-//    }
-//}
-
-//
-//tasks {
-//    // Disable publication on root project
-//    "artifactoryPublish"(ArtifactoryTask::class) {
-//        skip = true
-//    }
-//}
-
-//artifactory {
-//    setContextUrl("https://repo.gradle.org/gradle")
-//    publish(delegateClosureOf<PublisherConfig> {
-//        repository(delegateClosureOf<GroovyObject> {
-//            val targetRepoKey = "libs-${buildTagFor(project.version as String)}s-local"
-//            setProperty("repoKey", targetRepoKey)
-//            setProperty("username", project.findProperty("artifactory_user") ?: "nouser")
-//            setProperty("password", project.findProperty("artifactory_password") ?: "nopass")
-//            setProperty("maven", true)
-//        })
-//        defaults(delegateClosureOf<GroovyObject> {
-//            invokeMethod("publications", "mavenJava")
-//        })
-//    })
-//    resolve(delegateClosureOf<ResolverConfig> {
-//        setProperty("repoKey", "repo")
-//    })
-//}
+// we don't use maven with the plugin (it's uploaded separately to gradle plugins)
+tasks.withType(PublishToMavenRepository) {
+    onlyIf {
+        repository == publishing.repositories.maven && publication == publishing.publications.SystemTray
+    }
+}
+tasks.withType(PublishToMavenLocal) {
+    onlyIf {
+        publication == publishing.publications.SystemTray
+    }
+}
