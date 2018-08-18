@@ -226,8 +226,8 @@ dependencies {
     api 'com.dorkbox:ShellExecutor:1.1+'
 
     api 'org.javassist:javassist:3.23.0-GA'
-    api 'net.java.dev.jna:jna:4.3.0'
-    api 'net.java.dev.jna:jna-platform:4.3.0'
+    api 'net.java.dev.jna:jna:4.5.2'
+    api 'net.java.dev.jna:jna-platform:4.5.2'
     api 'org.slf4j:slf4j-api:1.7.25'
 
 
@@ -326,12 +326,16 @@ task compileUtils(type: JavaCompile) {
 ///////////////////////////////
 task swingExample(type: JavaExec) {
     classpath sourceSets.swingExample.runtimeClasspath
+
+    group = 'examples'
     main = 'dorkbox.TestTray'
     standardInput = System.in
 }
 
 task javaFxExample(type: JavaExec) {
     classpath sourceSets.javaFxExample.runtimeClasspath
+
+    group = 'examples'
     main = 'dorkbox.TestTrayJavaFX'
     standardInput = System.in
 }
@@ -339,6 +343,7 @@ task javaFxExample(type: JavaExec) {
 task swtExample(type: JavaExec) {
     classpath sourceSets.swtExample.runtimeClasspath
 
+    group = 'examples'
     main = 'dorkbox.TestTraySwt'
     standardInput = System.in
 }
