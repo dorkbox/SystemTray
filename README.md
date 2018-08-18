@@ -282,7 +282,6 @@ Maven Info
 </dependencies>
 ````
 
-  
 Gradle Info
 ---------
 ````
@@ -291,9 +290,6 @@ dependencies {
     compile 'com.dorkbox:SystemTray:3.15'
 }
 ````
-
-
-
 
 Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
 https://git.dorkbox.com/dorkbox/SystemTray/releases  
