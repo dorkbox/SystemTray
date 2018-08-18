@@ -192,7 +192,7 @@ Extension.SHELL_RESTART_COMMAND    (type String, default value 'gnome-shell --re
    
    
    
-The test application is [on GitHub](https://github.com/dorkbox/SystemTray/blob/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
+The test application is [on Git](https://git.dorkbox.com/dorkbox/SystemTray/src/branch/master/test/dorkbox/TestTray.java), and a *simple* example is as follows:
 ```
     SystemTray.SWING_UI = new CustomSwingUI();
 
