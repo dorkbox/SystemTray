@@ -118,18 +118,6 @@ licensing {
 }
 
 
-static String[] javaFile(String... fileNames) {
-    def fileList = [] as ArrayList
-
-    for (name in fileNames) {
-        def fixed = name.replace('.', '/') + '.java'
-        fileList.add(fixed)
-    }
-
-    return fileList
-}
-
-
 configurations {
     swtExampleJar
 }
@@ -287,6 +275,17 @@ tasks.withType(Jar) {
 ///////////////////////////////
 //////    UTILITIES COMPILE (for inclusion into jars)
 ///////////////////////////////
+static String[] javaFile(String... fileNames) {
+    def fileList = [] as ArrayList
+
+    for (name in fileNames) {
+        def fixed = name.replace('.', '/') + '.java'
+        fileList.add(fixed)
+    }
+
+    return fileList
+}
+
 task compileUtils(type: JavaCompile) {
     // we don't want the default include of **/*.java
     getIncludes().clear()
