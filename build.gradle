@@ -47,6 +47,10 @@ plugins {
 
     id "com.dorkbox.CrossCompile" version "1.0.1"
     id "com.dorkbox.VersionUpdate" version "1.2"
+
+    // setup checking for the latest version of a plugin or dependency (and updating the gradle build)
+    id "se.patrikerdes.use-latest-versions" version "0.2.3"
+    id 'com.github.ben-manes.versions' version '0.16.0'
 }
 
 // this is the only way to also get the source code for IDE auto-complete
