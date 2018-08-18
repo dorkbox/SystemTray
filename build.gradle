@@ -278,8 +278,6 @@ tasks.withType(JavaCompile) {
 tasks.withType(Jar) {
     duplicatesStrategy DuplicatesStrategy.FAIL
 
-
-
     manifest {
         attributes['Implementation-Version'] = version
         attributes['Build-Date'] = Instant.now().toString()
