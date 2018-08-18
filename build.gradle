@@ -470,7 +470,7 @@ task javaDocJar(type: Jar) {
 // for testing, we don't publish to maven central, but only to local maven
 publishing {
     publications {
-        SystemTray(MavenPublication) {
+        maven(MavenPublication) {
             from components.java
 
             artifact(javaDocJar)
@@ -539,7 +539,7 @@ nexusStaging {
 
 signing {
     required {hasProperty('sonatypeUsername')}
-    sign publishing.publications.SystemTray
+    sign publishing.publications.maven
 }
 
 // output the release URL in the console
@@ -555,11 +555,11 @@ releaseRepository.doLast {
 // we don't use maven with the plugin (it's uploaded separately to gradle plugins)
 tasks.withType(PublishToMavenRepository) {
     onlyIf {
-        repository == publishing.repositories.maven && publication == publishing.publications.SystemTray
+        repository == publishing.repositories.maven && publication == publishing.publications.maven
     }
 }
 tasks.withType(PublishToMavenLocal) {
     onlyIf {
-        publication == publishing.publications.SystemTray
+        publication == publishing.publications.maven
     }
 }
