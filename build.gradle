@@ -79,7 +79,7 @@ apply from: '../Utilities/scripts/gradle/utilities.gradle'
 
 project.description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
 project.group = 'com.dorkbox'
-project.version = '3.15'
+project.version = '3.16'
 
 project.ext.name = 'SystemTray'
 project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
