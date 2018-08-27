@@ -269,6 +269,7 @@ tasks.withType(Jar) {
     manifest {
         attributes['Implementation-Version'] = version
         attributes['Build-Date'] = Instant.now().toString()
+        attributes['Automatic-Module-Name'] = project.ext.name.toString()
     }
 }
 
