@@ -43,6 +43,7 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
+    id 'idea'
 
     // close and release on sonatype
     id 'io.codearte.nexus-staging' version '0.11.0'
@@ -67,6 +68,9 @@ apply plugin: 'java-library'
 //ext.swt = 'win64'
 apply from: '../Utilities/scripts/gradle/swt.gradle'
 
+// Utilities project shared configuration
+apply from: '../Utilities/scripts/gradle/utilities.gradle'
+
 
 
 project.description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
@@ -76,9 +80,19 @@ project.version = '3.15'
 project.ext.name = 'SystemTray'
 project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
 
+project.ext.javaVersion = JavaVersion.VERSION_1_7
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+
+sourceCompatibility = project.ext.javaVersion
+targetCompatibility = project.ext.javaVersion
+
+
+idea {
+    module {
+        downloadJavadoc = false
+        downloadSources = true
+    }
+}
 
 
 licensing {
@@ -119,15 +133,49 @@ licensing {
     }
 }
 
-
 configurations {
     swtExampleJar
 }
 
 sourceSets {
+    utilities {
+        java {
+            setSrcDirs Collections.singletonList('../Utilities/src')
+
+            include javaFile('dorkbox.util.SwingUtil',
+                             'dorkbox.util.OS',
+                             'dorkbox.util.OSUtil',
+                             'dorkbox.util.OSType',
+                             'dorkbox.util.ImageResizeUtil',
+                             'dorkbox.util.ImageUtil',
+                             'dorkbox.util.CacheUtil',
+                             'dorkbox.util.IO',
+                             'dorkbox.util.JavaFX',
+                             'dorkbox.util.Property',
+                             'dorkbox.util.Keep',
+                             'dorkbox.util.FontUtil',
+                             'dorkbox.util.ScreenUtil',
+                             'dorkbox.util.ClassLoaderUtil',
+                             'dorkbox.util.Swt',
+                             'dorkbox.util.NamedThreadFactory',
+                             'dorkbox.util.ActionHandlerLong',
+                             'dorkbox.util.FileUtil',
+                             'dorkbox.util.MathUtil',
+                             'dorkbox.util.LocationResolver',
+                             'dorkbox.util.Desktop')
+
+            // entire packages/directories
+            include('dorkbox/util/jna/**/*.java')
+            include('dorkbox/util/windows/**/*.java')
+            include('dorkbox/util/swing/**/*.java')
+        }
+    }
+
     main {
         java {
             setSrcDirs Collections.singletonList('src')
+
+            srcDir utilities.java
         }
 
         resources {
@@ -207,15 +255,10 @@ repositories {
     jcenter()
 }
 
-
 dependencies {
-    implementation(project('Utilities')) {
-        // don't include any of the project dependencies for anything
-        transitive = false
-    }
+    // utilities only
+    compileOnly project.ext['utilitiesDeps']
 
-    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
-    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
 
     api 'com.dorkbox:ShellExecutor:1.1'
 
@@ -243,21 +286,6 @@ dependencies {
     swtExampleImplementation configurations.implementation, log, swtDep
 }
 
-project('Utilities') {
-    tasks.withType(Test) {
-        // want to remove utilities project from unit tests. It's unnecessary to run unit tests for the entire Utilities project
-        exclude('**/*')
-    }
-
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-        options.incremental = true
-
-        // setup compile options. we specifically want to suppress usage of "Unsafe"
-        options.compilerArgs = ['-XDignore.symbol.file', '-Xlint:deprecation']
-    }
-}
-
 ///////////////////////////////
 //////    Task defaults
 ///////////////////////////////
@@ -276,7 +304,7 @@ tasks.withType(Jar) {
 }
 
 ///////////////////////////////
-//////    UTILITIES COMPILE (for inclusion into jars)
+//////    UTILITIES EXTRAS
 ///////////////////////////////
 static String[] javaFile(String... fileNames) {
     def fileList = [] as ArrayList
@@ -287,42 +315,6 @@ static String[] javaFile(String... fileNames) {
     }
 
     return fileList
-}
-
-task compileUtils(type: JavaCompile) {
-    // we don't want the default include of **/*.java
-    getIncludes().clear()
-
-    source = Collections.singletonList('../Utilities/src')
-    include javaFile('dorkbox.util.SwingUtil',
-                     'dorkbox.util.OS',
-                     'dorkbox.util.OSUtil',
-                     'dorkbox.util.OSType',
-                     'dorkbox.util.ImageResizeUtil',
-                     'dorkbox.util.ImageUtil',
-                     'dorkbox.util.CacheUtil',
-                     'dorkbox.util.IO',
-                     'dorkbox.util.JavaFX',
-                     'dorkbox.util.Property',
-                     'dorkbox.util.Keep',
-                     'dorkbox.util.FontUtil',
-                     'dorkbox.util.ScreenUtil',
-                     'dorkbox.util.ClassLoaderUtil',
-                     'dorkbox.util.Swt',
-                     'dorkbox.util.NamedThreadFactory',
-                     'dorkbox.util.ActionHandlerLong',
-                     'dorkbox.util.FileUtil',
-                     'dorkbox.util.MathUtil',
-                     'dorkbox.util.LocationResolver',
-                     'dorkbox.util.Desktop')
-
-    // entire packages/directories
-    include('dorkbox/util/jna/**/*.java')
-    include('dorkbox/util/windows/**/*.java')
-    include('dorkbox/util/swing/**/*.java')
-
-    classpath = sourceSets.main.compileClasspath
-    destinationDir = file("$rootDir/build/classes_utilities")
 }
 
 ///////////////////////////////
@@ -352,16 +344,6 @@ task swtExample(type: JavaExec) {
     standardInput = System.in
 }
 
-///////////////////////////////
-//////    Jar Tasks
-///////////////////////////////
-jar {
-    dependsOn compileUtils
-
-    // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
-}
-
 task jarSwingExample(type: Jar) {
     dependsOn jar
 
@@ -372,12 +354,9 @@ task jarSwingExample(type: Jar) {
     from sourceSets.swingExample.output.classesDirs
     from sourceSets.swingExample.output.resourcesDir
 
-    // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
-
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .findAll {it.name.endsWith('jar')}
                        .collect {zipTree(it)}
 
     manifest {
@@ -396,12 +375,9 @@ task jarJavaFxExample(type: Jar) {
     from sourceSets.javaFxExample.output.classesDirs
     from sourceSets.javaFxExample.output.resourcesDir
 
-    // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
-
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .findAll {it.name.endsWith('jar')}
                        .collect {zipTree(it)}
 
     manifest {
@@ -420,16 +396,13 @@ task jarSwtExample(type: Jar) {
     from sourceSets.swtExample.output.classesDirs
     from sourceSets.swtExample.output.resourcesDir
 
-    // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
-
     // include SWT
     from configurations.swtExampleJar
                        .collect {zipTree(it)}
 
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .findAll {it.name.endsWith('jar')}
                        .collect {zipTree(it)}
 
     manifest {
@@ -456,7 +429,6 @@ task sourceJar(type: Jar) {
     description = "Creates a JAR that contains the source code."
 
     from sourceSets.main.java
-    from compileUtils.source
 
     classifier = "sources"
 }
