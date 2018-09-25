@@ -142,44 +142,9 @@ configurations {
 }
 
 sourceSets {
-    utilities {
-        java {
-            setSrcDirs Collections.singletonList('../Utilities/src')
-
-            include javaFile('dorkbox.util.SwingUtil',
-                             'dorkbox.util.OS',
-                             'dorkbox.util.OSUtil',
-                             'dorkbox.util.OSType',
-                             'dorkbox.util.ImageResizeUtil',
-                             'dorkbox.util.ImageUtil',
-                             'dorkbox.util.CacheUtil',
-                             'dorkbox.util.IO',
-                             'dorkbox.util.JavaFX',
-                             'dorkbox.util.Property',
-                             'dorkbox.util.Keep',
-                             'dorkbox.util.FontUtil',
-                             'dorkbox.util.ScreenUtil',
-                             'dorkbox.util.ClassLoaderUtil',
-                             'dorkbox.util.Swt',
-                             'dorkbox.util.NamedThreadFactory',
-                             'dorkbox.util.ActionHandlerLong',
-                             'dorkbox.util.FileUtil',
-                             'dorkbox.util.MathUtil',
-                             'dorkbox.util.LocationResolver',
-                             'dorkbox.util.Desktop')
-
-            // entire packages/directories
-            include('dorkbox/util/jna/**/*.java')
-            include('dorkbox/util/windows/**/*.java')
-            include('dorkbox/util/swing/**/*.java')
-        }
-    }
-
     main {
         java {
             setSrcDirs Collections.singletonList('src')
-
-            srcDir utilities.java
         }
 
         resources {
@@ -206,8 +171,8 @@ sourceSets {
     swingExample {
         java {
             setSrcDirs Collections.singletonList('test')
-            include javaFile('dorkbox.TestTray',
-                             'dorkbox.CustomSwingUI')
+            include utilFiles('dorkbox.TestTray',
+                              'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -220,9 +185,9 @@ sourceSets {
     javaFxExample {
         java {
             setSrcDirs Collections.singletonList('test')
-            include javaFile('dorkbox.TestTray',
-                             'dorkbox.TestTrayJavaFX',
-                             'dorkbox.CustomSwingUI')
+            include utilFiles('dorkbox.TestTray',
+                              'dorkbox.TestTrayJavaFX',
+                              'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -235,9 +200,9 @@ sourceSets {
     swtExample {
         java {
             setSrcDirs Collections.singletonList('test')
-            include javaFile('dorkbox.TestTray',
-                             'dorkbox.TestTraySwt',
-                             'dorkbox.CustomSwingUI')
+            include utilFiles('dorkbox.TestTray',
+                              'dorkbox.TestTraySwt',
+                              'dorkbox.CustomSwingUI')
             srcDir main.java
         }
 
@@ -260,8 +225,11 @@ repositories {
 }
 
 dependencies {
-    // utilities dependencies compile only (this is so the IDE can compile the util source)
-    compileOnly project.ext['utilities']
+    // utilities dependencies compile SPECIFICALLY so that java 9+ modules work. We have to remove this project jar from maven builds
+    compile project('Utilities')
+
+    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
+    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
 
 
     api 'com.dorkbox:ShellExecutor:1.1'
@@ -308,9 +276,9 @@ tasks.withType(Jar) {
 }
 
 ///////////////////////////////
-//////    UTILITIES EXTRAS
+//////    UTILITIES COMPILE (for inclusion into jars)
 ///////////////////////////////
-static String[] javaFile(String... fileNames) {
+static String[] utilFiles(String... fileNames) {
     def fileList = [] as ArrayList
 
     for (name in fileNames) {
@@ -319,6 +287,50 @@ static String[] javaFile(String... fileNames) {
     }
 
     return fileList
+}
+
+task compileUtils(type: JavaCompile) {
+    // we don't want the default include of **/*.java
+    getIncludes().clear()
+
+    source = Collections.singletonList('../Utilities/src')
+
+    include utilFiles('dorkbox.util.SwingUtil',
+                      'dorkbox.util.OS',
+                      'dorkbox.util.OSUtil',
+                      'dorkbox.util.OSType',
+                      'dorkbox.util.ImageResizeUtil',
+                      'dorkbox.util.ImageUtil',
+                      'dorkbox.util.CacheUtil',
+                      'dorkbox.util.IO',
+                      'dorkbox.util.JavaFX',
+                      'dorkbox.util.Property',
+                      'dorkbox.util.Keep',
+                      'dorkbox.util.FontUtil',
+                      'dorkbox.util.ScreenUtil',
+                      'dorkbox.util.ClassLoaderUtil',
+                      'dorkbox.util.Swt',
+                      'dorkbox.util.NamedThreadFactory',
+                      'dorkbox.util.ActionHandlerLong',
+                      'dorkbox.util.FileUtil',
+                      'dorkbox.util.MathUtil',
+                      'dorkbox.util.LocationResolver',
+                      'dorkbox.util.Desktop')
+
+    // entire packages/directories
+    include('dorkbox/util/jna/**/*.java')
+    include('dorkbox/util/windows/**/*.java')
+    include('dorkbox/util/swing/**/*.java')
+
+    classpath = sourceSets.main.compileClasspath
+    destinationDir = file("$rootDir/build/classes_utilities")
+}
+
+jar {
+    dependsOn compileUtils
+
+    // include applicable class files from subset of Utilities project
+    from compileUtils.destinationDir
 }
 
 ///////////////////////////////
@@ -514,7 +526,6 @@ nexusStaging {
 }
 
 signing {
-    required {hasProperty('sonatypeUsername')}
     sign publishing.publications.maven
 }
 
@@ -538,4 +549,14 @@ tasks.withType(PublishToMavenLocal) {
     onlyIf {
         publication == publishing.publications.maven
     }
+}
+
+/////////////////////////////
+////    Gradle Wrapper Configuration.
+///  Run this task, then refresh the gradle project
+/////////////////////////////
+task updateWrapper(type: Wrapper) {
+    gradleVersion = '4.10.2'
+    distributionUrl = distributionUrl.replace("bin", "all")
+    setDistributionType(Wrapper.DistributionType.ALL)
 }
