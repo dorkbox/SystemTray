@@ -18,6 +18,8 @@ import java.nio.file.Paths
 import java.time.Instant
 
 buildscript {
+    println("Gradle " + project.getGradle().getGradleVersion())
+
     // load properties from custom location
     def propsFile = Paths.get("${projectDir}/../../gradle.properties").normalize().toFile()
     if (propsFile.canRead()) {
