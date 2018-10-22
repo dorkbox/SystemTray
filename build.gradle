@@ -226,7 +226,10 @@ repositories {
 
 dependencies {
     // utilities dependencies compile SPECIFICALLY so that java 9+ modules work. We have to remove this project jar from maven builds
-    compile project('Utilities')
+    implementation(project('Utilities')) {
+        // don't include any of the project dependencies for anything
+        transitive = false
+    }
 
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
@@ -373,6 +376,7 @@ task jarSwingExample(type: Jar) {
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
                        .findAll {it.name.endsWith('jar')}
+    .forEach {println(it)}
                        .collect {zipTree(it)}
 
     manifest {
