@@ -375,8 +375,8 @@ task jarSwingExample(type: Jar) {
 
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar')}
-                       .collect {zipTree(it)}
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
+                       .collect { zipTree(it)}
 
     manifest {
         attributes['Main-Class'] = 'dorkbox.TestTray'
@@ -396,7 +396,7 @@ task jarJavaFxExample(type: Jar) {
 
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar')}
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
                        .collect {zipTree(it)}
 
     manifest {
@@ -421,7 +421,7 @@ task jarSwtExample(type: Jar) {
 
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar')}
+                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
                        .collect {zipTree(it)}
 
     manifest {
