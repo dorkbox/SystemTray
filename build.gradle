@@ -376,7 +376,6 @@ task jarSwingExample(type: Jar) {
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
                        .findAll {it.name.endsWith('jar')}
-    .forEach {println(it)}
                        .collect {zipTree(it)}
 
     manifest {
