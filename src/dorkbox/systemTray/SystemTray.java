@@ -449,19 +449,21 @@ class SystemTray {
         }
 
         boolean isNix = OS.isLinux() || OS.isUnix();
+        boolean isWindows = OS.isWindows();
+        boolean isMacOsX = OS.isMacOsX();
 
-        // Windows can ONLY use Swing (non-native) - AWT/native looks absolutely horrid and is not an option
-        // OSx can use Swing (non-native) or AWT (native) .
+        // Windows can ONLY use Swing (non-native) or WindowsNotifyIcon (native) - AWT looks absolutely horrid and is not an option
+        // OSx can use Swing (non-native) or AWT (native).
         // Linux can use Swing (non-native), AWT (native), GtkStatusIcon (native), or AppIndicator (native)
-        if (OS.isWindows()) {
-            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing) {
-                // windows MUST use swing only!
+        if (isWindows) {
+            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.WindowsNotifyIcon) {
+                // windows MUST use swing/windows-notify-icon only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
-                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to native implementation");
+                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to swing implementation");
             }
         }
-        else if (OS.isMacOsX()) {
+        else if (isMacOsX) {
             // cannot mix Swing/AWT and JavaFX for MacOSX in java7 (fixed in java8) without special stuff.
             // https://bugs.openjdk.java.net/browse/JDK-8116017
             // https://bugs.openjdk.java.net/browse/JDK-8118714
@@ -487,7 +489,7 @@ class SystemTray {
                 // Of note, v4.3 is the "last released" version of SWT by eclipse AND IT WILL NOT WORK!!
                 // for NEWER versions of SWT via maven, use http://maven-eclipse.github.io/maven
                 if (Swt.getVersion() < 4430) {
-                    logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+.");
+                    logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+");
 
                     systemTrayMenu = null;
                     systemTray = null;
@@ -906,11 +908,12 @@ class SystemTray {
 
 
             // have to make adjustments BEFORE the tray/menu image size calculations
-            if (AUTO_FIX_INCONSISTENCIES && isTrayType(trayType, TrayType.Swing) && SystemTray.SWING_UI == null) {
-                if (isNix) {
+            if (AUTO_FIX_INCONSISTENCIES && SystemTray.SWING_UI == null) {
+                if (isNix && isTrayType(trayType, TrayType.Swing)) {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
-                else if (OS.isWindows()) {
+                else if (isWindows &&
+                         (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNotifyIcon))) {
                     SystemTray.SWING_UI = new WindowsSwingUI();
                 }
             }
@@ -927,12 +930,14 @@ class SystemTray {
 
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after GTK is started (if applicable)
-                if (OS.isWindows() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
-                    // Our default for windows is now a native tray icon (instead of the swing tray icon).
+                if (isWindows && isTrayType(trayType, TrayType.Swing)) {
+                    // we don't permit AWT for windows (it looks absolutely HORRID)
+
+                    // Our default for windows is now a native tray icon (instead of the swing tray icon), but we preserve the use of Swing
                     // windows hard-codes the image size for AWT/SWING tray types
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
-                else if (OS.isMacOsX() && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
+                else if (isMacOsX && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
                     // macosx doesn't respond to all buttons (but should)
                     SystemTrayFixes.fixMacOS();
                 }
@@ -987,6 +992,10 @@ class SystemTray {
                     }
                 });
             } else if (isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+                // ensure AWT toolkit is initialized.
+                java.awt.Toolkit.getDefaultToolkit();
+
+                // difference from above, is we do not need to do anything inside the swing EDT
                 try {
                     reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
                 } catch (Exception e) {
@@ -1036,7 +1045,7 @@ class SystemTray {
                     }
                 });
             }
-            else if (isTrayType(trayType, TrayType.Swing)) {
+            else if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                     @Override
                     public

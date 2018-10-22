@@ -32,6 +32,7 @@ import javax.swing.JMenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.ui.swing._SwingTray;
+import dorkbox.systemTray.ui.swing._WindowsNativeTray;
 import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.linux.GtkTheme;
@@ -108,10 +109,12 @@ class SizeAndScalingUtil {
                 TRAY_SIZE = 32;
             }
         }
+
         if (TRAY_SIZE == 0) {
             // reasonable default
             TRAY_SIZE = 32;
         }
+
         return TRAY_SIZE;
 }
 
@@ -128,7 +131,7 @@ class SizeAndScalingUtil {
                     TRAY_MENU_SIZE = 16;
                 }
             }
-            else if ((trayType == _SwingTray.class)) {
+            else if ((trayType == _SwingTray.class) || (trayType == _WindowsNativeTray.class)) {
                 // Java does not scale the menu item IMAGE **AT ALL**, we must provide the correct size to begin with
 
                 if (OS.isWindows()) {
