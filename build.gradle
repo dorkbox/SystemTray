@@ -375,6 +375,8 @@ task jarSwingExample(type: Jar) {
     from sourceSets.swingExample.output.classesDirs
     from sourceSets.swingExample.output.resourcesDir
 
+    from compileUtils.destinationDir
+
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
                        .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
@@ -396,6 +398,8 @@ task jarJavaFxExample(type: Jar) {
     from sourceSets.javaFxExample.output.classesDirs
     from sourceSets.javaFxExample.output.resourcesDir
 
+    from compileUtils.destinationDir
+    
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
                        .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
@@ -417,6 +421,8 @@ task jarSwtExample(type: Jar) {
     from sourceSets.swtExample.output.classesDirs
     from sourceSets.swtExample.output.resourcesDir
 
+    from compileUtils.destinationDir
+    
     // include SWT
     from configurations.swtExampleJar
                        .collect {zipTree(it)}
