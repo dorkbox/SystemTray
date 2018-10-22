@@ -367,7 +367,7 @@ class MenuItem extends Entry {
 
             if (!alreadyEmittedTooltipWarning) {
                 alreadyEmittedTooltipWarning = true;
-                SystemTray.logger.warn("Tooltips are not consistent across all platforms and tray types.");
+                SystemTray.logger.warn("Please disable tooltips, as they are not consistent across all platforms and tray types.");
             }
         }
 
