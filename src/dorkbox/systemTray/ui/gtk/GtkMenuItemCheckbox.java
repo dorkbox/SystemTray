@@ -30,7 +30,6 @@ import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.OSUtil;
 import dorkbox.util.jna.linux.GCallback;
 import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
@@ -60,7 +59,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         }
 
         if (SystemTray.DEBUG) {
-            SystemTray.logger.info("Using Fake CheckMark: " + useFakeCheckMark);
+            SystemTray.logger.debug("Using Fake CheckMark: " + useFakeCheckMark);
         }
     }
 
@@ -115,6 +114,10 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                     Rectangle size = GtkTheme.getPixelTextHeight("X");
                     int imageHeight = SystemTray.get().getMenuImageSize();
                     int height = size.height;
+
+                    if (SystemTray.DEBUG) {
+                        SystemTray.logger.debug("Fake checkmark size: {}px", height);
+                    }
 
                     if ((SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray)) {
                         // only app indicators don't need padding, as they automatically center the icon
