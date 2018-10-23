@@ -246,7 +246,9 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
+                        // install the Gnome extension
                         Tray.usingGnome = true;
+                        Extension.install();
 
                         // are we fedora? If so, what version?
                         // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
@@ -274,7 +276,10 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("default".equalsIgnoreCase(GDM)) {
+                        // install the Gnome extension
                         Tray.usingGnome = true;
+                        Extension.install();
+
                         // this can be gnome3 on debian/kali
 
                         if (OSUtil.Linux.isKali()) {
@@ -300,11 +305,13 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        // ubuntu 17.10 uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now proper Gnome
+                        // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now proper Gnome
                         int[] version = OSUtil.Linux.getUbuntuVersion();
                         if (version[0] > 17 || (version[0] == 17 && version[1] == 10)) {
                             // this is gnome 3.26.1
-                            logger.debug("This Ubuntu 17.10 is not yet supported!");
+                            // install the Gnome extension
+                            Tray.usingGnome = true;
+                            Extension.install();
                         }
 
                         return selectTypeQuietly(TrayType.AppIndicator);
@@ -328,7 +335,7 @@ class SystemTray {
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
                 case Unity7: {
-                    // Ubuntu Unity7 (17.04+, which has MIR) is a weird combination. It's "Gnome", but it's not "Gnome Shell".
+                    // Ubuntu Unity7 (17.04, which has MIR) is a weird combination. It's "Gnome", but it's not "Gnome Shell".
                     return selectTypeQuietly(TrayType.AppIndicator);
                 }
                 case XFCE: {

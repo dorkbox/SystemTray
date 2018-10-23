@@ -222,11 +222,6 @@ class _GtkStatusIconNativeTray extends Tray {
         });
 
         bind(gtkMenu, null, systemTray);
-
-        // install the Gnome extension
-        if (Tray.usingGnome) {
-            Extension.install();
-        }
     }
 
     @Override

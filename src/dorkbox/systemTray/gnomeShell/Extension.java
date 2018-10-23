@@ -169,9 +169,22 @@ class Extension {
 
     private static
     void restartShell() {
+        if (OSUtil.DesktopEnv.isWayland()) {
+            // you can no longer restart the shell in wayland. You must logout-login for shell modifications to apply
+            // https://mail.gnome.org/archives/commits-list/2015-March/msg01019.html
+
+            // HOWEVER, with wayland, shell-extensions that DO NO MODIFY THE GUI (we don't, we just add icons to it)
+            // are enabled without a shell restart.
+
+            // if there are still difficulties, you can use the following
+            // gnome-shell-extension-tool -e SystemTray@Dorkbox
+            return;
+        }
+
+
         if (ENABLE_SHELL_RESTART) {
             if (SystemTray.DEBUG) {
-                logger.debug("DEBUG mode enabled. You need to log-in/out or manually restart the shell via '{}' to apply the changes.",
+                logger.debug("DEBUG mode enabled. You need to log-out/in or manually restart the shell via '{}' to apply the changes.",
                              SHELL_RESTART_COMMAND);
                 return;
             }
