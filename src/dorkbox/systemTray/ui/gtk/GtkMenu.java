@@ -91,7 +91,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
      */
     @SuppressWarnings("ForLoopReplaceableByForEach")
     private
-    void deleteMenu() {
+    void deleteMenu(boolean recursiveDeleteParentMenu) {
         if (obliterateInProgress.get()) {
             return;
         }
@@ -106,8 +106,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             Gtk2.gtk_widget_destroy(_nativeMenu);
         }
 
-        if (parent != null) {
-            parent.deleteMenu();
+        if (parent != null && recursiveDeleteParentMenu) {
+            parent.deleteMenu(true);
         }
     }
 
@@ -120,7 +120,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
      */
     @SuppressWarnings("ForLoopReplaceableByForEach")
     private
-    void createMenu() {
+    void createMenu(boolean recursiveCreateParentMenu) {
         if (obliterateInProgress.get()) {
             return;
         }
@@ -133,8 +133,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             Gtk2.gtk_menu_item_set_submenu(_native, _nativeMenu);
         }
 
-        if (parent != null) {
-            parent.createMenu();
+        if (parent != null && recursiveCreateParentMenu) {
+            parent.createMenu(true);
         }
 
         // now add back other menu entries
@@ -154,7 +154,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 GtkMenu subMenu = (GtkMenu) menuEntry__;
                 if (subMenu.getParent() != GtkMenu.this) {
                     // we don't want to "createMenu" on our sub-menu that is assigned to us directly, as they are already doing it
-                    subMenu.createMenu();
+                    subMenu.createMenu(recursiveCreateParentMenu);
                 }
             }
         }
@@ -203,7 +203,9 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             void run() {
                 // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
                 // To work around this issue, we destroy then recreate the menu every time something is changed.
-                deleteMenu();
+
+                // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
+                deleteMenu(false);
 
                 GtkBaseMenuItem item = null;
 
@@ -230,20 +232,11 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     menuEntries.add(index, item);
                 }
 
-                createMenu();
 
                 // we must create the menu BEFORE binding the menu, otherwise the menus' children's GTK element can be added before
                 // their parent GTK elements are added (and the menu won't show up)
                 if (entry instanceof Menu) {
-                    Menu menuEntry = (Menu) entry;
-                    GtkMenu gtkMenu = (GtkMenu) item;
-                    menuEntry.bind(gtkMenu, parentMenu, parentMenu.getSystemTray());
-
-                    if (menuEntry.getFirst() == null) {
-                        // don't try to show the sub-menu if there are NO ENTRIES, because GTK will emit a warning and ignore it. (and yes, the typo is there too)
-                        // LIBDBUSMENU-GLIB-WARNING **: About to Show called on an item wihtout submenus. We're ignoring it.
-                        return;
-                    }
+                    ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Separator) {
                     ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getSystemTray());
@@ -258,7 +251,13 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getSystemTray());
                 }
 
-                Gtk2.gtk_widget_show_all(_nativeMenu);
+                // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
+                createMenu(false);
+
+                // only call show on the ROOT menu!
+                if (parent == null) {
+                    Gtk2.gtk_widget_show_all(_nativeMenu);
+                }
             }
         });
     }
@@ -392,8 +391,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         menuEntries.remove(item);
 
         // have to rebuild the menu now...
-        deleteMenu();  // must be on EDT
-        createMenu();  // must be on EDT
+        deleteMenu(true);  // must be on EDT
+        createMenu(true);  // must be on EDT
     }
 
     // a child will always remove itself from the parent.
@@ -419,8 +418,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     Gtk2.gtk_menu_item_set_submenu(_native, null);
 
                     // have to rebuild the menu now...
-                    parent.deleteMenu();  // must be on EDT
-                    parent.createMenu();  // must be on EDT
+                    parent.deleteMenu(true);  // must be on EDT
+                    parent.createMenu(true);  // must be on EDT
                 }
             }
         });
