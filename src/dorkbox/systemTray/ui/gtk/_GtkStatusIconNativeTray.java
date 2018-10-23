@@ -196,7 +196,7 @@ class _GtkStatusIconNativeTray extends Tray {
         GtkEventDispatch.waitForEventsToComplete();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
-        GtkEventDispatch.dispatch(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {

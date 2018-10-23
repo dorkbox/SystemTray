@@ -219,7 +219,7 @@ class _AppIndicatorNativeTray extends Tray {
             }
         };
 
-        GtkEventDispatch.dispatch(new Runnable() {
+        GtkEventDispatch.dispatchAndWait(new Runnable() {
             @Override
             public
             void run() {
