@@ -122,6 +122,39 @@ Notes:
   
   - Linux/Unix: If you want to run this library as a different user, you will need to launch your application via `sudo su username /bin/sh -c "DBUS_SESSION_BUS_ADDRESS='unix:abstract=/tmp/dbus-cLtEoBPmgC' XDG_CURRENT_DESKTOP=$XDG_CURRENT_DESKTOP program-name"`, where `unix:abstract=/tmp/dbus-cLtEoBPmgC` from `/run/user/{uid}/dbus-session`. You will also want to disable the root check + warnings via `SystemTray.ENABLE_ROOT_CHECK=false;` See [issue](https://github.com/dorkbox/SystemTray/issues/63) for more details.
   
+  - Linux/Unix: If you want to create a custom menu for the LAUNCHER icon, you must create a custom `.desktop` shortcut in order to create `Actions`. Credit to [@tresf ](https://github.com/dorkbox/SystemTray/issues/71#issuecomment-378345423) for figuring this out.
+  
+       For example:
+   
+    <img width="324" alt="steam launcher screen shot" src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/steam_screenshot.png">
+      
+  ```ini
+  [Desktop Entry]
+  Name=Steam
+  Comment=Application for managing and playing games on Steam
+  Exec=/usr/bin/steam %U
+  Icon=steam
+  Terminal=false
+  Type=Application
+  Categories=Network;FileTransfer;Game;
+  MimeType=x-scheme-handler/steam;
+  Actions=Store;Community;Library;Servers;Screenshots;News;Settings;BigPicture;Friends;
+  ```
+  
+  And then the executable path and language translations are as follows:
+  ```ini
+  [Desktop Action Store]
+  Name=Store
+  Name[de]=Shop
+  Name[es]=Tienda
+  Name[fr]=Magasin
+  Name[it]=Negozio
+  Name[pt]=Loja
+  Name[ru]=Магазин
+  Name[zh_CN]=商店
+  Name[zh_TW]=商店
+  Exec=steam steam://store
+  ```
   
 &nbsp;  
 &nbsp;  
