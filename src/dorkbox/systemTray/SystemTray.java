@@ -967,24 +967,30 @@ class SystemTray {
                 return;
             }
 
+            if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+                // ensure AWT toolkit is initialized.
+                java.awt.Toolkit.getDefaultToolkit();
+            }
+
+
 
             // javaFX and SWT **CAN NOT** start on the EDT!!
-            // linux + GTK/AppIndicator menus must not start on the EDT!
+            // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
             systemTray = new SystemTray();
 
             // AWT/Swing must be constructed on the EDT however...
-            if (JavaFX.isLoaded || Swt.isLoaded ||
-                (isNix && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator)))
-                ) {
+            if (JavaFX.isLoaded ||
+                Swt.isLoaded ||
+                (isNix && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator))) ||
+                isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+
                 try {
                     reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
                 } catch (Exception e) {
                     logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
                 }
-            } else if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT)) {
-                // ensure AWT toolkit is initialized.
-                java.awt.Toolkit.getDefaultToolkit();
-
+            }
+            else if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT)) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
                 SwingUtil.invokeAndWait(new Runnable() {
@@ -998,17 +1004,8 @@ class SystemTray {
                         }
                     }
                 });
-            } else if (isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
-                // ensure AWT toolkit is initialized.
-                java.awt.Toolkit.getDefaultToolkit();
-
-                // difference from above, is we do not need to do anything inside the swing EDT
-                try {
-                    reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
-                } catch (Exception e) {
-                    logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
-                }
-            } else {
+            }
+            else {
                 logger.error("Unable to create tray type: '{}'. Aborting!", trayType.getSimpleName());
             }
         } catch (Exception e) {
