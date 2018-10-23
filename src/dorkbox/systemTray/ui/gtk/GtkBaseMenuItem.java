@@ -61,7 +61,6 @@ class GtkBaseMenuItem implements EntryPeer {
         if (spacerImage != null) {
             Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
             spacerImage = null;
-            Gtk2.gtk_widget_show_all(_native);
         }
     }
 
@@ -102,8 +101,6 @@ class GtkBaseMenuItem implements EntryPeer {
         if (everyoneElseHasImages) {
             addSpacerImage();
         }
-
-        Gtk2.gtk_widget_show_all(_native);
     }
 
     // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
