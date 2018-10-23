@@ -223,10 +223,12 @@ class _AppIndicatorNativeTray extends Tray {
             @Override
             public
             void run() {
-                String id = System.nanoTime() + "DBST";
+                String id = "DBST" + System.nanoTime();
 
                 // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
-                File image = ImageResizeUtil.getTransparentImage(); // tiny size is OK because we will be replacing this image.
+                // Ubuntu 17.10 REQUIRES this to be the correct tray image size, otherwise we get the error:
+                // GLib-GIO-CRITICAL **: g_dbus_proxy_new: assertion 'G_IS_DBUS_CONNECTION (connection)' failed
+                File image = ImageResizeUtil.getTransparentImage(systemTray.getTrayImageSize());
                 appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
