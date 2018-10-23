@@ -840,8 +840,7 @@ class SystemTray {
 
 
         try {
-            // at this point, the tray type is what it should be. If there are failures or special cases, all types will fall back to
-            // Swing.
+            // at this point, the tray type is what it should be. If there are failures or special cases, all types will fall back to Swing.
 
             if (isNix) {
                 // linux/unix need access to GTK, so load it up before the tray is loaded!
