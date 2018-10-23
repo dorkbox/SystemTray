@@ -123,7 +123,7 @@ class GtkBaseMenuItem implements EntryPeer {
         // will also get:  gsignal.c:2516: signal 'child-added' is invalid for instance '0x7f1df8244080' of type 'GtkMenu'
         Gtk2.gtk_menu_shell_append(parentNative, _native);
         GObject.g_object_ref_sink(_native);  // undoes "floating"
-        Gtk2.gtk_widget_show_all(_native);    // necessary to guarantee widget is visible
+        // NOTE: We cannot show the menu until AFTER items have been added, otherwise we get GLIB warnings
     }
 
     @Override

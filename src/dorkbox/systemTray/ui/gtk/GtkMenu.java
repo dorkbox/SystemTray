@@ -109,14 +109,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         if (parent != null) {
             parent.deleteMenu();
         }
-
-        // makes a new one
-        _nativeMenu = Gtk2.gtk_menu_new();
-
-        // binds sub-menu to entry (if it exists! it does not for the root menu)
-        if (parent != null) {
-            Gtk2.gtk_menu_item_set_submenu(_native, _nativeMenu);
-        }
     }
 
     /**
@@ -131,6 +123,14 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     void createMenu() {
         if (obliterateInProgress.get()) {
             return;
+        }
+
+        // makes a new one
+        _nativeMenu = Gtk2.gtk_menu_new();
+
+        // binds sub-menu to entry (if it exists! it does not for the root menu)
+        if (parent != null) {
+            Gtk2.gtk_menu_item_set_submenu(_native, _nativeMenu);
         }
 
         if (parent != null) {
@@ -160,7 +160,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         }
 
         onMenuAdded(_nativeMenu);
-        Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
     }
 
     /**
@@ -250,6 +249,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 else if (entry instanceof MenuItem) {
                     ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getSystemTray());
                 }
+
+                Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
             }
         });
     }
