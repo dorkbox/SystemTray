@@ -235,7 +235,14 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 // we must create the menu BEFORE binding the menu, otherwise the menus' children's GTK element can be added before
                 // their parent GTK elements are added (and the menu won't show up)
                 if (entry instanceof Menu) {
-                    ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getSystemTray());
+                    Menu menuEntry = (Menu) entry;
+                    menuEntry.bind((GtkMenu) item, parentMenu, parentMenu.getSystemTray());
+
+                    if (menuEntry.getFirst() == null) {
+                        // don't try to show the sub-menu if there are NO ENTRIES, because GTK will emit a warning and ignore it. (and yes, the typo is there too)
+                        // LIBDBUSMENU-GLIB-WARNING **: About to Show called on an item wihtout submenus. We're ignoring it.
+                        return;
+                    }
                 }
                 else if (entry instanceof Separator) {
                     ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getSystemTray());
