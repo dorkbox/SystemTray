@@ -51,7 +51,10 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
         if (SystemTray.AUTO_FIX_INCONSISTENCIES &&
             (SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray) && OSUtil.Linux.isUbuntu()) {
-            useFakeCheckMark = true;
+
+            // Ubuntu < 17.10 (so 14.04, 14.10, 15.04, 15.10, 16.04, 16.10, 17.04) SCREW UP checkboxes. Ubuntu 17.10 uses gnome-shell properly and thus works correctly.
+            int[] version = OSUtil.Linux.getUbuntuVersion();
+            useFakeCheckMark = (version[0] < 17 || (version[0] == 17 && version[1] == 4));
         } else {
             useFakeCheckMark = false;
         }
