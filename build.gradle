@@ -170,7 +170,7 @@ sourceSets {
         }
     }
 
-    swingExample {
+    example {
         java {
             setSrcDirs Collections.singletonList('test')
             include utilFiles('dorkbox.TestTray',
@@ -181,6 +181,8 @@ sourceSets {
         resources {
             setSrcDirs Collections.singletonList('test')
             include 'dorkbox/*.png'
+
+            source sourceSets.main.resources
         }
     }
 
@@ -196,6 +198,8 @@ sourceSets {
         resources {
             setSrcDirs Collections.singletonList('test')
             include 'dorkbox/*.png'
+
+            source sourceSets.main.resources
         }
     }
 
@@ -211,6 +215,8 @@ sourceSets {
         resources {
             setSrcDirs Collections.singletonList('test')
             include 'dorkbox/*.png'
+
+            source sourceSets.main.resources
         }
     }
 }
@@ -258,7 +264,7 @@ dependencies {
     testImplementation files("${System.getProperty('java.home', '.')}/lib/ext/jfxrt.jar")
 
     // dependencies for our test examples
-    swingExampleImplementation configurations.implementation, log
+    exampleImplementation configurations.implementation, log
     javaFxExampleImplementation configurations.implementation, log
     swtExampleImplementation configurations.implementation, log, swtDep
 }
@@ -341,8 +347,8 @@ jar {
 ///////////////////////////////
 //////    Tasks to launch examples from gradle
 ///////////////////////////////
-task swingExample(type: JavaExec) {
-    classpath sourceSets.swingExample.runtimeClasspath
+task example(type: JavaExec) {
+    classpath sourceSets.example.runtimeClasspath
 
     group = 'examples'
     main = 'dorkbox.TestTray'
@@ -365,15 +371,15 @@ task swtExample(type: JavaExec) {
     standardInput = System.in
 }
 
-task jarSwingExample(type: Jar) {
+task jarExample(type: Jar) {
     dependsOn jar
 
-    baseName = 'SystemTray-SwingExample'
+    baseName = 'SystemTray-Example'
     group = BasePlugin.BUILD_GROUP
-    description = 'Create an all-in-one example for testing, using Swing'
+    description = 'Create an all-in-one example for testing, on a standard Java installation'
 
-    from sourceSets.swingExample.output.classesDirs
-    from sourceSets.swingExample.output.resourcesDir
+    from sourceSets.example.output.classesDirs
+    from sourceSets.example.output.resourcesDir
 
     from compileUtils.destinationDir
 
@@ -399,7 +405,7 @@ task jarJavaFxExample(type: Jar) {
     from sourceSets.javaFxExample.output.resourcesDir
 
     from compileUtils.destinationDir
-    
+
     // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
     from configurations.runtimeClasspath
                        .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
@@ -422,7 +428,7 @@ task jarSwtExample(type: Jar) {
     from sourceSets.swtExample.output.resourcesDir
 
     from compileUtils.destinationDir
-    
+
     // include SWT
     from configurations.swtExampleJar
                        .collect {zipTree(it)}
@@ -439,7 +445,7 @@ task jarSwtExample(type: Jar) {
 
 
 task jarAllExamples {
-    dependsOn jarSwingExample
+    dependsOn jarExample
     dependsOn jarJavaFxExample
     dependsOn jarSwtExample
 
