@@ -274,7 +274,6 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         if (checkedImage != null) {
             Gtk2.gtk_container_remove(_native, checkedImage);  // will automatically get destroyed if no other references to it
             checkedImage = null;
-            Gtk2.gtk_widget_show_all(_native);
         }
 
 

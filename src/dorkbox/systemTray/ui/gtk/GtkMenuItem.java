@@ -83,7 +83,6 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
                 if (image != null) {
                     Gtk2.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
                     image = null;
-                    Gtk2.gtk_widget_show_all(_native);
                 }
 
                 if (menuItem.getImage() != null) {
