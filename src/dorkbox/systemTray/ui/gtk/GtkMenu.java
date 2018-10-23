@@ -37,7 +37,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
     private final List<GtkBaseMenuItem> menuEntries = new ArrayList<GtkBaseMenuItem>();
 
-    private final GtkMenu parent;
+    private final GtkMenu parent;  // null when we are the main menu attached to the tray icon
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
 
     private volatile Pointer image;
@@ -236,7 +236,8 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 // their parent GTK elements are added (and the menu won't show up)
                 if (entry instanceof Menu) {
                     Menu menuEntry = (Menu) entry;
-                    menuEntry.bind((GtkMenu) item, parentMenu, parentMenu.getSystemTray());
+                    GtkMenu gtkMenu = (GtkMenu) item;
+                    menuEntry.bind(gtkMenu, parentMenu, parentMenu.getSystemTray());
 
                     if (menuEntry.getFirst() == null) {
                         // don't try to show the sub-menu if there are NO ENTRIES, because GTK will emit a warning and ignore it. (and yes, the typo is there too)
@@ -257,7 +258,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                     ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getSystemTray());
                 }
 
-                Gtk2.gtk_widget_show_all(_nativeMenu);    // necessary to guarantee widget is visible (doesn't always show_all for all children)
+                Gtk2.gtk_widget_show_all(_nativeMenu);
             }
         });
     }
