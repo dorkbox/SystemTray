@@ -268,7 +268,7 @@ class Extension {
 
         if (hasSystemTray) {
             if (SystemTray.DEBUG) {
-                logger.debug("Checking current version of extension for upgrade");
+                logger.debug("Extension already installed, checking for upgrade");
             }
             // have to check to see if the version is correct as well (otherwise we have to reinstall it)
             // compat for java 1.6
@@ -282,8 +282,7 @@ class Extension {
                     builder.append(line)
                            .append("\n");
                 }
-            } catch (FileNotFoundException ignored) {
-            } catch (IOException ignored) {
+            } catch (Exception ignored) {
             } finally {
                 if (bin != null) {
                     try {
