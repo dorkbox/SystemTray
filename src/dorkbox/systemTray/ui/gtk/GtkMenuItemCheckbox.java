@@ -30,6 +30,7 @@ import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.util.OSUtil;
 import dorkbox.util.jna.linux.GCallback;
 import dorkbox.util.jna.linux.GObject;
 import dorkbox.util.jna.linux.GtkEventDispatch;
