@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Random;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -195,6 +196,13 @@ class TestTraySwt {
             void actionPerformed(final ActionEvent e) {
                 MenuItem source = (MenuItem) e.getSource();
                 source.getParent().remove();
+            }
+        }));
+        submenu.add(new MenuItem("Add new entry to tray", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                systemTray.getMenu().add(new MenuItem("Random " + Integer.toString(new Random().nextInt(10))));
             }
         }));
         mainMenu.add(submenu);

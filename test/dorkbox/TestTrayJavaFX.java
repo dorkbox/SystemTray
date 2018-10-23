@@ -19,6 +19,7 @@ package dorkbox;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Random;
 
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
@@ -239,6 +240,13 @@ class TestTrayJavaFX {
             void actionPerformed(final java.awt.event.ActionEvent e) {
                 MenuItem source = (MenuItem) e.getSource();
                 source.getParent().remove();
+            }
+        }));
+        submenu.add(new MenuItem("Add new entry to tray", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final java.awt.event.ActionEvent e) {
+                systemTray.getMenu().add(new MenuItem("Random " + Integer.toString(new Random().nextInt(10))));
             }
         }));
         mainMenu.add(submenu);
