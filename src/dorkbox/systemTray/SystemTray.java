@@ -122,7 +122,8 @@ class SystemTray {
      * This property is available to disable this functionality in situations where you don't want this to happen.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true.
-     */ public static boolean ENABLE_SHUTDOWN_HOOK = true;
+     */
+    public static boolean ENABLE_SHUTDOWN_HOOK = true;
 
     @Property
     /**
