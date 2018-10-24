@@ -169,16 +169,21 @@ class Extension {
 
     private static
     void restartShell() {
+        // in some situations, you can no longer restart the shell in wayland. You must logout-login for shell modifications to apply
+        // https://mail.gnome.org/archives/commits-list/2015-March/msg01019.html
+
+        // HOWEVER, with wayland, shell-extensions that DO NO MODIFY THE GUI (we don't, we just add icons to it)
+        // are enabled without a shell restart.
+
+        // if there are still difficulties, you can use the following
+        // gnome-shell-extension-tool -e SystemTray@Dorkbox
+
         if (OSUtil.DesktopEnv.isWayland()) {
-            // you can no longer restart the shell in wayland. You must logout-login for shell modifications to apply
-            // https://mail.gnome.org/archives/commits-list/2015-March/msg01019.html
-
-            // HOWEVER, with wayland, shell-extensions that DO NO MODIFY THE GUI (we don't, we just add icons to it)
-            // are enabled without a shell restart.
-
-            // if there are still difficulties, you can use the following
-            // gnome-shell-extension-tool -e SystemTray@Dorkbox
-            return;
+            int[] version = OSUtil.Linux.getUbuntuVersion();
+            if (version[0] == 17) {
+                // ubuntu 17.04 is NOT WAYLAND (it's MIR) and ubuntu 17.10 is WAYLAND (and it's broken...)
+                return;
+            }
         }
 
 
