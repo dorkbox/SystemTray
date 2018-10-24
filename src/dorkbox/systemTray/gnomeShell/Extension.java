@@ -45,7 +45,8 @@ class Extension {
     public static final String DEFAULT_NAME = "SystemTray";
 
     @Property
-    /** Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome places the icon in the
+    /**
+     * Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome places the icon in the
      * "notification drawer", which is a collapsible menu at (usually) bottom left corner of the screen.
      */
     public static boolean ENABLE_EXTENSION_INSTALL = true;
