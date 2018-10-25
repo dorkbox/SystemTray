@@ -32,18 +32,14 @@
  *   journalctl /usr/bin/gnome-shell -f -o cat
  */
 
-const Clutter = imports.gi.Clutter;
-const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Main = imports.ui.main;
 const GLib = imports.gi.GLib;
 const Lang = imports.lang;
-const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 const Meta = imports.gi.Meta;
-const Mainloop = imports.mainloop;
 const NotificationDaemon = imports.ui.notificationDaemon;
-const Config = imports.misc.config
+const Config = imports.misc.config;
 const MessageTray = imports.ui.messageTray;
 
 let APP_NAME = "SystemTray";
@@ -65,10 +61,10 @@ let PANEL_ICON_SIZE = 24;
 
 // Workarounds...
 let currentArray = Config.PACKAGE_VERSION.split('.');
-if (currentArray[0] == 3 && currentArray[1] < 5) {
+if (currentArray[0] === 3 && currentArray[1] < 5) {
     // Gnome Shell 3.3 or 3.4
     PANEL_ICON_SIZE = MessageTray.Source.prototype.ICON_SIZE;
-} else if (currentArray[0] == 3 && currentArray[1] < 7) {
+} else if (currentArray[0] === 3 && currentArray[1] < 7) {
     // Gnome Shell 3.5 or 3.6
     PANEL_ICON_SIZE = MessageTray.NOTIFICATION_ICON_SIZE;
 } else {
