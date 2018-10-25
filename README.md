@@ -84,7 +84,9 @@ LinuxMint 18 | ✓ |
 Ubuntu 12.04 | ✓ | 
 Ubuntu 14.04 | ✓ | 
 Ubuntu 16.04 | ✓ | 
-Ubuntu 17.04 | ✓ | 
+Ubuntu 17.04 | ✓ |
+Ubuntu 17.10 | ✓ | 
+Ubuntu 18.04 | ✓ |  
 UbuntuGnome 16.04 | ✓ | 
 UbuntuGnome 17.04 | ✓ |
  | | 
