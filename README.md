@@ -110,7 +110,7 @@ Notes:
  
  - Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
 
- - Ubuntu 17.04+ Java only supports the X11 backend. MIR and Wayland are not supported.
+ - Ubuntu 17.04, Java only supports the X11 backend. MIR is not supported.
 
  - Debian + GNOME 3, SystemTray works, but will only show in a tray via pressing SUPER+M.  
 
