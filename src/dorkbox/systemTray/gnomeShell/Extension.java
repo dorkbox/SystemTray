@@ -168,7 +168,7 @@ class Extension {
         setGsettings.start();
     }
 
-    private static
+    public static
     void restartShell() {
         // in some situations, you can no longer restart the shell in wayland. You must logout-login for shell modifications to apply
         // https://mail.gnome.org/archives/commits-list/2015-March/msg01019.html
@@ -184,6 +184,15 @@ class Extension {
             if (version[0] == 17) {
                 // ubuntu 17.04 is NOT WAYLAND (it's MIR) and ubuntu 17.10 is WAYLAND (and it's broken...)
                 return;
+            }
+            else {
+                if (SystemTray.DEBUG) {
+                    logger.warn("Trying to restart the shell with an unknown version of wayland. Please create an issue with OS and debug information.");
+                }
+                else {
+                    logger.warn("Trying to restart the shell with an unknown version of wayland. Please set `SystemTray.DEBUG=true;` then create an issue " +
+                                "with OS and debug information.");
+                }
             }
         }
 
@@ -203,6 +212,7 @@ class Extension {
             ShellAsyncExecutor.runShell(SHELL_RESTART_COMMAND);
 
             // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
+            // Until then however, there will be errors which can be ignored, because the shell-restart means everything works.
         }
     }
 
