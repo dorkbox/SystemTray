@@ -38,6 +38,7 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.systemTray.gnomeShell.DummyFile;
 import dorkbox.systemTray.gnomeShell.Extension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
@@ -306,13 +307,28 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
-                        // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now proper Gnome
                         int[] version = OSUtil.Linux.getUbuntuVersion();
-                        if (version[0] > 17 || (version[0] == 17 && version[1] == 10)) {
-                            // this is gnome 3.26.1
-                            // install the Gnome extension
+
+                        // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now mostly Gnome
+                        if (version[0] == 17 && version[1] == 10) {
+                            // this is gnome 3.26.1, so we install the Gnome extension
                             Tray.usingGnome = true;
                             Extension.install();
+                        }
+                        else if (version[0] >= 18) {
+                            // ubuntu 18.04 doesn't need the extension BUT does need a logout-login (or gnome-shell restart) for it to work
+
+                            // we copy over a config file so we know if we have already restarted the shell or shown the warning. A logout-login will also work.
+                            if (!DummyFile.isPresent()) {
+                                DummyFile.install();
+
+                                if (!Extension.ENABLE_EXTENSION_INSTALL) {
+                                    logger.warn("You must log out-in for the system tray to work.");
+                                }
+                                else {
+                                    Extension.restartShell();
+                                }
+                            }
                         }
 
                         return selectTypeQuietly(TrayType.AppIndicator);
