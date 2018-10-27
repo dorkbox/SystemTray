@@ -25,7 +25,7 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.gnomeShell.Extension;
+import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.util.JavaFX;
 import dorkbox.util.jna.linux.GEventCallback;
 import dorkbox.util.jna.linux.GObject;
@@ -205,7 +205,7 @@ class _GtkStatusIconNativeTray extends Tray {
 
                 // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
                 //  in extension.js, so don't change it
-                Gtk2.gtk_status_icon_set_title(trayIcon, Extension.DEFAULT_NAME);
+                Gtk2.gtk_status_icon_set_title(trayIcon, LegacyExtension.DEFAULT_NAME);
 
                 // can cause
                 // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed

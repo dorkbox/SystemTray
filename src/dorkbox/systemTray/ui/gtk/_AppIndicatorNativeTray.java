@@ -23,7 +23,7 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.gnomeShell.Extension;
+import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.GObject;
@@ -126,7 +126,7 @@ class _AppIndicatorNativeTray extends Tray {
                     //  in extension.js, so don't change it
 
                     // additionally, this is required to be set HERE (not somewhere else)
-                    appIndicator.app_indicator_set_title(Extension.DEFAULT_NAME);
+                    appIndicator.app_indicator_set_title(LegacyExtension.DEFAULT_NAME);
                 }
             }
 

@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dorkbox.systemTray.gnomeShell.DummyFile;
-import dorkbox.systemTray.gnomeShell.Extension;
+import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
@@ -283,8 +283,8 @@ class SystemTray {
                         Extension.install();
 
                         // this can be gnome3 on debian/kali
-
                         if (OSUtil.Linux.isKali()) {
+                            LegacyExtension.install();
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
 
@@ -294,8 +294,9 @@ class SystemTray {
                             if (DEBUG) {
                                 logger.debug("Disabling the extension install. It won't work.");
                             }
-
-                            Extension.ENABLE_EXTENSION_INSTALL = false;
+                        }
+                        else {
+                            LegacyExtension.install();
                         }
 
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
@@ -322,12 +323,8 @@ class SystemTray {
                             if (!DummyFile.isPresent()) {
                                 DummyFile.install();
 
-                                if (!Extension.ENABLE_EXTENSION_INSTALL) {
-                                    logger.warn("You must log out-in for the system tray to work.");
-                                }
-                                else {
-                                    Extension.restartShell();
-                                }
+                                // just restarting the shell is enough to get the system tray to work
+                                LegacyExtension.restartShell();
                             }
                         }
 
@@ -919,7 +916,7 @@ class SystemTray {
                                 return;
                             }
                         } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
-                            if (!Extension.isInstalled()) {
+                            if (!LegacyExtension.isInstalled()) {
                                 // Automatically install the extension for everyone except Arch. They are bonkers.
                                 Extension.ENABLE_EXTENSION_INSTALL = false;
                                 SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
