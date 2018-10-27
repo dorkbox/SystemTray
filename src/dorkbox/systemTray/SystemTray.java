@@ -38,6 +38,7 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.systemTray.gnomeShell.AppIndicatorExtension;
 import dorkbox.systemTray.gnomeShell.DummyFile;
 import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.systemTray.ui.awt._AwtTray;
@@ -248,12 +249,7 @@ class SystemTray {
                     }
 
                     if ("gnome".equalsIgnoreCase(GDM)) {
-                        // install the Gnome extension
-                        Tray.usingGnome = true;
-                        Extension.install();
-
                         // are we fedora? If so, what version?
-                        // now, what VERSION of fedora? 23/24/25/? don't have AppIndicator installed, so we have to use GtkStatusIcon
                         if (OSUtil.Linux.isFedora()) {
                             if (DEBUG) {
                                 logger.debug("Running Fedora");
@@ -279,8 +275,8 @@ class SystemTray {
                     }
                     else if ("default".equalsIgnoreCase(GDM)) {
                         // install the Gnome extension
-                        Tray.usingGnome = true;
-                        Extension.install();
+                        Tray.gtkGnomeWorkaround = true;
+
 
                         // this can be gnome3 on debian/kali
                         if (OSUtil.Linux.isKali()) {
@@ -288,7 +284,7 @@ class SystemTray {
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
 
-                        if (OSUtil.Linux.isDebian() && Extension.ENABLE_EXTENSION_INSTALL) {
+                        if (OSUtil.Linux.isDebian()) {
                             logger.warn("Debian with Gnome detected. SystemTray works, but will only show via SUPER+M.");
 
                             if (DEBUG) {
@@ -313,8 +309,8 @@ class SystemTray {
                         // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now mostly Gnome
                         if (version[0] == 17 && version[1] == 10) {
                             // this is gnome 3.26.1, so we install the Gnome extension
-                            Tray.usingGnome = true;
-                            Extension.install();
+                            Tray.gtkGnomeWorkaround = true;
+                            LegacyExtension.install();
                         }
                         else if (version[0] >= 18) {
                             // ubuntu 18.04 doesn't need the extension BUT does need a logout-login (or gnome-shell restart) for it to work
@@ -918,8 +914,7 @@ class SystemTray {
                         } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
                             if (!LegacyExtension.isInstalled()) {
                                 // Automatically install the extension for everyone except Arch. They are bonkers.
-                                Extension.ENABLE_EXTENSION_INSTALL = false;
-                                SystemTray.logger.info("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
+                                SystemTray.logger.warn("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
                                                        "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
                                                        "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
                                                        "of the screen to the menu panel next to the clock.");

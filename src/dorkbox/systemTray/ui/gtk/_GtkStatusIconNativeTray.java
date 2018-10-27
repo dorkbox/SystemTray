@@ -215,8 +215,8 @@ class _GtkStatusIconNativeTray extends Tray {
                 //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
                 //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
                 //           we appear broken.
-                if (JavaFX.isLoaded || Tray.usingGnome) {
-                    Gtk2.gtk_status_icon_set_name(trayIcon, Extension.DEFAULT_NAME);
+                if (JavaFX.isLoaded || Tray.gtkGnomeWorkaround) {
+                    Gtk2.gtk_status_icon_set_name(trayIcon, LegacyExtension.DEFAULT_NAME);
                 }
             }
         });

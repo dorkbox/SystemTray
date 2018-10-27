@@ -27,8 +27,8 @@ import dorkbox.systemTray.util.ImageResizeUtil;
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
 class Tray extends Menu {
-    // true if we are using gnome (and things depend on it) or false
-    public static volatile boolean usingGnome = false;
+    // true if we are using gnome (and we have to implement workarounds) or false
+    public static volatile boolean gtkGnomeWorkaround = false;
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
