@@ -171,8 +171,8 @@ class ExtensionSupport {
         // HOWEVER, with wayland, shell-extensions that DO NO MODIFY THE GUI (we don't, we just add icons to it)
         // are enabled without a shell restart.
 
-        // if there are still difficulties, you can use the following
-        // gnome-shell-extension-tool -e SystemTray@Dorkbox
+        // The app-indicator extension with wayland (on Fedora 27+) CANNOT restart the shell.
+
 
         logger.info("Restarting gnome-shell via '{}' so tray notification changes can be applied.", restartCommand);
 
