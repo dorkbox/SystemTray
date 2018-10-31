@@ -780,7 +780,7 @@ class SystemTray {
             if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
                 OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
-                if (OSUtil.DesktopEnv.isUnity(de) && OSUtil.Linux.isUbuntu()) {
+                if (OSUtil.Linux.isUbuntu() && OSUtil.DesktopEnv.isUnity(de)) {
                     if (AUTO_FIX_INCONSISTENCIES) {
                         // GTK2 does not support AppIndicators!
                         if (Gtk.isGtk2) {
