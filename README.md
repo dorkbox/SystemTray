@@ -5,7 +5,7 @@ Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusI
 
 This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment and if AutoDetect (the default) is enabled. 
 
- - Linux/Unix will automatically choose *Native* (*GtkStatusIcon*, and *AppIndicator*) menus, Windows will choose *Native* (with Swing menus), and MacOS will choose *AWT*.
+ - Linux/Unix will automatically choose *Native* (*GtkStatusIcon* or *AppIndicator*) menus, Windows will choose *Native* (*WindowsNotifyIcon* with Swing menus), and MacOS will choose *AWT*.
   
  - Please note that the *Native* and *AWT* menus follow the specified look and feel of that OS and are limited by what is supported on the OS. Consequently they are not consistent across all platforms and environments.
  
@@ -16,7 +16,7 @@ This library provides **OS Native** menus and **Swing/AWT** menus, depending on 
 The following unique problems are also solved by this library:  
  1. *Sun/Oracle* system-tray icons on Linux/Unix **do not** support images with transparent backgrounds  
  1. *Sun/Oracle* system-tray and *SWT* system-tray implementations **do not** support app-indicators, which are necessary on different distributions of Linux/Unix
- 1. *GtkStatusIcons* on GNOME3 desktop environments are hidden by default  
+ 1. *GNOME3* desktop environments hide or remove entirely system tray icons  (hidden from 3.16-3.25, removed from 3.26+)
  1. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
  1. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
  1. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
@@ -39,20 +39,21 @@ Problems and Restrictions
  
  - **SWT** can use *GTK2* or *GTK3*. If you want to use *GTK2* you must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized and only if there are problems with the autodetection, you can also set `SystemTray.FORCE_GTK2=true;`.
  
- - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager -- and this cannot happen between different user accounts. We attempt to detect this and fallback to using Swing.
+ - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user without extra work (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager. (see the `Notes` below for the details)
  
- - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together (see the `Notes` below for the details.)
+ - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together. (see the `Notes` below for the details)
  
   - **MacOSX** *native* menus cannot display images attached to menu entries. If desired, one could override the default for MacOSX so that it uses *Swing* instead of *AWT*, however this will result the SystemTray no-longer supporting the OS theme and transparency. The default of *AWT* was chosen because it looks much, much better than *Swing*. 
  
- - **Gnome3** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around (it will be placed next to the clock) for most Gnome environments, except for Arch Linux. Another workaround is to install the [Top Icons plugin](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
+ - **Gnome 3: 3.16 - 3.25** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Top Icons](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
  
+ - **Gnome 3: 3.26+** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Appindicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) plugin which allows the addition of app-indicator icons where one would expect. Additionally, you will need to install `libappindicator-gtk3`.
+  
  - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Specifically, Swing and GtkStatusIcon types support tray tooltips and menu tooltips. AWT and AppIndicator types do not support tooltips of any kind. Please note that **Ubuntu** uses AppIndicators!
                      
  - **Linux/Unix Menus** Some Linux environments only support right-click to display the menu, and it is not possible to change the behavior.
  
- - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will 
- intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
+ - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
 
 AutoDetect Compatibility List
 ------------------
@@ -61,10 +62,17 @@ OS | Supported
 --- | --- | 
 Arch Linux + Gnome3 | ✓ |
  | |
-ChromeOS | - |
+ChromeOS | x |
  | |
 Debian 8.5 + Gnome3 | ✓ |
 Debian 8.6 + Gnome3 | ✓ |
+ | |
+Debian 9.5 + Gnome3 | ✓ |
+Debian 9.5 + KDE | ? |
+Debian 9.5 + Cinnamon | ✓ |
+Debian 9.5 + MATE | ? |
+Debian 9.5 + LXDE | ? |
+Debian 9.5 + XFCE | ✓ |
  | | 
 Elementary OS 0.3.2 | ✓ |
 Elementary OS 0.4 | ✓ |
@@ -73,6 +81,10 @@ Fedora 23 | ✓ |
 Fedora 24 | ✓ | 
 Fedora 25 | ✓ | 
 Fedora 25 KDE | ✓ |
+Fedora 26 | ✓ |
+Fedora 27 | ✓ |
+Fedora 28 | ✓ |  
+Fedora 29 | ✓ |  
  | |
 FreeBSD 11 + Gnome3 | ✓ |
  | |
@@ -92,7 +104,7 @@ UbuntuGnome 17.04 | ✓ |
  | | 
 XUbuntu 16.04 | ✓ |
  | | 
-MacOSx  | ✓ | 
+MacOSx      | ✓ | 
  | |
 Windows XP  | ✓ | 
 Windows 7   | ✓ | 
@@ -103,24 +115,27 @@ Notes:
 -------
  - The compatibility list only applies while the SystemTray is in `AutoDetect` mode. Not all OSes support forcing a custom tray type.
  
+ - Some Linux operating systems with `GNOME 3` might require the installation of the app-indicator library as well. We provide feedback when
+    this is necessary. (Arch, Fedora, etc)
+ 
  - The menu item callbacks occur on **their own dispatch thread** (instead of being on whatever OS's event dispatch thread), in order to 
     provide consistent actions across all platforms. It is critical to make sure that access to Swing/etc that depend on running events
-    inside their own EDT, are properly called. IE: `SwingUtilities.invokeLater()`. Do not use `invokeAndWait()` as weird GUI anomalies 
+    inside their own `EDT`, are properly called. IE: `SwingUtilities.invokeLater()`. Do not use `invokeAndWait()` as weird GUI anomalies 
     can happen.
  
- - Ubuntu 16.04+ with JavaFX require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
+ - `Ubuntu 16.04+` with `JavaFX` require `libappindicator1` because of JavaFX GTK and indicator panel incompatibilities. See [more details](https://github.com/dorkbox/SystemTray/issues/14#issuecomment-248853532). We attempt to fallback to using Swing in this situation.  
 
- - Ubuntu 17.04, Java only supports the X11 backend. MIR is not supported.
+ - `Ubuntu 17.04`, Java only supports the `X11` backend. `MIR` is not supported.
 
- - Debian + GNOME 3, SystemTray works, but will only show in a tray via pressing SUPER+M.  
+ - `Debian` + `GNOME 3`, SystemTray works, but will only show in a tray via pressing SUPER+M.  
 
- - MacOSX JavaFX (Java7) is incompatible with the SystemTray by default. See [issue details](https://bugs.openjdk.java.net/browse/JDK-8116017).
+ - `MacOSX JavaFX` (Java7) is incompatible with the SystemTray by default. See [issue details](https://bugs.openjdk.java.net/browse/JDK-8116017).
      - To fix this do one of the following
         - Upgrade to Java 8
         - Add : `-Djavafx.macosx.embedded=true` as a JVM parameter
         - Set the system property via `System.setProperty("javafx.macosx.embedded", "true");`  before JavaFX is initialized, used, or accessed. *NOTE*: You may need to change the class (that your main method is in) so it does NOT extend the JavaFX `Application` class.
 
-  - SWT builds for FreeBSD do not exist.
+  - `SWT` builds for `FreeBSD` do not exist.
   
   - Linux/Unix: If you want to run this library as a different user, you will need to launch your application via `sudo su username /bin/sh -c "DBUS_SESSION_BUS_ADDRESS='unix:abstract=/tmp/dbus-cLtEoBPmgC' XDG_CURRENT_DESKTOP=$XDG_CURRENT_DESKTOP program-name"`, where `unix:abstract=/tmp/dbus-cLtEoBPmgC` from `/run/user/{uid}/dbus-session`. You will also want to disable the root check + warnings via `SystemTray.ENABLE_ROOT_CHECK=false;` See [issue](https://github.com/dorkbox/SystemTray/issues/63) for more details.
   
