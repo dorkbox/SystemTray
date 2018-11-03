@@ -240,8 +240,10 @@ class Menu extends MenuItem {
         item.setEnabled(entry.isEnabled());
 
         Icon icon = entry.getIcon();
-        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-        item.setImage(bimage);
+        if (icon != null) {
+            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+            item.setImage(bimage);
+        }
 
         item.setShortcut(entry.getMnemonic());
         item.setText(entry.getText());
