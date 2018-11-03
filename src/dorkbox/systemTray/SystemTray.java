@@ -379,16 +379,30 @@ class SystemTray {
                     return selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 case KDE: {
-                    if (OSUtil.Linux.isFedora()) {
-                        // Fedora KDE requires GtkStatusIcon
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
-                    }
-                    else {
-                        // kde (at least, plasma 5.5.6) requires appindicator
-                        return selectTypeQuietly(TrayType.AppIndicator);
+                    // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
+
+                    double plasmaVersion = DesktopEnv.getPlasmaVersion();
+
+                    if (DEBUG) {
+                        logger.debug("KDE Plasma Version: {}", plasmaVersion);
                     }
 
-                    // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
+                    if (plasmaVersion == 0.0) {
+                        // this shouldn't ever happen!
+
+                        logger.error("KDE Plasma detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
+                                     "Please create an issue with as many details as possible.");
+
+                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    }
+
+                    if (plasmaVersion <= 5.5) {
+                        // older versions use GtkStatusIcon
+                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    } else {
+                        // newer versions use appindicator, but the user MIGHT have to install libappindicator
+                        return selectTypeQuietly(TrayType.AppIndicator);
+                    }
                 }
                 case Unity: {
                     // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
@@ -407,6 +421,9 @@ class SystemTray {
                     return selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 case LXDE: {
+                    return selectTypeQuietly(TrayType.GtkStatusIcon);
+                }
+                case MATE: {
                     return selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 case Pantheon: {
@@ -932,8 +949,8 @@ class SystemTray {
                     if (!AppIndicator.isLoaded) {
                         // YIKES. AppIndicator couldn't load.
 
-                        // can we fallback to swing?
-                        if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported()) {
+                        // can we fallback to swing? KDE does not work for this...
+                        if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported() && !OSUtil.DesktopEnv.isKDE()) {
                             trayType = selectTypeQuietly(TrayType.Swing);
 
                             logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
