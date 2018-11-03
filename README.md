@@ -76,6 +76,7 @@ Debian 9.5 + XFCE | ✓ |
  | |
 Elementary OS 0.3.2 | ✓ |
 Elementary OS 0.4 | ✓ |
+Elementary OS 5.0 | * |
  | |
 Fedora 23 | ✓ |
 Fedora 24 | ✓ |
@@ -139,6 +140,8 @@ Notes:
         - Set the system property via `System.setProperty("javafx.macosx.embedded", "true");`  before JavaFX is initialized, used, or accessed. *NOTE*: You may need to change the class (that your main method is in) so it does NOT extend the JavaFX `Application` class.
 
   - `SWT` builds for `FreeBSD` do not exist.
+  
+  - `ElementaryOS 5.0+` removed support for appindicators by just not including a library. [You can add it back with here.](https://git.dorkbox.com/dorkbox/elementary-indicators)
   
   - Linux/Unix: If you want to run this library as a different user, you will need to launch your application via `sudo su username /bin/sh -c "DBUS_SESSION_BUS_ADDRESS='unix:abstract=/tmp/dbus-cLtEoBPmgC' XDG_CURRENT_DESKTOP=$XDG_CURRENT_DESKTOP program-name"`, where `unix:abstract=/tmp/dbus-cLtEoBPmgC` from `/run/user/{uid}/dbus-session`. You will also want to disable the root check + warnings via `SystemTray.ENABLE_ROOT_CHECK=false;` See [issue](https://github.com/dorkbox/SystemTray/issues/63) for more details.
   
