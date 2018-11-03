@@ -915,110 +915,37 @@ class SystemTray {
                 GtkEventDispatch.startGui(FORCE_GTK2, PREFER_GTK3, DEBUG);
                 GtkEventDispatch.waitForEventsToComplete();
 
-
-
-
                 if (DEBUG) {
                     // output what version of GTK we have loaded.
                     logger.debug("GTK Version: " + Gtk.MAJOR + "." + Gtk.MINOR + "." + Gtk.MICRO);
                     logger.debug("Is the system already running GTK? {}", Gtk.alreadyRunningGTK);
                 }
 
-                if (!isTrayType(trayType, TrayType.Swing)) {
-                    // NOTE:  appindicator1 -> GTk2, appindicator3 -> GTK3.
-                    // appindicator3 doesn't support menu icons via GTK2!!
-                    if (!Gtk.isLoaded) {
-                        trayType = selectTypeQuietly(TrayType.Swing);
+                if (!Gtk.isLoaded) {
+                    trayType = selectTypeQuietly(TrayType.Swing);
 
-                        logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
-                    }
-                    else if (OSUtil.Linux.isArch()) {
-                        // arch linux is fun!
+                    logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
+                }
 
-                        // this will try to load AppIndicator
-                        if (isTrayType(trayType, TrayType.AppIndicator) && !AppIndicator.isLoaded) {
-                            // appindicators
+                // this will to load the app-indicator library
+                else if (isTrayType(trayType, TrayType.AppIndicator)) {
+                    if (!AppIndicator.isLoaded) {
+                        // YIKES. AppIndicator couldn't load.
 
-                            // requires the install of libappindicator which is GTK2 (as of 25DEC2016)
-                            // requires the install of libappindicator3 which is GTK3 (as of 25DEC2016)
-                            if (java.awt.SystemTray.isSupported()) {
-                                trayType = selectTypeQuietly(TrayType.Swing);
+                        // can we fallback to swing?
+                        if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported()) {
+                            trayType = selectTypeQuietly(TrayType.Swing);
 
-                                if (Gtk.isGtk2) {
-                                    logger.warn("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
-                                                "Please install libappindicator, for example: 'sudo pacman -S libappindicator'. " +
-                                                "Using the Swing Tray type instead.");
-                                }
-                                else {
-                                    logger.warn("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
-                                                "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. " +
-                                                "Using the Swing Tray type instead."); // GTK3
-                                }
-                            }
-                            else {
-                                if (Gtk.isGtk2) {
-                                    logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK2! " +
-                                                 "Please install libappindicator, for example: 'sudo pacman -S libappindicator'. ");
-                                }
-                                else {
-                                    logger.error("Unable to initialize AppIndicator for Arch linux, it requires GTK3! " +
-                                                 "Please install libappindicator3, for example: 'sudo pacman -S libappindicator3'. "); // GTK3
-                                }
-
-                                systemTrayMenu = null;
-                                systemTray = null;
-                                return;
-                            }
-                        } else if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
-                            if (!LegacyExtension.isInstalled()) {
-                                // Automatically install the extension for everyone except Arch. They are bonkers.
-                                SystemTray.logger.warn("You may need a work-around for showing the SystemTray icon - we suggest installing the " +
-                                                       "the [Top Icons] plugin (https://extensions.gnome.org/extension/1031/topicons/) which moves " +
-                                                       "icons from the *notification drawer* (it is normally collapsed) at the bottom left corner " +
-                                                       "of the screen to the menu panel next to the clock.");
-                            }
+                            logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
+                            logger.warn(AppIndicator.getInstallString(GtkCheck.isGtk2));
                         }
-                    }
-                    else if (isTrayType(trayType, TrayType.AppIndicator)) {
-                        if (Gtk.isGtk2 && AppIndicator.isVersion3) {
+                        else {
+                            // no swing, have to emit instructions how to fix the error.
+                            logger.error("AppIndicator unable to load.  " + AppIndicator.getInstallString(GtkCheck.isGtk2));
 
-                            if (java.awt.SystemTray.isSupported()) {
-                                trayType = selectTypeQuietly(TrayType.Swing);
-
-                                logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
-                                            "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'. " +
-                                            "Using the Swing Tray type instead.");
-                            }
-                            else {
-                                logger.warn("AppIndicator3 detected with GTK2, falling back to GTK2 system tray type.  " +
-                                            "Please install libappindicator1 OR GTK3, for example: 'sudo apt-get install libappindicator1'.");
-
-                                systemTrayMenu = null;
-                                systemTray = null;
-                                return;
-                            }
-                        }
-                        else if (!AppIndicator.isLoaded) {
-                            // YIKES. AppIndicator couldn't load.
-
-                            if (java.awt.SystemTray.isSupported()) {
-                                trayType = selectTypeQuietly(TrayType.Swing);
-                                logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
-                            }
-                            else {
-                                if (Gtk.isGtk2) {
-                                    logger.error("AppIndicator unable to load.  " +
-                                                 "Please install libappindicator1, for example: 'sudo apt-get install libappindicator1'.");
-                                }
-                                else {
-                                    logger.error("AppIndicator unable to load.  " +
-                                                 "Please install libappindicator3, for example: 'sudo apt-get install libappindicator3-1'.");
-                                }
-
-                                systemTrayMenu = null;
-                                systemTray = null;
-                                return;
-                            }
+                            systemTrayMenu = null;
+                            systemTray = null;
+                            return;
                         }
                     }
                 }
