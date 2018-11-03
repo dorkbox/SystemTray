@@ -61,9 +61,6 @@ public
 class AppIndicatorExtension extends ExtensionSupport {
     private static final String UID = "appindicatorsupport@rgcjonas.gmail.com";
 
-    /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
-    private static final String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
-
     /**
      * `(K)StatusNotifierItem/AppIndicator Support` will convert ALL app indicator icons to be at the top of the screen, so there is no reason to have both installed
      *
@@ -146,16 +143,6 @@ class AppIndicatorExtension extends ExtensionSupport {
 
     public static
     void unInstall() {
-        unInstall(UID, SHELL_RESTART_COMMAND);
-    }
-
-    public static
-    void restartShell() {
-        if (SystemTray.DEBUG) {
-            logger.debug("DEBUG mode enabled. You need to log-out/in or manually restart the shell via '{}' to apply the changes.", SHELL_RESTART_COMMAND);
-            return;
-        }
-
-        restartShell(SHELL_RESTART_COMMAND);
+        unInstall(UID, null);
     }
 }

@@ -165,6 +165,10 @@ class ExtensionSupport {
 
     public static
     void restartShell(String restartCommand) {
+        if (restartCommand == null) {
+            return;
+        }
+
         // in some situations, you can no longer restart the shell in wayland. You must logout-login for shell modifications to apply
         // https://mail.gnome.org/archives/commits-list/2015-March/msg01019.html
 
