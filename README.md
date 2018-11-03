@@ -68,10 +68,10 @@ Debian 8.5 + Gnome3 | ✓ |
 Debian 8.6 + Gnome3 | ✓ |
  | |
 Debian 9.5 + Gnome3 | ✓ |
-Debian 9.5 + KDE | ? |
+Debian 9.5 + KDE | ✓ |
 Debian 9.5 + Cinnamon | ✓ |
-Debian 9.5 + MATE | ? |
-Debian 9.5 + LXDE | ? |
+Debian 9.5 + MATE | ✓ |
+Debian 9.5 + LXDE | ✓ |
 Debian 9.5 + XFCE | ✓ |
  | | 
 Elementary OS 0.3.2 | ✓ |
