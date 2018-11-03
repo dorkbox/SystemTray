@@ -1149,7 +1149,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "3.16";
+        return "3.17";
     }
 
     /**
