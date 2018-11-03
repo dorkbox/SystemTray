@@ -430,6 +430,9 @@ class SystemTray {
                     // elementaryOS. It only supports appindicator (not gtkstatusicon)
                     // http://bazaar.launchpad.net/~wingpanel-devs/wingpanel/trunk/view/head:/sample/SampleIndicator.vala
 
+                    // in version 5.0+, they REMOVED support for appindicators. You can add it back via
+                    // see: https://git.dorkbox.com/dorkbox/elementary-indicators
+
                     // ElementaryOS shows the checkbox on the right, everyone else is on the left.
                     // With eOS, we CANNOT show the spacer image. It does not work.
                     return selectTypeQuietly(TrayType.AppIndicator);
@@ -891,18 +894,40 @@ class SystemTray {
                 }
             }
 
-            if (SystemTray.ENABLE_ROOT_CHECK && isTrayType(trayType, TrayType.AppIndicator) && OSUtil.Linux.isRoot()) {
-                // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
-                if (AUTO_FIX_INCONSISTENCIES) {
-                    trayType = selectTypeQuietly(TrayType.Swing);
+            if (isTrayType(trayType, TrayType.AppIndicator)) {
+                if (SystemTray.ENABLE_ROOT_CHECK &&  OSUtil.Linux.isRoot()) {
+                    // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
+                    if (AUTO_FIX_INCONSISTENCIES) {
+                        trayType = selectTypeQuietly(TrayType.Swing);
 
-                    logger.warn("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
-                                 "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
-                                "how to work around this.");
+                        logger.warn("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
+                                     "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
+                                    "how to work around this.");
 
-                } else {
-                    logger.error("Attempting to load the SystemTray as the 'root/sudo' user. This will likely NOT WORK because of dbus " +
-                                 "restrictions. Please refer to the readme notes or issue #63 on how to work around this.");
+                    } else {
+                        logger.error("Attempting to load the SystemTray as the 'root/sudo' user. This will likely NOT WORK because of dbus " +
+                                     "restrictions. Please refer to the readme notes or issue #63 on how to work around this.");
+                    }
+                }
+
+
+                if (OSUtil.Linux.isElementaryOS() && OSUtil.Linux.getElementaryOSVersion()[0] >= 5) {
+                    // in version 5.0+, they REMOVED support for appindicators. You can add it back via some extra work.
+                    // see: https://git.dorkbox.com/dorkbox/elementary-indicators
+
+                    // or you can download
+                    // https://launchpad.net/~elementary-os/+archive/ubuntu/stable/+files/wingpanel-indicator-ayatana_2.0.3+r27+pkg17~ubuntu0.4.1.1_amd64.deb
+                    // then dpkg -i filename
+
+                    // check if this library is installed.
+                    if (!new File("/usr/share/doc/wingpanel-indicator-ayatana").isDirectory()) {
+                        logger.error("Unable to use the SystemTray as-is with this version of ElementaryOS. By default, tray icons *are not* supported, but a" +
+                                     " workaround has been developed. Please see: https://git.dorkbox.com/dorkbox/elementary-indicators");
+
+                        systemTrayMenu = null;
+                        systemTray = null;
+                        return;
+                    }
                 }
             }
         }
