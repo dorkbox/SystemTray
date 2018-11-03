@@ -220,24 +220,6 @@ SystemTray.SWING_UI    (type SwingUIFactory, default value 'null')
  
 SystemTray.DEBUG    (type boolean, default value 'false')
  -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
-  
-  
-Extension.ENABLE_EXTENSION_INSTALL    (type boolean, default value 'true')
- - Permit the StatusTray icon to be displayed next to the clock by installing an extension. By default, gnome 
-   places the icon in the "notification drawer", which is a collapsible menu (usually) at the bottom left corner 
-   of the screen.  This should be set to false if you want to preserve the default Desktop Environment UI preferences.
-   Additionally, Arch Linux is the only exception to this rule where it does not install the extension, so TopIcons is
-   necessary for placing the icon near the clock.
-  
-  
-Extension.ENABLE_SHELL_RESTART    (type boolean, default value 'true')
- - Permit the gnome-shell to be restarted when the extension is installed.
-  
-  
-Extension.SHELL_RESTART_COMMAND    (type String, default value 'gnome-shell --replace &')
- - Command to restart the gnome-shell. It is recommended to start it in the background (hence '&')
-  
-  
 ```
    
    
