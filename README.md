@@ -114,6 +114,8 @@ Windows 10  | ✓ |
 
 Notes:
 -------
+ - If you have us working on an *unlisted* OS/DE, please let us know!!
+ 
  - The compatibility list only applies while the SystemTray is in `AutoDetect` mode. Not all OSes support forcing a custom tray type.
  
  - Some Linux operating systems with `GNOME 3` might require the installation of the app-indicator library as well. We provide feedback when
