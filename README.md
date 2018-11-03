@@ -59,7 +59,7 @@ AutoDetect Compatibility List
 ------------------
      
 OS | Supported 
---- | --- | 
+--- | --- |
 Arch Linux + Gnome3 | ✓ |
  | |
 ChromeOS | x |
@@ -73,43 +73,44 @@ Debian 9.5 + Cinnamon | ✓ |
 Debian 9.5 + MATE | ✓ |
 Debian 9.5 + LXDE | ✓ |
 Debian 9.5 + XFCE | ✓ |
- | | 
+ | |
 Elementary OS 0.3.2 | ✓ |
 Elementary OS 0.4 | ✓ |
  | |
-Fedora 23 | ✓ | 
-Fedora 24 | ✓ | 
-Fedora 25 | ✓ | 
+Fedora 23 | ✓ |
+Fedora 24 | ✓ |
+Fedora 25 | ✓ |
 Fedora 25 KDE | ✓ |
 Fedora 26 | ✓ |
 Fedora 27 | ✓ |
-Fedora 28 | ✓ |  
-Fedora 29 | ✓ |  
+Fedora 28 | ✓ |
+Fedora 29 | ✓ |
  | |
 FreeBSD 11 + Gnome3 | ✓ |
  | |
-Kali 2016 | ✓ | 
-Kali 2017 | ✓ | 
+Kali 2016 | ✓ |
+Kali 2017 | ✓ |
  | |
 LinuxMint 18 | ✓ |
- | | 
-Ubuntu 12.04 | ✓ | 
-Ubuntu 14.04 | ✓ | 
-Ubuntu 16.04 | ✓ | 
-Ubuntu 17.04 | ✓ |
-Ubuntu 17.10 | ✓ | 
-Ubuntu 18.04 | ✓ |  
-UbuntuGnome 16.04 | ✓ | 
-UbuntuGnome 17.04 | ✓ |
- | | 
-XUbuntu 16.04 | ✓ |
- | | 
-MacOSx      | ✓ | 
  | |
-Windows XP  | ✓ | 
-Windows 7   | ✓ | 
-Windows 8.1 | ✓ | 
-Windows 10  | ✓ | 
+Ubuntu 12.04 | ✓ |
+Ubuntu 14.04 | ✓ |
+Ubuntu 16.04 | ✓ |
+Ubuntu 17.04 | ✓ |
+Ubuntu 17.10 | ✓ |
+Ubuntu 18.04 | ✓ |
+ | |
+UbuntuGnome 16.04 | ✓ |
+UbuntuGnome 17.04 | ✓ |
+ | |
+XUbuntu 16.04 | ✓ |
+ | |
+MacOSx      | ✓ |
+ | |
+Windows XP  | ✓ |
+Windows 7   | ✓ |
+Windows 8.1 | ✓ |
+Windows 10  | ✓ |
 
 Notes:
 -------
