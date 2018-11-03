@@ -33,18 +33,6 @@ class LegacyExtension extends ExtensionSupport {
     private static final String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
 
     /**
-     * topIcons will convert ALL icons to be at the top of the screen, so there is no reason to have both installed
-     *
-     * @return true if that extension is installed
-     */
-    public static
-    boolean isInstalled() {
-        List<String> enabledExtensions = getEnabledExtensions();
-        return enabledExtensions.contains("topIcons@adel.gadllah@gmail.com") || enabledExtensions.contains(UID);
-    }
-
-
-    /**
      * Only install a version that specifically moves only our icon next to the clock
      */
     public static

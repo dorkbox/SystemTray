@@ -11,11 +11,9 @@ class DummyFile {
 
     private static final File file = new File(System.getProperty("user.home") + "/.local/.SystemTray");
 
-    public static
-    boolean isPresent() {
-        return file.exists();
-    }
-
+    /**
+     * Installs a dummy file to indicate we've restarted the shell. This will restart the shell if necessary
+     */
     public static
     void install() {
         if (!file.exists()) {
@@ -28,8 +26,12 @@ class DummyFile {
             } catch (IOException e) {
                 SystemTray.logger.error("Error creating file", e);
             }
+
+            file.setLastModified(System.currentTimeMillis());
+
+            // just restarting the shell is enough to get the system tray to work
+            LegacyExtension.restartShell();
         }
 
-        file.setLastModified(System.currentTimeMillis());
     }
 }

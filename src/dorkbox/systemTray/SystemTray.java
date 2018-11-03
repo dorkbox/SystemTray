@@ -307,12 +307,7 @@ class SystemTray {
                             else if (minorAndPatch < 26.0D) {
                                 Tray.gtkGnomeWorkaround = true;
 
-                                if (!LegacyExtension.isInstalled()) {
-                                    LegacyExtension.install();
-
-                                    // just restarting the shell is enough to get the system tray to work
-                                    LegacyExtension.restartShell();
-                                }
+                                LegacyExtension.install();
 
                                 // now, what VERSION of fedora? "normal" fedora doesn't have AppIndicator installed, so we have to use GtkStatusIcon
                                 // 23 is gtk, 24/25/26 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
@@ -362,12 +357,7 @@ class SystemTray {
                             // ubuntu 18.04 doesn't need the extension BUT does need a logout-login (or gnome-shell restart) for it to work
 
                             // we copy over a config file so we know if we have already restarted the shell or shown the warning. A logout-login will also work.
-                            if (!DummyFile.isPresent()) {
-                                DummyFile.install();
-
-                                // just restarting the shell is enough to get the system tray to work
-                                LegacyExtension.restartShell();
-                            }
+                            DummyFile.install();
                         }
 
                         return selectTypeQuietly(TrayType.AppIndicator);
