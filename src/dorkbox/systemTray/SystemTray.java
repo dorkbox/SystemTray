@@ -58,6 +58,7 @@ import dorkbox.util.IO;
 import dorkbox.util.JavaFX;
 import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
+import dorkbox.util.OSUtil.DesktopEnv;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.Swt;
@@ -248,53 +249,98 @@ class SystemTray {
                         logger.debug("Currently using the '{}' session type", GDM);
                     }
 
-                    if ("gnome".equalsIgnoreCase(GDM)) {
-                        // are we fedora? If so, what version?
-                        if (OSUtil.Linux.isFedora()) {
-                            if (DEBUG) {
-                                logger.debug("Running Fedora");
-                            }
-
-                            // 23 is gtk, 24/25 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
-                        }
-                        else if (OSUtil.Linux.isUbuntu()) {
+                    if ("gnome".equalsIgnoreCase(GDM) || "default".equalsIgnoreCase(GDM)) {
+                        // UGH. At least ubuntu un-butchers gnome.
+                        if (OSUtil.Linux.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
-                        else if (OSUtil.Unix.isFreeBSD()) {
+
+                        // "default" can be gnome3 on debian/kali
+
+
+                        // for everyone else, we have to check the gnome version.
+                        // gnome2 -> everything is glorious and just works.
+                        // gnome3 -> someone started sniffing glue.
+                        //   < 3.16  - It's in the notification tray. SystemTray works, but will only show via SUPER+M.
+                        //   < 3.26  - (3.16 introduced the legacy tray, and removed gtkstatus icon "normal" placement) legacy icons via shell extensions work + GTK workarounds
+                        //   >= 3.26 - (3.26 removed the legacy tray) app-indicator icons via shell extensions + libappindicator work
+
+
+                        String gnomeVersion = DesktopEnv.getGnomeVersion();
+                        if (gnomeVersion == null) {
+                            // this shouldn't ever happen!
+
+                            logger.error("GNOME shell detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
+                                         "Please create an issue with as many details as possible.");
+
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
-                        else {
-                            // arch likely will have problems unless the correct/appropriate libraries are installed.
-                            return selectTypeQuietly(TrayType.AppIndicator);
+
+                        if (DEBUG) {
+                            logger.debug("Gnome Version: {}", gnomeVersion);
                         }
-                    }
-                    else if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
-                    }
-                    else if ("default".equalsIgnoreCase(GDM)) {
-                        // install the Gnome extension
-                        Tray.gtkGnomeWorkaround = true;
+
+                        // get the major/minor/patch, if possible.
+                        int major = 0;
+                        double minorAndPatch = 0.0D;
+
+                        // this isn't the BEST way to do this, but it's simple and easy to understand
+                        String[] split = gnomeVersion.split("\\.",2);
+
+                        try {
+                            major = Integer.parseInt(split[0]);
+                            minorAndPatch = Double.parseDouble(split[1]);
+                        } catch (Exception ignored) {
+                        }
 
 
-                        // this can be gnome3 on debian/kali
-                        if (OSUtil.Linux.isKali()) {
-                            LegacyExtension.install();
+
+                        if (major == 2) {
                             return selectTypeQuietly(TrayType.GtkStatusIcon);
                         }
+                        else if (major == 3) {
+                            if (minorAndPatch < 16.0D) {
+                                logger.warn("SystemTray works, but will only show via SUPER+M.");
+                                return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            }
+                            else if (minorAndPatch < 26.0D) {
+                                Tray.gtkGnomeWorkaround = true;
 
-                        if (OSUtil.Linux.isDebian()) {
-                            logger.warn("Debian with Gnome detected. SystemTray works, but will only show via SUPER+M.");
+                                if (!LegacyExtension.isInstalled()) {
+                                    LegacyExtension.install();
 
-                            if (DEBUG) {
-                                logger.debug("Disabling the extension install. It won't work.");
+                                    // just restarting the shell is enough to get the system tray to work
+                                    LegacyExtension.restartShell();
+                                }
+
+                                // now, what VERSION of fedora? "normal" fedora doesn't have AppIndicator installed, so we have to use GtkStatusIcon
+                                // 23 is gtk, 24/25/26 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
+                                return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            }
+                            else {
+                                // 'pure' gnome3 DOES NOT support legacy tray icons any more. This ability has ENTIRELY been removed. NOTE: Ubuntu still supports these via app-indicators.
+                                // the work-around for fedora is to install libappindicator + the appindicator extension
+
+                                // install the appindicator Gnome extension
+                                if (!AppIndicatorExtension.isInstalled()) {
+                                    AppIndicatorExtension.install();
+
+                                    logger.error("You must log out and then in again for system tray settings to apply.");
+                                    return null;
+                                }
+
+                                return selectTypeQuietly(TrayType.AppIndicator);
                             }
                         }
                         else {
-                            LegacyExtension.install();
-                        }
+                            logger.error("GNOME shell detected, but UNKNOWN shell version. This should never happen. Falling back to GtkStatusIcon. " +
+                                         "Please create an issue with as many details as possible.");
 
+                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        }
+                    }
+                    else if ("cinnamon".equalsIgnoreCase(GDM)) {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
@@ -326,7 +372,11 @@ class SystemTray {
 
                         return selectTypeQuietly(TrayType.AppIndicator);
                     }
-                    break;
+
+                    logger.error("GNOME shell detected, but UNKNOWN type. This should never happen. Falling back to GtkStatusIcon. " +
+                                 "Please create an issue with as many details as possible.");
+
+                    return selectTypeQuietly(TrayType.GtkStatusIcon);
                 }
                 case KDE: {
                     if (OSUtil.Linux.isFedora()) {
@@ -439,7 +489,7 @@ class SystemTray {
             }
         }
 
-        return null;
+        throw new RuntimeException("This OS is not supported. Please create an issue with the details from `SystemTray.DEBUG=true;`");
     }
 
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
@@ -765,13 +815,17 @@ class SystemTray {
             trayType = selectTypeQuietly(SystemTray.FORCE_TRAY_TYPE);
         }
 
-        if (trayType == null && OSUtil.DesktopEnv.isChromeOS()) {
-            logger.error("ChromeOS detected and it is not supported. Aborting.");
+        if (trayType == null) {
+            if (OSUtil.DesktopEnv.isChromeOS()) {
+                logger.error("ChromeOS detected and it is not supported. Aborting.");
+            }
 
             systemTrayMenu = null;
             systemTray = null;
             return;
         }
+
+
 
 
         // fix various incompatibilities with selected tray types
@@ -807,12 +861,15 @@ class SystemTray {
                     }
                 }
 
-                if (de == OSUtil.DesktopEnv.Env.Gnome && (OSUtil.Linux.isKali() || OSUtil.Linux.isFedora())) {
-                    // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
-                    PREFER_GTK3 = false;
+                if (de == OSUtil.DesktopEnv.Env.Gnome) {
+                    boolean hasWeirdOsProblems = OSUtil.Linux.isKali() || (OSUtil.Linux.isFedora());
+                    if (hasWeirdOsProblems) {
+                        // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
+                        PREFER_GTK3 = false;
 
-                    if (DEBUG) {
-                        logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
+                        if (DEBUG) {
+                            logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
+                        }
                     }
                 }
             }
@@ -840,6 +897,7 @@ class SystemTray {
 
             logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Falling back to the Swing Tray.");
         }
+
 
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
