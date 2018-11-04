@@ -105,7 +105,8 @@ class AppIndicatorExtension extends ExtensionSupport {
         // have to create the metadata.json file (and make it so that it's **always** current).
         // we do this via getting the shell version
 
-        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), gnomeVersion);
+        // note: the appName is not configurable for the appindicator gnome-shell extension
+        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), "SystemTray", gnomeVersion);
 
         if (SystemTray.DEBUG) {
             logger.debug("Checking the appindicator gnome-shell extension");

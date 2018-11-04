@@ -187,6 +187,10 @@ Customization parameters:
 
 SystemTray.AUTO_SIZE   (type boolean, default value 'true')
  - Enables auto-detection for the system tray. This should be mostly successful.
+ 
+ 
+SystemTray.APP_NAME   (type String, default value 'SystemTray')
+ - Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
    
  
 SystemTray.FORCE_GTK2    (type boolean, default value 'false')

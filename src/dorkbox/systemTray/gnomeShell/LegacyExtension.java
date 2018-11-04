@@ -27,7 +27,6 @@ import dorkbox.util.OSUtil;
 public
 class LegacyExtension extends ExtensionSupport {
     private static final String UID = "SystemTray@Dorkbox";
-    public static final String DEFAULT_NAME = "SystemTray";
 
     /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
     private static final String SHELL_RESTART_COMMAND = "gnome-shell --replace &";
@@ -78,7 +77,7 @@ class LegacyExtension extends ExtensionSupport {
         // have to create the metadata.json file (and make it so that it's **always** current).
         // we do this via getting the shell version
 
-        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), gnomeVersion);
+        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), SystemTray.APP_NAME, gnomeVersion);
 
         if (SystemTray.DEBUG) {
             logger.debug("Checking the legacy gnome-shell extension");
@@ -99,8 +98,8 @@ class LegacyExtension extends ExtensionSupport {
         boolean success = ExtensionSupport.writeFile(metadata, metaDatafile);
 
         if (success && !hasSystemTray) {
-            // copies our provided extension files to the correct location on disk
-            ExtensionSupport.installFile("extension.js", directory);
+            // copies our provided extension files to the correct location on disk. Also sets the APP NAME in the extension file
+            ExtensionSupport.installFile("extension.js", directory, SystemTray.APP_NAME);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Enabling legacy gnome-shell extension");

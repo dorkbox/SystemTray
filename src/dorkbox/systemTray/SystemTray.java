@@ -101,6 +101,10 @@ class SystemTray {
     public static boolean AUTO_SIZE = true;
 
     @Property
+    /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
+    public static String APP_NAME = "SystemTray";
+
+    @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static boolean FORCE_GTK2 = false;
 

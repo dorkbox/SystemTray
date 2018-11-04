@@ -80,6 +80,8 @@ class TestTraySwt {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
         CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
 
+        SystemTray.APP_NAME = "SysTrayExample";
+
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 

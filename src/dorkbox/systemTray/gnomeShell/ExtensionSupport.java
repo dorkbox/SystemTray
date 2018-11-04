@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import dorkbox.executor.ShellAsyncExecutor;
 import dorkbox.executor.ShellExecutor;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
+import dorkbox.util.OS;
 import dorkbox.util.OSUtil;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
@@ -254,46 +256,51 @@ class ExtensionSupport {
         return true;
     }
 
+
+
     /**
      * @return true if successful, false if there was a failure
      */
     protected static
-    boolean installFile(final String resourceName, final File targetDirectory) {
+    boolean installFile(final String resourceName, final File targetDirectory, final String appName) {
         final File outputFile = new File(targetDirectory, resourceName);
 
-        InputStream reader = null;
-        FileOutputStream fileOutputStream = null;
         try {
-            reader = ExtensionSupport.class.getResourceAsStream(resourceName);
-            fileOutputStream = new FileOutputStream(outputFile);
+            InputStream reader = ExtensionSupport.class.getResourceAsStream(resourceName);
+            // fileOutputStream = new FileOutputStream(outputFile);
 
             if (reader == null) {
-                logger.error("The {} file cannot be found. Something is severely wrong.", resourceName);
+                logger.error("The {} file resource cannot be found. Something is severely wrong.", resourceName);
                 return false;
             }
 
-            IO.copyStream(reader, fileOutputStream);
+            // instead of copying the file from one place to another, we have to read the file as a string, THEN replace the app name, THEN write it out.
+
+            FileWriter fileWriter = new FileWriter(outputFile);
+            InputStreamReader inputStreamReader = new InputStreamReader(reader);
+            try {
+                String lineSeparator = OS.LINE_SEPARATOR;
+                BufferedReader bin = new BufferedReader(inputStreamReader);
+                String line;
+
+                while (( line = bin.readLine()) != null) {
+                    if (line.startsWith("let APP_NAME = \"")) {
+                        line = "let APP_NAME = \"" + appName + "\";";
+                    }
+
+                    fileWriter.write(line);
+                    fileWriter.write(lineSeparator);
+                }
+            } finally {
+                IO.closeQuietly(inputStreamReader);
+                IO.closeQuietly(fileWriter);
+            }
 
             return true;
         } catch (FileNotFoundException e) {
             logger.error("Cannot find gnome-shell extension", e);
         } catch (IOException e) {
             logger.error("Unable to get gnome-shell extension", e);
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    logger.error("Error closing: {}", reader, e);
-                }
-            }
-            if (fileOutputStream != null) {
-                try {
-                    fileOutputStream.close();
-                } catch (IOException e) {
-                    logger.error("Error closing: {}", fileOutputStream, e);
-                }
-            }
         }
 
         return false;
@@ -369,10 +376,11 @@ class ExtensionSupport {
 
 
     protected static
-    String createMetadata(final String uid, final String appVersion, final String gnomeVersion) {
+    String createMetadata(final String uid, final String appVersion, final String appName, final String gnomeVersion) {
         return "{\n" +
                 "  \"description\": \"Moves the java SystemTray icon from inside the notification drawer to alongside the clock.\",\n" +
                 "  \"name\": \"Dorkbox SystemTray\",\n" +
+                "  \"app-name-id\": \"" + appName + "\",\n" +
                 "  \"shell-version\": [\n" +
                 "    \"" + gnomeVersion + "\"\n" +
                 "  ],\n" +
