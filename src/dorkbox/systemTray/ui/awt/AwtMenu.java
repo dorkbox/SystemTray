@@ -59,8 +59,8 @@ class AwtMenu implements MenuPeer {
             public
             void run() {
                 if (entry instanceof Menu) {
-                    AwtMenu swingMenu = new AwtMenu(AwtMenu.this);
-                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
+                    AwtMenu menu = new AwtMenu(AwtMenu.this);
+                    ((Menu) entry).bind(menu, parentMenu, parentMenu.getSystemTray());
                 }
                 else if (entry instanceof Separator) {
                     AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
