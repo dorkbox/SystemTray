@@ -52,7 +52,7 @@ class _AwtTray extends Tray {
     private volatile String tooltipText = "";
 
     private final Object keepAliveLock = new Object[0];
-    private Thread keepAliveThread;
+    private volatile Thread keepAliveThread;
 
     // Called in the EDT
     public
