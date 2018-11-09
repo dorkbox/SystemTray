@@ -26,6 +26,7 @@ import javax.swing.ImageIcon;
 
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.util.ImageUtil;
 import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
@@ -145,8 +146,8 @@ class _AwtTray extends Tray {
                         }
 
                         // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                        final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-                        trayImage.flush();
+                        Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
+                        trayImage = ImageUtil.getImageImmediate(trayImage);
 
                         if (trayIcon == null) {
                             // here we init. everything
