@@ -40,6 +40,7 @@ class AwtMenu implements MenuPeer {
     AwtMenu(final AwtMenu parent) {
         this.parent = parent;
 
+        // are we a menu or a sub-menu?
         if (parent == null) {
             this._native = new PopupMenu();
         }
