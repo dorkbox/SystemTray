@@ -173,4 +173,16 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
             });
         }
     }
+
+    @Override
+    public
+    void setTooltip(final Checkbox menuItem) {
+        SwingUtil.invokeLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                _native.setToolTipText(menuItem.getTooltip());
+            }
+        });
+    }
 }

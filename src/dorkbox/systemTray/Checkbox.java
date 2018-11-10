@@ -32,6 +32,7 @@ class Checkbox extends Entry {
 
     private volatile boolean enabled = true;
     private volatile char mnemonicKey;
+    private volatile String tooltip;
 
     public
     Checkbox() {
@@ -194,5 +195,46 @@ class Checkbox extends Entry {
         if (peer != null) {
             ((CheckboxPeer) peer).setShortcut(this);
         }
+    }
+
+    /**
+     * Specifies the tooltip text, usually this is used to brand the SystemTray icon with your product's name, or to provide extra
+     * information during mouse-over for menu entries.
+     * <p>
+     * NOTE: Maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments.
+     * <p>
+     * For more details on Linux see https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12.
+     *
+     * @param tooltipText the text to use as a mouse-over tooltip for the tray icon or menu entry, null to remove.
+     */
+    public
+    void setTooltip(final String tooltipText) {
+        if (tooltipText != null) {
+            // this is a safety precaution, since the behavior of really long text is undefined.
+            if (tooltipText.length() > 64) {
+                throw new RuntimeException("Tooltip text cannot be longer than 64 characters.");
+            }
+
+            if (!MenuItem.alreadyEmittedTooltipWarning) {
+                MenuItem.alreadyEmittedTooltipWarning = true;
+                SystemTray.logger.warn("Please disable tooltips, as they are not consistent across all platforms and tray types.");
+            }
+        }
+
+        this.tooltip = tooltipText;
+
+        if (peer != null) {
+            ((CheckboxPeer) peer).setTooltip(this);
+        }
+    }
+
+    /**
+     * Gets the mouse-over tooltip for the meme entry.
+     *
+     * NOTE: This is not consistent across all platforms and tray types.
+     */
+    public
+    String getTooltip() {
+        return this.tooltip;
     }
 }

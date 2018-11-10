@@ -33,7 +33,7 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public
 class MenuItem extends Entry {
-    private static boolean alreadyEmittedTooltipWarning = false;
+    static boolean alreadyEmittedTooltipWarning = false;
 
     private volatile String text;
     private volatile File imageFile;

@@ -124,6 +124,12 @@ class AwtMenuItemCheckbox implements CheckboxPeer {
 
     @Override
     public
+    void setTooltip(final Checkbox menuItem) {
+        // no op. (awt menus cannot show tooltips)
+    }
+
+    @Override
+    public
     void setChecked(final Checkbox menuItem) {
         boolean checked = menuItem.getChecked();
 

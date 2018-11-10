@@ -268,6 +268,20 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         }
     }
 
+    @Override
+    public
+    void setTooltip(final Checkbox menuItem) {
+        GtkEventDispatch.dispatch(new Runnable() {
+            @Override
+            public
+            void run() {
+                // NOTE: this will not work for AppIndicator tray types!
+                // null will remove the tooltip
+                Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
+            }
+        });
+    }
+
     // this is pretty much ONLY for Ubuntu AppIndicators
     private
     void setCheckedIconForFakeCheckMarks() {
