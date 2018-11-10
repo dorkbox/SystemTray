@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -352,7 +353,18 @@ class Menu extends MenuItem {
     }
 
     /**
-     *  This removes a menu entry from the menu.
+     * @return a copy of all of the current menu entries. It is safe to modify any of the entries in this list without concerning yourself with synchronize.
+     */
+    public
+    List<Entry> getEntries() {
+        synchronized (menuEntries) {
+            // access on this object must be synchronized for object visibility
+            return Collections.unmodifiableList(new ArrayList<Entry>(menuEntries));
+        }
+    }
+
+    /**
+     * This removes a menu entry from the menu.
      *
      * @param entry This is the menu entry to remove
      */
