@@ -230,6 +230,13 @@ class _AwtTray extends Tray {
                 });
 
                 super.remove();
+
+                // make sure this thread doesn't keep the JVM alive anymore
+                if (keepAliveThread != null) {
+                    synchronized (keepAliveLock) {
+                        keepAliveLock.notifyAll();
+                    }
+                }
             }
         };
 
