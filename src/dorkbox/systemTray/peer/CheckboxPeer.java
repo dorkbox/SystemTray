@@ -31,5 +31,5 @@ interface CheckboxPeer extends EntryPeer {
 
     void setShortcut(Checkbox menuItem);
 
-    void setChecked(Checkbox checkbox);
+    void setChecked(Checkbox menuItem);
 }
