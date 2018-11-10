@@ -151,7 +151,7 @@ class TestTraySwt {
             public
             void actionPerformed(final ActionEvent e) {
                 try {
-                    Desktop.browseURL("https://github.com/dorkbox/SystemTray");
+                    Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
