@@ -190,7 +190,13 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void setShortcut(final MenuItem menuItem) {
-        this.mnemonicKey = Character.toLowerCase(menuItem.getShortcut());
+        char shortcut = menuItem.getShortcut();
+
+        if (shortcut != 0) {
+            this.mnemonicKey = Character.toLowerCase(shortcut);
+        } else {
+            this.mnemonicKey = 0;
+        }
 
         setText(menuItem);
     }

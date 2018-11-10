@@ -308,7 +308,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void setShortcut(final Checkbox checkbox) {
-        this.mnemonicKey = Character.toLowerCase(checkbox.getShortcut());
+        char shortcut = checkbox.getShortcut();
+
+        if (shortcut != 0) {
+            this.mnemonicKey = Character.toLowerCase(shortcut);
+        } else {
+            this.mnemonicKey = 0;
+        }
 
         setText(checkbox);
     }

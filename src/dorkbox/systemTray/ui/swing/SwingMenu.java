@@ -162,17 +162,16 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setShortcut(final MenuItem menuItem) {
-        char shortcut = menuItem.getShortcut();
-        // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        // Will return 0 as the vKey if it's not set (which will remove the shortcut)
+        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
         SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                ((JMenu) _native).setMnemonic(vKey);
-            }
-        });
+                @Override
+                public
+                void run() {
+                    ((JMenu) _native).setMnemonic(vKey);
+                }
+            });
     }
 
     @Override

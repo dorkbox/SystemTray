@@ -137,9 +137,8 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @Override
     public
     void setShortcut(final Checkbox menuItem) {
-        char shortcut = menuItem.getShortcut();
-        // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        // Will return 0 as the vKey if it's not set (which will remove the shortcut)
+        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
         SwingUtil.invokeLater(new Runnable() {
             @Override

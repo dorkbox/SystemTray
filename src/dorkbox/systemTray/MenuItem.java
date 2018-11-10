@@ -41,7 +41,9 @@ class MenuItem extends Entry {
 
     // default enabled is always true
     private volatile boolean enabled = true;
-    private volatile char mnemonicKey;
+
+    // default is 0, which will remove the shortcut key from the native peer
+    private volatile char mnemonicKey = 0;
     private volatile String tooltip;
 
     public

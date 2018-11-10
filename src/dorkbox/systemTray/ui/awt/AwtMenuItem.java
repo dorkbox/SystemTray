@@ -107,17 +107,16 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void setShortcut(final dorkbox.systemTray.MenuItem menuItem) {
-        char shortcut = menuItem.getShortcut();
-        // yikes...
-        final int vKey = SwingUtil.getVirtualKey(shortcut);
+        // Will return 0 as the vKey if it's not set (which will remove the shortcut)
+        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
         SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setShortcut(new MenuShortcut(vKey));
-            }
-        });
+                @Override
+                public
+                void run() {
+                    _native.setShortcut(new MenuShortcut(vKey));
+                }
+            });
     }
 
     @Override

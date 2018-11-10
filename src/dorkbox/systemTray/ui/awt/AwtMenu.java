@@ -125,7 +125,7 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setShortcut(final MenuItem menuItem) {
-        // yikes...
+        // Will return 0 as the vKey if it's not set (which will remove the shortcut)
         final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
         SwingUtil.invokeLater(new Runnable() {
