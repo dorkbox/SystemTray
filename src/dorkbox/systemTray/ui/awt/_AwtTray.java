@@ -48,7 +48,7 @@ class _AwtTray extends Tray {
     private volatile TrayIcon trayIcon;
 
     // is the system tray visible or not.
-    private volatile boolean visible = true;
+    private volatile boolean visible = false;
     private volatile File imageFile;
     private volatile String tooltipText = "";
 
@@ -113,7 +113,7 @@ class _AwtTray extends Tray {
                             tray.remove(trayIcon);
                             visible = false;
                         }
-                        else if (!visible && enabled) {
+                        else if (!visible && enabled && trayIcon != null) {
                             try {
                                 tray.add(trayIcon);
                                 visible = true;
@@ -157,6 +157,7 @@ class _AwtTray extends Tray {
 
                             try {
                                 tray.add(trayIcon);
+                                visible = true;
                             } catch (AWTException e) {
                                 dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                             }
