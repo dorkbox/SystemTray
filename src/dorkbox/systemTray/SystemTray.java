@@ -44,6 +44,7 @@ import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
+import dorkbox.systemTray.ui.osx._OsxNativeTray;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.systemTray.ui.swing._WindowsNativeTray;
@@ -93,6 +94,7 @@ class SystemTray {
         AppIndicator,
         WindowsNotifyIcon,
         Swing,
+        OSXStatusItem,
         AWT
     }
 
@@ -173,6 +175,7 @@ class SystemTray {
             case AppIndicator: return tray == _AppIndicatorNativeTray.class;
             case WindowsNotifyIcon: return tray == _WindowsNativeTray.class;
             case Swing: return tray == _SwingTray.class;
+            case OSXStatusItem: return tray == _OsxNativeTray.class;
             case AWT: return tray == _AwtTray.class;
         }
 
@@ -192,6 +195,9 @@ class SystemTray {
         }
         else if (trayType == TrayType.Swing) {
             return _SwingTray.class;
+        }
+        else if (trayType == TrayType.OSXStatusItem) {
+            return _OsxNativeTray.class;
         }
         else if (trayType == TrayType.AWT) {
             return _AwtTray.class;
@@ -224,11 +230,17 @@ class SystemTray {
             }
         }
         else if (OS.isMacOsX()) {
-            // macos can ONLY use the AWT if you want it to follow the L&F of the OS. It is the default.
+            // macos can ONLY use the OSXStatusItem or AWT if you want it to follow the L&F of the OS. It is the default.
             try {
-                return selectType(TrayType.AWT);
+                return selectType(TrayType.OSXStatusItem);
             } catch (Throwable e) {
-                logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+                logger.error("Unable to select the OSX native status item. Falling back to using AWT.", e);
+
+                try {
+                    return selectType(TrayType.AWT);
+                } catch (Throwable e1) {
+                    logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
+                }
             }
         }
         else if ((OS.isLinux() || OS.isUnix())) {
@@ -1118,7 +1130,9 @@ class SystemTray {
                     }
                 });
             }
-            else if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+            else if (isTrayType(trayType, TrayType.Swing) ||
+                     isTrayType(trayType, TrayType.WindowsNotifyIcon) ||
+                     isTrayType(trayType, TrayType.OSXStatusItem)) {
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                     @Override
                     public
