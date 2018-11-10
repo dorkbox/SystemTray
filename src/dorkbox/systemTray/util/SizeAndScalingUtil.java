@@ -45,7 +45,7 @@ class SizeAndScalingUtil {
     static int TRAY_MENU_SIZE = 0;
 
     public static
-    double getMacOSScaleFactor() {
+    int getMacOSScaleFactor() {
         // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
 
         // java6 way of getting it...
@@ -55,9 +55,9 @@ class SizeAndScalingUtil {
                 // 1 = retina not available (regular display). Usually, for retina enabled displays returns 2.
                 if ((Float) obj > 1.9F) {
                     // this means it's really 2.0F
-                    return 2.0D;
+                    return 2;
                 } else {
-                    return 1.0D;
+                    return 1;
                 }
             }
         }
@@ -84,7 +84,7 @@ class SizeAndScalingUtil {
         AffineTransform transform = g.getFontRenderContext()
                                      .getTransform();
 
-        return transform.getScaleX();
+        return (int) transform.getScaleX();
     }
 
 
@@ -95,12 +95,9 @@ class SizeAndScalingUtil {
                 TRAY_SIZE = GtkTheme.getIndicatorSize();
             }
             else if (OS.isMacOsX()) {
-                // these are the standard icon sizes. From what I can tell, they are Apple defined, and cannot be changed.
-                if (SizeAndScalingUtil.getMacOSScaleFactor() == 2.0D) {
-                    TRAY_SIZE = 44;
-                } else {
-                    TRAY_SIZE = 22;
-                }
+                // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
+                // we obviously do not want to be the exact same size, so we give 2px padding on each side.
+                TRAY_SIZE = SizeAndScalingUtil.getMacOSScaleFactor() * 18;
             }
             else if (OS.isWindows()) {
                 TRAY_SIZE = User32.User32.GetSystemMetrics(SM_CYSMICON);
@@ -123,13 +120,9 @@ class SizeAndScalingUtil {
         if (TRAY_MENU_SIZE == 0) {
             if (OS.isMacOsX()) {
                 // Note: Mac (AWT) does not have images in the menu.
-                // these are the standard icon sizes. From what I can tell, they are Apple defined, and cannot be changed.
-                if (SizeAndScalingUtil.getMacOSScaleFactor() == 2.0D) {
-                    TRAY_MENU_SIZE = 32;
-                }
-                else {
-                    TRAY_MENU_SIZE = 16;
-                }
+                // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
+                // we obviously do not want to be the exact same size, so we give 2px padding on each side.
+                TRAY_MENU_SIZE = SizeAndScalingUtil.getMacOSScaleFactor() * 18;
             }
             else if ((trayType == _SwingTray.class) || (trayType == _WindowsNativeTray.class)) {
                 // Java does not scale the menu item IMAGE **AT ALL**, we must provide the correct size to begin with
