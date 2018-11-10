@@ -209,6 +209,10 @@ class TestTraySwt {
         }));
         mainMenu.add(submenu);
 
+        MenuItem entry = new MenuItem("Type: " + systemTray.getType().toString());
+        entry.setEnabled(false);
+        systemTray.getMenu().add(entry);
+
         systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
             @Override
             public

@@ -207,6 +207,30 @@ class SystemTray {
     }
 
     private static
+    TrayType fromClass(final Class<? extends Tray> trayClass) {
+        if (trayClass == _GtkStatusIconNativeTray.class) {
+            return TrayType.GtkStatusIcon;
+        }
+        else if (trayClass == _AppIndicatorNativeTray.class) {
+            return TrayType.AppIndicator;
+        }
+        else if (trayClass == _WindowsNativeTray.class) {
+            return TrayType.WindowsNotifyIcon;
+        }
+        else if (trayClass == _SwingTray.class) {
+            return TrayType.Swing;
+        }
+        else if (trayClass == _OsxNativeTray.class) {
+            return TrayType.OSXStatusItem;
+        }
+        else if (trayClass == _AwtTray.class) {
+            return TrayType.AWT;
+        }
+
+        return null;
+    }
+
+    private static
     Class<? extends Tray> selectTypeQuietly(final TrayType trayType) {
         try {
             return selectType(trayType);
@@ -1416,6 +1440,14 @@ class SystemTray {
     public
     int getMenuImageSize() {
         return SizeAndScalingUtil.getMenuImageSize(systemTrayMenu.getClass());
+    }
+
+    /**
+     * @return the tray type used to create the system tray
+     */
+    public
+    TrayType getType() {
+        return fromClass(systemTrayMenu.getClass());
     }
 }
 
