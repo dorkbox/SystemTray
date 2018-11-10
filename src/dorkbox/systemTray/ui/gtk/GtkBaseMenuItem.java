@@ -28,7 +28,7 @@ import dorkbox.util.jna.linux.GtkEventDispatch;
 
 abstract
 class GtkBaseMenuItem implements EntryPeer {
-    // these are necessary BECAUSE GTK menus look funky as hell when there are some menu entries WITH icons and some WITHOUT
+    // these are necessary BECAUSE GTK menus look funky when there are some menu entries WITH icons and some WITHOUT
     private static final File transparentIcon = ImageResizeUtil.getTransparentImage();
     private volatile boolean hasLegitImage = false; // default is to not have an image assigned
 
