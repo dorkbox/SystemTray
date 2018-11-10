@@ -86,7 +86,7 @@ project.version = '3.17'
 project.ext.name = 'SystemTray'
 project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
 
-project.ext.javaVersion = JavaVersion.VERSION_1_7
+project.ext.javaVersion = JavaVersion.VERSION_1_6
 
 
 sourceCompatibility = project.ext.javaVersion
