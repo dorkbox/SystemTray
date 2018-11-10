@@ -1054,18 +1054,8 @@ class SystemTray {
             systemTray = new SystemTray();
 
             // AWT/Swing must be constructed on the EDT however...
-            if (JavaFX.isLoaded ||
-                Swt.isLoaded ||
-                (isNix && (isTrayType(trayType, TrayType.GtkStatusIcon) || isTrayType(trayType, TrayType.AppIndicator))) ||
-                isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
-
-                try {
-                    reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
-                } catch (Exception e) {
-                    logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
-                }
-            }
-            else if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT)) {
+            if (!JavaFX.isLoaded && !Swt.isLoaded &&
+                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
                 SwingUtil.invokeAndWait(new Runnable() {
@@ -1081,7 +1071,11 @@ class SystemTray {
                 });
             }
             else {
-                logger.error("Unable to create tray type: '{}'. Aborting!", trayType.getSimpleName());
+                try {
+                    reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
+                } catch (Exception e) {
+                    logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
+                }
             }
         } catch (Exception e) {
             logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
