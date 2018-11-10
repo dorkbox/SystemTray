@@ -17,7 +17,6 @@ package dorkbox.systemTray;
 
 import java.awt.Component;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -29,12 +28,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
 import dorkbox.systemTray.peer.MenuPeer;
+import dorkbox.util.SwingUtil;
 
 /**
  * Represents a cross-platform menu that is displayed by the tray-icon or as a sub-menu
@@ -109,6 +110,39 @@ class Menu extends MenuItem {
         super(text, image, callback);
     }
 
+    public
+    Menu(final JMenu jMenu) {
+        super();
+
+        setEnabled(jMenu.isEnabled());
+
+        Icon icon = jMenu.getIcon();
+        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        setImage(bimage);
+
+        setText(jMenu.getText());
+        setShortcut(jMenu.getMnemonic());
+
+        Component[] menuComponents = jMenu.getMenuComponents();
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0, menuComponentsLength = menuComponents.length; i < menuComponentsLength; i++) {
+            final Component c = menuComponents[i];
+
+            if (c instanceof JMenu) {
+                add((JMenu) c);
+            }
+            else if (c instanceof JCheckBoxMenuItem) {
+                add((JCheckBoxMenuItem) c);
+            }
+            else if (c instanceof JMenuItem) {
+                add((JMenuItem) c);
+            }
+            else if (c instanceof JSeparator) {
+                add((JSeparator) c);
+            }
+        }
+    }
+
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
@@ -145,35 +179,7 @@ class Menu extends MenuItem {
     @SuppressWarnings("Duplicates")
     public final
     Menu add(final JMenu entry) {
-        Menu menu = new Menu();
-        menu.setEnabled(entry.isEnabled());
-
-        Icon icon = entry.getIcon();
-        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-        menu.setImage(bimage);
-
-        menu.setText(entry.getText());
-        menu.setShortcut(entry.getMnemonic());
-
-        Component[] menuComponents = entry.getMenuComponents();
-        for (int i = 0, menuComponentsLength = menuComponents.length; i < menuComponentsLength; i++) {
-            final Component c = menuComponents[i];
-
-            if (c instanceof JMenu) {
-                menu.add((JMenu) c);
-            }
-            else if (c instanceof JCheckBoxMenuItem) {
-                menu.add((JCheckBoxMenuItem) c);
-            }
-            else if (c instanceof JMenuItem) {
-                menu.add((JMenuItem) c);
-            }
-            else if (c instanceof JSeparator) {
-                menu.add((JSeparator) c);
-            }
-        }
-
-        add(menu);
+        add(new Menu(entry));
         return this;
     }
 
@@ -182,33 +188,7 @@ class Menu extends MenuItem {
      */
     public final
     Menu add(final JCheckBoxMenuItem entry) {
-        Checkbox checkbox = new Checkbox();
-
-        final ActionListener[] actionListeners = entry.getActionListeners();
-        //noinspection Duplicates
-        if (actionListeners != null) {
-            if (actionListeners.length == 1) {
-                checkbox.setCallback(actionListeners[0]);
-            } else {
-                ActionListener actionListener = new ActionListener() {
-                    @Override
-                    public
-                    void actionPerformed(final ActionEvent e) {
-                        for (ActionListener actionListener : actionListeners) {
-                            actionListener.actionPerformed(e);
-                        }
-                    }
-                };
-                checkbox.setCallback(actionListener);
-            }
-        }
-
-        checkbox.setEnabled(entry.isEnabled());
-        checkbox.setChecked(entry.getState());
-        checkbox.setShortcut(entry.getMnemonic());
-        checkbox.setText(entry.getText());
-
-        add(checkbox);
+        add(new Checkbox(entry));
         return this;
     }
 
@@ -217,39 +197,7 @@ class Menu extends MenuItem {
      */
     public final
     Menu add(final JMenuItem entry) {
-        MenuItem item = new MenuItem();
-
-        final ActionListener[] actionListeners = entry.getActionListeners();
-        //noinspection Duplicates
-        if (actionListeners != null) {
-            if (actionListeners.length == 1) {
-                item.setCallback(actionListeners[0]);
-            } else {
-                ActionListener actionListener = new ActionListener() {
-                    @Override
-                    public
-                    void actionPerformed(final ActionEvent e) {
-                        for (ActionListener actionListener : actionListeners) {
-                            actionListener.actionPerformed(e);
-                        }
-                    }
-                };
-                item.setCallback(actionListener);
-            }
-        }
-
-        item.setEnabled(entry.isEnabled());
-
-        Icon icon = entry.getIcon();
-        if (icon != null) {
-            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-            item.setImage(bimage);
-        }
-
-        item.setShortcut(entry.getMnemonic());
-        item.setText(entry.getText());
-
-        add(item);
+        add(new MenuItem(entry));
         return this;
     }
 
@@ -258,9 +206,7 @@ class Menu extends MenuItem {
      */
     public final
     Menu add(final JSeparator entry) {
-        Separator separator = new Separator();
-
-        add(separator);
+        add(new Separator());
         return this;
     }
 
@@ -361,6 +307,51 @@ class Menu extends MenuItem {
             // access on this object must be synchronized for object visibility
             return Collections.unmodifiableList(new ArrayList<Entry>(menuEntries));
         }
+    }
+
+
+    /**
+     * @return a copy of this menu as a swing JMenu, with all elements converted to their respective swing elements. Modifications to the elements of the new JMenu will not affect anything, as they are all copies
+     */
+    public
+    JMenu asSwingComponent() {
+        JMenu jMenu = new JMenu();
+
+        if (getImage() != null) {
+            jMenu.setIcon(new ImageIcon(getImage().getAbsolutePath()));
+        }
+        jMenu.setText(getText());
+        jMenu.setToolTipText(getTooltip());
+        jMenu.setEnabled(getEnabled());
+        jMenu.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+
+
+        synchronized (menuEntries) {
+            for (final Entry menuEntry : menuEntries) {
+                if (menuEntry instanceof Menu) {
+                    Menu entry = (Menu) menuEntry;
+                    jMenu.add(entry.asSwingComponent());
+                }
+                else if (menuEntry instanceof Checkbox) {
+                    Checkbox entry = (Checkbox) menuEntry;
+                    jMenu.add(entry.asSwingComponent());
+                }
+                else if (menuEntry instanceof MenuItem) {
+                    MenuItem entry = (MenuItem) menuEntry;
+                    jMenu.add(entry.asSwingComponent());
+                }
+                else if (menuEntry instanceof Separator) {
+                    Separator entry = (Separator) menuEntry;
+                    jMenu.add(entry.asSwingComponent());
+                }
+                else if (menuEntry instanceof Status) {
+                    Status entry = (Status) menuEntry;
+                    jMenu.add(entry.asSwingComponent());
+                }
+            }
+        }
+
+        return jMenu;
     }
 
     /**

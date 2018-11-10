@@ -15,6 +15,10 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.Component;
+
+import javax.swing.JSeparator;
+
 import dorkbox.systemTray.peer.SeparatorPeer;
 
 /**
@@ -50,5 +54,14 @@ class Separator extends Entry {
     public
     void bind(final SeparatorPeer peer, final Menu parent, final SystemTray systemTray) {
         super.bind(peer, parent, systemTray);
+    }
+
+
+    /**
+     * @return a copy of this Separator as a swing JSeparator, with all elements converted to their respective swing elements.
+     */
+    public
+    Component asSwingComponent() {
+        return new JSeparator();
     }
 }

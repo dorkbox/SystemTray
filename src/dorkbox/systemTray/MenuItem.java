@@ -16,12 +16,17 @@
 package dorkbox.systemTray;
 
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -114,6 +119,39 @@ class MenuItem extends Entry {
     public
     MenuItem(final String text, final ImageInputStream imageStream, final ActionListener callback) {
         this(text, ImageResizeUtil.shouldResizeOrCache(false, imageStream), callback, false);
+    }
+
+    public
+    MenuItem(final JMenuItem jMenuItem) {
+        final ActionListener[] actionListeners = jMenuItem.getActionListeners();
+        //noinspection Duplicates
+        if (actionListeners != null) {
+            if (actionListeners.length == 1) {
+                setCallback(actionListeners[0]);
+            } else {
+                ActionListener actionListener = new ActionListener() {
+                    @Override
+                    public
+                    void actionPerformed(final ActionEvent e) {
+                        for (ActionListener actionListener : actionListeners) {
+                            actionListener.actionPerformed(e);
+                        }
+                    }
+                };
+                setCallback(actionListener);
+            }
+        }
+
+        setEnabled(jMenuItem.isEnabled());
+
+        Icon icon = jMenuItem.getIcon();
+        if (icon != null) {
+            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+            setImage(bimage);
+        }
+
+        setShortcut(jMenuItem.getMnemonic());
+        setText(jMenuItem.getText());
     }
 
     // the last parameter (unused) is there so the signature is different
@@ -388,5 +426,25 @@ class MenuItem extends Entry {
     public
     String getTooltip() {
         return this.tooltip;
+    }
+
+    /**
+     * @return a copy of this MenuItem as a swing JMenuItem, with all elements converted to their respective swing elements.
+     */
+    protected
+    JMenuItem asSwingComponent() {
+        JMenuItem jMenuItem = new JMenuItem();
+
+        if (getImage() != null) {
+            jMenuItem.setIcon(new ImageIcon(getImage().getAbsolutePath()));
+        }
+        jMenuItem.setText(getText());
+        jMenuItem.setToolTipText(getTooltip());
+        jMenuItem.setEnabled(getEnabled());
+        jMenuItem.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+
+        jMenuItem.addActionListener(getCallback());
+
+        return jMenuItem;
     }
 }

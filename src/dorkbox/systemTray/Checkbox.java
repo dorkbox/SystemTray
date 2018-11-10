@@ -15,7 +15,10 @@
  */
 package dorkbox.systemTray;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.JCheckBoxMenuItem;
 
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.util.SwingUtil;
@@ -40,14 +43,41 @@ class Checkbox extends Entry {
     }
 
     public
-    Checkbox(final String text, final ActionListener callback) {
-        this.text = text;
-        this.callback = callback;
+    Checkbox(final String text) {
+        this(text, null);
     }
 
     public
-    Checkbox(final String text) {
-        this(text, null);
+    Checkbox(final JCheckBoxMenuItem jCheckBoxMenuItem) {
+        final ActionListener[] actionListeners = jCheckBoxMenuItem.getActionListeners();
+        //noinspection Duplicates
+        if (actionListeners != null) {
+            if (actionListeners.length == 1) {
+                setCallback(actionListeners[0]);
+            } else {
+                ActionListener actionListener = new ActionListener() {
+                    @Override
+                    public
+                    void actionPerformed(final ActionEvent e) {
+                        for (ActionListener actionListener : actionListeners) {
+                            actionListener.actionPerformed(e);
+                        }
+                    }
+                };
+                setCallback(actionListener);
+            }
+        }
+
+        setEnabled(jCheckBoxMenuItem.isEnabled());
+        setChecked(jCheckBoxMenuItem.getState());
+        setShortcut(jCheckBoxMenuItem.getMnemonic());
+        setText(jCheckBoxMenuItem.getText());
+    }
+
+    public
+    Checkbox(final String text, final ActionListener callback) {
+        this.text = text;
+        this.callback = callback;
     }
 
     /**
@@ -236,5 +266,24 @@ class Checkbox extends Entry {
     public
     String getTooltip() {
         return this.tooltip;
+    }
+
+
+    /**
+     * @return a copy of this Checkbox as a swing JCheckBoxMenuItem, with all elements converted to their respective swing elements. Modifications to the elements of the new JCheckBoxMenuItem will not affect anything, as they are all copies
+     */
+    public
+    JCheckBoxMenuItem asSwingComponent() {
+        JCheckBoxMenuItem jCheckBoxMenuItem = new JCheckBoxMenuItem();
+
+        jCheckBoxMenuItem.setText(getText());
+        jCheckBoxMenuItem.setToolTipText(getTooltip());
+        jCheckBoxMenuItem.setEnabled(getEnabled());
+        jCheckBoxMenuItem.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+
+        jCheckBoxMenuItem.setState(getChecked());
+        jCheckBoxMenuItem.addActionListener(getCallback());
+
+        return jCheckBoxMenuItem;
     }
 }

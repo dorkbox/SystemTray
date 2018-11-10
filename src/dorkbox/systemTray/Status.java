@@ -15,6 +15,8 @@
  */
 package dorkbox.systemTray;
 
+import javax.swing.JMenuItem;
+
 import dorkbox.systemTray.peer.StatusPeer;
 
 /**
@@ -60,5 +62,18 @@ class Status extends Entry {
         if (peer != null) {
             ((StatusPeer) peer).setText(this);
         }
+    }
+
+    /**
+     * @return a copy of this Status as a swing JMenuItem, with all elements converted to their respective swing elements.
+     */
+    public
+    JMenuItem asSwingComponent() {
+        JMenuItem jMenuItem = new JMenuItem();
+
+        jMenuItem.setText(getText());
+        jMenuItem.setEnabled(false);
+
+        return jMenuItem;
     }
 }
