@@ -80,6 +80,9 @@ Problems and Restrictions
  
  - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
 
+- **WSL** Windows Subsystem for Linux requires some [extra work](https://github.com/dorkbox/SystemTray/issues/88) to get a tray icon showing correctly, either by starting java under windows (instead of WSL), or by adding an X-Server.
+ 
+
 AutoDetect Compatibility List
 ------------------
      
