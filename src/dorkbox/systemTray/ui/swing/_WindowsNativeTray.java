@@ -33,6 +33,7 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 
+import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.WinDef.POINT;
 
 import dorkbox.systemTray.MenuItem;
@@ -42,7 +43,6 @@ import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.jna.windows.HBITMAPWrap;
 import dorkbox.util.jna.windows.HICONWrap;
-import dorkbox.util.jna.windows.Kernel32;
 import dorkbox.util.jna.windows.Listener;
 import dorkbox.util.jna.windows.Shell32;
 import dorkbox.util.jna.windows.User32;
@@ -88,7 +88,7 @@ class _WindowsNativeTray extends Tray {
                 }
 
                 if (!Shell32.Shell_NotifyIcon(NIM_MODIFY, nid)) {
-                    SystemTray.logger.error("Error setting the image for the tray. {}", Kernel32.getLastErrorMessage());
+                    SystemTray.logger.error("Error setting the image for the tray. {}", Kernel32Util.getLastErrorMessage());
                 }
 
                 // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
@@ -247,7 +247,7 @@ class _WindowsNativeTray extends Tray {
             nid.hWnd = WindowsEventDispatch.get();
 
             if (!Shell32.Shell_NotifyIcon(NIM_DELETE, nid)) {
-                SystemTray.logger.error("Error hiding tray. {}", Kernel32.getLastErrorMessage());
+                SystemTray.logger.error("Error hiding tray. {}", Kernel32Util.getLastErrorMessage());
             }
             visible = false;
         }
@@ -267,7 +267,7 @@ class _WindowsNativeTray extends Tray {
         nid.setCallback(WM_SHELLNOTIFY);
 
         if (!Shell_NotifyIcon(NIM_ADD, nid)) {
-            SystemTray.logger.error("Error showing tray. {}", Kernel32.getLastErrorMessage());
+            SystemTray.logger.error("Error showing tray. {}", Kernel32Util.getLastErrorMessage());
         }
         visible = true;
     }
