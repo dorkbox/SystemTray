@@ -32,6 +32,31 @@ This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windo
 &nbsp;  
 &nbsp;  
 
+Linux
+-
+
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-1.png">
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-2.png">
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-3.png">
+<img height="30%" src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-4.png">
+
+MacOS
+-
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/macosx.png">
+
+Windows
+-
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-7.png">
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-8.png">
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-10.png">
+<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-10-125.png">
+
+
+
+
+&nbsp;  
+&nbsp;  
+
 
 Problems and Restrictions
 ---------
