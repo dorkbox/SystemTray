@@ -1,13 +1,13 @@
  - SystemTray - 
    https://git.dorkbox.com/dorkbox/SystemTray
-   Copyright 2018 - The Apache Software License, Version 2.0
+   Copyright 2019 - The Apache Software License, Version 2.0
      dorkbox, llc
    Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+
 
 
  - Dorkbox Utils - 
    https://git.dorkbox.com/dorkbox/Utilities
-   Copyright 2018 - The Apache Software License, Version 2.0
+   Copyright 2019 - The Apache Software License, Version 2.0
      dorkbox, llc
 
 
