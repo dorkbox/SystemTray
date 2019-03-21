@@ -13,14 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-include("Utilities")
-
-for (project in rootProject.children) {
-    project.projectDir = file("../$project.name")
-    project.buildFileName = "utilities.gradle"
-
-    assert (project.projectDir.directory)
-    assert (project.buildFile.file)
-}
-
-enableFeaturePreview('STABLE_PUBLISHING')

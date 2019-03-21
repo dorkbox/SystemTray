@@ -14,567 +14,640 @@
  * limitations under the License.
  */
 
-import java.nio.file.Paths
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import java.time.Instant
+import java.util.*
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.full.declaredMemberProperties
 
-buildscript {
-    println("Gradle " + project.getGradle().getGradleVersion())
+///////////////////////////////
+//////    PUBLISH TO SONATYPE / MAVEN CENTRAL
+//////
+////// TESTING : local maven repo <PUBLISHING - publishToMavenLocal>
+//////
+////// RELEASE : sonatype / maven central, <PUBLISHING - publish> then <RELEASE - closeAndReleaseRepository>
+///////////////////////////////
 
-    // load properties from custom location
-    def propsFile = Paths.get("${projectDir}/../../gradle.properties").normalize().toFile()
-    if (propsFile.canRead()) {
-        println("Loading custom property data from: ${propsFile}")
-
-        def props = new Properties()
-        propsFile.withInputStream {props.load(it)}
-        props.each {key, val -> project.ext.set(key, val)}
-    } else {
-        ext.sonatypeUsername = ""
-        ext.sonatypePassword = ""
-    }
-
-
-    // for plugin publishing and license sources
-    repositories {
-        maven {url "https://plugins.gradle.org/m2/"}
-    }
-    dependencies {
-        // this is the only way to also get the source code for IDE auto-complete
-        classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2"
-        classpath "gradle.plugin.com.dorkbox:Licensing:1.2.2:sources"
-    }
-}
+println("\tGradle ${project.gradle.gradleVersion} on Java ${JavaVersion.current()}")
 
 plugins {
-    id 'java'
-    id 'maven-publish'
-    id 'signing'
-    id 'idea'
+    java
+    signing
+    `maven-publish`
 
     // close and release on sonatype
-    id 'io.codearte.nexus-staging' version '0.11.0'
+    id("io.codearte.nexus-staging") version "0.20.0"
 
-    id "com.dorkbox.CrossCompile" version "1.0.1"
-    id "com.dorkbox.VersionUpdate" version "1.2"
+    id("com.dorkbox.CrossCompile") version "1.0.1"
+    id("com.dorkbox.Licensing") version "1.4"
+    id("com.dorkbox.VersionUpdate") version "1.4.1"
 
-    // setup checking for the latest version of a plugin or dependency (and updating the gradle build)
-    id "se.patrikerdes.use-latest-versions" version "0.2.3"
-    id 'com.github.ben-manes.versions' version '0.16.0'
+    // setup checking for the latest version of a plugin or dependency
+    id("com.github.ben-manes.versions") version "0.21.0"
+
+    kotlin("jvm") version "1.3.21"
 }
 
-// this is the only way to also get the source code for IDE auto-complete
-apply plugin: "com.dorkbox.Licensing"
+val IS_COMPILING_JAVAFX = gradle.startParameter.taskNames.filterNot { it?.toLowerCase()?.contains("javafx") ?: false }.isEmpty()
 
-// give us access to api/implementation differences for building java libraries
-apply plugin: 'java-library'
+object Extras {
+    // set for the project
+    const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+"
+    const val group = "com.dorkbox"
+    const val version = "3.17"
 
+    // set as project.ext
+    const val name = "SystemTray"
+    const val id = "SystemTray"
+    const val vendor = "Dorkbox LLC"
+    const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
+    val buildDate = Instant.now().toString()
 
-// optionally let us specify which SWT to use. options are win32/mac32/linux32 and win64/mac64/linux64
-// this is needed when building the SWT test example for a different OS combinations
-//ext.swt = 'win64'
-apply from: '../Utilities/scripts/gradle/swt.gradle'
+    val JAVA_VERSION = JavaVersion.VERSION_1_6.toString()
 
-// Utilities project shared configuration
-apply from: '../Utilities/scripts/gradle/utilities.gradle'
+    var sonatypeUserName = ""
+    var sonatypePassword = ""
+}
 
+///////////////////////////////
+/////  assign 'Extras'
+///////////////////////////////
+description = Extras.description
+group = Extras.group
+version = Extras.version
 
+val propsFile = File("$projectDir/../../gradle.properties").normalize()
+if (propsFile.canRead()) {
+    println("\tLoading custom property data from: [$propsFile]")
 
-project.description = 'Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+'
-project.group = 'com.dorkbox'
-project.version = '3.17'
-
-project.ext.name = 'SystemTray'
-project.ext.url = 'https://git.dorkbox.com/dorkbox/SystemTray'
-
-project.ext.javaVersion = JavaVersion.VERSION_1_6
-
-
-sourceCompatibility = project.ext.javaVersion
-targetCompatibility = project.ext.javaVersion
-
-
-idea {
-    module {
-        downloadJavadoc = false
-        downloadSources = true
+    val props = Properties()
+    propsFile.inputStream().use {
+        props.load(it)
     }
+
+    val extraProperties = Extras::class.declaredMemberProperties.filterIsInstance<KMutableProperty<String>>()
+    props.forEach { (k, v) -> run {
+        val key = k as String
+        val value = v as String
+
+        val member = extraProperties.find { it.name == key }
+        if (member != null) {
+            member.setter.call(Extras::class.objectInstance, value)
+        }
+        else {
+            project.extra.set(k, v)
+        }
+    }}
 }
 
 
 licensing {
     license(License.APACHE_2) {
-        author 'dorkbox, llc'
-        url project.ext.url
-        note project.description
+        author(Extras.vendor)
+        url(Extras.url)
+        note(Extras.description)
     }
 
-    license('Dorkbox Utils', License.APACHE_2) {
-        author 'dorkbox, llc'
-        url 'https://git.dorkbox.com/dorkbox/Utilities'
+    license("Dorkbox Utils", License.APACHE_2) {
+        author(Extras.vendor)
+        url("https://git.dorkbox.com/dorkbox/Utilities")
     }
 
-    license('JNA', License.APACHE_2) {
-        copyright 2011
-        author 'Timothy Wall'
-        url 'https://github.com/twall/jna'
+    license("JNA", License.APACHE_2) {
+        copyright(2011)
+        author("Timothy Wall")
+        url("https://github.com/twall/jna")
     }
 
-    license('Lantern', License.APACHE_2) {
-        copyright 2010
-        author 'Brave New Software Project, Inc.'
-        url 'https://github.com/getlantern/lantern'
+    license("Lantern", License.APACHE_2) {
+        copyright(2010)
+        author("Brave New Software Project, Inc.")
+        url("https://github.com/getlantern/lantern")
     }
 
-    license('QZTray', License.APACHE_2) {
-        copyright 2016
-        author 'Tres Finocchiaro, QZ Industries, LLC'
-        url 'https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java'
-        note 'Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.'
+    license("QZTray", License.APACHE_2) {
+        copyright (2016)
+        author ("Tres Finocchiaro")
+        author ("QZ Industries, LLC")
+        url("https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java")
+        note("Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.")
     }
 
-    license('SLF4J', License.MIT) {
-        copyright 2008
-        author 'QOS.ch'
-        url 'http://www.slf4j.org'
+    license("SLF4J", License.MIT) {
+        copyright(2008)
+        author("QOS.ch")
+        url("http://www.slf4j.org")
     }
 }
 
-configurations {
-    swtExampleJar
-}
+
+val exampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+
+val SourceSetContainer.example: SourceSet get() = maybeCreate("example")
+fun SourceSetContainer.example(block: SourceSet.() -> Unit) = example.apply(block)
+val org.gradle.api.tasks.SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
+fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
+val org.gradle.api.tasks.SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
+fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.apply(block)
 
 sourceSets {
     main {
         java {
-            setSrcDirs Collections.singletonList('src')
-        }
+            setSrcDirs(listOf("src"))
 
-        resources {
-            setSrcDirs Collections.singletonList('src')
-            include 'dorkbox/systemTray/gnomeShell/extension.js',
-                    'dorkbox/systemTray/gnomeShell/appindicator.zip',
-                    'dorkbox/systemTray/util/error_32.png'
+            // want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
+
+            resources {
+                setSrcDirs(listOf("src"))
+                include("dorkbox/systemTray/gnomeShell/extension.js",
+                    "dorkbox/systemTray/gnomeShell/appindicator.zip",
+                    "dorkbox/systemTray/util/error_32.png")
+            }
         }
     }
 
     test {
         java {
-            setSrcDirs Collections.singletonList('test')
+            setSrcDirs(listOf("test"))
+
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
 
             // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
-            srcDir main.java
-        }
+            srcDir(sourceSets["main"].allJava)
 
-        resources {
-            setSrcDirs Collections.singletonList('test')
-            include 'dorkbox/*.png'
+
+            resources {
+                setSrcDirs(listOf("test"))
+                include("dorkbox/*.png")
+            }
         }
     }
 
     example {
         java {
-            setSrcDirs Collections.singletonList('test')
-            include utilFiles('dorkbox.TestTray',
-                              'dorkbox.CustomSwingUI')
-            srcDir main.java
+            setSrcDirs(listOf("test"))
+            include(javaFile("dorkbox.TestTray", "dorkbox.CustomSwingUI"))
+
+            srcDir(sourceSets["main"].allJava)
         }
 
         resources {
-            setSrcDirs Collections.singletonList('test')
-            include 'dorkbox/*.png'
+            setSrcDirs(listOf("test"))
+            include("dorkbox/*.png")
 
-            source sourceSets.main.resources
+            srcDir(sourceSets["main"].resources)
         }
     }
 
     javaFxExample {
         java {
-            setSrcDirs Collections.singletonList('test')
-            include utilFiles('dorkbox.TestTray',
-                              'dorkbox.TestTrayJavaFX',
-                              'dorkbox.CustomSwingUI')
-            srcDir main.java
+            setSrcDirs(listOf("test"))
+            include(javaFile("dorkbox.TestTray", "dorkbox.TestTrayJavaFX", "dorkbox.CustomSwingUI"))
+
+            srcDir(sourceSets["main"].allJava)
         }
 
         resources {
-            setSrcDirs Collections.singletonList('test')
-            include 'dorkbox/*.png'
+            setSrcDirs(listOf("test"))
+            include("dorkbox/*.png")
 
-            source sourceSets.main.resources
+            srcDir(sourceSets["main"].resources)
         }
     }
 
     swtExample {
         java {
-            setSrcDirs Collections.singletonList('test')
-            include utilFiles('dorkbox.TestTray',
-                              'dorkbox.TestTraySwt',
-                              'dorkbox.CustomSwingUI')
-            srcDir main.java
+            setSrcDirs(listOf("test"))
+            include(javaFile("dorkbox.TestTray", "dorkbox.TestTraySwt", "dorkbox.CustomSwingUI"))
+
+            srcDir(sourceSets["main"].allJava)
         }
 
         resources {
-            setSrcDirs Collections.singletonList('test')
-            include 'dorkbox/*.png'
+            setSrcDirs(listOf("test"))
+            include("dorkbox/*.png")
 
-            source sourceSets.main.resources
+            srcDir(sourceSets["main"].resources)
         }
     }
 }
-
 
 repositories {
     mavenLocal() // this must be first!
 
-    maven {
-        //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
-        url 'http://maven-eclipse.github.io/maven'
-    }
+    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
+    maven("http://maven-eclipse.github.io/maven")
+
     jcenter()
 }
 
-dependencies {
-    // utilities dependencies compile SPECIFICALLY so that java 9+ modules work. We have to remove this project jar from maven builds
-    implementation(project('Utilities')) {
-        // don't include any of the project dependencies for anything
-        transitive = false
-    }
-
-    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
-    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
-
-
-    api 'com.dorkbox:ShellExecutor:1.1'
-
-    api 'org.javassist:javassist:3.23.0-GA'
-    api 'net.java.dev.jna:jna:4.5.2'
-    api 'net.java.dev.jna:jna-platform:4.5.2'
-    api 'org.slf4j:slf4j-api:1.7.25'
-
-
-    def log = implementation 'ch.qos.logback:logback-classic:1.1.6'
-
-    //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
-    //  http://maven-eclipse.github.io/maven
-    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
-    def swtDep = swtExampleJar "org.eclipse.swt:org.eclipse.swt.${swtWindowingLibrary}.${swtPlatform}.${swtArch}:4.4+"
-
-    testCompileOnly swtDep
-
-    // JavaFX isn't always added to the compile classpath....
-    testImplementation files("${System.getProperty('java.home', '.')}/lib/ext/jfxrt.jar")
-
-    // dependencies for our test examples
-    exampleImplementation configurations.implementation, log
-    javaFxExampleImplementation configurations.implementation, log
-    swtExampleImplementation configurations.implementation, log, swtDep
-}
 
 ///////////////////////////////
-//////    Task defaults
+//////    UTILITIES COMPILE
 ///////////////////////////////
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
 
-tasks.withType(Jar) {
-    duplicatesStrategy DuplicatesStrategy.FAIL
+// as long as the 'Utilities' project is ALSO imported into IntelliJ, class resolution will work (add the sources in the intellij project)
+val utils : Configuration by configurations.creating
 
-    manifest {
-        attributes['Implementation-Version'] = version
-        attributes['Build-Date'] = Instant.now().toString()
-        attributes['Automatic-Module-Name'] = project.ext.name.toString()
-    }
-}
+fun javaFile(vararg fileNames: String): Iterable<String> {
+    val fileList = ArrayList<String>(fileNames.size)
 
-///////////////////////////////
-//////    UTILITIES COMPILE (for inclusion into jars)
-///////////////////////////////
-static String[] utilFiles(String... fileNames) {
-    def fileList = [] as ArrayList
-
-    for (name in fileNames) {
-        def fixed = name.replace('.', '/') + '.java'
-        fileList.add(fixed)
+    fileNames.forEach { name ->
+        fileList.add(name.replace('.', '/') + ".java")
     }
 
     return fileList
 }
 
-task compileUtils(type: JavaCompile) {
+
+task<JavaCompile>("compileUtils") {
     // we don't want the default include of **/*.java
-    getIncludes().clear()
+    includes.clear()
 
-    source = Collections.singletonList('../Utilities/src')
-
-    include utilFiles('dorkbox.util.SwingUtil',
-                      'dorkbox.util.OS',
-                      'dorkbox.util.OSUtil',
-                      'dorkbox.util.OSType',
-                      'dorkbox.util.ImageResizeUtil',
-                      'dorkbox.util.ImageUtil',
-                      'dorkbox.util.CacheUtil',
-                      'dorkbox.util.IO',
-                      'dorkbox.util.JavaFX',
-                      'dorkbox.util.Property',
-                      'dorkbox.util.Keep',
-                      'dorkbox.util.FontUtil',
-                      'dorkbox.util.ScreenUtil',
-                      'dorkbox.util.ClassLoaderUtil',
-                      'dorkbox.util.Swt',
-                      'dorkbox.util.NamedThreadFactory',
-                      'dorkbox.util.ActionHandlerLong',
-                      'dorkbox.util.FileUtil',
-                      'dorkbox.util.MathUtil',
-                      'dorkbox.util.LocationResolver',
-                      'dorkbox.util.Desktop')
+    source = fileTree("../Utilities/src")
+    include(javaFile(
+        "dorkbox.util.OS",
+        "dorkbox.util.OSUtil",
+        "dorkbox.util.OSType",
+        "dorkbox.util.ImageResizeUtil",
+        "dorkbox.util.ImageUtil",
+        "dorkbox.util.CacheUtil",
+        "dorkbox.util.IO",
+        "dorkbox.util.JavaFX",
+        "dorkbox.util.Property",
+        "dorkbox.util.Keep",
+        "dorkbox.util.FontUtil",
+        "dorkbox.util.ScreenUtil",
+        "dorkbox.util.SwingUtil",
+        "dorkbox.util.ClassLoaderUtil",
+        "dorkbox.util.Swt",
+        "dorkbox.util.NamedThreadFactory",
+        "dorkbox.util.ActionHandlerLong",
+        "dorkbox.util.FileUtil",
+        "dorkbox.util.MathUtil",
+        "dorkbox.util.LocationResolver",
+        "dorkbox.util.Desktop"
+                    ))
 
     // entire packages/directories
-    include('dorkbox/util/jna/**/*.java')
-    include('dorkbox/util/windows/**/*.java')
-    include('dorkbox/util/swing/**/*.java')
+    include("dorkbox/util/jna/**/*.java")
+    include("dorkbox/util/windows/**/*.java")
+    include("dorkbox/util/swing/**/*.java")
 
-    classpath = sourceSets.main.compileClasspath
+    classpath = files(utils)
     destinationDir = file("$rootDir/build/classes_utilities")
 }
 
-jar {
-    dependsOn compileUtils
 
+///////////////////////////////
+//////    Task defaults
+///////////////////////////////
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+    val current = JavaVersion.current()
+
+    if (!IS_COMPILING_JAVAFX) {
+        if (current > JavaVersion.VERSION_1_8) {
+            throw GradleException("The WindowsXP compatibility layer is not compatible with Java9+")
+        }
+        sourceCompatibility = Extras.JAVA_VERSION
+        targetCompatibility = Extras.JAVA_VERSION
+    }
+    else {
+        if (current < JavaVersion.VERSION_1_7) {
+            throw GradleException("This build must be run with Java 7+ to compile JavaFX example files")
+        }
+    }
+}
+
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+
+val jar: Jar by tasks
+jar.apply {
     // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
+    from((tasks["compileUtils"] as JavaCompile).destinationDir)
+
+    manifest {
+        // https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
+        attributes["Name"] = Extras.name
+
+        attributes["Specification-Title"] = Extras.name
+        attributes["Specification-Version"] = Extras.version
+        attributes["Specification-Vendor"] = Extras.vendor
+
+        attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
+        attributes["Implementation-Version"] = Extras.buildDate
+        attributes["Implementation-Vendor"] = Extras.vendor
+
+        attributes["Automatic-Module-Name"] = Extras.name
+    }
+}
+
+tasks.compileJava.get().apply {
+    println("\tCompiling classes to Java $sourceCompatibility")
+}
+
+
+dependencies {
+    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
+    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
+    val shellExecutor = api("com.dorkbox:ShellExecutor:1.1+")
+    val javassist = api("org.javassist:javassist:3.23.0-GA")
+
+    val jna = api("net.java.dev.jna:jna:4.5.2")
+    val jnaPlatform = api("net.java.dev.jna:jna-platform:4.5.2")
+    val slf4j = api("org.slf4j:slf4j-api:1.7.25")
+
+
+    val log = runtime("ch.qos.logback:logback-classic:1.2.3")!!
+
+    //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
+    //  http://maven-eclipse.github.io/maven
+    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
+    val swtDep = testCompileOnly("org.eclipse.swt:${getSwtMavenName()}:4.4+")!!
+
+    val commonDeps = listOf(shellExecutor, javassist, jna, jnaPlatform, slf4j, swtDep)
+
+
+    // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
+    // JavaFX isn't always added to the compile classpath....
+    if (IS_COMPILING_JAVAFX) {
+        val current = JavaVersion.current()
+        // Java7/8 include JavaFX seperately. Newer versions of java bundle it (or, you can download/install it separately)
+        if (current == JavaVersion.VERSION_1_7 || current == JavaVersion.VERSION_1_8) {
+            val javaFxFile = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
+            if (!File(javaFxFile).exists()) {
+                throw GradleException("JavaFX file $javaFxFile cannot be found")
+            }
+
+            val javaFX = api(files(javaFxFile))
+
+            javaFxExampleCompile.dependencies += listOf(javaFX, log)
+        }
+    }
+
+    // add compile utils to dependencies
+    implementation(files((tasks["compileUtils"] as JavaCompile).outputs))
+    utils.dependencies += commonDeps
+
+    exampleCompile.dependencies += log
+    swtExampleCompile.dependencies += listOf(swtDep, log)
 }
 
 ///////////////////////////////
 //////    Tasks to launch examples from gradle
 ///////////////////////////////
-task example(type: JavaExec) {
-    classpath sourceSets.example.runtimeClasspath
-
-    group = 'examples'
-    main = 'dorkbox.TestTray'
-    standardInput = System.in
+task<JavaExec>("example") {
+    classpath = sourceSets.example.runtimeClasspath
+    main = "dorkbox.TestTray"
+    standardInput = System.`in`
 }
 
-task javaFxExample(type: JavaExec) {
-    classpath sourceSets.javaFxExample.runtimeClasspath
-
-    group = 'examples'
-    main = 'dorkbox.TestTrayJavaFX'
-    standardInput = System.in
+task<JavaExec>("javaFxExample") {
+    classpath = sourceSets.javaFxExample.runtimeClasspath
+    main = "dorkbox.TestTrayJavaFX"
+    standardInput = System.`in`
 }
 
-task swtExample(type: JavaExec) {
-    classpath sourceSets.swtExample.runtimeClasspath
-
-    group = 'examples'
-    main = 'dorkbox.TestTraySwt'
-    standardInput = System.in
+task<JavaExec>("swtExample") {
+    classpath = sourceSets.swtExample.runtimeClasspath
+    main = "dorkbox.TestTraySwt"
+    standardInput = System.`in`
 }
-
-task jarExample(type: Jar) {
-    dependsOn jar
-
-    baseName = 'SystemTray-Example'
-    group = BasePlugin.BUILD_GROUP
-    description = 'Create an all-in-one example for testing, on a standard Java installation'
-
-    from sourceSets.example.output.classesDirs
-    from sourceSets.example.output.resourcesDir
-
-    from compileUtils.destinationDir
-
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
-                       .collect { zipTree(it)}
-
-    manifest {
-        attributes['Main-Class'] = 'dorkbox.TestTray'
-    }
-}
-
-
-task jarJavaFxExample(type: Jar) {
-    dependsOn jar
-
-    baseName = 'SystemTray-JavaFxExample'
-    group = BasePlugin.BUILD_GROUP
-    description = 'Create an all-in-one example for testing, using JavaFX'
-
-    from sourceSets.javaFxExample.output.classesDirs
-    from sourceSets.javaFxExample.output.resourcesDir
-
-    from compileUtils.destinationDir
-
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
-                       .collect {zipTree(it)}
-
-    manifest {
-        attributes['Main-Class'] = 'dorkbox.TestTrayJavaFX'
-        attributes['Class-Path'] = "${System.getProperty('java.home', '.')}/lib/ext/jfxrt.jar"
-    }
-}
-
-task jarSwtExample(type: Jar) {
-    dependsOn jar
-
-    baseName = 'SystemTray-SwtExample'
-    group = BasePlugin.BUILD_GROUP
-    description = 'Create an all-in-one example for testing, using SWT'
-
-    from sourceSets.swtExample.output.classesDirs
-    from sourceSets.swtExample.output.resourcesDir
-
-    from compileUtils.destinationDir
-
-    // include SWT
-    from configurations.swtExampleJar
-                       .collect {zipTree(it)}
-
-    // add all of the main project jars as a fat-jar for all examples, exclude the Utilities.jar contents
-    from configurations.runtimeClasspath
-                       .findAll {it.name.endsWith('jar') && it.name != 'Utilities.jar'}
-                       .collect {zipTree(it)}
-
-    manifest {
-        attributes['Main-Class'] = 'dorkbox.TestTraySwt'
-    }
-}
-
-
-task jarAllExamples {
-    dependsOn jarExample
-    dependsOn jarJavaFxExample
-    dependsOn jarSwtExample
-
-    group = BasePlugin.BUILD_GROUP
-    description = 'Create all-in-one examples for testing, using Swing, JavaFX, and SWT'
-}
-
 
 
 /////////////////////////////
-////    Maven Publishing + Release
+////    Jar Tasks
 /////////////////////////////
-task sourceJar(type: Jar) {
+task<Jar>("jarExample") {
+    dependsOn(jar)
+
+    archiveBaseName.set("SystemTray-Example")
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, on a standard Java installation"
+
+    from(sourceSets.example.output.classesDirs)
+    from(sourceSets.example.output.resourcesDir)
+
+    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) })
+
+    manifest {
+        attributes["Main-Class"] = "dorkbox.TestTray"
+    }
+}
+
+task<Jar>("jarJavaFxExample") {
+    dependsOn(jar)
+
+    archiveBaseName.set("SystemTray-JavaFxExample")
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, using JavaFX"
+
+    from(sourceSets.javaFxExample.output.classesDirs)
+    from(sourceSets.javaFxExample.output.resourcesDir)
+
+    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) })
+
+
+    manifest {
+        attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
+        attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
+    }
+}
+
+task<Jar>("jarSwtExample") {
+    dependsOn(jar)
+
+    archiveBaseName.set("SystemTray-SwtExample")
+    group = BasePlugin.BUILD_GROUP
+    description = "Create an all-in-one example for testing, using SWT"
+
+    from(sourceSets.swtExample.output.classesDirs)
+    from(sourceSets.swtExample.output.resourcesDir)
+
+    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) })
+
+    manifest {
+        attributes["Main-Class"] = "dorkbox.TestTraySwt"
+    }
+}
+
+
+task("jarAllExamples") {
+    dependsOn("jarExample")
+    dependsOn("jarJavaFxExample")
+    dependsOn("jarSwtExample")
+
+    group = BasePlugin.BUILD_GROUP
+    description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
+}
+
+
+operator fun Regex.contains(text: CharSequence): Boolean = this.matches(text)
+fun getSwtMavenName(): String {
+    val currentOS = org.gradle.internal.os.OperatingSystem.current()
+    val platform = when {
+            currentOS.isWindows -> "win32"
+            currentOS.isMacOsX  -> "macosx"
+            else                -> "linux"
+        }
+
+
+    var arch = System.getProperty("os.arch")
+    arch = when {
+        arch.matches(".*64.*".toRegex()) -> "x86_64"
+        else                             -> "x86"
+    }
+
+
+    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
+    //  https://github.com/maven-eclipse/maven-eclipse.github.io   for the website about it
+    //  http://maven-eclipse.github.io/maven  for the maven repo
+    return "org.eclipse.swt.gtk.$platform.$arch"
+}
+
+///////////////////////////////
+//////    PUBLISH TO SONATYPE / MAVEN CENTRAL
+//////
+////// TESTING : local maven repo <PUBLISHING - publishToMavenLocal>
+//////
+////// RELEASE : sonatype / maven central, <PUBLISHING - publish> then <RELEASE - closeAndReleaseRepository>
+///////////////////////////////
+val sourceJar = task<Jar>("sourceJar") {
     description = "Creates a JAR that contains the source code."
 
-    from sourceSets.main.java
+    from(sourceSets["main"].java)
 
-    classifier = "sources"
+    archiveClassifier.set("sources")
 }
 
-task javaDocJar(type: Jar) {
+val javaDocJar = task<Jar>("javaDocJar") {
     description = "Creates a JAR that contains the javadocs."
 
-    classifier = "javadoc"
+    archiveClassifier.set("javadoc")
 }
 
-// for testing, we don't publish to maven central, but only to local maven
 publishing {
     publications {
-        maven(MavenPublication) {
-            from components.java
+        create<MavenPublication>("maven") {
+            groupId = Extras.group
+            artifactId = Extras.id
+            version = Extras.version
 
-            artifact(javaDocJar)
+            from(components["java"])
+
             artifact(sourceJar)
-
-            groupId project.group
-            artifactId project.ext.name
-            version project.version
+            artifact(javaDocJar)
 
             pom {
-                withXml {
-                    // eliminate logback and utilities (no need in maven POMs)
-                    def root = asNode()
-
-                    root.dependencies.'*'.findAll() {
-                        it.artifactId.text() == "logback-classic" || it.artifactId.text() == "Utilities"
-                    }.each() {
-                        it.parent().remove(it)
-                    }
-                }
-
-                name = project.ext.name
-                url = project.ext.url
-                description = project.description
+                name.set(Extras.name)
+                description.set(Extras.description)
+                url.set(Extras.url)
 
                 issueManagement {
-                    url = "${project.ext.url}/issues".toString()
-                    system = 'Gitea Issues'
+                    url.set("${Extras.url}/issues")
+                    system.set("Gitea Issues")
                 }
-
                 organization {
-                    name = 'dorkbox, llc'
-                    url = 'https://dorkbox.com'
+                    name.set(Extras.vendor)
+                    url.set("https://dorkbox.com")
                 }
-
                 developers {
                     developer {
-                        name = 'dorkbox, llc'
-                        email = 'email@dorkbox.com'
+                        id.set("dorkbox")
+                        name.set(Extras.vendor)
+                        email.set("email@dorkbox.com")
                     }
                 }
-
                 scm {
-                    url = project.ext.url
-                    connection = "scm:${project.ext.url}.git".toString()
+                    url.set(Extras.url)
+                    connection.set("scm:${Extras.url}.git")
                 }
             }
+
         }
     }
+
 
     repositories {
         maven {
-            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
             credentials {
-                username sonatypeUsername
-                password sonatypePassword
+                username = Extras.sonatypeUserName
+                password = Extras.sonatypePassword
             }
         }
+    }
+
+
+    tasks.withType<PublishToMavenRepository> {
+        onlyIf {
+            publication == publishing.publications["maven"] && repository == publishing.repositories["maven"]
+        }
+    }
+
+    tasks.withType<PublishToMavenLocal> {
+        onlyIf {
+            publication == publishing.publications["maven"]
+        }
+    }
+
+    // output the release URL in the console
+    tasks["releaseRepository"].doLast {
+        val url = "https://oss.sonatype.org/content/repositories/releases/"
+        val projectName = Extras.group.replace('.', '/')
+        val name = Extras.name
+        val version = Extras.version
+
+        println("Maven URL: $url$projectName/$name/$version/")
     }
 }
 
 nexusStaging {
-    username sonatypeUsername
-    password sonatypePassword
+    username = Extras.sonatypeUserName
+    password = Extras.sonatypePassword
 }
 
 signing {
-    sign publishing.publications.maven
+    sign(publishing.publications["maven"])
 }
 
-// output the release URL in the console
-releaseRepository.doLast {
-    def URL = 'https://oss.sonatype.org/content/repositories/releases/'
-    def projectName = project.group.toString().replaceAll('\\.', '/')
-    def name = project.ext.name
-    def version = project.version
 
-    println("Maven URL: ${URL}${projectName}/${name}/${version}/")
-}
 
-// we don't use maven with the plugin (it's uploaded separately to gradle plugins)
-tasks.withType(PublishToMavenRepository) {
-    onlyIf {
-        repository == publishing.repositories.maven && publication == publishing.publications.maven
+///////////////////////////////
+/////   Prevent anything other than a release from showing version updates
+////  https://github.com/ben-manes/gradle-versions-plugin/blob/master/README.md
+///////////////////////////////
+tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
+    resolutionStrategy {
+        componentSelection {
+            all {
+                val rejected = listOf("alpha", "beta", "rc", "cr", "m", "preview")
+                        .map { qualifier -> Regex("(?i).*[.-]$qualifier[.\\d-]*") }
+                        .any { it.matches(candidate.version) }
+                if (rejected) {
+                    reject("Release candidate")
+                }
+            }
+        }
     }
-}
-tasks.withType(PublishToMavenLocal) {
-    onlyIf {
-        publication == publishing.publications.maven
-    }
+
+    // optional parameters
+    checkForGradleUpdate = true
 }
 
-/////////////////////////////
-////    Gradle Wrapper Configuration.
-///  Run this task, then refresh the gradle project
-/////////////////////////////
-task updateWrapper(type: Wrapper) {
-    gradleVersion = '4.10.2'
+
+///////////////////////////////
+//////    Gradle Wrapper Configuration.
+/////  Run this task, then refresh the gradle project
+///////////////////////////////
+val wrapperUpdate by tasks.creating(Wrapper::class) {
+    gradleVersion = "5.3"
     distributionUrl = distributionUrl.replace("bin", "all")
-    setDistributionType(Wrapper.DistributionType.ALL)
 }
