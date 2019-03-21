@@ -345,7 +345,7 @@ jar.apply {
         attributes["Implementation-Version"] = Extras.buildDate
         attributes["Implementation-Vendor"] = Extras.vendor
 
-        attributes["Automatic-Module-Name"] = Extras.name
+        attributes["Automatic-Module-Name"] = Extras.id
     }
 }
 
