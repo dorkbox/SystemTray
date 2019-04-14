@@ -141,6 +141,14 @@ licensing {
 }
 
 
+fun javaFile(vararg fileNames: String): Iterable<String> {
+    val fileList = ArrayList<String>(fileNames.size)
+    fileNames.forEach { name ->
+        fileList.add(name.replace('.', '/') + ".java")
+    }
+    return fileList
+}
+
 val exampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
@@ -247,63 +255,6 @@ repositories {
 
 
 ///////////////////////////////
-//////    UTILITIES COMPILE
-///////////////////////////////
-
-// as long as the 'Utilities' project is ALSO imported into IntelliJ, class resolution will work (add the sources in the intellij project)
-val utils : Configuration by configurations.creating
-
-fun javaFile(vararg fileNames: String): Iterable<String> {
-    val fileList = ArrayList<String>(fileNames.size)
-
-    fileNames.forEach { name ->
-        fileList.add(name.replace('.', '/') + ".java")
-    }
-
-    return fileList
-}
-
-
-task<JavaCompile>("compileUtils") {
-    // we don't want the default include of **/*.java
-    includes.clear()
-
-    source = fileTree("../Utilities/src")
-    include(javaFile(
-        "dorkbox.util.OS",
-        "dorkbox.util.OSUtil",
-        "dorkbox.util.OSType",
-        "dorkbox.util.ImageResizeUtil",
-        "dorkbox.util.ImageUtil",
-        "dorkbox.util.CacheUtil",
-        "dorkbox.util.IO",
-        "dorkbox.util.JavaFX",
-        "dorkbox.util.Property",
-        "dorkbox.util.Keep",
-        "dorkbox.util.FontUtil",
-        "dorkbox.util.ScreenUtil",
-        "dorkbox.util.SwingUtil",
-        "dorkbox.util.ClassLoaderUtil",
-        "dorkbox.util.Swt",
-        "dorkbox.util.NamedThreadFactory",
-        "dorkbox.util.ActionHandlerLong",
-        "dorkbox.util.FileUtil",
-        "dorkbox.util.MathUtil",
-        "dorkbox.util.LocationResolver",
-        "dorkbox.util.Desktop"
-                    ))
-
-    // entire packages/directories
-    include("dorkbox/util/jna/**/*.java")
-    include("dorkbox/util/windows/**/*.java")
-    include("dorkbox/util/swing/**/*.java")
-
-    classpath = files(utils)
-    destinationDir = file("$rootDir/build/classes_utilities")
-}
-
-
-///////////////////////////////
 //////    Task defaults
 ///////////////////////////////
 tasks.withType<JavaCompile> {
@@ -330,9 +281,6 @@ tasks.withType<Jar> {
 
 val jar: Jar by tasks
 jar.apply {
-    // include applicable class files from subset of Utilities project
-    from((tasks["compileUtils"] as JavaCompile).destinationDir)
-
     manifest {
         // https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
         attributes["Name"] = Extras.name
@@ -357,12 +305,12 @@ tasks.compileJava.get().apply {
 dependencies {
     // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
     // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
-    val shellExecutor = api("com.dorkbox:ShellExecutor:1.1+")
-    val javassist = api("org.javassist:javassist:3.23.0-GA")
+    implementation("com.dorkbox:ShellExecutor:1.1+")
+    implementation("org.javassist:javassist:3.23.0-GA")
 
-    val jna = api("net.java.dev.jna:jna:4.5.2")
-    val jnaPlatform = api("net.java.dev.jna:jna-platform:4.5.2")
-    val slf4j = api("org.slf4j:slf4j-api:1.7.25")
+    implementation("net.java.dev.jna:jna:4.5.2")
+    implementation("net.java.dev.jna:jna-platform:4.5.2")
+    implementation("org.slf4j:slf4j-api:1.7.25")
 
 
     val log = runtime("ch.qos.logback:logback-classic:1.2.3")!!
@@ -371,9 +319,6 @@ dependencies {
     //  http://maven-eclipse.github.io/maven
     // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
     val swtDep = testCompileOnly("org.eclipse.swt:${getSwtMavenName()}:4.4+")!!
-
-    val commonDeps = listOf(shellExecutor, javassist, jna, jnaPlatform, slf4j, swtDep)
-
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
@@ -392,9 +337,7 @@ dependencies {
         }
     }
 
-    // add compile utils to dependencies
-    implementation(files((tasks["compileUtils"] as JavaCompile).outputs))
-    utils.dependencies += commonDeps
+    implementation("com.dorkbox:Utilities:1.1")
 
     exampleCompile.dependencies += log
     swtExampleCompile.dependencies += listOf(swtDep, log)
