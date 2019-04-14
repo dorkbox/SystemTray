@@ -15,6 +15,8 @@
  */
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import net.sf.json.JSONObject
+import java.net.URL
 import java.time.Instant
 import java.util.*
 import kotlin.reflect.KMutableProperty
@@ -45,7 +47,7 @@ plugins {
     // setup checking for the latest version of a plugin or dependency
     id("com.github.ben-manes.versions") version "0.21.0"
 
-    kotlin("jvm") version "1.3.21"
+    kotlin("jvm") version "1.3.30"
 }
 
 val IS_COMPILING_JAVAFX = gradle.startParameter.taskNames.filterNot { it?.toLowerCase()?.contains("javafx") ?: false }.isEmpty()
@@ -303,14 +305,15 @@ tasks.compileJava.get().apply {
 
 
 dependencies {
-    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
-    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
     implementation("com.dorkbox:ShellExecutor:1.1+")
-    implementation("org.javassist:javassist:3.23.0-GA")
+    implementation("org.javassist:javassist:3.24.1-GA")
 
-    implementation("net.java.dev.jna:jna:4.5.2")
-    implementation("net.java.dev.jna:jna-platform:4.5.2")
-    implementation("org.slf4j:slf4j-api:1.7.25")
+    val jnaVersion = "5.2.0"
+
+    implementation("net.java.dev.jna:jna:$jnaVersion")
+    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+
+    implementation("org.slf4j:slf4j-api:1.7.26")
 
 
     val log = runtime("ch.qos.logback:logback-classic:1.2.3")!!
@@ -318,7 +321,7 @@ dependencies {
     //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
     //  http://maven-eclipse.github.io/maven
     // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
-    val swtDep = testCompileOnly("org.eclipse.swt:${getSwtMavenName()}:4.4+")!!
+    val swtDep = testCompileOnly("org.eclipse.swt:${getSwtMavenName()}:4.6.1")!!
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
@@ -567,7 +570,11 @@ signing {
 /////   Prevent anything other than a release from showing version updates
 ////  https://github.com/ben-manes/gradle-versions-plugin/blob/master/README.md
 ///////////////////////////////
-tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
+tasks.withType<DependencyUpdatesTask> {
+    group = "gradle"
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    
     resolutionStrategy {
         componentSelection {
             all {
@@ -588,9 +595,39 @@ tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
 
 ///////////////////////////////
 //////    Gradle Wrapper Configuration.
-/////  Run this task, then refresh the gradle project
+/////  Run this task (GRADLE -> autoUpdateGradleWrapper), then refresh the gradle project
 ///////////////////////////////
-val wrapperUpdate by tasks.creating(Wrapper::class) {
-    gradleVersion = "5.3"
-    distributionUrl = distributionUrl.replace("bin", "all")
+task<Task>("autoUpdateGradleWrapper") {
+    group = "gradle"
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    // always make sure this task when specified. ALWAYS skip for other tasks, Never skip for us.
+    // This is a little bit of a PITA, because of how gradle configures, then runs tasks...
+    if (gradle.startParameter.taskNames.contains("autoUpdateGradleWrapper")) {
+        finalizedBy(task<Task>("autoUpdateGradleWrapperDownloader") {
+            group = "gradle"
+            outputs.upToDateWhen { false }
+            outputs.cacheIf { false }
+
+            val releaseText = URL("https://services.gradle.org/versions/current").readText()
+            val foundGradleVersion = JSONObject.fromObject(releaseText)["version"] as String?
+
+            if (foundGradleVersion.isNullOrEmpty()) {
+                println("\tUnable to detect Newest Gradle Version. Output json: $releaseText")
+            }
+            else {
+                println("\tDetected Newest Gradle Version: '$foundGradleVersion'")
+
+                finalizedBy(task<Wrapper>("wrapperUpdate") {
+                    group = "gradle"
+                    outputs.upToDateWhen { false }
+                    outputs.cacheIf { false }
+
+                    gradleVersion = foundGradleVersion
+                    distributionUrl = distributionUrl.replace("bin", "all")
+                })
+            }
+        })
+    }
 }
