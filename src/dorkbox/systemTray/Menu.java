@@ -35,6 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
 import dorkbox.systemTray.peer.MenuPeer;
+import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -214,23 +215,34 @@ class Menu extends MenuItem {
      * Adds a menu entry, separator, or sub-menu to this menu.
      */
     public
-    <T extends Entry> T add(final T entry, int index) {
+    <T extends Entry> T add(final T entry, final int index) {
+        final int insertIndex;
         synchronized (menuEntries) {
             // access on this object must be synchronized for object visibility
             if (index == -1) {
-                index = menuEntries.size();
+                insertIndex = menuEntries.size();
                 menuEntries.add(entry);
             } else {
                 if (!menuEntries.isEmpty() && menuEntries.get(0) instanceof Status) {
                     // the "status" menu entry is ALWAYS first
-                    index++;
+                    insertIndex = index+1;
+                } else {
+                    insertIndex = index;
                 }
+
                 menuEntries.add(index, entry);
             }
+        }
 
-            if (peer != null) {
-                ((MenuPeer) peer).add(this, entry, index);
-            }
+        if (peer != null) {
+            // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
+            EventDispatch.runLater(new Runnable() {
+                @Override
+                public
+                void run() {
+                    ((MenuPeer) peer).add(Menu.this, entry, insertIndex);
+                }
+            });
         }
 
         return entry;
@@ -378,14 +390,23 @@ class Menu extends MenuItem {
                 }
             }
             if (toRemove != null) {
-                toRemove.remove();
+                final Entry reference = toRemove;
+                // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
+                EventDispatch.runLater(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        reference.remove();
+                    }
+                });
+
                 toRemove = null;
             }
 
 
-            // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+            // now check to see if a spacer is at the TOP of the list (and remove it if so. This is a recursive function.
             synchronized (menuEntries) {
-                // access on this object must be synchronized for object visibility
+                // access on this object must be synchronized for object visibility. When it runs recursively, it will correctly remove the entry.
                 if (!menuEntries.isEmpty()) {
                     if (menuEntries.get(0) instanceof dorkbox.systemTray.Separator) {
                         toRemove = menuEntries.get(0);
@@ -398,9 +419,9 @@ class Menu extends MenuItem {
             }
 
 
-            // now check to see if a spacer is at the top/bottom of the list (and remove it if so. This is a recursive function.
+            // now check to see if a spacer is at the BOTTOM of the list (and remove it if so. This is a recursive function.
             synchronized (menuEntries) {
-                // access on this object must be synchronized for object visibility
+                // access on this object must be synchronized for object visibility. When it runs recursively, it will correctly remove the entry.
                 if (!menuEntries.isEmpty()) {
                     if (menuEntries.get(menuEntries.size()-1) instanceof dorkbox.systemTray.Separator) {
                         toRemove = menuEntries.get(menuEntries.size() - 1);
@@ -423,6 +444,18 @@ class Menu extends MenuItem {
             menuEntries.clear();
         }
 
+        // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
+        EventDispatch.runLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                Menu.this.remove_();
+            }
+        });
+    }
+
+    private
+    void remove_() {
         super.remove();
     }
 }

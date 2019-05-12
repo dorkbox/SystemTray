@@ -144,6 +144,20 @@ class TestTraySwt {
         checkbox.setShortcut('€');
         mainMenu.add(checkbox);
 
+        MenuItem removeTest = new MenuItem("This should not be here", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                try {
+                    Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+        mainMenu.add(removeTest);
+        mainMenu.remove(removeTest);
+
         mainMenu.add(new Separator());
 
         mainMenu.add(new MenuItem("About", new ActionListener() {

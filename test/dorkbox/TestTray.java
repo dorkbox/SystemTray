@@ -89,6 +89,7 @@ class TestTray {
                 entry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
                 systemTray.getMenu().remove(entry);
+                entry.remove();
                 System.err.println("POW");
             }
         };
@@ -127,6 +128,20 @@ class TestTray {
         });
         checkbox.setShortcut('€');
         mainMenu.add(checkbox);
+
+        MenuItem removeTest = new MenuItem("This should not be here", new ActionListener() {
+            @Override
+            public
+            void actionPerformed(final ActionEvent e) {
+                try {
+                    Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+        mainMenu.add(removeTest);
+        mainMenu.remove(removeTest);
 
         mainMenu.add(new Separator());
 
