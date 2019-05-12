@@ -54,7 +54,7 @@ class AwtMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeLater(new Runnable() {
+        SwingUtil.invokeAndWaitQuietly(new Runnable() {
             @Override
             public
             void run() {
