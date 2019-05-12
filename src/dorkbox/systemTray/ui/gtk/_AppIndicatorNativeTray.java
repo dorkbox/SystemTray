@@ -96,7 +96,7 @@ class _AppIndicatorNativeTray extends Tray {
 
     public
     _AppIndicatorNativeTray(final SystemTray systemTray) {
-        super();
+        super(systemTray);
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final GtkMenu gtkMenu = new GtkMenu() {

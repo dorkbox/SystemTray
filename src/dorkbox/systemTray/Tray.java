@@ -29,6 +29,7 @@ public
 class Tray extends Menu {
     // true if we are using gnome (and we have to implement workarounds) or false
     public static volatile boolean gtkGnomeWorkaround = false;
+    private final SystemTray systemTray;
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
@@ -37,8 +38,9 @@ class Tray extends Menu {
     private volatile String statusText;
 
     public
-    Tray() {
+    Tray(final SystemTray systemTray) {
         super();
+        this.systemTray = systemTray;
     }
 
     /**
@@ -166,5 +168,21 @@ class Tray extends Menu {
     public
     void setImage(final ImageInputStream imageStream) {
         setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
+    }
+
+    /**
+     * This removes all menu entries from the tray icon menu AND removes the tray icon from the system tray!
+     * <p>
+     * You will need to recreate ALL parts of the menu to see the tray icon + menu again!
+     */
+    @Override
+    public
+    void remove() {
+        super.remove();
+
+        // we have to tell our parent that we have been removed.
+        // This is HERE instead of inside of the tray implementations because of visibility requirements.
+        //  remove_() is internal and should NEVER be called by someone else!
+        systemTray.remove_();
     }
 }

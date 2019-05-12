@@ -236,7 +236,7 @@ class Menu extends MenuItem {
 
         if (peer != null) {
             // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-            EventDispatch.runLater(new Runnable() {
+            EventDispatch.run(new Runnable() {
                 @Override
                 public
                 void run() {
@@ -392,7 +392,7 @@ class Menu extends MenuItem {
             if (toRemove != null) {
                 final Entry reference = toRemove;
                 // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-                EventDispatch.runLater(new Runnable() {
+                EventDispatch.run(new Runnable() {
                     @Override
                     public
                     void run() {
@@ -445,7 +445,7 @@ class Menu extends MenuItem {
         }
 
         // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-        EventDispatch.runLater(new Runnable() {
+        EventDispatch.run(new Runnable() {
             @Override
             public
             void run() {

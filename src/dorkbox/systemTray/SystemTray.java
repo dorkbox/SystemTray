@@ -166,6 +166,7 @@ class SystemTray {
 
     private static volatile SystemTray systemTray = null;
     private static volatile Tray systemTrayMenu = null;
+    private static volatile boolean shutdownHooksAdded = false;
 
 
     private static
@@ -545,9 +546,7 @@ class SystemTray {
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
     private static
     void init() {
-        if (systemTray != null) {
-            return;
-        }
+        // have to RECREATE the menu if we call get() after remove()!
 
 //        if (DEBUG) {
 //            Properties properties = System.getProperties();
@@ -877,7 +876,6 @@ class SystemTray {
 
 
 
-
         // fix various incompatibilities with selected tray types
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
@@ -970,8 +968,6 @@ class SystemTray {
             logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Falling back to the Swing Tray.");
         }
 
-
-        final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
         // - appIndicator/gtk require strings (which is the path)
         // - swing version loads as an image (which can be stream or path, we use path)
@@ -1088,7 +1084,14 @@ class SystemTray {
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
             systemTray = new SystemTray();
+        } catch (Exception e) {
+            logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
+        }
 
+
+        // the "menu" in this case is the ACTUAL menu that shows up in the system tray (the icon + submenu, etc)
+        final AtomicReference<Tray> reference = new AtomicReference<Tray>();
+        try {
             // AWT/Swing must be constructed on the EDT however...
             if (!JavaFX.isLoaded && !Swt.isLoaded &&
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT))) {
@@ -1107,65 +1110,66 @@ class SystemTray {
                 });
             }
             else {
-                try {
-                    reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
-                } catch (Exception e) {
-                    logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
-                }
+                reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
             }
         } catch (Exception e) {
-            logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
+            logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
         }
 
+
         systemTrayMenu = reference.get();
+
         if (systemTrayMenu != null) {
             if (DEBUG) {
                 logger.info("Successfully loaded type: {}", trayType.getSimpleName());
             } else {
                 logger.info("Successfully loaded");
             }
-        }
 
-        // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
-        if (ENABLE_SHUTDOWN_HOOK) {
-            if (JavaFX.isLoaded) {
-                // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
-                // Also, it's nice to have us shutdown at the same time as the main application
-                JavaFX.onShutdown(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (systemTray != null) {
-                            systemTray.shutdown();
+            // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
+            if (ENABLE_SHUTDOWN_HOOK && !shutdownHooksAdded) {
+                // have to make sure that we only add this ONCE!
+                shutdownHooksAdded = true;
+
+                if (JavaFX.isLoaded) {
+                    // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
+                    // Also, it's nice to have us shutdown at the same time as the main application
+                    JavaFX.onShutdown(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            if (systemTray != null) {
+                                systemTray.shutdown();
+                            }
                         }
-                    }
-                });
-            }
-            else if (Swt.isLoaded) {
-                // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
-                // Also, it's nice to have us shutdown at the same time as the main application
-                dorkbox.util.Swt.onShutdown(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (systemTray != null) {
-                            systemTray.shutdown();
+                    });
+                }
+                else if (Swt.isLoaded) {
+                    // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
+                    // Also, it's nice to have us shutdown at the same time as the main application
+                    dorkbox.util.Swt.onShutdown(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            if (systemTray != null) {
+                                systemTray.shutdown();
+                            }
                         }
-                    }
-                });
-            }
-            else if (isTrayType(trayType, TrayType.Swing) ||
-                     isTrayType(trayType, TrayType.WindowsNotifyIcon) ||
-                     isTrayType(trayType, TrayType.OSXStatusItem)) {
-                Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (systemTray != null) {
-                            systemTray.shutdown();
+                    });
+                }
+                else if (isTrayType(trayType, TrayType.Swing) ||
+                         isTrayType(trayType, TrayType.WindowsNotifyIcon) ||
+                         isTrayType(trayType, TrayType.OSXStatusItem)) {
+                    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                        @Override
+                        public
+                        void run() {
+                            if (systemTray != null) {
+                                systemTray.shutdown();
+                            }
                         }
-                    }
-                }));
+                    }));
+                }
             }
         }
     }
@@ -1201,13 +1205,11 @@ class SystemTray {
     public
     void shutdown() {
         // this is thread-safe
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
+            // this will shutdown and do what it needs to
             menu.remove();
         }
-
-        systemTrayMenu = null;
-        EventDispatch.shutdown();
     }
 
     /**
@@ -1215,9 +1217,9 @@ class SystemTray {
      */
     public
     String getStatus() {
-        final Tray tray = systemTrayMenu;
-        if (tray != null) {
-            return tray.getStatus();
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            return menu.getStatus();
         }
 
         return "";
@@ -1230,9 +1232,9 @@ class SystemTray {
      */
     public
     void setStatus(String statusText) {
-        final Tray tray = systemTrayMenu;
-        if (tray != null) {
-            tray.setStatus(statusText);
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setStatus(statusText);
         }
     }
 
@@ -1286,7 +1288,7 @@ class SystemTray {
      */
     public
     void setEnabled(final boolean enabled) {
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
             menu.setEnabled(enabled);
         }
@@ -1324,7 +1326,7 @@ class SystemTray {
             throw new NullPointerException("imageFile");
         }
 
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
             menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageFile));
         }
@@ -1362,7 +1364,7 @@ class SystemTray {
             throw new NullPointerException("imageUrl");
         }
 
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
             menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageUrl));
         }
@@ -1381,7 +1383,7 @@ class SystemTray {
             throw new NullPointerException("imageStream");
         }
 
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
             menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
         }
@@ -1400,7 +1402,7 @@ class SystemTray {
             throw new NullPointerException("image");
         }
 
-        final Menu menu = systemTrayMenu;
+        final Tray menu = systemTrayMenu;
         if (menu != null) {
             menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, image));
         }
@@ -1419,9 +1421,9 @@ class SystemTray {
             throw new NullPointerException("image");
         }
 
-        final Tray tray = systemTrayMenu;
-        if (tray != null) {
-            tray.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
         }
     }
 
@@ -1435,11 +1437,17 @@ class SystemTray {
 
 
     /**
-     * @return the system tray menu image size, accounting for OS and theme differences
+     * @return the system tray menu image size, accounting for OS and theme differences. 0 if the menu does not exist
      */
     public
     int getMenuImageSize() {
-        return SizeAndScalingUtil.getMenuImageSize(systemTrayMenu.getClass());
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            return SizeAndScalingUtil.getMenuImageSize(menu.getClass());
+        }
+        else {
+            return 0;
+        }
     }
 
     /**
@@ -1447,7 +1455,35 @@ class SystemTray {
      */
     public
     TrayType getType() {
-        return fromClass(systemTrayMenu.getClass());
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            return fromClass(systemTrayMenu.getClass());
+        }
+        else {
+            return null;
+        }
+    }
+
+    /**
+     * This removes all menu entries from the tray icon menu AND removes the tray icon from the system tray!
+     * <p>
+     * You will need to recreate ALL parts of the menu to see the tray icon + menu again!
+     */
+    public
+    void remove() {
+        final Tray menu = systemTrayMenu;
+        if (menu != null) {
+            systemTrayMenu.remove();
+        }
+    }
+
+    /**
+     * Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
+     */
+    void remove_() {
+        // we just check for null
+        systemTrayMenu = null;
+        EventDispatch.shutdown();
     }
 }
 

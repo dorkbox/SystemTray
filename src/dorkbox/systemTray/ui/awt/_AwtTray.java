@@ -58,7 +58,7 @@ class _AwtTray extends Tray {
     // Called in the EDT
     public
     _AwtTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super();
+        super(systemTray);
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +

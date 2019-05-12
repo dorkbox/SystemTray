@@ -49,7 +49,7 @@ class _OsxNativeTray extends Tray {
 
     public
     _OsxNativeTray(final SystemTray systemTray) {
-        super();
+        super(systemTray);
 
         // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
         // all platforms.

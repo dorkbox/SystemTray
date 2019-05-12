@@ -54,7 +54,7 @@ class _SwingTray extends Tray {
     // Called in the EDT
     public
     _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super();
+        super(systemTray);
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +

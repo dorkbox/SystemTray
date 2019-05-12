@@ -63,7 +63,7 @@ class _GtkStatusIconNativeTray extends Tray {
     // called on the EDT
     public
     _GtkStatusIconNativeTray(final SystemTray systemTray) {
-        super();
+        super(systemTray);
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         gtkMenu = new GtkMenu() {
@@ -77,11 +77,11 @@ class _GtkStatusIconNativeTray extends Tray {
                         boolean enabled = menuItem.getEnabled();
 
                         if (visible && !enabled) {
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, enabled);
+                            Gtk2.gtk_status_icon_set_visible(trayIcon, false);
                             visible = false;
                         }
                         else if (!visible && enabled) {
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, enabled);
+                            Gtk2.gtk_status_icon_set_visible(trayIcon, true);
                             visible = true;
                         }
                     }
