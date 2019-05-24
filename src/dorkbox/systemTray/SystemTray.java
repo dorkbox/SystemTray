@@ -1138,9 +1138,16 @@ class SystemTray {
                         @Override
                         public
                         void run() {
-                            if (systemTray != null) {
-                                systemTray.shutdown();
-                            }
+                            // we have to make sure we shutdown on our own thread (and not the JavaFX thread)
+                            EventDispatch.runLater(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    if (systemTray != null) {
+                                        systemTray.shutdown();
+                                    }
+                                }
+                            });
                         }
                     });
                 }
@@ -1151,9 +1158,16 @@ class SystemTray {
                         @Override
                         public
                         void run() {
-                            if (systemTray != null) {
-                                systemTray.shutdown();
-                            }
+                            // we have to make sure we shutdown on our own thread (and not the SWT thread)
+                            EventDispatch.runLater(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    if (systemTray != null) {
+                                        systemTray.shutdown();
+                                    }
+                                }
+                            });
                         }
                     });
                 }
