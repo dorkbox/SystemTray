@@ -62,7 +62,7 @@ import dorkbox.util.OSUtil;
 import dorkbox.util.OSUtil.DesktopEnv;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.Swt;
+import dorkbox.util.swt.Swt;
 import dorkbox.util.jna.linux.AppIndicator;
 import dorkbox.util.jna.linux.Gtk;
 import dorkbox.util.jna.linux.GtkCheck;
@@ -1154,7 +1154,7 @@ class SystemTray {
                 else if (Swt.isLoaded) {
                     // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
                     // Also, it's nice to have us shutdown at the same time as the main application
-                    dorkbox.util.Swt.onShutdown(new Runnable() {
+                    dorkbox.util.swt.Swt.onShutdown(new Runnable() {
                         @Override
                         public
                         void run() {
