@@ -35,12 +35,10 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     // these have to be volatile, because they can be changed from any thread
     private volatile boolean isChecked = false;
 
-    private static volatile ImageIcon checkedIcon;
+    private static ImageIcon checkedIcon;
 
-    // this is ALWAYS called on the EDT.
-    SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
-        super(parent, entry);
-
+    private static
+    ImageIcon getCheckedIcon(SystemTray systemTray) {
         if (checkedIcon == null) {
             try {
                 JMenuItem jMenuItem = new JMenuItem();
@@ -54,8 +52,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
 
                 // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                int menuImageSize = SystemTray.get()
-                                              .getMenuImageSize();
+                int menuImageSize = systemTray.getMenuImageSize();
 
                 String checkmarkPath;
                 if (SystemTray.SWING_UI != null) {
@@ -69,6 +66,15 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 SystemTray.logger.error("Error creating check-mark image.", e);
             }
         }
+
+        return checkedIcon;
+    }
+
+    // this is ALWAYS called on the EDT.
+    SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
+        super(parent, entry);
+
+
     }
 
     @Override
@@ -163,10 +169,10 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 public
                 void run() {
                     if (isChecked) {
-                        _native.setIcon(checkedIcon);
+                        _native.setIcon(getCheckedIcon(parent.systemTray));
                     }
                     else {
-                        _native.setIcon(SwingMenuItem.transparentIcon);
+                        _native.setIcon(SwingMenuItem.getTransparentIcon(parent.systemTray));
                     }
                 }
             });

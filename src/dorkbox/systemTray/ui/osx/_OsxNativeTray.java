@@ -30,7 +30,6 @@ import dorkbox.util.jna.macos.cocoa.NSString;
  */
 public
 class _OsxNativeTray extends Tray {
-
     // is the system tray visible or not.
     private volatile boolean visible = false;
     private volatile File imageFile;
@@ -71,7 +70,7 @@ class _OsxNativeTray extends Tray {
 
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final OsxMenu osxMenu = new OsxMenu(null) {
+        final OsxMenu osxMenu = new OsxMenu(systemTray) {
 
             @Override
             public

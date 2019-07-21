@@ -66,7 +66,7 @@ class _GtkStatusIconNativeTray extends Tray {
         super(systemTray);
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        gtkMenu = new GtkMenu() {
+        gtkMenu = new GtkMenu(systemTray) {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {

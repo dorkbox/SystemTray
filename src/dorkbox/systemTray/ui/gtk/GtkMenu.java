@@ -29,6 +29,7 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.util.jna.linux.GtkEventDispatch;
 
@@ -37,7 +38,9 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
     private final List<GtkBaseMenuItem> menuEntries = new ArrayList<GtkBaseMenuItem>();
 
+    final SystemTray systemTray;
     private final GtkMenu parent;  // null when we are the main menu attached to the tray icon
+
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
 
     private volatile Pointer image;
@@ -53,9 +56,10 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // called by the system tray constructors
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    GtkMenu() {
+    GtkMenu(final SystemTray systemTray) {
         super(null);
         this.parent = null;
+        this.systemTray = systemTray;
     }
 
     // This is NOT a copy constructor!
@@ -64,6 +68,9 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     GtkMenu(final GtkMenu parent) {
         super(Gtk2.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
         this.parent = parent;
+
+        // we have to propagate instances of the system tray
+        this.systemTray = parent.systemTray;
     }
 
     GtkMenu getParent() {

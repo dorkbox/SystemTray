@@ -50,7 +50,8 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         // this class is initialized on the GTK dispatch thread.
 
         if (SystemTray.AUTO_FIX_INCONSISTENCIES &&
-            (SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray) && OSUtil.Linux.isUbuntu()) {
+            _AppIndicatorNativeTray.isLoaded &&
+            OSUtil.Linux.isUbuntu()) {
 
             // Ubuntu < 17.10 (so 14.04, 14.10, 15.04, 15.10, 16.04, 16.10, 17.04) SCREW UP checkboxes. Ubuntu 17.10 uses gnome-shell properly and thus works correctly.
             int[] version = OSUtil.Linux.getUbuntuVersion();
@@ -113,14 +114,14 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 if (checkedFile == null) {
                     Rectangle size = GtkTheme.getPixelTextHeight("X");
-                    int imageHeight = SystemTray.get().getMenuImageSize();
+                    int imageHeight = parent.systemTray.getMenuImageSize();
                     int height = size.height;
 
                     if (SystemTray.DEBUG) {
                         SystemTray.logger.debug("Fake checkmark size: {}px", height);
                     }
 
-                    if ((SystemTray.get().getMenu() instanceof _AppIndicatorNativeTray)) {
+                    if (_AppIndicatorNativeTray.isLoaded) {
                         // only app indicators don't need padding, as they automatically center the icon
                         checkedFile = HeavyCheckMark.get(color, height, height);
                     } else {

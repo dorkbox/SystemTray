@@ -36,35 +36,42 @@ import dorkbox.util.SwingUtil;
 @SuppressWarnings("ForLoopReplaceableByForEach")
 public
 class SwingMenu implements MenuPeer {
-
-    final JComponent _native;
     private final SwingMenu parent;
+
+    final SystemTray systemTray;
+    final JComponent _native;
+
+    // called by the system tray constructors
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    SwingMenu(final SystemTray systemTray) {
+        this.parent = null;
+        this.systemTray = systemTray;
+
+        TrayPopup trayPopup = new TrayPopup();
+        if (SystemTray.SWING_UI != null) {
+            trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
+        }
+        this._native = trayPopup;
+    }
 
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
     public
     SwingMenu(final SwingMenu parent, final Menu entry) {
         this.parent = parent;
+        this.systemTray = parent.systemTray;
 
-        if (parent == null) {
-            TrayPopup trayPopup = new TrayPopup();
-            if (SystemTray.SWING_UI != null) {
-                trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
-            }
-            this._native = trayPopup;
+        JMenu jMenu = new JMenu();
+        JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
+
+        if (SystemTray.SWING_UI != null) {
+            jMenu.setUI(SystemTray.SWING_UI.getItemUI(jMenu, entry));
+            popupMenu.setUI(SystemTray.SWING_UI.getMenuUI(popupMenu, entry));
         }
-        else {
-            JMenu jMenu = new JMenu();
-            JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
 
-            if (SystemTray.SWING_UI != null) {
-                jMenu.setUI(SystemTray.SWING_UI.getItemUI(jMenu, entry));
-                popupMenu.setUI(SystemTray.SWING_UI.getMenuUI(popupMenu, entry));
-            }
-
-            this._native = jMenu;
-            parent._native.add(jMenu);
-        }
+        this._native = jMenu;
+        parent._native.add(jMenu);
     }
 
     @Override

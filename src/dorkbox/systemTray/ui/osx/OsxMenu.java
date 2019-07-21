@@ -21,6 +21,7 @@ import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.util.jna.macos.cocoa.NSCellStateValue;
 import dorkbox.util.jna.macos.cocoa.NSImage;
@@ -30,6 +31,7 @@ import dorkbox.util.jna.macos.cocoa.NSMenuItem;
 import dorkbox.util.jna.macos.cocoa.NSString;
 
 class OsxMenu implements MenuPeer {
+    final SystemTray systemTray;
 
     // the native OSX components
     protected final OsxMenu parent;
@@ -45,18 +47,25 @@ class OsxMenu implements MenuPeer {
     @SuppressWarnings("FieldCanBeLocal")
     private final NSInteger indentationLevel = new NSInteger(1);
 
+    // called by the system tray constructors
+    // This is NOT a copy constructor!
+    @SuppressWarnings("IncompleteCopyConstructor")
+    OsxMenu(final SystemTray systemTray) {
+        this.parent = null;
+        this.systemTray = systemTray;
+    }
+
     OsxMenu(final OsxMenu parent) {
         this.parent = parent;
+        this.systemTray = parent.systemTray;
         _nativeMenu = new NSMenu();
 
-        if (parent != null) {
-            _native.setSubmenu(_nativeMenu);
-            parent.addItem(_native);
+        _native.setSubmenu(_nativeMenu);
+        parent.addItem(_native);
 
-            // this is to provide reasonable spacing for the menu item, otherwise it looks weird
-            _native.setIndentationLevel(indentationLevel);
-            _native.setImage(OsxBaseMenuItem.transparentIcon);
-        }
+        // this is to provide reasonable spacing for the menu item, otherwise it looks weird
+        _native.setIndentationLevel(indentationLevel);
+        _native.setImage(OsxBaseMenuItem.getTransparentIcon(parent.systemTray));
     }
 
     @Override

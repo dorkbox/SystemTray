@@ -32,9 +32,33 @@ import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
 class SwingMenuItem implements MenuItemPeer {
-
     // necessary to have the correct scaling + padding for the menu entries.
-    protected static ImageIcon transparentIcon;
+    private static ImageIcon transparentIcon = null;
+
+    static
+    ImageIcon getTransparentIcon(SystemTray systemTray) {
+        if (transparentIcon == null) {
+            try {
+                JMenuItem jMenuItem = new JMenuItem();
+
+                // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                if (SystemTray.SWING_UI != null) {
+                    jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
+                }
+
+                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+                int menuImageSize = systemTray.getMenuImageSize();
+
+                transparentIcon = new ImageIcon(ImageResizeUtil.getTransparentImage(menuImageSize)
+                                                               .getAbsolutePath());
+            } catch (Exception e) {
+                SystemTray.logger.error("Error creating transparent image.", e);
+            }
+        }
+
+        return transparentIcon;
+    }
+
 
     protected final SwingMenu parent;
     protected final JMenuItem _native = new JMenuItem();
@@ -53,27 +77,7 @@ class SwingMenuItem implements MenuItemPeer {
         _native.setHorizontalAlignment(SwingConstants.LEFT);
         parent._native.add(_native);
 
-        if (transparentIcon == null) {
-            try {
-                JMenuItem jMenuItem = new JMenuItem();
-
-                // do the same modifications that would also happen (if specified) for the actual displayed menu items
-                if (SystemTray.SWING_UI != null) {
-                    jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
-                }
-
-                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                int menuImageSize = SystemTray.get()
-                                              .getMenuImageSize();
-
-                transparentIcon = new ImageIcon(ImageResizeUtil.getTransparentImage(menuImageSize)
-                                                               .getAbsolutePath());
-            } catch (Exception e) {
-                SystemTray.logger.error("Error creating transparent image.", e);
-            }
-        }
-
-        _native.setIcon(transparentIcon);
+        _native.setIcon(getTransparentIcon(parent.systemTray));
     }
 
     @Override

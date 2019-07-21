@@ -70,7 +70,7 @@ class _WindowsNativeTray extends Tray {
         super(systemTray);
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null, null) {
+        final SwingMenu swingMenu = new SwingMenu(systemTray) {
             @Override
             public
             void setImage(final MenuItem menuItem) {
