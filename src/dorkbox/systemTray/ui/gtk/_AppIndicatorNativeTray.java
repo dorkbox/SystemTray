@@ -77,6 +77,8 @@ import dorkbox.util.jna.linux.structs.AppIndicatorInstanceStruct;
 @SuppressWarnings("Duplicates")
 public final
 class _AppIndicatorNativeTray extends Tray {
+    public static boolean isLoaded = false;
+
     private volatile AppIndicatorInstanceStruct appIndicator;
     private boolean isActive = false;
 
@@ -98,8 +100,10 @@ class _AppIndicatorNativeTray extends Tray {
     _AppIndicatorNativeTray(final SystemTray systemTray) {
         super(systemTray);
 
+        isLoaded = true;
+
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final GtkMenu gtkMenu = new GtkMenu() {
+        final GtkMenu gtkMenu = new GtkMenu(systemTray) {
             /**
              * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
              *
