@@ -127,7 +127,7 @@ class AppIndicatorExtension extends ExtensionSupport {
         boolean success = ExtensionSupport.writeFile(metadata, metaDatafile);
         if (success) {
             // copies our provided extension files to the correct location on disk
-            ExtensionSupport.installZip("appindicator.zip", directory  );
+            ExtensionSupport.installZip("appindicator.zip", directory);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Enabling appindicator gnome-shell extension");
