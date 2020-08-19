@@ -19,14 +19,14 @@ import static com.sun.jna.platform.win32.WinDef.HWND;
 import static com.sun.jna.platform.win32.WinDef.LPARAM;
 import static com.sun.jna.platform.win32.WinDef.WPARAM;
 import static com.sun.jna.platform.win32.WinUser.WM_QUIT;
-import static dorkbox.util.jna.windows.Shell32.NIM_ADD;
-import static dorkbox.util.jna.windows.Shell32.NIM_DELETE;
-import static dorkbox.util.jna.windows.Shell32.NIM_MODIFY;
-import static dorkbox.util.jna.windows.Shell32.Shell_NotifyIcon;
-import static dorkbox.util.jna.windows.User32.WM_LBUTTONUP;
-import static dorkbox.util.jna.windows.User32.WM_RBUTTONUP;
-import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_SHELLNOTIFY;
-import static dorkbox.util.jna.windows.WindowsEventDispatch.WM_TASKBARCREATED;
+import static dorkbox.jna.windows.Shell32.NIM_ADD;
+import static dorkbox.jna.windows.Shell32.NIM_DELETE;
+import static dorkbox.jna.windows.Shell32.NIM_MODIFY;
+import static dorkbox.jna.windows.Shell32.Shell_NotifyIcon;
+import static dorkbox.jna.windows.User32.WM_LBUTTONUP;
+import static dorkbox.jna.windows.User32.WM_RBUTTONUP;
+import static dorkbox.jna.windows.WindowsEventDispatch.WM_SHELLNOTIFY;
+import static dorkbox.jna.windows.WindowsEventDispatch.WM_TASKBARCREATED;
 
 import java.awt.Point;
 import java.io.File;
@@ -41,13 +41,13 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.jna.windows.HBITMAPWrap;
-import dorkbox.util.jna.windows.HICONWrap;
-import dorkbox.util.jna.windows.Listener;
-import dorkbox.util.jna.windows.Shell32;
-import dorkbox.util.jna.windows.User32;
-import dorkbox.util.jna.windows.WindowsEventDispatch;
-import dorkbox.util.jna.windows.structs.NOTIFYICONDATA;
+import dorkbox.jna.windows.HBITMAPWrap;
+import dorkbox.jna.windows.HICONWrap;
+import dorkbox.jna.windows.Listener;
+import dorkbox.jna.windows.Shell32;
+import dorkbox.jna.windows.User32;
+import dorkbox.jna.windows.WindowsEventDispatch;
+import dorkbox.jna.windows.structs.NOTIFYICONDATA;
 
 
 /**

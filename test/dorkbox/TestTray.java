@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Random;
 
+import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
@@ -29,7 +30,6 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
-import dorkbox.util.OS;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set

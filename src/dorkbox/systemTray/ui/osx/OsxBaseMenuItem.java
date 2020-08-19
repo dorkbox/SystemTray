@@ -20,9 +20,9 @@ import java.awt.image.BufferedImage;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.util.ImageUtil;
-import dorkbox.util.jna.macos.cocoa.NSImage;
-import dorkbox.util.jna.macos.cocoa.NSInteger;
-import dorkbox.util.jna.macos.cocoa.NSMenuItem;
+import dorkbox.jna.macos.cocoa.NSImage;
+import dorkbox.jna.macos.cocoa.NSInteger;
+import dorkbox.jna.macos.cocoa.NSMenuItem;
 
 abstract
 class OsxBaseMenuItem implements EntryPeer {

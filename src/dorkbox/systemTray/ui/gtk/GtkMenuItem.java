@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.util.jna.linux.Gtk.Gtk2;
+import static dorkbox.jna.linux.Gtk.Gtk2;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,9 +26,9 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.EventDispatch;
-import dorkbox.util.jna.linux.GCallback;
-import dorkbox.util.jna.linux.GObject;
-import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.GCallback;
+import dorkbox.jna.linux.GObject;
+import dorkbox.jna.linux.GtkEventDispatch;
 
 class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     private final GtkMenu parent;

@@ -23,12 +23,12 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.util.jna.macos.cocoa.NSCellStateValue;
-import dorkbox.util.jna.macos.cocoa.NSImage;
-import dorkbox.util.jna.macos.cocoa.NSInteger;
-import dorkbox.util.jna.macos.cocoa.NSMenu;
-import dorkbox.util.jna.macos.cocoa.NSMenuItem;
-import dorkbox.util.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.NSCellStateValue;
+import dorkbox.jna.macos.cocoa.NSImage;
+import dorkbox.jna.macos.cocoa.NSInteger;
+import dorkbox.jna.macos.cocoa.NSMenu;
+import dorkbox.jna.macos.cocoa.NSMenuItem;
+import dorkbox.jna.macos.cocoa.NSString;
 
 class OsxMenu implements MenuPeer {
     final SystemTray systemTray;

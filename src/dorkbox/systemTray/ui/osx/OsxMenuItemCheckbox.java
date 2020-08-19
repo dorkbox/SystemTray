@@ -22,9 +22,9 @@ import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
-import dorkbox.util.jna.macos.cocoa.NSCellStateValue;
-import dorkbox.util.jna.macos.cocoa.NSString;
-import dorkbox.util.jna.macos.cocoa.OsxClickCallback;
+import dorkbox.jna.macos.cocoa.NSCellStateValue;
+import dorkbox.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.OsxClickCallback;
 
 class OsxMenuItemCheckbox extends OsxBaseMenuItem implements CheckboxPeer, OsxClickCallback {
 

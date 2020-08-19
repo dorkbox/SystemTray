@@ -17,7 +17,7 @@ package dorkbox.systemTray.ui.osx;
 
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.peer.StatusPeer;
-import dorkbox.util.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.NSString;
 
 class OsxMenuItemStatus extends OsxBaseMenuItem implements StatusPeer {
 

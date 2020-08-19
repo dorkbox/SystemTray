@@ -16,7 +16,7 @@
 package dorkbox.systemTray.ui.osx;
 
 import dorkbox.systemTray.peer.EntryPeer;
-import dorkbox.util.jna.macos.cocoa.NSMenuItem;
+import dorkbox.jna.macos.cocoa.NSMenuItem;
 
 class OsxMenuItemSeparator implements EntryPeer {
 

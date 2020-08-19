@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.util.jna.linux.Gtk.Gtk2;
+import static dorkbox.jna.linux.Gtk.Gtk2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.GtkEventDispatch;
 
 @SuppressWarnings("deprecation")
 class GtkMenu extends GtkBaseMenuItem implements MenuPeer {

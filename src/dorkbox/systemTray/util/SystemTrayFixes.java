@@ -21,9 +21,9 @@ import static javassist.bytecode.Opcode.BIPUSH;
 import java.awt.AWTException;
 import java.util.Locale;
 
+import dorkbox.jna.JnaClassUtils;
+import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.ClassLoaderUtil;
-import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
@@ -122,6 +122,13 @@ class SystemTrayFixes {
             // not fixing things that are not broken.
             return;
         }
+
+        // ONLY java <= 8
+        if (OS.javaVersion > 8) {
+            // there are problems with java 9+
+            return;
+        }
+
 
         if (isSwingTrayLoaded()) {
             // we have to throw a significant error.
@@ -231,8 +238,8 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            ClassLoaderUtil.Bootstrap.defineClass(trayBytes);
-            ClassLoaderUtil.Bootstrap.defineClass(trayIconBytes);
+            JnaClassUtils.defineClass(trayBytes);
+            JnaClassUtils.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon size to: {}", trayIconSize);
@@ -412,7 +419,7 @@ class SystemTrayFixes {
             mouseEventBytes = trayClass.toBytecode();
 
             // whoosh, past the classloader and directly into memory.
-            ClassLoaderUtil.Bootstrap.defineClass(mouseEventBytes);
+            JnaClassUtils.defineClass(mouseEventBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed mouse trigger for MacOSX");
@@ -691,11 +698,11 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            ClassLoaderUtil.Bootstrap.defineClass(runnableBytes);
-            ClassLoaderUtil.Bootstrap.defineClass(eFrameBytes);
-            ClassLoaderUtil.Bootstrap.defineClass(iconCanvasBytes);
-            ClassLoaderUtil.Bootstrap.defineClass(trayIconBytes);
-            ClassLoaderUtil.Bootstrap.defineClass(trayPeerBytes);
+            JnaClassUtils.defineClass(runnableBytes);
+            JnaClassUtils.defineClass(eFrameBytes);
+            JnaClassUtils.defineClass(iconCanvasBytes);
+            JnaClassUtils.defineClass(trayIconBytes);
+            JnaClassUtils.defineClass(trayPeerBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon background color");

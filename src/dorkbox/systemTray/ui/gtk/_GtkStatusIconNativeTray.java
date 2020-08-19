@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.util.jna.linux.Gtk.Gtk2;
+import static dorkbox.jna.linux.Gtk.Gtk2;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,11 +25,11 @@ import com.sun.jna.Pointer;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.util.JavaFX;
-import dorkbox.util.jna.linux.GEventCallback;
-import dorkbox.util.jna.linux.GObject;
-import dorkbox.util.jna.linux.GtkEventDispatch;
-import dorkbox.util.jna.linux.structs.GdkEventButton;
+import dorkbox.util.javaFx.JavaFX;
+import dorkbox.jna.linux.GEventCallback;
+import dorkbox.jna.linux.GObject;
+import dorkbox.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.structs.GdkEventButton;
 
 /**
  * Class for handling all system tray interactions via GTK.

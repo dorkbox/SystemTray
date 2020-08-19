@@ -22,10 +22,10 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.EventDispatch;
-import dorkbox.util.jna.macos.cocoa.NSCellStateValue;
-import dorkbox.util.jna.macos.cocoa.NSImage;
-import dorkbox.util.jna.macos.cocoa.NSString;
-import dorkbox.util.jna.macos.cocoa.OsxClickCallback;
+import dorkbox.jna.macos.cocoa.NSCellStateValue;
+import dorkbox.jna.macos.cocoa.NSImage;
+import dorkbox.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.OsxClickCallback;
 
 class OsxMenuItem extends OsxBaseMenuItem implements MenuItemPeer, OsxClickCallback {
 

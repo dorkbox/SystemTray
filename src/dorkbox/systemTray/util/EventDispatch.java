@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.LoggerFactory;
 
 import dorkbox.util.NamedThreadFactory;
-import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.GtkEventDispatch;
 
 /**
  * Adds events to a single thread event dispatch, so that regardless of OS, all event callbacks happen on the same thread -- which is NOT

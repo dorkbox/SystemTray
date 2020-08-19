@@ -38,6 +38,12 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.jna.linux.AppIndicator;
+import dorkbox.jna.linux.Gtk;
+import dorkbox.jna.linux.GtkCheck;
+import dorkbox.jna.linux.GtkEventDispatch;
+import dorkbox.os.OS;
+import dorkbox.os.OSUtil;
 import dorkbox.systemTray.gnomeShell.AppIndicatorExtension;
 import dorkbox.systemTray.gnomeShell.DummyFile;
 import dorkbox.systemTray.gnomeShell.LegacyExtension;
@@ -56,17 +62,10 @@ import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.systemTray.util.WindowsSwingUI;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
-import dorkbox.util.JavaFX;
-import dorkbox.util.OS;
-import dorkbox.util.OSUtil;
-import dorkbox.util.OSUtil.DesktopEnv;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.javaFx.JavaFX;
 import dorkbox.util.swt.Swt;
-import dorkbox.util.jna.linux.AppIndicator;
-import dorkbox.util.jna.linux.Gtk;
-import dorkbox.util.jna.linux.GtkCheck;
-import dorkbox.util.jna.linux.GtkEventDispatch;
 
 
 /**
@@ -308,7 +307,7 @@ class SystemTray {
                         //   >= 3.26 - (3.26 removed the legacy tray) app-indicator icons via shell extensions + libappindicator work
 
 
-                        String gnomeVersion = DesktopEnv.getGnomeVersion();
+                        String gnomeVersion = OSUtil.DesktopEnv.getGnomeVersion();
                         if (gnomeVersion == null) {
                             // this shouldn't ever happen!
 
@@ -412,7 +411,7 @@ class SystemTray {
                 case KDE: {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
 
-                    double plasmaVersion = DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OSUtil.DesktopEnv.getPlasmaVersion();
 
                     if (DEBUG) {
                         logger.debug("KDE Plasma Version: {}", plasmaVersion);
@@ -659,7 +658,7 @@ class SystemTray {
                                 logger.debug("Forcing GTK2 because JavaFX is GTK2");
                             }
                         }
-                        else if (Swt.isLoaded) {
+                        else if (Swt.isLoaded && !Swt.isGtk3) {
                             // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                             // System.setProperty("SWT_GTK3", "0");
 

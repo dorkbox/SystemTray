@@ -20,10 +20,10 @@ import java.io.File;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
-import dorkbox.util.jna.macos.cocoa.NSImage;
-import dorkbox.util.jna.macos.cocoa.NSStatusBar;
-import dorkbox.util.jna.macos.cocoa.NSStatusItem;
-import dorkbox.util.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.NSImage;
+import dorkbox.jna.macos.cocoa.NSStatusBar;
+import dorkbox.jna.macos.cocoa.NSStatusItem;
+import dorkbox.jna.macos.cocoa.NSString;
 
 /**
  *

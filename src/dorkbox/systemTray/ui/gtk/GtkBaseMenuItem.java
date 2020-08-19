@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.util.jna.linux.Gtk.Gtk2;
+import static dorkbox.jna.linux.Gtk.Gtk2;
 
 import java.io.File;
 
@@ -23,8 +23,8 @@ import com.sun.jna.Pointer;
 
 import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.jna.linux.GObject;
-import dorkbox.util.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.GObject;
+import dorkbox.jna.linux.GtkEventDispatch;
 
 abstract
 class GtkBaseMenuItem implements EntryPeer {

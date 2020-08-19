@@ -20,9 +20,9 @@ import java.util.HashMap;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 
-import dorkbox.util.jna.macos.cocoa.NSObject;
-import dorkbox.util.jna.macos.cocoa.OsxClickCallback;
-import dorkbox.util.jna.macos.foundation.ObjectiveC;
+import dorkbox.jna.macos.cocoa.NSObject;
+import dorkbox.jna.macos.cocoa.OsxClickCallback;
+import dorkbox.jna.macos.foundation.ObjectiveC;
 
 //@formatter:off
 class OsxClickAction extends NSObject {

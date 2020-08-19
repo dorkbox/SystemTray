@@ -34,12 +34,11 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import dorkbox.executor.ShellAsyncExecutor;
-import dorkbox.executor.ShellExecutor;
+import dorkbox.executor.Executor;
+import dorkbox.os.OS;
+import dorkbox.os.OSUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
-import dorkbox.util.OS;
-import dorkbox.util.OSUtil;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
 public
@@ -47,14 +46,18 @@ class ExtensionSupport {
     public static
     List<String> getEnabledExtensions() {
         // gsettings get org.gnome.shell enabled-extensions
-        final ShellExecutor gsettings = new ShellExecutor();
-        gsettings.setExecutable("gsettings");
-        gsettings.addArgument("get");
-        gsettings.addArgument("org.gnome.shell");
-        gsettings.addArgument("enabled-extensions");
-        gsettings.start();
+        final Executor gsettings = new Executor();
+        gsettings.command("gsettings", "get", "org.gnome.shell", "enabled-extensions");
+        gsettings.enableRead();
 
-        String output = gsettings.getOutput();
+        String output = "";
+        try {
+            output = gsettings.startAsShellBlocking().getOutput().utf8();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Unable to get enabled extensions!", e);
+            return new ArrayList<>(0);
+        }
 
         // now we have to enable us if we aren't already enabled
 
@@ -144,13 +147,7 @@ class ExtensionSupport {
         // gsettings set org.gnome.shell enabled-extensions "['SystemTray@Dorkbox']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@Dorkbox']"
-        final ShellExecutor setGsettings = new ShellExecutor();
-        setGsettings.setExecutable("gsettings");
-        setGsettings.addArgument("set");
-        setGsettings.addArgument("org.gnome.shell");
-        setGsettings.addArgument("enabled-extensions");
-        setGsettings.addArgument(stringBuilder.toString());
-        setGsettings.start();
+        Executor.Companion.run("gsettings", "set", "org.gnome.shell", "enabled-extensions", stringBuilder.toString());
     }
 
     public static
@@ -183,7 +180,13 @@ class ExtensionSupport {
         logger.info("Restarting gnome-shell via '{}' so tray notification changes can be applied.", restartCommand);
 
         // now we have to restart the gnome shell via bash in a background process
-        ShellAsyncExecutor.runShell(restartCommand);
+        final Executor executor = new Executor();
+        executor.command(restartCommand);
+        try {
+            executor.startAsShellAsync();
+        } catch (IOException e) {
+            logger.error("Unable to restart gnome shell!", e);
+        }
 
         // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
         // Until then however, there will be errors which can be ignored, because the shell-restart means everything works.

@@ -15,7 +15,7 @@
  */
 package dorkbox.systemTray.ui.gtk;
 
-import static dorkbox.util.jna.linux.Gtk.Gtk2;
+import static dorkbox.jna.linux.Gtk.Gtk2;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -24,17 +24,17 @@ import java.awt.event.ActionListener;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.jna.linux.GCallback;
+import dorkbox.jna.linux.GObject;
+import dorkbox.jna.linux.GtkEventDispatch;
+import dorkbox.jna.linux.GtkTheme;
+import dorkbox.os.OSUtil;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.OSUtil;
-import dorkbox.util.jna.linux.GCallback;
-import dorkbox.util.jna.linux.GObject;
-import dorkbox.util.jna.linux.GtkEventDispatch;
-import dorkbox.util.jna.linux.GtkTheme;
 
 @SuppressWarnings("deprecation")
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
