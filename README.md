@@ -1,7 +1,6 @@
-SystemTray
 ==========
 
-###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/SystemTray) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/SystemTray) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/SystemTray) [![Bitbucket](https://badge.dorkbox.com/bitbucket.svg "Bitbucket")](https://bitbucket.org/dorkbox/SystemTray)
+###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/SystemTray) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/SystemTray) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/SystemTray)
 
 
 Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 6+.  
@@ -82,7 +81,8 @@ Problems and Restrictions
                      
  - **Linux/Unix Menus** Some Linux environments only support right-click to display the menu, and it is not possible to change the behavior.
  
- - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
+ - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently
+  call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
 
 - **WSL** Windows Subsystem for Linux requires some [extra work](https://github.com/dorkbox/SystemTray/issues/88) to get a tray icon showing correctly, either by starting java under windows (instead of WSL), or by adding an X-Server.
  
