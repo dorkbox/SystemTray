@@ -27,9 +27,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 
 import dorkbox.jna.linux.GtkEventDispatch;
-import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 /**

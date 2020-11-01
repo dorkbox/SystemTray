@@ -20,8 +20,8 @@ import static dorkbox.systemTray.SystemTray.logger;
 import java.io.File;
 import java.util.List;
 
-import dorkbox.os.OSUtil;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.OSUtil;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
 public

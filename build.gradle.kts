@@ -14,41 +14,31 @@
  * limitations under the License.
  */
 
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import net.sf.json.JSONObject
-import java.net.URL
 import java.time.Instant
 import java.util.*
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.full.declaredMemberProperties
 
 ///////////////////////////////
 //////    PUBLISH TO SONATYPE / MAVEN CENTRAL
-//////
-////// TESTING : local maven repo <PUBLISHING - publishToMavenLocal>
-//////
-////// RELEASE : sonatype / maven central, <PUBLISHING - publish> then <RELEASE - closeAndReleaseRepository>
+////// TESTING : (to local maven repo) <'publish and release' - 'publishToMavenLocal'>
+////// RELEASE : (to sonatype/maven central), <'publish and release' - 'publishToSonatypeAndRelease'>
 ///////////////////////////////
 
-println("\tGradle ${project.gradle.gradleVersion} on Java ${JavaVersion.current()}")
+gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
+gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
     java
-    signing
-    `maven-publish`
 
-    // close and release on sonatype
-    id("io.codearte.nexus-staging") version "0.20.0"
+    id("com.dorkbox.GradleUtils") version "1.12"
+    id("com.dorkbox.Licensing") version "2.5"
+    id("com.dorkbox.VersionUpdate") version "2.0"
+    id("com.dorkbox.GradlePublish") version "1.7"
+//    id("com.dorkbox.GradleModuleInfo") version "1.0"
 
     id("com.dorkbox.CrossCompile") version "1.0.1"
-    id("com.dorkbox.Licensing") version "1.4"
-    id("com.dorkbox.VersionUpdate") version "1.4.1"
-    id("com.dorkbox.GradleUtils") version "1.0"
 
-    kotlin("jvm") version "1.3.30"
+    kotlin("jvm") version "1.3.72"
 }
-
-val IS_COMPILING_JAVAFX = gradle.startParameter.taskNames.filterNot { it?.toLowerCase()?.contains("javafx") ?: false }.isEmpty()
 
 object Extras {
     // set for the project
@@ -63,80 +53,36 @@ object Extras {
     const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
     val buildDate = Instant.now().toString()
 
-    val JAVA_VERSION = JavaVersion.VERSION_1_6.toString()
-
-    var sonatypeUserName = ""
-    var sonatypePassword = ""
+    val JAVA_VERSION = JavaVersion.VERSION_11.toString()
 }
 
 ///////////////////////////////
 /////  assign 'Extras'
 ///////////////////////////////
-description = Extras.description
-group = Extras.group
-version = Extras.version
-
-val propsFile = File("$projectDir/../../gradle.properties").normalize()
-if (propsFile.canRead()) {
-    println("\tLoading custom property data from: [$propsFile]")
-
-    val props = Properties()
-    propsFile.inputStream().use {
-        props.load(it)
-    }
-
-    val extraProperties = Extras::class.declaredMemberProperties.filterIsInstance<KMutableProperty<String>>()
-    props.forEach { (k, v) -> run {
-        val key = k as String
-        val value = v as String
-
-        val member = extraProperties.find { it.name == key }
-        if (member != null) {
-            member.setter.call(Extras::class.objectInstance, value)
-        }
-        else {
-            project.extra.set(k, v)
-        }
-    }}
-}
+GradleUtils.load("$projectDir/../../gradle.properties", Extras)
+GradleUtils.fixIntellijPaths()
+GradleUtils.defaultResolutionStrategy()
+GradleUtils.compileConfiguration(JavaVersion.VERSION_1_6)
 
 
 licensing {
     license(License.APACHE_2) {
-        author(Extras.vendor)
+        description(Extras.description)
         url(Extras.url)
-        note(Extras.description)
-    }
-
-    license("Dorkbox Utils", License.APACHE_2) {
         author(Extras.vendor)
-        url("https://git.dorkbox.com/dorkbox/Utilities")
-    }
 
-    license("JNA", License.APACHE_2) {
-        copyright(2011)
-        author("Timothy Wall")
-        url("https://github.com/twall/jna")
-    }
-
-    license("Lantern", License.APACHE_2) {
-        copyright(2010)
-        author("Brave New Software Project, Inc.")
-        url("https://github.com/getlantern/lantern")
-    }
-
-    license("QZTray", License.APACHE_2) {
-        copyright (2016)
-        author ("Tres Finocchiaro")
-        author ("QZ Industries, LLC")
-        url("https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java")
-        note("Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.")
-    }
-
-    license("SLF4J", License.MIT) {
-        copyright(2008)
-        author("QOS.ch")
-        url("http://www.slf4j.org")
+        extra("Lantern", License.APACHE_2) {
+            it.copyright(2010)
+            it.author("Brave New Software Project, Inc.")
+            it.url("https://github.com/getlantern/lantern")
+        }
+        extra("QZTray", License.APACHE_2) {
+            it.copyright(2016)
+            it.author("Tres Finocchiaro")
+            it.author("QZ Industries, LLC")
+            it.url("https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java")
+            it.note("Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.")
+        }
     }
 }
 
@@ -155,9 +101,9 @@ val swtExampleCompile : Configuration by configurations.creating { extendsFrom(c
 
 val SourceSetContainer.example: SourceSet get() = maybeCreate("example")
 fun SourceSetContainer.example(block: SourceSet.() -> Unit) = example.apply(block)
-val org.gradle.api.tasks.SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
+val SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
-val org.gradle.api.tasks.SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
+val SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
 fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.apply(block)
 
 sourceSets {
@@ -247,9 +193,6 @@ sourceSets {
 repositories {
     mavenLocal() // this must be first!
 
-    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
-    maven("http://maven-eclipse.github.io/maven")
-
     jcenter()
 }
 
@@ -257,28 +200,6 @@ repositories {
 ///////////////////////////////
 //////    Task defaults
 ///////////////////////////////
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-    val current = JavaVersion.current()
-
-    if (!IS_COMPILING_JAVAFX) {
-        if (current > JavaVersion.VERSION_1_8) {
-            throw GradleException("The WindowsXP compatibility layer is not compatible with Java9+")
-        }
-        sourceCompatibility = Extras.JAVA_VERSION
-        targetCompatibility = Extras.JAVA_VERSION
-    }
-    else {
-        if (current < JavaVersion.VERSION_1_7) {
-            throw GradleException("This build must be run with Java 7+ to compile JavaFX example files")
-        }
-    }
-}
-
-tasks.withType<Jar> {
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-}
-
 val jar: Jar by tasks
 jar.apply {
     manifest {
@@ -297,48 +218,111 @@ jar.apply {
     }
 }
 
-tasks.compileJava.get().apply {
-    println("\tCompiling classes to Java $sourceCompatibility")
-}
+//fun getSwtMavenName(): String {
+//    // SEE: https://repo1.maven.org/maven2/org/eclipse/platform/
+//
+//    // windows
+//        // org.eclipse.swt.win32.win32.x86
+//        // org.eclipse.swt.win32.win32.x86_64
+//
+//    // linux
+//        // org.eclipse.swt.gtk.linux.x86
+//        // org.eclipse.swt.gtk.linux.x86_64
+//
+//    // macoxs
+//        // org.eclipse.swt.cocoa.macosx.x86_64
+//
+//    val currentOS = org.gradle.internal.os.OperatingSystem.current()
+//    val windowingTk = when {
+//        currentOS.isWindows -> "win32"
+//        currentOS.isMacOsX  -> "cocoa"
+//        else                -> "gtk"
+//    }
+//
+//    val platform = when {
+//        currentOS.isWindows -> "win32"
+//        currentOS.isMacOsX  -> "macosx"
+//        else                -> "linux"
+//    }
+//
+//
+//    var arch = System.getProperty("os.arch")
+//    arch = when {
+//        arch.matches(".*64.*".toRegex()) -> "x86_64"
+//        else                             -> "x86"
+//    }
+//
+//    return "$windowingTk.$platform.$arch"
+//}
+//
+//configurations.all {
+//    resolutionStrategy {
+//        dependencySubstitution {
+//            // The maven property ${osgi.platform} is not handled by Gradle for the SWT builds
+//            // so we replace the dependency, using the osgi platform from the project settings
+//            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
+//                    .with(module("org.eclipse.platform:org.eclipse.swt.gtk.${getSwtMavenName()}:3.110.0"))
+//        }
+//    }
+//}
 
 
 dependencies {
+    implementation("com.dorkbox:Utilities:1.5.1")
     implementation("com.dorkbox:ShellExecutor:1.1+")
-    implementation("org.javassist:javassist:3.24.1-GA")
+//    implementation("com.dorkbox:Executor:1.1") // java 11
 
-    val jnaVersion = "5.2.0"
+    implementation("org.javassist:javassist:3.27.0-GA")
 
+    val jnaVersion = "5.6.0"
     implementation("net.java.dev.jna:jna:$jnaVersion")
     implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 
-    implementation("org.slf4j:slf4j-api:1.7.26")
+    implementation("org.slf4j:slf4j-api:1.7.30")
+    val log = runtimeOnly("ch.qos.logback:logback-classic:1.2.3")!!
 
 
-    val log = runtime("ch.qos.logback:logback-classic:1.2.3")!!
-
-    //  because the eclipse release of SWT is abandoned on maven, this repo has a newer version of SWT,
-    //  http://maven-eclipse.github.io/maven
-    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
-    val swtDep = testCompileOnly("org.eclipse.swt:${getSwtMavenName()}:4.6.1")!!
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
-    if (IS_COMPILING_JAVAFX) {
-        val current = JavaVersion.current()
-        // Java7/8 include JavaFX seperately. Newer versions of java bundle it (or, you can download/install it separately)
-        if (current == JavaVersion.VERSION_1_7 || current == JavaVersion.VERSION_1_8) {
-            val javaFxFile = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
-            if (!File(javaFxFile).exists()) {
-                throw GradleException("JavaFX file $javaFxFile cannot be found")
-            }
+    val current = JavaVersion.current()
 
+    // Java7/8 include JavaFX separately. Newer versions of java bundle it (or, you can download/install it separately)
+    if (current == JavaVersion.VERSION_1_7 || current == JavaVersion.VERSION_1_8) {
+        val javaFxFile = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
+        if (File(javaFxFile).exists()) {
             val javaFX = api(files(javaFxFile))
-
             javaFxExampleCompile.dependencies += listOf(javaFX, log)
         }
+    } else {
+        // also see: https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
+        val currentOS = org.gradle.internal.os.OperatingSystem.current()
+        val platform = when {
+            currentOS.isWindows -> { "win" }
+            currentOS.isLinux -> { "linux" }
+            currentOS.isMacOsX -> { "mac" }
+            else -> { "unknown" }
+        }
+
+        val jfx1 = testImplementation("org.openjfx:javafx-base:11:${platform}")
+        val jfx2 = testImplementation("org.openjfx:javafx-graphics:11:${platform}")
+        val jfx3 = testImplementation("org.openjfx:javafx-controls:11:${platform}")
+
+        javaFxExampleCompile.dependencies += listOf(jfx1, jfx2, jfx3, log)
     }
 
-    implementation("com.dorkbox:Utilities:1.1")
+
+    // This is really SWT version 4.xx? no idea how the internal versions are tracked
+    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
+    //  because the eclipse release of SWT is sPecIaL!
+    val swtName = GradleUtils.getSwtMavenId("3.114.100")
+    val swtDep = testCompileOnly(swtName) {
+        isTransitive = false
+    }
+
+    compileOnly(swtName) {
+        isTransitive = false
+    }
 
     exampleCompile.dependencies += log
     swtExampleCompile.dependencies += listOf(swtDep, log)
@@ -432,132 +416,3 @@ task("jarAllExamples") {
     description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
 }
 
-
-operator fun Regex.contains(text: CharSequence): Boolean = this.matches(text)
-fun getSwtMavenName(): String {
-    val currentOS = org.gradle.internal.os.OperatingSystem.current()
-    val platform = when {
-            currentOS.isWindows -> "win32"
-            currentOS.isMacOsX  -> "macosx"
-            else                -> "linux"
-        }
-
-
-    var arch = System.getProperty("os.arch")
-    arch = when {
-        arch.matches(".*64.*".toRegex()) -> "x86_64"
-        else                             -> "x86"
-    }
-
-
-    //  because the eclipse release of SWT is abandoned on maven, this MAVEN repo has newer version of SWT,
-    //  https://github.com/maven-eclipse/maven-eclipse.github.io   for the website about it
-    //  http://maven-eclipse.github.io/maven  for the maven repo
-    return "org.eclipse.swt.gtk.$platform.$arch"
-}
-
-///////////////////////////////
-//////    PUBLISH TO SONATYPE / MAVEN CENTRAL
-//////
-////// TESTING : local maven repo <PUBLISHING - publishToMavenLocal>
-//////
-////// RELEASE : sonatype / maven central, <PUBLISHING - publish> then <RELEASE - closeAndReleaseRepository>
-///////////////////////////////
-val sourceJar = task<Jar>("sourceJar") {
-    description = "Creates a JAR that contains the source code."
-
-    from(sourceSets["main"].java)
-
-    archiveClassifier.set("sources")
-}
-
-val javaDocJar = task<Jar>("javaDocJar") {
-    description = "Creates a JAR that contains the javadocs."
-
-    archiveClassifier.set("javadoc")
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = Extras.group
-            artifactId = Extras.id
-            version = Extras.version
-
-            from(components["java"])
-
-            artifact(sourceJar)
-            artifact(javaDocJar)
-
-            pom {
-                name.set(Extras.name)
-                description.set(Extras.description)
-                url.set(Extras.url)
-
-                issueManagement {
-                    url.set("${Extras.url}/issues")
-                    system.set("Gitea Issues")
-                }
-                organization {
-                    name.set(Extras.vendor)
-                    url.set("https://dorkbox.com")
-                }
-                developers {
-                    developer {
-                        id.set("dorkbox")
-                        name.set(Extras.vendor)
-                        email.set("email@dorkbox.com")
-                    }
-                }
-                scm {
-                    url.set(Extras.url)
-                    connection.set("scm:${Extras.url}.git")
-                }
-            }
-
-        }
-    }
-
-
-    repositories {
-        maven {
-            setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
-            credentials {
-                username = Extras.sonatypeUserName
-                password = Extras.sonatypePassword
-            }
-        }
-    }
-
-
-    tasks.withType<PublishToMavenRepository> {
-        onlyIf {
-            publication == publishing.publications["maven"] && repository == publishing.repositories["maven"]
-        }
-    }
-
-    tasks.withType<PublishToMavenLocal> {
-        onlyIf {
-            publication == publishing.publications["maven"]
-        }
-    }
-
-    // output the release URL in the console
-    tasks["releaseRepository"].doLast {
-        val url = "https://oss.sonatype.org/content/repositories/releases/"
-        val projectName = Extras.group.replace('.', '/')
-        val name = Extras.name
-        val version = Extras.version
-
-        println("Maven URL: $url$projectName/$name/$version/")
-    }
-}
-
-nexusStaging {
-    username = Extras.sonatypeUserName
-    password = Extras.sonatypePassword
-}
-
-signing {
-    sign(publishing.publications["maven"])
-}

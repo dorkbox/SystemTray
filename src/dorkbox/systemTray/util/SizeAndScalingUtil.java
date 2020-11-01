@@ -31,11 +31,11 @@ import javax.swing.JMenuItem;
 
 import dorkbox.jna.linux.GtkTheme;
 import dorkbox.jna.windows.User32;
-import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.systemTray.ui.swing._WindowsNativeTray;
+import dorkbox.util.OS;
 import dorkbox.util.SwingUtil;
 
 public

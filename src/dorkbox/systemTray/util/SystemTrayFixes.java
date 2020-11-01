@@ -16,14 +16,13 @@
 package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
-import static javassist.bytecode.Opcode.BIPUSH;
 
 import java.awt.AWTException;
 import java.util.Locale;
 
 import dorkbox.jna.JnaClassUtils;
-import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
@@ -725,7 +724,7 @@ class SystemTrayFixes {
                     int opcode = methodIterator.byteAt(index);
 
                     switch (opcode) {
-                        case BIPUSH: {
+                        case javassist.bytecode.Opcode.BIPUSH: {
                             int i = methodIterator.byteAt(index + 1);
 
                             if (i == oldTraySize) {
