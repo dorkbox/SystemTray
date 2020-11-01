@@ -285,6 +285,24 @@ class SystemTray {
                     // check other DE / OS combos that are based on gnome
                     String GDM = System.getenv("GDMSESSION");
 
+                    // fix for some linux OS where this session variable is not set
+                    if (GDM == null) {
+                        if (DEBUG) {
+                            logger.debug("GDMSESSION value is not set by OS. Checking '/etc/os-release' for more info.");
+                        }
+
+                        // see: https://github.com/dorkbox/SystemTray/issues/125
+                        boolean isPop = OS.isLinux() && OSUtil.Linux.getInfo("pop");
+                        if (isPop) {
+                            GDM = "ubuntu";   // special case for popOS! (it is ubuntu-like, but does not set GDMSESSION)
+
+                            if (DEBUG) {
+                                logger.debug("Detected popOS! Using 'ubuntu' for that configuration.");
+                            }
+                        }
+                    }
+
+
                     if (DEBUG) {
                         logger.debug("Currently using the '{}' session type", GDM);
                     }
@@ -385,6 +403,7 @@ class SystemTray {
                         return selectTypeQuietly(TrayType.GtkStatusIcon);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
+                        // NOTE: popOS can also get here. It will also version check (since it's ubuntu-like)
                         int[] version = OSUtil.Linux.getUbuntuVersion();
 
                         // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now mostly Gnome
