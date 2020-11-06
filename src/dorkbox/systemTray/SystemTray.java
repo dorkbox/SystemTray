@@ -1291,8 +1291,10 @@ class SystemTray {
 
         if (menu != null) {
             Icon icon = jMenu.getIcon();
-            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-            setImage(bimage);
+            if (icon != null) {
+                BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                setImage(bimage);
+            }
 
             Component[] menuComponents = jMenu.getMenuComponents();
             for (Component c : menuComponents) {

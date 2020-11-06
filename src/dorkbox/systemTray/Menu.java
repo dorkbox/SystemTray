@@ -118,8 +118,10 @@ class Menu extends MenuItem {
         setEnabled(jMenu.isEnabled());
 
         Icon icon = jMenu.getIcon();
-        BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-        setImage(bimage);
+        if (icon != null) {
+            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+            setImage(bimage);
+        }
 
         setText(jMenu.getText());
         setShortcut(jMenu.getMnemonic());
@@ -325,6 +327,7 @@ class Menu extends MenuItem {
     /**
      * @return a copy of this menu as a swing JMenu, with all elements converted to their respective swing elements. Modifications to the elements of the new JMenu will not affect anything, as they are all copies
      */
+    @Override
     public
     JMenu asSwingComponent() {
         JMenu jMenu = new JMenu();
