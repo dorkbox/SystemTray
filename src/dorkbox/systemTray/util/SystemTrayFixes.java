@@ -249,7 +249,7 @@ class SystemTrayFixes {
     }
 
     /**
-     * MacOS AWT is hardcoded to respond only to lef-click for menus, where it should be any mouse button
+     * MacOS AWT is hardcoded to respond only to left-click for menus, where it should be any mouse button
      *
      * https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
      * https://bugs.openjdk.java.net/browse/JDK-7158615
