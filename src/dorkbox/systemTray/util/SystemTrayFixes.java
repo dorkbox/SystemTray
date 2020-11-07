@@ -110,6 +110,8 @@ class SystemTrayFixes {
 
 
     /**
+     * NOTE: Only for SWING
+     *
      * oh my. Java likes to think that ALL windows tray icons are 16x16.... Lets fix that!
      *
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
@@ -249,6 +251,8 @@ class SystemTrayFixes {
     }
 
     /**
+     * NOTE: Only for SWING + AWT tray types
+     *
      * MacOS AWT is hardcoded to respond only to left-click for menus, where it should be any mouse button
      *
      * https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
@@ -263,6 +267,11 @@ class SystemTrayFixes {
             return;
         }
 
+        // ONLY java <= 8
+        if (OS.javaVersion > 8) {
+            // there are problems with java 9+
+            return;
+        }
 
         if (isSwingTrayLoaded()) {
             // we have to throw a significant error.
@@ -429,6 +438,8 @@ class SystemTrayFixes {
     }
 
     /**
+     * NOTE: ONLY IS FOR SWING TRAY TYPES!
+     *
      * Linux/Unix/Solaris use X11 + AWT to add an AWT window to a spot in the notification panel. UNFORTUNATELY, AWT
      * components are heavyweight, and DO NOT support transparency -- so one gets a "grey" box as the background of the icon.
      *
@@ -456,6 +467,12 @@ class SystemTrayFixes {
 
         if (isOracleVM()) {
             // not fixing things that are not broken.
+            return;
+        }
+
+        // ONLY java <= 8
+        if (OS.javaVersion > 8) {
+            // there are problems with java 9+
             return;
         }
 
