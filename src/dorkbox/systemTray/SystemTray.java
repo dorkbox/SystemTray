@@ -88,13 +88,9 @@ class SystemTray {
 
     public enum TrayType {
         /** Will choose as a 'best guess' which tray type to use */
-        AutoDetect,
-        GtkStatusIcon,
-        AppIndicator,
-        WindowsNotifyIcon,
-        Swing,
-        OSXStatusItem,
-        AWT
+        AutoDetect, Gtk,
+        AppIndicator, WindowsNative,
+        Swing, Osx, Awt
     }
 
     @Property
@@ -171,12 +167,12 @@ class SystemTray {
     private static
     boolean isTrayType(final Class<? extends Tray> tray, final TrayType trayType) {
         switch (trayType) {
-            case GtkStatusIcon: return tray == _GtkStatusIconNativeTray.class;
+            case Gtk: return tray == _GtkStatusIconNativeTray.class;
             case AppIndicator: return tray == _AppIndicatorNativeTray.class;
-            case WindowsNotifyIcon: return tray == _WindowsNativeTray.class;
+            case WindowsNative: return tray == _WindowsNativeTray.class;
             case Swing: return tray == _SwingTray.class;
-            case OSXStatusItem: return tray == _OsxNativeTray.class;
-            case AWT: return tray == _AwtTray.class;
+            case Osx: return tray == _OsxNativeTray.class;
+            case Awt: return tray == _AwtTray.class;
         }
 
         return false;
@@ -184,22 +180,22 @@ class SystemTray {
 
     private static
     Class<? extends Tray> selectType(final TrayType trayType) throws Exception {
-        if (trayType == TrayType.GtkStatusIcon) {
+        if (trayType == TrayType.Gtk) {
             return _GtkStatusIconNativeTray.class;
         }
         else if (trayType == TrayType.AppIndicator) {
             return _AppIndicatorNativeTray.class;
         }
-        else if (trayType == TrayType.WindowsNotifyIcon) {
+        else if (trayType == TrayType.WindowsNative) {
             return _WindowsNativeTray.class;
         }
         else if (trayType == TrayType.Swing) {
             return _SwingTray.class;
         }
-        else if (trayType == TrayType.OSXStatusItem) {
+        else if (trayType == TrayType.Osx) {
             return _OsxNativeTray.class;
         }
-        else if (trayType == TrayType.AWT) {
+        else if (trayType == TrayType.Awt) {
             return _AwtTray.class;
         }
 
@@ -209,22 +205,22 @@ class SystemTray {
     private static
     TrayType fromClass(final Class<? extends Tray> trayClass) {
         if (trayClass == _GtkStatusIconNativeTray.class) {
-            return TrayType.GtkStatusIcon;
+            return TrayType.Gtk;
         }
         else if (trayClass == _AppIndicatorNativeTray.class) {
             return TrayType.AppIndicator;
         }
         else if (trayClass == _WindowsNativeTray.class) {
-            return TrayType.WindowsNotifyIcon;
+            return TrayType.WindowsNative;
         }
         else if (trayClass == _SwingTray.class) {
             return TrayType.Swing;
         }
         else if (trayClass == _OsxNativeTray.class) {
-            return TrayType.OSXStatusItem;
+            return TrayType.Osx;
         }
         else if (trayClass == _AwtTray.class) {
-            return TrayType.AWT;
+            return TrayType.Awt;
         }
 
         return null;
@@ -248,7 +244,7 @@ class SystemTray {
     Class<? extends Tray> getAutoDetectTrayType() {
         if (OS.isWindows()) {
             try {
-                return selectType(TrayType.WindowsNotifyIcon);
+                return selectType(TrayType.WindowsNative);
             } catch (Throwable e) {
                 logger.error("Something is wrong. Please create an issue with this error message!", e);
             }
@@ -256,12 +252,12 @@ class SystemTray {
         else if (OS.isMacOsX()) {
             // macos can ONLY use the OSXStatusItem or AWT if you want it to follow the L&F of the OS. It is the default.
             try {
-                return selectType(TrayType.OSXStatusItem);
+                return selectType(TrayType.Osx);
             } catch (Throwable e) {
                 logger.error("Unable to select the OSX native status item. Falling back to using AWT.", e);
 
                 try {
-                    return selectType(TrayType.AWT);
+                    return selectType(TrayType.Awt);
                 } catch (Throwable e1) {
                     logger.error("You might need to grant the AWTPermission `accessSystemTray` to the SecurityManager.");
                 }
@@ -311,7 +307,7 @@ class SystemTray {
                         // UGH. At least ubuntu un-butchers gnome.
                         if (OSUtil.Linux.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            return selectTypeQuietly(TrayType.Gtk);
                         }
 
                         // "default" can be gnome3 on debian/kali
@@ -332,7 +328,7 @@ class SystemTray {
                             logger.error("GNOME shell detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
                                          "Please create an issue with as many details as possible.");
 
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            return selectTypeQuietly(TrayType.Gtk);
                         }
 
                         if (DEBUG) {
@@ -355,12 +351,12 @@ class SystemTray {
 
 
                         if (major == 2) {
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            return selectTypeQuietly(TrayType.Gtk);
                         }
                         else if (major == 3) {
                             if (minorAndPatch < 16.0D) {
                                 logger.warn("SystemTray works, but will only show via SUPER+M.");
-                                return selectTypeQuietly(TrayType.GtkStatusIcon);
+                                return selectTypeQuietly(TrayType.Gtk);
                             }
                             else if (minorAndPatch < 26.0D) {
                                 Tray.gtkGnomeWorkaround = true;
@@ -369,7 +365,7 @@ class SystemTray {
 
                                 // now, what VERSION of fedora? "normal" fedora doesn't have AppIndicator installed, so we have to use GtkStatusIcon
                                 // 23 is gtk, 24/25/26 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
-                                return selectTypeQuietly(TrayType.GtkStatusIcon);
+                                return selectTypeQuietly(TrayType.Gtk);
                             }
                             else {
                                 // 'pure' gnome3 DOES NOT support legacy tray icons any more. This ability has ENTIRELY been removed. NOTE: Ubuntu still supports these via app-indicators.
@@ -390,17 +386,17 @@ class SystemTray {
                             logger.error("GNOME shell detected, but UNKNOWN shell version. This should never happen. Falling back to GtkStatusIcon. " +
                                          "Please create an issue with as many details as possible.");
 
-                            return selectTypeQuietly(TrayType.GtkStatusIcon);
+                            return selectTypeQuietly(TrayType.Gtk);
                         }
                     }
                     else if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        return selectTypeQuietly(TrayType.Gtk);
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        return selectTypeQuietly(TrayType.Gtk);
                     }
                     else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        return selectTypeQuietly(TrayType.Gtk);
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
                         // NOTE: popOS can also get here. It will also version check (since it's ubuntu-like)
@@ -425,7 +421,7 @@ class SystemTray {
                     logger.error("GNOME shell detected, but UNKNOWN type. This should never happen. Falling back to GtkStatusIcon. " +
                                  "Please create an issue with as many details as possible.");
 
-                    return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    return selectTypeQuietly(TrayType.Gtk);
                 }
                 case KDE: {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
@@ -442,12 +438,12 @@ class SystemTray {
                         logger.error("KDE Plasma detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
                                      "Please create an issue with as many details as possible.");
 
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        return selectTypeQuietly(TrayType.Gtk);
                     }
 
                     if (plasmaVersion <= 5.5) {
                         // older versions use GtkStatusIcon
-                        return selectTypeQuietly(TrayType.GtkStatusIcon);
+                        return selectTypeQuietly(TrayType.Gtk);
                     } else {
                         // newer versions use appindicator, but the user MIGHT have to install libappindicator
                         return selectTypeQuietly(TrayType.AppIndicator);
@@ -467,13 +463,13 @@ class SystemTray {
                     // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
 
                     // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
-                    return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    return selectTypeQuietly(TrayType.Gtk);
                 }
                 case LXDE: {
-                    return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    return selectTypeQuietly(TrayType.Gtk);
                 }
                 case MATE: {
-                    return selectTypeQuietly(TrayType.GtkStatusIcon);
+                    return selectTypeQuietly(TrayType.Gtk);
                 }
                 case Pantheon: {
                     // elementaryOS. It only supports appindicator (not gtkstatusicon)
@@ -590,7 +586,7 @@ class SystemTray {
         // OSx can use Swing (non-native) or AWT (native).
         // Linux can use Swing (non-native), AWT (native), GtkStatusIcon (native), or AppIndicator (native)
         if (isWindows) {
-            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.WindowsNotifyIcon) {
+            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.WindowsNative) {
                 // windows MUST use swing/windows-notify-icon only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
@@ -636,7 +632,7 @@ class SystemTray {
                     if (AUTO_FIX_INCONSISTENCIES) {
                         logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
 
-                        FORCE_TRAY_TYPE = TrayType.AWT;
+                        FORCE_TRAY_TYPE = TrayType.Awt;
                     }
                     else {
                         logger.error("Unable to load Swing + SWT (for all versions of Java). " +
@@ -649,7 +645,7 @@ class SystemTray {
                 }
             }
 
-            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.AWT) {
+            if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.Awt) {
                 // MacOsX can only use swing and AWT
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
 
@@ -897,7 +893,7 @@ class SystemTray {
         // fix various incompatibilities with selected tray types
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
-            if (isTrayType(trayType, TrayType.GtkStatusIcon)) {
+            if (isTrayType(trayType, TrayType.Gtk)) {
                 OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
                 if (OSUtil.Linux.isUbuntu() && OSUtil.DesktopEnv.isUnity(de)) {
@@ -1045,7 +1041,7 @@ class SystemTray {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
                 else if (isWindows &&
-                         (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNotifyIcon))) {
+                         (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNative))) {
                     SystemTray.SWING_UI = new WindowsSwingUI();
                 }
             }
@@ -1069,7 +1065,7 @@ class SystemTray {
                     // windows hard-codes the image size for AWT/SWING tray types
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
-                else if (isMacOsX && (isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.Swing))) {
+                else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.Swing))) {
                     // macosx doesn't respond to all buttons (but should)
                     SystemTrayFixes.fixMacOS();
                 }
@@ -1092,7 +1088,7 @@ class SystemTray {
                 return;
             }
 
-            if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT) || isTrayType(trayType, TrayType.WindowsNotifyIcon)) {
+            if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.WindowsNative)) {
                 // ensure AWT toolkit is initialized.
                 java.awt.Toolkit.getDefaultToolkit();
             }
@@ -1112,7 +1108,7 @@ class SystemTray {
         try {
             // AWT/Swing must be constructed on the EDT however...
             if (!JavaFX.isLoaded && !Swt.isLoaded &&
-                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.AWT))) {
+                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
                 SwingUtil.invokeAndWait(new Runnable() {
@@ -1190,8 +1186,8 @@ class SystemTray {
                     });
                 }
                 else if (isTrayType(trayType, TrayType.Swing) ||
-                         isTrayType(trayType, TrayType.WindowsNotifyIcon) ||
-                         isTrayType(trayType, TrayType.OSXStatusItem)) {
+                         isTrayType(trayType, TrayType.WindowsNative) ||
+                         isTrayType(trayType, TrayType.Osx)) {
                     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                         @Override
                         public
