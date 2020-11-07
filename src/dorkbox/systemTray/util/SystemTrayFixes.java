@@ -119,7 +119,7 @@ class SystemTrayFixes {
      */
     public static
     void fixWindows(int trayIconSize) {
-        if (isOracleVM()) {
+        if (!isOracleVM()) {
             // not fixing things that are not broken.
             return;
         }
@@ -262,7 +262,7 @@ class SystemTrayFixes {
      */
     public static
     void fixMacOS() {
-        if (isOracleVM()) {
+        if (!isOracleVM()) {
             // not fixing things that are not broken.
             return;
         }
@@ -465,7 +465,7 @@ class SystemTrayFixes {
     void fixLinux(int trayIconSize) {
         // linux/mac doesn't have transparent backgrounds for "swing" system tray icons
 
-        if (isOracleVM()) {
+        if (!isOracleVM()) {
             // not fixing things that are not broken.
             return;
         }
