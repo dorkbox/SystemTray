@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
@@ -34,7 +35,6 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
-import dorkbox.util.OS;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
