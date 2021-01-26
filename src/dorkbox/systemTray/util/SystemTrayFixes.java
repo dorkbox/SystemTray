@@ -21,8 +21,8 @@ import java.awt.AWTException;
 import java.util.Locale;
 
 import dorkbox.jna.JnaClassUtils;
+import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.OS;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;

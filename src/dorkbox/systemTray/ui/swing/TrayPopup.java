@@ -32,8 +32,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.OS;
 import dorkbox.util.ScreenUtil;
 
 /**
