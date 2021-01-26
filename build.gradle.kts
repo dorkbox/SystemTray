@@ -32,7 +32,7 @@ plugins {
     id("com.dorkbox.GradleUtils") version "1.12"
     id("com.dorkbox.Licensing") version "2.5"
     id("com.dorkbox.VersionUpdate") version "2.0"
-    id("com.dorkbox.GradlePublish") version "1.7"
+    id("com.dorkbox.GradlePublish") version "1.10"
 //    id("com.dorkbox.GradleModuleInfo") version "1.0"
 
     id("com.dorkbox.CrossCompile") version "1.0.1"
@@ -62,7 +62,7 @@ object Extras {
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.fixIntellijPaths()
 GradleUtils.defaultResolutionStrategy()
-GradleUtils.compileConfiguration(JavaVersion.VERSION_1_6)
+GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
 
 
 licensing {
@@ -268,9 +268,8 @@ jar.apply {
 
 
 dependencies {
-    implementation("com.dorkbox:Utilities:1.5.1")
-    implementation("com.dorkbox:ShellExecutor:1.1+")
-//    implementation("com.dorkbox:Executor:1.1") // java 11
+    implementation("com.dorkbox:Executor:2.1")
+    implementation("com.dorkbox:Utilities:1.9")
 
     implementation("org.javassist:javassist:3.27.0-GA")
 
