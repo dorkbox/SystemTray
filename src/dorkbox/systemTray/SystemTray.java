@@ -1213,6 +1213,7 @@ class SystemTray {
     public
     void shutdown() {
         // this is thread-safe
+        EventDispatch.shutdown();
         final Tray menu = systemTrayMenu;
         if (menu != null) {
             // this will shutdown and do what it needs to

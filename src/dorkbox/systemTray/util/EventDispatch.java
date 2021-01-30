@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.LoggerFactory;
 
-import dorkbox.util.NamedThreadFactory;
 import dorkbox.jna.linux.GtkEventDispatch;
+import dorkbox.util.NamedThreadFactory;
 
 /**
  * Adds events to a single thread event dispatch, so that regardless of OS, all event callbacks happen on the same thread -- which is NOT
@@ -92,8 +92,10 @@ class EventDispatch {
             return;
         }
 
-        if (eventDispatchExecutor == null) {
-            eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTrayEventDispatch", false));
+        synchronized(EventDispatch.class) {
+            if (eventDispatchExecutor == null) {
+                eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTrayEventDispatch", false));
+            }
         }
 
         eventDispatchExecutor.execute(new Runnable() {
@@ -114,9 +116,11 @@ class EventDispatch {
      */
     public static
     void shutdown() {
-        if (eventDispatchExecutor != null) {
-            eventDispatchExecutor.shutdownNow();
-            eventDispatchExecutor = null;
+        synchronized(EventDispatch.class) {
+            if (eventDispatchExecutor != null) {
+                eventDispatchExecutor.shutdownNow();
+                eventDispatchExecutor = null;
+            }
         }
     }
 }
