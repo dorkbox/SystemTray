@@ -38,12 +38,14 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dorkbox.javaFx.JavaFx;
 import dorkbox.jna.linux.AppIndicator;
 import dorkbox.jna.linux.Gtk;
 import dorkbox.jna.linux.GtkCheck;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.os.OS;
 import dorkbox.os.OSUtil;
+import dorkbox.swt.Swt;
 import dorkbox.systemTray.gnomeShell.AppIndicatorExtension;
 import dorkbox.systemTray.gnomeShell.DummyFile;
 import dorkbox.systemTray.gnomeShell.LegacyExtension;
@@ -64,8 +66,6 @@ import dorkbox.util.CacheUtil;
 import dorkbox.util.IO;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.javaFx.JavaFX;
-import dorkbox.util.swt.Swt;
 
 
 /**
@@ -640,7 +640,7 @@ class SystemTray {
             if (loadedGtkVersion == 2) {
                 if (AUTO_FIX_INCONSISTENCIES) {
                     if (!FORCE_GTK2) {
-                        if (JavaFX.isLoaded) {
+                        if (JavaFx.isLoaded) {
                             // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                             // see
                             // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -693,7 +693,7 @@ class SystemTray {
             }
             else if (loadedGtkVersion == 3) {
                 if (AUTO_FIX_INCONSISTENCIES) {
-                    if (JavaFX.isLoaded) {
+                    if (JavaFx.isLoaded) {
                         // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                         // see
                         // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -760,7 +760,7 @@ class SystemTray {
                 } else {
                     // !AUTO_FIX_INCONSISTENCIES
 
-                    if (JavaFX.isLoaded) {
+                    if (JavaFx.isLoaded) {
                         // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                         // see
                         // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -825,7 +825,7 @@ class SystemTray {
 
 
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
-            logger.debug("Is JavaFX detected? {}", JavaFX.isLoaded);
+            logger.debug("Is JavaFX detected? {}", JavaFx.isLoaded);
             logger.debug("Is SWT detected? {}", Swt.isLoaded);
             if (Swt.isLoaded) {
                 logger.debug("SWT version: {}", Swt.getVersion());
@@ -1058,7 +1058,7 @@ class SystemTray {
 
 
 
-            if ((JavaFX.isLoaded || Swt.isLoaded) && SwingUtilities.isEventDispatchThread()) {
+            if ((JavaFx.isLoaded || Swt.isLoaded) && SwingUtilities.isEventDispatchThread()) {
                 // This WILL NOT WORK. Let the dev know
                 logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
                              "(EDT). Something is seriously wrong.");
@@ -1087,7 +1087,7 @@ class SystemTray {
         final AtomicReference<Tray> reference = new AtomicReference<Tray>();
         try {
             // AWT/Swing must be constructed on the EDT however...
-            if (!JavaFX.isLoaded && !Swt.isLoaded &&
+            if (!JavaFx.isLoaded && !Swt.isLoaded &&
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
@@ -1125,10 +1125,10 @@ class SystemTray {
                 // have to make sure that we only add this ONCE!
                 shutdownHooksAdded = true;
 
-                if (JavaFX.isLoaded) {
+                if (JavaFx.isLoaded) {
                     // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
                     // Also, it's nice to have us shutdown at the same time as the main application
-                    JavaFX.onShutdown(new Runnable() {
+                    JavaFx.onShutdown(new Runnable() {
                         @Override
                         public
                         void run() {
@@ -1148,7 +1148,7 @@ class SystemTray {
                 else if (Swt.isLoaded) {
                     // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
                     // Also, it's nice to have us shutdown at the same time as the main application
-                    dorkbox.util.swt.Swt.onShutdown(new Runnable() {
+                    dorkbox.swt.Swt.onShutdown(new Runnable() {
                         @Override
                         public
                         void run() {

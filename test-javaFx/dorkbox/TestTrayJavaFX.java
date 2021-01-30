@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Random;
 
+import dorkbox.javaFx.JavaFx;
 import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
@@ -29,7 +30,6 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.Desktop;
-import dorkbox.util.javaFx.JavaFX;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -48,18 +48,18 @@ import javafx.stage.Stage;
 public
 class TestTrayJavaFX {
 
-    public static final URL BLUE_CAMPING = TestTray.class.getResource("accommodation_camping.glow.0092DA.32.png");
-    public static final URL BLACK_FIRE = TestTray.class.getResource("amenity_firestation.p.000000.32.png");
+    public static final URL BLUE_CAMPING = TestTrayJavaFX.class.getResource("accommodation_camping.glow.0092DA.32.png");
+    public static final URL BLACK_FIRE = TestTrayJavaFX.class.getResource("amenity_firestation.p.000000.32.png");
 
-    public static final URL BLACK_MAIL = TestTray.class.getResource("amenity_post_box.p.000000.32.png");
-    public static final URL GREEN_MAIL = TestTray.class.getResource("amenity_post_box.p.39AC39.32.png");
+    public static final URL BLACK_MAIL = TestTrayJavaFX.class.getResource("amenity_post_box.p.000000.32.png");
+    public static final URL GREEN_MAIL = TestTrayJavaFX.class.getResource("amenity_post_box.p.39AC39.32.png");
 
-    public static final URL BLACK_BUS = TestTray.class.getResource("transport_bus_station.p.000000.32.png");
-    public static final URL LT_GRAY_BUS = TestTray.class.getResource("transport_bus_station.p.999999.32.png");
+    public static final URL BLACK_BUS = TestTrayJavaFX.class.getResource("transport_bus_station.p.000000.32.png");
+    public static final URL LT_GRAY_BUS = TestTrayJavaFX.class.getResource("transport_bus_station.p.999999.32.png");
 
-    public static final URL BLACK_TRAIN = TestTray.class.getResource("transport_train_station.p.000000.32.png");
-    public static final URL GREEN_TRAIN = TestTray.class.getResource("transport_train_station.p.39AC39.32.png");
-    public static final URL LT_GRAY_TRAIN = TestTray.class.getResource("transport_train_station.p.666666.32.png");
+    public static final URL BLACK_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.000000.32.png");
+    public static final URL GREEN_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.39AC39.32.png");
+    public static final URL LT_GRAY_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.666666.32.png");
 
     private static TestTrayJavaFX testTrayJavaFX;
 
@@ -82,11 +82,6 @@ class TestTrayJavaFX {
 
     public static
     void main(String[] args) {
-        if (OS.isMacOsX() && OS.javaVersion <= 7) {
-            System.setProperty("javafx.macosx.embedded", "true");
-            java.awt.Toolkit.getDefaultToolkit();
-        }
-
         testTrayJavaFX = new TestTrayJavaFX();
 
         Application application = new MyApplication();
@@ -105,14 +100,14 @@ class TestTrayJavaFX {
 
     public
     void doJavaFxStuff(final Stage primaryStage) throws Exception {
-        primaryStage.setTitle("Hello World!");
+        primaryStage.setTitle("Hello World JavaFx!");
         Button btn = new Button();
-        btn.setText("Say 'Hello World'");
+        btn.setText("Say 'Hello World JavaFx'");
         btn.setOnAction(new EventHandler<ActionEvent>() {
 
             @Override
             public void handle(ActionEvent event) {
-                System.out.println("Hello World!");
+                System.out.println("Hello World JavaFx!");
             }
         });
 
@@ -276,9 +271,8 @@ class TestTrayJavaFX {
             public
             void actionPerformed(final java.awt.event.ActionEvent e) {
                 systemTray.shutdown();
-
-                if (!JavaFX.isEventThread()) {
-                    JavaFX.dispatch(new Runnable() {
+                if (!JavaFx.isEventThread()) {
+                    JavaFx.dispatch(new Runnable() {
                         @Override
                         public
                         void run() {

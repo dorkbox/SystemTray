@@ -44,18 +44,18 @@ import dorkbox.util.Desktop;
 public
 class TestTraySwt {
 
-    public static final URL BLUE_CAMPING = TestTray.class.getResource("accommodation_camping.glow.0092DA.32.png");
-    public static final URL BLACK_FIRE = TestTray.class.getResource("amenity_firestation.p.000000.32.png");
+    public static final URL BLUE_CAMPING = TestTraySwt.class.getResource("accommodation_camping.glow.0092DA.32.png");
+    public static final URL BLACK_FIRE = TestTraySwt.class.getResource("amenity_firestation.p.000000.32.png");
 
-    public static final URL BLACK_MAIL = TestTray.class.getResource("amenity_post_box.p.000000.32.png");
-    public static final URL GREEN_MAIL = TestTray.class.getResource("amenity_post_box.p.39AC39.32.png");
+    public static final URL BLACK_MAIL = TestTraySwt.class.getResource("amenity_post_box.p.000000.32.png");
+    public static final URL GREEN_MAIL = TestTraySwt.class.getResource("amenity_post_box.p.39AC39.32.png");
 
-    public static final URL BLACK_BUS = TestTray.class.getResource("transport_bus_station.p.000000.32.png");
-    public static final URL LT_GRAY_BUS = TestTray.class.getResource("transport_bus_station.p.999999.32.png");
+    public static final URL BLACK_BUS = TestTraySwt.class.getResource("transport_bus_station.p.000000.32.png");
+    public static final URL LT_GRAY_BUS = TestTraySwt.class.getResource("transport_bus_station.p.999999.32.png");
 
-    public static final URL BLACK_TRAIN = TestTray.class.getResource("transport_train_station.p.000000.32.png");
-    public static final URL GREEN_TRAIN = TestTray.class.getResource("transport_train_station.p.39AC39.32.png");
-    public static final URL LT_GRAY_TRAIN = TestTray.class.getResource("transport_train_station.p.666666.32.png");
+    public static final URL BLACK_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.000000.32.png");
+    public static final URL GREEN_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.39AC39.32.png");
+    public static final URL LT_GRAY_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.666666.32.png");
 
     public static
     void main(String[] args) {
@@ -70,7 +70,7 @@ class TestTraySwt {
 
     public
     TestTraySwt() {
-        final Display display = new Display ();
+        final Display display = new Display();
         final Shell shell = new Shell(display);
 
         Text helloWorldTest = new Text(shell, SWT.NONE);

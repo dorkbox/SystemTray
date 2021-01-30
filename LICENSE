@@ -1,7 +1,7 @@
  - SystemTray - Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+
    [The Apache Software License, Version 2.0]
    https://git.dorkbox.com/dorkbox/SystemTray
-   Copyright 2020
+   Copyright 2021
      Dorkbox LLC
 
    Extra license information
@@ -19,17 +19,11 @@
          QZ Industries, LLC
        Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.
 
-     - Eclipse Platform - Frameworks and common services to support the use of Eclipse and it's tools (SWT)
-       [Eclipse Public License (EPL)]
-       https://projects.eclipse.org/projects/eclipse.platform
-       Copyright 2020
-         The Eclipse Foundation, Inc.
-
      - Javassist - Javassist (JAVA programming ASSISTant) makes Java bytecode manipulation simple
        [The Apache Software License, Version 2.0]
        http://www.javassist.org
        https://github.com/jboss-javassist/javassist
-       Copyright 2020
+       Copyright 2021
          Shigeru Chiba
          Bill Burke
          Jason T. Greene
@@ -38,17 +32,406 @@
      - JNA - Simplified native library access for Java.
        [The Apache Software License, Version 2.0]
        https://github.com/twall/jna
-       Copyright 2020
+       Copyright 2021
+         Timothy Wall
+
+     - JNA-Platform - Mappings for a number of commonly used platform functions
+       [The Apache Software License, Version 2.0]
+       https://github.com/twall/jna
+       Copyright 2021
          Timothy Wall
 
      - SLF4J - Simple facade or abstraction for various logging frameworks
        [MIT License]
        http://www.slf4j.org
-       Copyright 2020
+       Copyright 2021
          QOS.ch
 
      - Logback - Logback is a logging framework for Java applications
        [The Apache Software License, Version 2.0]
        http://logback.qos.ch
-       Copyright 2020
+       Copyright 2021
          QOS.ch
+
+     - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 11+
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/Executor
+       Copyright 2021
+         Dorkbox LLC
+
+       Extra license information
+         - ZT Process Executor - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/zeroturnaround/zt-exec
+           Copyright 2014
+             ZeroTurnaround LLC
+
+         - Apache Commons Exec - 
+           [The Apache Software License, Version 2.0]
+           https://commons.apache.org/proper/commons-exec/
+           Copyright 2014
+             The Apache Software Foundation
+
+         - Kotlin - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/JetBrains/kotlin
+           Copyright 2020
+             JetBrains s.r.o. and Kotlin Programming Language contributors
+           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+         - kotlinx.coroutines - Library support for Kotlin coroutines with multiplatform support
+           [The Apache Software License, Version 2.0]
+           https://github.com/Kotlin/kotlinx.coroutines
+           Copyright 2021
+             JetBrains s.r.o.
+
+         - kotlin-logging - Lightweight logging framework for Kotlin
+           [The Apache Software License, Version 2.0]
+           https://github.com/MicroUtils/kotlin-logging
+           Copyright 2021
+             Ohad Shai
+
+         - SLF4J - Simple facade or abstraction for various logging frameworks
+           [MIT License]
+           http://www.slf4j.org
+           Copyright 2021
+             QOS.ch
+
+         - SSHJ - SSHv2 library for Java
+           [The Apache Software License, Version 2.0]
+           https://github.com/hierynomus/sshj
+           Copyright 2021
+             Jeroen van Erp
+             SSHJ Contributors
+
+           Extra license information
+             - Apache MINA - 
+               [The Apache Software License, Version 2.0]
+               https://mina.apache.org/sshd-project/
+                 The Apache Software Foundation
+
+             - Apache Commons-Net - 
+               [The Apache Software License, Version 2.0]
+               https://commons.apache.org/proper/commons-net/
+                 The Apache Software Foundation
+
+             - JZlib - 
+               [The Apache Software License, Version 2.0]
+               http://www.jcraft.com/jzlib
+                 Atsuhiko Yamanaka
+                 JCraft, Inc.
+
+             - Bouncy Castle Crypto - 
+               [The Apache Software License, Version 2.0]
+               http://www.bouncycastle.org
+                 The Legion of the Bouncy Castle Inc
+
+             - ed25519-java - 
+               [Public Domain, per Creative Commons CC0]
+               https://github.com/str4d/ed25519-java
+                 https://github.com/str4d
+
+     - SwtJavaFx - Swt and JavaFx Utilities
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/SwtJavaFx
+       Copyright 2021
+         Dorkbox LLC
+
+       Extra license information
+         - Eclipse Platform - Frameworks and common services to support the use of Eclipse and it's tools (SWT)
+           [Eclipse Public License (EPL)]
+           https://projects.eclipse.org/projects/eclipse.platform
+           Copyright 2021
+             The Eclipse Foundation, Inc.
+
+         - OpenJFX - OpenJFX client application platform for desktop, mobile and embedded systems
+           [GNU General Public License, version 2, with the Classpath Exception]
+           https://github.com/openjdk/jfx
+           Copyright 2021
+             Oracle and/or its affiliates
+
+         - SLF4J - Simple facade or abstraction for various logging frameworks
+           [MIT License]
+           http://www.slf4j.org
+           Copyright 2021
+             QOS.ch
+
+     - Utilities - Utilities for use within Java projects
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/Utilities
+       Copyright 2021
+         Dorkbox LLC
+
+       Extra license information
+         - MersenneTwisterFast - 
+           [BSD 3-Clause License]
+           https://git.dorkbox.com/dorkbox/Utilities
+           Copyright 2003
+             Sean Luke
+             Michael Lecuyer (portions Copyright 1993
+
+         - FileUtil (code from FilenameUtils.java for normalize + dependencies) - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           http://commons.apache.org/proper/commons-io/
+           Copyright 2013
+             The Apache Software Foundation
+             Kevin A. Burton
+             Scott Sanders
+             Daniel Rall
+             Christoph.Reck
+             Peter Donald
+             Jeff Turner
+             Matthew Hawthorne
+             Martin Cooper
+             Jeremias Maerki
+             Stephen Colebourne
+
+         - FastThreadLocal - 
+           [BSD 3-Clause License]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java
+           https://github.com/riven8192/LibStruct/blob/master/src/net/indiespot/struct/runtime/FastThreadLocal.java
+           Copyright 2014
+             Lightweight Java Game Library Project
+             Riven
+
+         - Base64Fast - 
+           [BSD 3-Clause License]
+           https://git.dorkbox.com/dorkbox/Utilities
+           http://migbase64.sourceforge.net/
+           Copyright 2004
+             Mikael Grev, MiG InfoCom AB. (base64@miginfocom.com)
+
+         - BCrypt - 
+           [BSD 2-Clause "Simplified" or "FreeBSD" license]
+           https://git.dorkbox.com/dorkbox/Utilities
+           http://www.mindrot.org/projects/jBCrypt
+           Copyright 2006
+             Damien Miller (djm@mindrot.org)
+           GWT modified version
+
+         - Bias, BinarySearch - 
+           [MIT License]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/timboudreau/util
+           Copyright 2013
+             Tim Boudreau
+
+         - ConcurrentEntry - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           Copyright 2016
+             bennidi
+             dorkbox
+
+         - Collection Utilities (Array, ArrayMap, BooleanArray, ByteArray, CharArray, FloatArray, IdentityMap, IntArray, IntFloatMap, IntIntMap, IntMap, IntSet, LongArray, LongMap, ObjectFloatMap, ObjectIntMap, ObjectMap, ObjectSet, OrderedMap, OrderedSet) - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+           Copyright 2011
+             LibGDX
+             Mario Zechner (badlogicgames@gmail.com)
+             Nathan Sweet (nathan.sweet@gmail.com)
+
+         - Predicate - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+           Copyright 2011
+             LibGDX
+             Mario Zechner (badlogicgames@gmail.com)
+             Nathan Sweet (nathan.sweet@gmail.com)
+             xoppa
+
+         - Select, QuickSelect - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+           Copyright 2011
+             LibGDX
+             Mario Zechner (badlogicgames@gmail.com)
+             Nathan Sweet (nathan.sweet@gmail.com)
+             Jon Renner
+
+         - TimSort, ComparableTimSort - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+           Copyright 2008
+             The Android Open Source Project
+
+         - Modified hex conversion utility methods - 
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Utilities
+           https://netty.io
+           Copyright 2014
+             The Netty Project
+
+         - Retrofit - A type-safe HTTP client for Android and Java
+           [The Apache Software License, Version 2.0]
+           https://github.com/square/retrofit
+           Copyright 2020
+             Square, Inc
+
+         - JNA - Simplified native library access for Java.
+           [The Apache Software License, Version 2.0]
+           https://github.com/twall/jna
+           Copyright 2021
+             Timothy Wall
+
+         - JNA-Platform - Mappings for a number of commonly used platform functions
+           [The Apache Software License, Version 2.0]
+           https://github.com/twall/jna
+           Copyright 2021
+             Timothy Wall
+
+         - Java Uuid Generator - A set of Java classes for working with UUIDs
+           [The Apache Software License, Version 2.0]
+           https://github.com/cowtowncoder/java-uuid-generator
+           Copyright 2021
+             Tatu Saloranta (tatu.saloranta@iki.fi)
+             Contributors. See source release-notes/CREDITS
+
+         - Netty - An event-driven asynchronous network application framework
+           [The Apache Software License, Version 2.0]
+           https://netty.io
+           Copyright 2021
+             The Netty Project
+             Contributors. See source NOTICE
+
+         - Bouncy Castle Crypto - Lightweight cryptography API and JCE Extension
+           [The Apache Software License, Version 2.0]
+           http://www.bouncycastle.org
+           Copyright 2021
+             The Legion of the Bouncy Castle Inc
+
+         - Lightweight Java Game Library - Java library that enables cross-platform access to popular native APIs
+           [BSD 3-Clause License]
+           https://github.com/LWJGL/lwjgl3
+           Copyright 2021
+             Lightweight Java Game Library
+
+         - TypeTools - A simple, zero-dependency library for working with types. Supports Java 1.6+ and Android.
+           [The Apache Software License, Version 2.0]
+           https://github.com/jhalterman/typetools
+           Copyright 2021
+             Jonathan Halterman and friends
+
+         - SLF4J - Simple facade or abstraction for various logging frameworks
+           [MIT License]
+           http://www.slf4j.org
+           Copyright 2021
+             QOS.ch
+
+         - XZ for Java - Complete implementation of XZ data compression in pure Java
+           [Public Domain, per Creative Commons CC0]
+           https://tukaani.org/xz/java.html
+           Copyright 2021
+             Lasse Collin
+             Igor Pavlov
+
+         - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 8+
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Executor
+           Copyright 2021
+             Dorkbox LLC
+
+           Extra license information
+             - ZT Process Executor - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/zeroturnaround/zt-exec
+               Copyright 2014
+                 ZeroTurnaround LLC
+
+             - Apache Commons Exec - 
+               [The Apache Software License, Version 2.0]
+               https://commons.apache.org/proper/commons-exec/
+               Copyright 2014
+                 The Apache Software Foundation
+
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+             - kotlinx.coroutines - Library support for Kotlin coroutines with multiplatform support
+               [The Apache Software License, Version 2.0]
+               https://github.com/Kotlin/kotlinx.coroutines
+               Copyright 2021
+                 JetBrains s.r.o.
+
+             - kotlin-logging - Lightweight logging framework for Kotlin
+               [The Apache Software License, Version 2.0]
+               https://github.com/MicroUtils/kotlin-logging
+               Copyright 2021
+                 Ohad Shai
+
+             - SLF4J - Simple facade or abstraction for various logging frameworks
+               [MIT License]
+               http://www.slf4j.org
+               Copyright 2021
+                 QOS.ch
+
+             - SSHJ - SSHv2 library for Java
+               [The Apache Software License, Version 2.0]
+               https://github.com/hierynomus/sshj
+               Copyright 2021
+                 Jeroen van Erp
+                 SSHJ Contributors
+
+               Extra license information
+                 - Apache MINA - 
+                   [The Apache Software License, Version 2.0]
+                   https://mina.apache.org/sshd-project/
+                     The Apache Software Foundation
+
+                 - Apache Commons-Net - 
+                   [The Apache Software License, Version 2.0]
+                   https://commons.apache.org/proper/commons-net/
+                     The Apache Software Foundation
+
+                 - JZlib - 
+                   [The Apache Software License, Version 2.0]
+                   http://www.jcraft.com/jzlib
+                     Atsuhiko Yamanaka
+                     JCraft, Inc.
+
+                 - Bouncy Castle Crypto - 
+                   [The Apache Software License, Version 2.0]
+                   http://www.bouncycastle.org
+                     The Legion of the Bouncy Castle Inc
+
+                 - ed25519-java - 
+                   [Public Domain, per Creative Commons CC0]
+                   https://github.com/str4d/ed25519-java
+                     https://github.com/str4d
+
+         - SwtJavaFx - Swt and JavaFx Utilities
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/SwtJavaFx
+           Copyright 2021
+             Dorkbox LLC
+
+           Extra license information
+             - Eclipse Platform - Frameworks and common services to support the use of Eclipse and it's tools (SWT)
+               [Eclipse Public License (EPL)]
+               https://projects.eclipse.org/projects/eclipse.platform
+               Copyright 2021
+                 The Eclipse Foundation, Inc.
+
+             - OpenJFX - OpenJFX client application platform for desktop, mobile and embedded systems
+               [GNU General Public License, version 2, with the Classpath Exception]
+               https://github.com/openjdk/jfx
+               Copyright 2021
+                 Oracle and/or its affiliates
+
+             - SLF4J - Simple facade or abstraction for various logging frameworks
+               [MIT License]
+               http://www.slf4j.org
+               Copyright 2021
+                 QOS.ch
