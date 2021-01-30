@@ -36,6 +36,12 @@ import dorkbox.util.ImageUtil;
 
 public
 class ImageResizeUtil {
+
+    // - appIndicator/gtk require strings (which is the path)
+    // - swing version loads as an image (which can be stream or path, we use path)
+    private static final CacheUtil cache = new CacheUtil("SystemTrayImages");
+
+
     public static
     File getTransparentImage() {
         // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
@@ -47,7 +53,7 @@ class ImageResizeUtil {
     File getTransparentImage(final int imageSize) {
         // NOTE: this does not need to be called on the EDT
         try {
-            final File newFile = CacheUtil.create(imageSize + "_empty.png");
+            final File newFile = cache.create(imageSize + "_empty.png");
             return ImageUtil.createImage(imageSize, newFile, null);
         } catch (IOException e) {
             throw new RuntimeException("Unable to generate transparent image! Something is severely wrong!");
@@ -74,7 +80,7 @@ class ImageResizeUtil {
 
 
             // if we already have this fileName, reuse it
-            final File check = CacheUtil.check(cacheName);
+            final File check = cache.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -83,7 +89,7 @@ class ImageResizeUtil {
             File resizedFile = resizeFileNoCheck(size, imageStream);
 
             // now cache that file
-            return CacheUtil.save(cacheName, resizedFile);
+            return cache.save(cacheName, resizedFile);
         } catch (Exception e) {
             // this must be thrown
             throw new RuntimeException("Serious problems! Unable to extract error image, this should NEVER happen!", e);
@@ -135,7 +141,7 @@ class ImageResizeUtil {
 
 
             // if we already have this fileName, reuse it
-            final File check = CacheUtil.check(cacheName);
+            final File check = cache.check(cacheName);
             if (check != null) {
                 return check;
             }
@@ -165,7 +171,7 @@ class ImageResizeUtil {
 
                 // now cache that file
                 try {
-                    return CacheUtil.save(cacheName, resizedFile);
+                    return cache.save(cacheName, resizedFile);
                 } catch (Exception e) {
                     // have to serve up the error image instead.
                     SystemTray.logger.error("Error caching image. Using error icon instead", e);
@@ -181,7 +187,7 @@ class ImageResizeUtil {
         } else {
             // no resize necessary, just cache as is.
             try {
-                return CacheUtil.save(cacheName, imageStream);
+                return cache.save(cacheName, imageStream);
             } catch (Exception e) {
                 // have to serve up the error image instead.
                 SystemTray.logger.error("Error caching image. Using error icon instead", e);
@@ -216,7 +222,7 @@ class ImageResizeUtil {
     File resizeFileNoCheck(final int size, InputStream inputStream) throws IOException {
         // have to resize the file (and return the new path)
 
-        File newFile = CacheUtil.create("temp_resize.png");
+        File newFile = cache.create("temp_resize.png");
         // if it's already there, we have to delete it
         newFile.delete();
 
@@ -285,7 +291,7 @@ class ImageResizeUtil {
 
                 return file;
             } else {
-                return CacheUtil.save(imageUrl);
+                return cache.save(imageUrl);
             }
         } catch (Exception e) {
             // have to serve up the error image instead.
@@ -304,7 +310,7 @@ class ImageResizeUtil {
             return ImageResizeUtil.resizeAndCache(getSize(isTrayImage), imageStream);
         } else {
             try {
-                return CacheUtil.save(imageStream);
+                return cache.save(imageStream);
             } catch (IOException e) {
                 SystemTray.logger.error("Error checking cache for information. Using error icon instead", e);
                 return getErrorImage(0);
@@ -334,7 +340,7 @@ class ImageResizeUtil {
 
                 return file;
             } else {
-                File file = CacheUtil.save(imageInputStream);
+                File file = cache.save(imageInputStream);
                 imageInputStream.close(); // BAOS doesn't do anything, but here for completeness + documentation
 
                 return file;
@@ -359,7 +365,7 @@ class ImageResizeUtil {
             if (SystemTray.AUTO_SIZE) {
                 return resizeAndCache(getSize(isTrayImage), fileStream);
             } else {
-                return CacheUtil.save(fileStream);
+                return cache.save(fileStream);
             }
         } catch (Exception e) {
             // have to serve up the error image instead.

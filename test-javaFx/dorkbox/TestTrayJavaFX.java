@@ -117,7 +117,10 @@ class TestTrayJavaFX {
         primaryStage.show();
 
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
-        CacheUtil.clear(); // for test apps, make sure the cache is always reset. You should never do this in production.
+
+        // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
+        new CacheUtil("SystemTrayImages").clear();
+        new CacheUtil("CheckMarks").clear();
 
         SystemTray.APP_NAME = "SysTrayExample";
 

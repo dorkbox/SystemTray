@@ -22,6 +22,10 @@ public class HeavyCheckMark {
     // if you change how this mark is drawn, increment the version so that the cached file is correctly regenerated.
     private static final int VERSION = 1;
 
+    // - appIndicator/gtk require strings (which is the path)
+    // - swing version loads as an image (which can be stream or path, we use path)
+    private static final CacheUtil cache = new CacheUtil("CheckMarks");
+
     /**
      * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize
      * (which is square)
@@ -51,7 +55,7 @@ public class HeavyCheckMark {
             targetImageSize = checkMarkSize;
         }
 
-        final File newFile = CacheUtil.create(name);
+        final File newFile = cache.create(name);
         if (newFile.canRead() || newFile.length() == 0) {
             try {
                 BufferedImage img = HeavyCheckMark.draw(color, checkMarkSize, targetImageSize);
