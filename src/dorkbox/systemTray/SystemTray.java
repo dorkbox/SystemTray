@@ -702,7 +702,7 @@ class SystemTray {
 
                         if (FORCE_GTK2) {
                             // if we are java9, then we can change it -- otherwise we cannot.
-                            if (OS.javaVersion == 9) {
+                            if (OS.javaVersion >= 9) {
                                 FORCE_GTK2 = false;
                                 logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
                                             "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
