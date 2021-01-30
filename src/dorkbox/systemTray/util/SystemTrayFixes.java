@@ -310,13 +310,7 @@ class SystemTrayFixes {
 
             CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
 
-            String nsEventFQND;
-            if (OS.javaVersion <= 7) {
-                nsEventFQND = "sun.lwawt.macosx.event.NSEvent";
-            }
-            else {
-                nsEventFQND = "sun.lwawt.macosx.NSEvent";
-            }
+            String nsEventFQND = "sun.lwawt.macosx.NSEvent";
 
 
             ctMethodGet.setBody("{" +
