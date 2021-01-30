@@ -15,7 +15,6 @@
  */
 
 import java.time.Instant
-import java.util.*
 
 ///////////////////////////////
 //////    PUBLISH TO SONATYPE / MAVEN CENTRAL
@@ -30,19 +29,19 @@ plugins {
     java
 
     id("com.dorkbox.GradleUtils") version "1.12"
-    id("com.dorkbox.Licensing") version "2.5"
-    id("com.dorkbox.VersionUpdate") version "2.0"
+    id("com.dorkbox.Licensing") version "2.5.4"
+    id("com.dorkbox.VersionUpdate") version "2.1"
     id("com.dorkbox.GradlePublish") version "1.10"
 //    id("com.dorkbox.GradleModuleInfo") version "1.0"
 
-    id("com.dorkbox.CrossCompile") version "1.0.1"
+//    id("com.dorkbox.CrossCompile") version "1.1"
 
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.21-2"
 }
 
 object Extras {
     // set for the project
-    const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+"
+    const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+"
     const val group = "com.dorkbox"
     const val version = "3.17"
 
@@ -62,7 +61,7 @@ object Extras {
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.fixIntellijPaths()
 GradleUtils.defaultResolutionStrategy()
-GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
+GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8) // NOTE: Only support java 8 as the lowest target now
 
 
 licensing {
@@ -86,14 +85,6 @@ licensing {
     }
 }
 
-
-fun javaFile(vararg fileNames: String): Iterable<String> {
-    val fileList = ArrayList<String>(fileNames.size)
-    fileNames.forEach { name ->
-        fileList.add(name.replace('.', '/') + ".java")
-    }
-    return fileList
-}
 
 val exampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
@@ -123,30 +114,52 @@ sourceSets {
         }
     }
 
-    test {
+//    test {
+//        java {
+//            setSrcDirs(listOf("test"))
+//
+//            // only want to include java files for the source. 'setSrcDirs' resets includes...
+//            include("**/*.java")
+//
+//            // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
+//            srcDir(sourceSets["main"].allJava)
+//
+//
+//            resources {
+//                setSrcDirs(listOf("test"))
+//                include("dorkbox/*.png")
+//            }
+//        }
+//    }
+
+    example {
         java {
             setSrcDirs(listOf("test"))
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
 
+            srcDir(sourceSets["main"].allJava)
+        }
+
+        resources {
+            setSrcDirs(listOf("test"))
+            include("dorkbox/*.png")
+
+            srcDir(sourceSets["main"].resources)
+        }
+
+        compileClasspath += sourceSets.main.get().runtimeClasspath
+//        runtimeClasspath += sourceSets.main.get().runtimeClasspath
+    }
+
+    javaFxExample {
+        java {
+            setSrcDirs(listOf("test-javaFx"))
             // only want to include java files for the source. 'setSrcDirs' resets includes...
             include("**/*.java")
 
             // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
             srcDir(sourceSets["main"].allJava)
-
-
-            resources {
-                setSrcDirs(listOf("test"))
-                include("dorkbox/*.png")
-            }
-        }
-    }
-
-    example {
-        java {
-            setSrcDirs(listOf("test"))
-            include(javaFile("dorkbox.TestTray", "dorkbox.CustomSwingUI"))
-
-            srcDir(sourceSets["main"].allJava)
         }
 
         resources {
@@ -155,28 +168,15 @@ sourceSets {
 
             srcDir(sourceSets["main"].resources)
         }
-    }
 
-    javaFxExample {
-        java {
-            setSrcDirs(listOf("test"))
-            include(javaFile("dorkbox.TestTray", "dorkbox.TestTrayJavaFX", "dorkbox.CustomSwingUI"))
-
-            srcDir(sourceSets["main"].allJava)
-        }
-
-        resources {
-            setSrcDirs(listOf("test"))
-            include("dorkbox/*.png")
-
-            srcDir(sourceSets["main"].resources)
-        }
+        compileClasspath += sourceSets.main.get().runtimeClasspath + sourceSets.example.runtimeClasspath
     }
 
     swtExample {
         java {
-            setSrcDirs(listOf("test"))
-            include(javaFile("dorkbox.TestTray", "dorkbox.TestTraySwt", "dorkbox.CustomSwingUI"))
+            setSrcDirs(listOf("test-swt"))
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
 
             srcDir(sourceSets["main"].allJava)
         }
@@ -187,6 +187,8 @@ sourceSets {
 
             srcDir(sourceSets["main"].resources)
         }
+
+        compileClasspath += sourceSets.example.compileClasspath
     }
 }
 
@@ -218,57 +220,9 @@ jar.apply {
     }
 }
 
-//fun getSwtMavenName(): String {
-//    // SEE: https://repo1.maven.org/maven2/org/eclipse/platform/
-//
-//    // windows
-//        // org.eclipse.swt.win32.win32.x86
-//        // org.eclipse.swt.win32.win32.x86_64
-//
-//    // linux
-//        // org.eclipse.swt.gtk.linux.x86
-//        // org.eclipse.swt.gtk.linux.x86_64
-//
-//    // macoxs
-//        // org.eclipse.swt.cocoa.macosx.x86_64
-//
-//    val currentOS = org.gradle.internal.os.OperatingSystem.current()
-//    val windowingTk = when {
-//        currentOS.isWindows -> "win32"
-//        currentOS.isMacOsX  -> "cocoa"
-//        else                -> "gtk"
-//    }
-//
-//    val platform = when {
-//        currentOS.isWindows -> "win32"
-//        currentOS.isMacOsX  -> "macosx"
-//        else                -> "linux"
-//    }
-//
-//
-//    var arch = System.getProperty("os.arch")
-//    arch = when {
-//        arch.matches(".*64.*".toRegex()) -> "x86_64"
-//        else                             -> "x86"
-//    }
-//
-//    return "$windowingTk.$platform.$arch"
-//}
-//
-//configurations.all {
-//    resolutionStrategy {
-//        dependencySubstitution {
-//            // The maven property ${osgi.platform} is not handled by Gradle for the SWT builds
-//            // so we replace the dependency, using the osgi platform from the project settings
-//            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
-//                    .with(module("org.eclipse.platform:org.eclipse.swt.gtk.${getSwtMavenName()}:3.110.0"))
-//        }
-//    }
-//}
-
-
 dependencies {
     implementation("com.dorkbox:Executor:2.1")
+    implementation("com.dorkbox:SwtJavaFx:1.0")
     implementation("com.dorkbox:Utilities:1.9")
 
     implementation("org.javassist:javassist:3.27.0-GA")
@@ -281,17 +235,24 @@ dependencies {
     val log = runtimeOnly("ch.qos.logback:logback-classic:1.2.3")!!
 
 
+    // NOTE: we must have GRADLE ITSELF using the Oracle 1.8 JDK (which includes JavaFX).
+    //       OR we will manually include JavaFx11 (which JavaFx8, for what we use, is compatible)
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
     val current = JavaVersion.current()
 
-    // Java7/8 include JavaFX separately. Newer versions of java bundle it (or, you can download/install it separately)
-    if (current == JavaVersion.VERSION_1_7 || current == JavaVersion.VERSION_1_8) {
-        val javaFxFile = "${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar"
-        if (File(javaFxFile).exists()) {
-            val javaFX = api(files(javaFxFile))
-            javaFxExampleCompile.dependencies += listOf(javaFX, log)
+    // Java 8 include JavaFX separately. Newer versions of java bundle it (or, you can download/install it separately)
+    if (current == JavaVersion.VERSION_1_8) {
+        // Paths for the various executables in the Java 'bin' directory
+        val javaFxFile = File("${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar")
+//        val javaFxFile = File("D:/Code/extras/jdk1.8.0_181-oracle/jre/lib/ext/jfxrt.jar")
+        println("\tJavaFX: $javaFxFile")
+
+        if (javaFxFile.exists()) {
+            javaFxExampleCompile(files(javaFxFile))
+        } else {
+            println("\tJavaFX not found, unable to add JavaFX 8 dependency!")
         }
     } else {
         // also see: https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
@@ -303,28 +264,21 @@ dependencies {
             else -> { "unknown" }
         }
 
-        val jfx1 = testImplementation("org.openjfx:javafx-base:11:${platform}")
-        val jfx2 = testImplementation("org.openjfx:javafx-graphics:11:${platform}")
-        val jfx3 = testImplementation("org.openjfx:javafx-controls:11:${platform}")
-
-        javaFxExampleCompile.dependencies += listOf(jfx1, jfx2, jfx3, log)
+        javaFxExampleCompile("org.openjfx:javafx-base:11:${platform}")
+        javaFxExampleCompile("org.openjfx:javafx-graphics:11:${platform}")
+        javaFxExampleCompile("org.openjfx:javafx-controls:11:${platform}")
     }
-
 
     // This is really SWT version 4.xx? no idea how the internal versions are tracked
     // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
     //  because the eclipse release of SWT is sPecIaL!
-    val swtName = GradleUtils.getSwtMavenId("3.114.100")
-    val swtDep = testCompileOnly(swtName) {
-        isTransitive = false
-    }
-
-    compileOnly(swtName) {
+    swtExampleCompile(GradleUtils.getSwtMavenId("3.115.100")) {
         isTransitive = false
     }
 
     exampleCompile.dependencies += log
-    swtExampleCompile.dependencies += listOf(swtDep, log)
+    javaFxExampleCompile.dependencies += log
+    swtExampleCompile.dependencies += log
 }
 
 ///////////////////////////////
@@ -353,16 +307,18 @@ task<JavaExec>("swtExample") {
 ////    Jar Tasks
 /////////////////////////////
 task<Jar>("jarExample") {
-    dependsOn(jar)
-
     archiveBaseName.set("SystemTray-Example")
     group = BasePlugin.BUILD_GROUP
     description = "Create an all-in-one example for testing, on a standard Java installation"
 
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from(sourceSets.example.output.classesDirs)
     from(sourceSets.example.output.resourcesDir)
 
-    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) })
+    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.DSA", "META-INF/*.SF")
+    }
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTray"
@@ -370,35 +326,39 @@ task<Jar>("jarExample") {
 }
 
 task<Jar>("jarJavaFxExample") {
-    dependsOn(jar)
-
     archiveBaseName.set("SystemTray-JavaFxExample")
     group = BasePlugin.BUILD_GROUP
     description = "Create an all-in-one example for testing, using JavaFX"
 
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from(sourceSets.javaFxExample.output.classesDirs)
     from(sourceSets.javaFxExample.output.resourcesDir)
 
-    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) })
-
+    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.DSA", "META-INF/*.SF")
+    }
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
-        attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
+        // necessary for java FX 8 on Java8, for our limited use - the api in JavaFx11 is compatible, so we can compile with any JDK
+        //  attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
     }
 }
 
 task<Jar>("jarSwtExample") {
-    dependsOn(jar)
-
     archiveBaseName.set("SystemTray-SwtExample")
     group = BasePlugin.BUILD_GROUP
     description = "Create an all-in-one example for testing, using SWT"
 
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from(sourceSets.swtExample.output.classesDirs)
     from(sourceSets.swtExample.output.resourcesDir)
 
-    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) })
+    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.DSA", "META-INF/*.SF")
+    }
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTraySwt"
