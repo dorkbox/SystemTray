@@ -18,13 +18,9 @@ package dorkbox.systemTray.util;
 import static com.sun.jna.platform.win32.WinUser.SM_CYMENUCHECK;
 import static com.sun.jna.platform.win32.WinUser.SM_CYSMICON;
 
-import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JMenuItem;
@@ -48,43 +44,9 @@ class SizeAndScalingUtil {
     int getMacOSScaleFactor() {
         // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
 
-        // java6 way of getting it...
-        if (OS.javaVersion == 6) {
-            Object obj = Toolkit.getDefaultToolkit().getDesktopProperty("apple.awt.contentScaleFactor");
-            if (obj instanceof Float) {
-                // 1 = retina not available (regular display). Usually, for retina enabled displays returns 2.
-                if ((Float) obj > 1.9F) {
-                    // this means it's really 2.0F
-                    return 2;
-                } else {
-                    return 1;
-                }
-            }
-        }
-
-        // java7+ way of getting it.
         GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-
-        try {
-            Field field = graphicsDevice.getClass().getDeclaredField("scale");
-            if (field != null) {
-                field.setAccessible(true);
-                Object scale = field.get(graphicsDevice);
-
-                if (scale instanceof Integer) {
-                    return (Integer) scale;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-
-        // apple.awt.contentScaleFactor or graphics scale does not ALWAYS work, so we draw on the screen THEN see if it was scaled.
-        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = GraphicsEnvironment.getLocalGraphicsEnvironment().createGraphics(img);
-        AffineTransform transform = g.getFontRenderContext()
-                                     .getTransform();
-
-        return (int) transform.getScaleX();
+        GraphicsConfiguration graphicsConfig = graphicsDevice.getDefaultConfiguration();
+        return (int) graphicsConfig.getDefaultTransform().getScaleX();
     }
 
 
