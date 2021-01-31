@@ -684,7 +684,9 @@ class SystemTray {
                 AutoDetectTrayType.removeSystemTrayHook(trayName);
 
                 // this is thread-safe
-                EventDispatch.shutdown();
+                if (!AutoDetectTrayType.hasOtherTrays()) {
+                    EventDispatch.shutdown();
+                }
             };
 
             CacheUtil cache = new CacheUtil(trayName + "Cache");
