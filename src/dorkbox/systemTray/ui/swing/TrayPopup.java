@@ -20,10 +20,10 @@ import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -32,7 +32,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.ScreenUtil;
 
@@ -66,26 +65,7 @@ class TrayPopup extends JPopupMenu {
         // on Linux, the following two entries will **MOST OF THE TIME** prevent the hidden dialog from showing in the task-bar
         hiddenDialog.getContentPane().setLayout(null);
 
-        if (OS.javaVersion >= 7) {
-            try {
-                // this is java 1.7, so we have to use reflection. It is critical for this to be set to keep the "hidden" dialog
-                // hidden in the taskbar
-                // hiddenDialog.setType(Window.Type.POPUP);
-                Class<? extends JDialog> hiddenDialogClass = hiddenDialog.getClass();
-                Method[] methods = hiddenDialogClass.getMethods();
-                for (Method method : methods) {
-                    if (method.getName()
-                              .equals("setType")) {
-
-                        Class<Enum> cl = (Class<Enum>) Class.forName("java.awt.Window$Type");
-                        method.invoke(hiddenDialog, Enum.valueOf(cl, "POPUP"));
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                SystemTray.logger.error("Error setting the tray popup menu type. The parent window might show on the task bar.");
-            }
-        }
+        hiddenDialog.setType(Window.Type.POPUP);
 
         hiddenDialog.pack();
         hiddenDialog.setBounds(0,0,0,0);
