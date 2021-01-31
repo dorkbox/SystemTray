@@ -24,7 +24,9 @@ public class HeavyCheckMark {
 
     // - appIndicator/gtk require strings (which is the path)
     // - swing version loads as an image (which can be stream or path, we use path)
-    private static final CacheUtil cache = new CacheUtil("CheckMarks");
+
+    // this is shared, because we are unique based on the details of the checkmark
+    private static final CacheUtil cache = new CacheUtil("SystemTrayCheckMarks");
 
     /**
      * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize
