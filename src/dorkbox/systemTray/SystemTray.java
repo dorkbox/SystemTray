@@ -714,67 +714,14 @@ class SystemTray {
                 logger.info("Successfully loaded");
             }
 
-            // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
-            if (ENABLE_SHUTDOWN_HOOK && !shutdownHooksAdded) {
-                // have to make sure that we only add this ONCE!
-                shutdownHooksAdded = true;
-
-                if (JavaFx.isLoaded) {
-                    // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
-                    // Also, it's nice to have us shutdown at the same time as the main application
-                    JavaFx.onShutdown(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // we have to make sure we shutdown on our own thread (and not the JavaFX thread)
-                            EventDispatch.runLater(new Runnable() {
-                                @Override
-                                public
-                                void run() {
-                                    if (systemTray != null) {
-                                        systemTray.shutdown();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-                else if (Swt.isLoaded) {
-                    // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
-                    // Also, it's nice to have us shutdown at the same time as the main application
-                    dorkbox.swt.Swt.onShutdown(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // we have to make sure we shutdown on our own thread (and not the SWT thread)
-                            EventDispatch.runLater(new Runnable() {
-                                @Override
-                                public
-                                void run() {
-                                    if (systemTray != null) {
-                                        systemTray.shutdown();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-                else if (isTrayType(trayType, TrayType.Swing) ||
-                         isTrayType(trayType, TrayType.WindowsNative) ||
-                         isTrayType(trayType, TrayType.Osx)) {
-                    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            if (systemTray != null) {
-                                systemTray.shutdown();
-                            }
-                        }
-                    }));
-                }
+            if (ENABLE_SHUTDOWN_HOOK) {
+                AutoDetectTrayType.installShutdownHooks(trayName, trayType);
             }
+
+            return new SystemTray(systemTrayMenu, imageResizeUtil);
+        } catch (Exception e) {
+            logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
         }
-    }
 
     /**
      * Gets the version number.

@@ -21,9 +21,14 @@ import static dorkbox.systemTray.SystemTray.logger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashMap;
+import java.util.Map;
 
+import dorkbox.javaFx.JavaFx;
 import dorkbox.os.OS;
 import dorkbox.os.OSUtil;
+import dorkbox.swt.Swt;
+import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTray.TrayType;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.AppIndicatorExtension;
@@ -42,6 +47,11 @@ import dorkbox.util.IO;
  */
 public
 class AutoDetectTrayType {
+    // we want to have "singleton" access for a specified SystemTray NAME, so that (should one want) different parts of an application
+    // can add entries to the menu without having to pass the SystemTray object around
+    private static final Map<String, SystemTray> traySingletons = new HashMap<>();
+
+
     public static
     Class<? extends Tray> selectType(final TrayType trayType) {
         if (trayType == TrayType.Gtk) {
@@ -109,7 +119,7 @@ class AutoDetectTrayType {
      */
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public static
-    Class<? extends Tray> get() {
+    Class<? extends Tray> get(final String trayName) {
         if (OS.isWindows()) {
             return selectType(TrayType.WindowsNative);
         }
@@ -215,7 +225,7 @@ class AutoDetectTrayType {
                             else if (minorAndPatch < 26.0D) {
                                 Tray.gtkGnomeWorkaround = true;
 
-                                LegacyExtension.install();
+                                LegacyExtension.install(trayName);
 
                                 // now, what VERSION of fedora? "normal" fedora doesn't have AppIndicator installed, so we have to use GtkStatusIcon
                                 // 23 is gtk, 24/25/26 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
@@ -260,7 +270,7 @@ class AutoDetectTrayType {
                         if (version[0] == 17 && version[1] == 10) {
                             // this is gnome 3.26.1, so we install the Gnome extension
                             Tray.gtkGnomeWorkaround = true;
-                            LegacyExtension.install();
+                            LegacyExtension.install(trayName);
                         }
                         else if (version[0] >= 18) {
                             // ubuntu 18.04 doesn't need the extension BUT does need a logout-login (or gnome-shell restart) for it to work
@@ -398,5 +408,97 @@ class AutoDetectTrayType {
         }
 
         throw new RuntimeException("This OS is not supported. Please create an issue with the details from `SystemTray.DEBUG=true;`");
+    }
+
+    public static
+    void installShutdownHooks(final String trayName, final Class<? extends Tray> trayType) {
+        // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
+        if (JavaFx.isLoaded) {
+            // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
+            // Also, it's nice to have us shutdown at the same time as the main application
+            JavaFx.onShutdown(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
+                    synchronized (traySingletons) {
+                        if (traySingletons.containsKey(trayName)) {
+                            // we haven't been removed by anything else
+
+                            // we have to make sure we shutdown on our own thread (and not the JavaFX thread)
+                            EventDispatch.runLater(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    synchronized (traySingletons) {
+                                        // Only perform this action ONCE!
+                                        SystemTray systemTray = traySingletons.remove(trayName);
+                                        if (systemTray != null) {
+                                            System.err.println("remove4");
+                                            systemTray.shutdown();
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        else if (Swt.isLoaded) {
+            // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
+            // Also, it's nice to have us shutdown at the same time as the main application
+            dorkbox.swt.Swt.onShutdown(new Runnable() {
+                @Override
+                public
+                void run() {
+                    // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
+                    synchronized (traySingletons) {
+                        if (traySingletons.containsKey(trayName)) {
+                            // we have to make sure we shutdown on our own thread (and not the SWT thread)
+                            EventDispatch.runLater(new Runnable() {
+                                @Override
+                                public
+                                void run() {
+                                    synchronized (traySingletons) {
+                                        // Only perform this action ONCE!
+                                        SystemTray systemTray = traySingletons.remove(trayName);
+                                        if (systemTray != null) {
+                                            System.err.println("remove3");
+                                            systemTray.shutdown();
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        else if (isTrayType(trayType, TrayType.Swing) ||
+                 isTrayType(trayType, TrayType.WindowsNative) ||
+                 isTrayType(trayType, TrayType.Osx)) {
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public
+                void run() {
+                    synchronized (traySingletons) {
+                        // Only perform this action ONCE!
+                        SystemTray systemTray = traySingletons.remove(trayName);
+                        if (systemTray != null) {
+                            System.err.println("remove2");
+                            systemTray.shutdown();
+                        }
+                    }
+                }
+            }));
+        }
+    }
+
+    public static
+    void removeSystemTrayHook(final String trayName) {
+        synchronized (traySingletons) {
+            traySingletons.remove(trayName);
+        }
     }
 }
