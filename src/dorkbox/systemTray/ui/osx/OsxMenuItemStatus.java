@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 dorkbox, llc
+ * Copyright 2021 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package dorkbox.systemTray.ui.osx;
 
+import dorkbox.jna.macos.cocoa.NSString;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.peer.StatusPeer;
-import dorkbox.jna.macos.cocoa.NSString;
 
 class OsxMenuItemStatus extends OsxBaseMenuItem implements StatusPeer {
 

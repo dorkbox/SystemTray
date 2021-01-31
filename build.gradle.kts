@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 dorkbox, llc
+ * Copyright 2021 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.time.Instant
 
 ///////////////////////////////
@@ -86,12 +85,9 @@ licensing {
 }
 
 
-val exampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 
-val SourceSetContainer.example: SourceSet get() = maybeCreate("example")
-fun SourceSetContainer.example(block: SourceSet.() -> Unit) = example.apply(block)
 val SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
 val SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
@@ -115,12 +111,6 @@ sourceSets {
     }
 
     test {
-        java {
-            setSrcDirs(listOf("test")) // no includes
-        }
-    }
-
-    example {
         java {
             setSrcDirs(listOf("test"))
             // only want to include java files for the source. 'setSrcDirs' resets includes...
@@ -156,7 +146,7 @@ sourceSets {
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets.main.get().runtimeClasspath + sourceSets.example.runtimeClasspath
+        compileClasspath += sourceSets.test.get().runtimeClasspath
     }
 
     swtExample {
@@ -175,7 +165,7 @@ sourceSets {
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets.example.compileClasspath
+        compileClasspath += sourceSets.test.get().runtimeClasspath
     }
 }
 
@@ -263,7 +253,8 @@ dependencies {
         isTransitive = false
     }
 
-    exampleCompile.dependencies += log
+    configurations["testCompile"].dependencies += configurations["implementation"].dependencies
+    configurations["testCompile"].dependencies += log
     javaFxExampleCompile.dependencies += log
     swtExampleCompile.dependencies += log
 }
@@ -272,7 +263,7 @@ dependencies {
 //////    Tasks to launch examples from gradle
 ///////////////////////////////
 task<JavaExec>("example") {
-    classpath = sourceSets.example.runtimeClasspath
+    classpath = sourceSets.test.get().runtimeClasspath
     main = "dorkbox.TestTray"
     standardInput = System.`in`
 }
@@ -300,10 +291,10 @@ task<Jar>("jarExample") {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    from(sourceSets.example.output.classesDirs)
-    from(sourceSets.example.output.resourcesDir)
+    from(sourceSets.test.get().output.classesDirs)
+    from(sourceSets.test.get().output.resourcesDir)
 
-    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+    from(configurations["testCompile"].map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.DSA", "META-INF/*.SF")
     }
 

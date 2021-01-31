@@ -25,64 +25,64 @@ import dorkbox.util.CacheUtil;
  * Icons from 'SJJB Icons', public domain/CC0 icon set
  */
 public
-class TestReAddTray {
+class TestMultiTray {
 
-    public static final URL LT_GRAY_TRAIN = TestReAddTray.class.getResource("transport_train_station.p.666666.32.png");
+    public static final URL LT_GRAY_TRAIN = TestMultiTray.class.getResource("transport_train_station.p.666666.32.png");
+    public static final URL GREEN_TRAIN = TestMultiTray.class.getResource("transport_train_station.p.39AC39.32.png");
 
     public static
     void main(String[] args) {
         // make sure JNA jar is on the classpath!
-        new TestReAddTray();
+        new TestMultiTray();
     }
 
-    private SystemTray systemTray;
+    private SystemTray systemTray1;
+    private SystemTray systemTray2;
 
     public
-    TestReAddTray() {
+    TestMultiTray() {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
         // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
-        CacheUtil.clear("SysTrayExample");
+        CacheUtil.clear("SysTrayExample1");
+        CacheUtil.clear("SysTrayExample2");
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 
-        this.systemTray = SystemTray.get("SysTrayExample");
-        if (systemTray == null) {
+        this.systemTray1 = SystemTray.get("SysTrayExample1");
+        if (systemTray1 == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        systemTray.setTooltip("Mail Checker");
-        systemTray.setImage(LT_GRAY_TRAIN);
-        systemTray.setStatus("No Mail");
+        systemTray1.setTooltip("Mail Checker");
+        systemTray1.setImage(LT_GRAY_TRAIN);
+        systemTray1.setStatus("No Mail");
 
-        systemTray.getMenu().add(new MenuItem("Quit", e->{
-            systemTray.shutdown();
+        systemTray1.getMenu().add(new MenuItem("Quit", e->{
+            systemTray1.shutdown();
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
 
 
+        System.err.println("Creating another tray");
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        System.err.println("Removing then adding new tray");
-
-        systemTray.remove();
-
-        systemTray = SystemTray.get("SysTrayExample");
-        if (systemTray == null) {
+        systemTray2 = SystemTray.get("SysTrayExample2");
+        if (systemTray2 == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        systemTray.setTooltip("Mail Checker");
-        systemTray.setImage(LT_GRAY_TRAIN);
-        systemTray.setStatus("SUPER Mail");
+        systemTray2.setTooltip("Choo-Choo!");
+        systemTray2.setImage(GREEN_TRAIN);
+        systemTray2.setStatus("HONK");
 
-        systemTray.getMenu().add(new MenuItem("Quit", e->{
-            systemTray.shutdown();
+        systemTray2.getMenu().add(new MenuItem("Quit", e->{
+            systemTray2.shutdown();
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
     }

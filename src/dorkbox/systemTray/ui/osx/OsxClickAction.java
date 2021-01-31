@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 dorkbox, llc
+ * Copyright 2021 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ class OsxClickAction extends NSObject {
         clickMap.remove(asPointer());
     }
 
-    protected
+    @Override protected
     void finalize() throws Throwable {
         synchronized (clickMap){
             clickMap.remove(asPointer());
