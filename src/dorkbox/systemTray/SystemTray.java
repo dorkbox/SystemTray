@@ -193,6 +193,17 @@ class SystemTray {
             return null;
         }
 
+        // if we already have a system tray by this name, return it (do not allow duplicate tray names)
+        SystemTray existingTray = AutoDetectTrayType.getInstance(trayName);
+        if (existingTray != null) {
+            if (DEBUG) {
+                logger.info("Returning existing tray: " + trayName);
+            }
+            return existingTray;
+        }
+
+
+
         boolean isNix = OS.isLinux() || OS.isUnix();
         boolean isWindows = OS.isWindows();
         boolean isMacOsX = OS.isMacOsX();

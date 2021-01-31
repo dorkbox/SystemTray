@@ -488,4 +488,11 @@ class AutoDetectTrayType {
             return !traySingletons.isEmpty();
         }
     }
+
+    public static
+    SystemTray getInstance(final String trayName) {
+        synchronized (traySingletons) {
+            return traySingletons.get(trayName);
+        }
+    }
 }
