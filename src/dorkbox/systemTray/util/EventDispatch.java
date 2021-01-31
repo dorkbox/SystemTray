@@ -61,17 +61,13 @@ class EventDispatch {
         }
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        runLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                try {
-                    runnable.run();
-                } catch (Exception e) {
-                    LoggerFactory.getLogger(GtkEventDispatch.class).error("Error during Event dispatch run loop: ", e);
-                } finally {
-                    countDownLatch.countDown();
-                }
+        runLater(()->{
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                LoggerFactory.getLogger(GtkEventDispatch.class).error("Error during Event dispatch run loop: ", e);
+            } finally {
+                countDownLatch.countDown();
             }
         });
 
@@ -113,16 +109,12 @@ class EventDispatch {
             }
         }
 
-        eventDispatchExecutor.execute(new Runnable() {
-            @Override
-            public
-            void run() {
-                EventDispatch.isDispatch.set(true);
+        eventDispatchExecutor.execute(()->{
+            EventDispatch.isDispatch.set(true);
 
-                runnable.run();
+            runnable.run();
 
-                EventDispatch.isDispatch.set(false);
-            }
+            EventDispatch.isDispatch.set(false);
         });
     }
 
@@ -131,15 +123,11 @@ class EventDispatch {
      */
     public static
     void shutdown() {
-        runLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (EventDispatch.class) {
-                    if (eventDispatchExecutor != null) {
-                        eventDispatchExecutor.shutdownNow();
-                        eventDispatchExecutor = null;
-                    }
+        runLater(()->{
+            synchronized (EventDispatch.class) {
+                if (eventDispatchExecutor != null) {
+                    eventDispatchExecutor.shutdownNow();
+                    eventDispatchExecutor = null;
                 }
             }
         });

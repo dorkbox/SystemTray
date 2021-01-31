@@ -60,17 +60,14 @@ class TestMultiTray {
         systemTray1.setStatus("No Mail");
 
         systemTray1.getMenu().add(new MenuItem("Quit", e->{
+            System.err.println("Quit 1");
             systemTray1.shutdown();
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
 
 
         System.err.println("Creating another tray");
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
 
         systemTray2 = SystemTray.get("SysTrayExample2");
         if (systemTray2 == null) {
@@ -82,6 +79,7 @@ class TestMultiTray {
         systemTray2.setStatus("HONK");
 
         systemTray2.getMenu().add(new MenuItem("Quit", e->{
+            System.err.println("Quit 2");
             systemTray2.shutdown();
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
