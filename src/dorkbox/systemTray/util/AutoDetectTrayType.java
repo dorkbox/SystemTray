@@ -416,31 +416,23 @@ class AutoDetectTrayType {
         if (JavaFx.isLoaded) {
             // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
             // Also, it's nice to have us shutdown at the same time as the main application
-            JavaFx.onShutdown(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
-                    synchronized (traySingletons) {
-                        if (traySingletons.containsKey(trayName)) {
-                            // we haven't been removed by anything else
+            JavaFx.onShutdown(()->{
+                // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
+                synchronized (traySingletons) {
+                    if (traySingletons.containsKey(trayName)) {
+                        // we haven't been removed by anything else
 
-                            // we have to make sure we shutdown on our own thread (and not the JavaFX thread)
-                            EventDispatch.runLater(new Runnable() {
-                                @Override
-                                public
-                                void run() {
-                                    synchronized (traySingletons) {
-                                        // Only perform this action ONCE!
-                                        SystemTray systemTray = traySingletons.remove(trayName);
-                                        if (systemTray != null) {
-                                            System.err.println("remove4");
-                                            systemTray.shutdown();
-                                        }
-                                    }
+                        // we have to make sure we shutdown on our own thread (and not the JavaFX thread)
+                        EventDispatch.runLater(()->{
+                            synchronized (traySingletons) {
+                                // Only perform this action ONCE!
+                                SystemTray systemTray = traySingletons.remove(trayName);
+                                if (systemTray != null) {
+                                    System.err.println("remove4");
+                                    systemTray.shutdown();
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 }
             });
@@ -448,29 +440,21 @@ class AutoDetectTrayType {
         else if (Swt.isLoaded) {
             // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
             // Also, it's nice to have us shutdown at the same time as the main application
-            dorkbox.swt.Swt.onShutdown(new Runnable() {
-                @Override
-                public
-                void run() {
-                    // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
-                    synchronized (traySingletons) {
-                        if (traySingletons.containsKey(trayName)) {
-                            // we have to make sure we shutdown on our own thread (and not the SWT thread)
-                            EventDispatch.runLater(new Runnable() {
-                                @Override
-                                public
-                                void run() {
-                                    synchronized (traySingletons) {
-                                        // Only perform this action ONCE!
-                                        SystemTray systemTray = traySingletons.remove(trayName);
-                                        if (systemTray != null) {
-                                            System.err.println("remove3");
-                                            systemTray.shutdown();
-                                        }
-                                    }
+            dorkbox.swt.Swt.onShutdown(()->{
+                // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
+                synchronized (traySingletons) {
+                    if (traySingletons.containsKey(trayName)) {
+                        // we have to make sure we shutdown on our own thread (and not the SWT thread)
+                        EventDispatch.runLater(()->{
+                            synchronized (traySingletons) {
+                                // Only perform this action ONCE!
+                                SystemTray systemTray = traySingletons.remove(trayName);
+                                if (systemTray != null) {
+                                    System.err.println("remove3");
+                                    systemTray.shutdown();
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 }
             });
@@ -478,17 +462,13 @@ class AutoDetectTrayType {
         else if (isTrayType(trayType, TrayType.Swing) ||
                  isTrayType(trayType, TrayType.WindowsNative) ||
                  isTrayType(trayType, TrayType.Osx)) {
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public
-                void run() {
-                    synchronized (traySingletons) {
-                        // Only perform this action ONCE!
-                        SystemTray systemTray = traySingletons.remove(trayName);
-                        if (systemTray != null) {
-                            System.err.println("remove2");
-                            systemTray.shutdown();
-                        }
+            Runtime.getRuntime().addShutdownHook(new Thread(()->{
+                synchronized (traySingletons) {
+                    // Only perform this action ONCE!
+                    SystemTray systemTray = traySingletons.remove(trayName);
+                    if (systemTray != null) {
+                        System.err.println("remove2");
+                        systemTray.shutdown();
                     }
                 }
             }));

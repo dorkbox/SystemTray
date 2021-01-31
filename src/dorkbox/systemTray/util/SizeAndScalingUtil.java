@@ -145,21 +145,17 @@ class SizeAndScalingUtil {
                 } else {
                     final AtomicInteger iconSize = new AtomicInteger();
 
-                    SwingUtil.invokeAndWaitQuietly(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            JMenuItem jMenuItem = new JMenuItem();
+                    SwingUtil.invokeAndWaitQuietly(()->{
+                        JMenuItem jMenuItem = new JMenuItem();
 
-                            // do the same modifications that would also happen (if specified) for the actual displayed menu items
-                            if (SystemTray.SWING_UI != null) {
-                                jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
-                            }
-
-                            // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                            int height = SwingUtil.getLargestIconHeightForButton(jMenuItem);
-                            iconSize.set(height);
+                        // do the same modifications that would also happen (if specified) for the actual displayed menu items
+                        if (SystemTray.SWING_UI != null) {
+                            jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
                         }
+
+                        // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+                        int height = SwingUtil.getLargestIconHeightForButton(jMenuItem);
+                        iconSize.set(height);
                     });
                     TRAY_MENU_SIZE = iconSize.get();
                 }
