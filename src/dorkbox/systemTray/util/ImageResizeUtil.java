@@ -39,17 +39,20 @@ class ImageResizeUtil {
 
     // - appIndicator/gtk require strings (which is the path)
     // - swing version loads as an image (which can be stream or path, we use path)
-    private static final CacheUtil cache = new CacheUtil("SystemTrayImages");
+    private final CacheUtil cache;
 
+    public ImageResizeUtil(CacheUtil cache) {
+        this.cache = cache;
+    }
 
-    public static
+    public
     File getTransparentImage() {
         // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
         // it is HIGHLY unlikely that the menu entry will be smaller than 4px.
         return getTransparentImage(4);
     }
 
-    public static
+    public
     File getTransparentImage(final int imageSize) {
         // NOTE: this does not need to be called on the EDT
         try {
@@ -60,7 +63,7 @@ class ImageResizeUtil {
         }
     }
 
-    public static
+    public synchronized
     File getErrorImage(int size) {
         if (size == 0) {
             // default size
@@ -96,12 +99,12 @@ class ImageResizeUtil {
         }
     }
 
-    private static synchronized
+    private
     File resizeAndCache(final int size, final File file) {
         return resizeAndCache(size, file.getAbsolutePath());
     }
 
-    private static synchronized
+    private
     File resizeAndCache(final int size, final String fileName) {
         if (fileName == null) {
             return null;
@@ -121,7 +124,7 @@ class ImageResizeUtil {
     }
 
     @SuppressWarnings("Duplicates")
-    private static synchronized
+    private synchronized
     File resizeAndCache(final int size, InputStream imageStream) {
         if (imageStream == null) {
             return null;
@@ -218,7 +221,7 @@ class ImageResizeUtil {
      * @return the file on disk that is the resized icon
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static
+    private
     File resizeFileNoCheck(final int size, InputStream inputStream) throws IOException {
         // have to resize the file (and return the new path)
 
@@ -250,34 +253,34 @@ class ImageResizeUtil {
     }
 
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final File imageFile) {
         if (imageFile == null) {
             return null;
         }
 
         if (SystemTray.AUTO_SIZE) {
-            return ImageResizeUtil.resizeAndCache(getSize(isTrayImage), imageFile);
+            return resizeAndCache(getSize(isTrayImage), imageFile);
         } else {
             return imageFile;
         }
     }
 
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final String imagePath) {
         if (imagePath == null) {
             return null;
         }
 
         if (SystemTray.AUTO_SIZE) {
-            return ImageResizeUtil.resizeAndCache(getSize(isTrayImage), imagePath);
+            return resizeAndCache(getSize(isTrayImage), imagePath);
         } else {
             return new File(imagePath);
         }
     }
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final URL imageUrl) {
         if (imageUrl == null) {
             return null;
@@ -300,14 +303,14 @@ class ImageResizeUtil {
         }
     }
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final InputStream imageStream) {
         if (imageStream == null) {
             return null;
         }
 
         if (SystemTray.AUTO_SIZE) {
-            return ImageResizeUtil.resizeAndCache(getSize(isTrayImage), imageStream);
+            return resizeAndCache(getSize(isTrayImage), imageStream);
         } else {
             try {
                 return cache.save(imageStream);
@@ -319,7 +322,7 @@ class ImageResizeUtil {
     }
 
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final Image image) {
         if (image == null) {
             return null;
@@ -352,7 +355,7 @@ class ImageResizeUtil {
         }
     }
 
-    public static
+    public
     File shouldResizeOrCache(final boolean isTrayImage, final ImageInputStream imageStream) {
         if (imageStream == null) {
             return null;
