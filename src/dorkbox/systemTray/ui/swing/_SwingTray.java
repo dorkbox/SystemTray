@@ -71,7 +71,7 @@ class _SwingTray extends Tray {
 
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(null, null) {
+        final SwingMenu swingMenu = new SwingMenu() {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
