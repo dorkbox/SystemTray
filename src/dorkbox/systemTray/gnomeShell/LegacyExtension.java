@@ -99,10 +99,13 @@ class LegacyExtension extends ExtensionSupport {
 
         if (success && !hasSystemTray) {
             // copies our provided extension files to the correct location on disk. Also sets the APP NAME in the extension file
-            ExtensionSupport.installFile("extension.js", directory, trayName);
-
-            if (SystemTray.DEBUG) {
-                logger.debug("Enabling legacy gnome-shell extension");
+            boolean installedJs = ExtensionSupport.installFile("extension.js", directory, trayName);
+            if (!installedJs) {
+                logger.error("Unable to install legacy gnome-shell extension!!");
+            } else {
+                if (SystemTray.DEBUG) {
+                    logger.debug("Enabling legacy gnome-shell extension");
+                }
             }
 
             if (!enabledExtensions.contains(UID)) {

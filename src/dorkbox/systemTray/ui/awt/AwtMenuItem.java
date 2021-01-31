@@ -47,25 +47,13 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void setEnabled(final dorkbox.systemTray.MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(menuItem.getEnabled());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
     @Override
     public
     void setText(final dorkbox.systemTray.MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setLabel(menuItem.getText());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setLabel(menuItem.getText()));
     }
 
     @SuppressWarnings("Duplicates")
@@ -86,15 +74,11 @@ class AwtMenuItem implements MenuItemPeer {
                 public
                 void actionPerformed(ActionEvent e) {
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }
@@ -110,13 +94,7 @@ class AwtMenuItem implements MenuItemPeer {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
         final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    _native.setShortcut(new MenuShortcut(vKey));
-                }
-            });
+        SwingUtil.invokeLater(()->_native.setShortcut(new MenuShortcut(vKey)));
     }
 
     @Override
@@ -129,21 +107,17 @@ class AwtMenuItem implements MenuItemPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.deleteShortcut();
-                _native.setEnabled(false);
+        SwingUtil.invokeLater(()->{
+            _native.deleteShortcut();
+            _native.setEnabled(false);
 
-                if (callback != null) {
-                    _native.removeActionListener(callback);
-                    callback = null;
-                }
-                parent._native.remove(_native);
-
-                _native.removeNotify();
+            if (callback != null) {
+                _native.removeActionListener(callback);
+                callback = null;
             }
+            parent._native.remove(_native);
+
+            _native.removeNotify();
         });
     }
 }

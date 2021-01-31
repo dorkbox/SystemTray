@@ -49,7 +49,7 @@ class _GtkStatusIconNativeTray extends Tray {
     private GEventCallback gtkCallback = null;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
-    private AtomicBoolean shuttingDown = new AtomicBoolean();
+    private final AtomicBoolean shuttingDown = new AtomicBoolean();
 
     private volatile boolean isActive = false;
 
@@ -74,20 +74,16 @@ class _GtkStatusIconNativeTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                GtkEventDispatch.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        boolean enabled = menuItem.getEnabled();
+                GtkEventDispatch.dispatch(()->{
+                    boolean enabled = menuItem.getEnabled();
 
-                        if (visible && !enabled) {
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, false);
-                            visible = false;
-                        }
-                        else if (!visible && enabled) {
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, true);
-                            visible = true;
-                        }
+                    if (visible && !enabled) {
+                        Gtk2.gtk_status_icon_set_visible(trayIcon, false);
+                        visible = false;
+                    }
+                    else if (!visible && enabled) {
+                        Gtk2.gtk_status_icon_set_visible(trayIcon, true);
+                        visible = true;
                     }
                 });
             }
@@ -100,16 +96,12 @@ class _GtkStatusIconNativeTray extends Tray {
                     return;
                 }
 
-                GtkEventDispatch.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        Gtk2.gtk_status_icon_set_from_file(trayIcon, imageFile.getAbsolutePath());
+                GtkEventDispatch.dispatch(()->{
+                    Gtk2.gtk_status_icon_set_from_file(trayIcon, imageFile.getAbsolutePath());
 
-                        if (!isActive) {
-                            isActive = true;
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, true);
-                        }
+                    if (!isActive) {
+                        isActive = true;
+                        Gtk2.gtk_status_icon_set_visible(trayIcon, true);
                     }
                 });
             }
@@ -138,13 +130,7 @@ class _GtkStatusIconNativeTray extends Tray {
 
                 tooltipText = text;
 
-                GtkEventDispatch.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        Gtk2.gtk_status_icon_set_tooltip_text(trayIcon, text);
-                    }
-                });
+                GtkEventDispatch.dispatch(()->Gtk2.gtk_status_icon_set_tooltip_text(trayIcon, text));
             }
 
             @Override
@@ -152,18 +138,14 @@ class _GtkStatusIconNativeTray extends Tray {
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
-                    GtkEventDispatch.dispatch(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // this hides the indicator
-                            Gtk2.gtk_status_icon_set_visible(trayIcon, false);
-                            GObject.g_object_unref(trayIcon);
+                    GtkEventDispatch.dispatch(()->{
+                        // this hides the indicator
+                        Gtk2.gtk_status_icon_set_visible(trayIcon, false);
+                        GObject.g_object_unref(trayIcon);
 
-                            // mark for GC
-                            trayIcon = null;
-                            gtkCallback = null;
-                        }
+                        // mark for GC
+                        trayIcon = null;
+                        gtkCallback = null;
                     });
 
                     super.remove();
@@ -174,53 +156,45 @@ class _GtkStatusIconNativeTray extends Tray {
             }
         };
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                trayIcon = Gtk2.gtk_status_icon_new();
+        GtkEventDispatch.dispatch(()->{
+            trayIcon = Gtk2.gtk_status_icon_new();
 
-                gtkCallback = new GEventCallback() {
-                    @Override
-                    public
-                    void callback(Pointer notUsed, final GdkEventButton event) {
-                        // show the swing menu on the EDT
-                        // BUTTON_PRESS only (any mouse click)
-                        if (event.type == 4) {
-                            Gtk2.gtk_menu_popup(gtkMenu._nativeMenu, null, null, Gtk2.gtk_status_icon_position_menu,
-                                                trayIcon, 0, event.time);
-                        }
+            gtkCallback = new GEventCallback() {
+                @Override
+                public
+                void callback(Pointer notUsed, final GdkEventButton event) {
+                    // show the swing menu on the EDT
+                    // BUTTON_PRESS only (any mouse click)
+                    if (event.type == 4) {
+                        Gtk2.gtk_menu_popup(gtkMenu._nativeMenu, null, null, Gtk2.gtk_status_icon_position_menu,
+                                            trayIcon, 0, event.time);
                     }
-                };
-                GObject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
-            }
+                }
+            };
+            GObject.g_signal_connect_object(trayIcon, "button_press_event", gtkCallback, null, 0);
         });
 
         GtkEventDispatch.waitForEventsToComplete();
 
         // we have to be able to set our title, otherwise the gnome-shell extension WILL NOT work
-        GtkEventDispatch.dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                // in GNOME by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
-                // If you change "SystemTray" to something else, make sure to change it in extension.js as well
+        GtkEventDispatch.dispatchAndWait(()->{
+            // in GNOME by default, the title/name of the tray icon is "java". We are the only java-based tray icon, so we just use that.
+            // If you change "SystemTray" to something else, make sure to change it in extension.js as well
 
-                // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
-                //  in extension.js, so don't change it
-                Gtk2.gtk_status_icon_set_title(trayIcon, trayName);
+            // necessary for gnome icon detection/placement because we move tray icons around by title. This is hardcoded
+            //  in extension.js, so don't change it
+            Gtk2.gtk_status_icon_set_title(trayIcon, trayName);
 
-                // can cause
-                // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
-                // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
+            // can cause
+            // Gdk-CRITICAL **: gdk_window_thaw_toplevel_updates: assertion 'window->update_and_descendants_freeze_count > 0' failed
+            // Gdk-CRITICAL **: IA__gdk_window_thaw_toplevel_updates_libgtk_only: assertion 'private->update_and_descendants_freeze_count > 0' failed
 
-                // ... so, bizzaro things going on here. These errors DO NOT happen if JavaFX or Gnome is dispatching the events.
-                //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
-                //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
-                //           we appear broken.
-                if (JavaFx.isLoaded || Tray.gtkGnomeWorkaround) {
-                    Gtk2.gtk_status_icon_set_name(trayIcon, trayName);
-                }
+            // ... so, bizzaro things going on here. These errors DO NOT happen if JavaFX or Gnome is dispatching the events.
+            //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
+            //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
+            //           we appear broken.
+            if (JavaFx.isLoaded || Tray.gtkGnomeWorkaround) {
+                Gtk2.gtk_status_icon_set_name(trayIcon, trayName);
             }
         });
 

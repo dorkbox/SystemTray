@@ -42,7 +42,7 @@ import dorkbox.util.SwingUtil;
  * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
  * https://stackoverflow.com/questions/331407/java-trayicon-using-image-with-transparent-background/3882028#3882028
  */
-@SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess"})
 public final
 class _SwingTray extends Tray {
     private volatile SystemTray tray;
@@ -54,6 +54,7 @@ class _SwingTray extends Tray {
     private volatile String tooltipText = "";
 
     // Called in the EDT
+    @SuppressWarnings("unused")
     public
     _SwingTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
         super(onRemoveEvent);
@@ -74,31 +75,27 @@ class _SwingTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (tray == null) {
-                            tray = SystemTray.getSystemTray();
-                        }
+                SwingUtil.invokeLater(()->{
+                    if (tray == null) {
+                        tray = SystemTray.getSystemTray();
+                    }
 
-                        boolean enabled = menuItem.getEnabled();
+                    boolean enabled = menuItem.getEnabled();
 
-                        if (visible && !enabled) {
-                            tray.remove(trayIcon);
-                            visible = false;
-                        }
-                        else if (!visible && enabled) {
-                            try {
-                                tray.add(trayIcon);
-                                visible = true;
+                    if (visible && !enabled) {
+                        tray.remove(trayIcon);
+                        visible = false;
+                    }
+                    else if (!visible && enabled) {
+                        try {
+                            tray.add(trayIcon);
+                            visible = true;
 
-                                // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                                // want to make sure keep the tooltip text the same as before.
-                                trayIcon.setToolTip(tooltipText);
-                            } catch (AWTException e) {
-                                dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
-                            }
+                            // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                            // want to make sure keep the tooltip text the same as before.
+                            trayIcon.setToolTip(tooltipText);
+                        } catch (AWTException e) {
+                            dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
                         }
                     }
                 });
@@ -112,55 +109,51 @@ class _SwingTray extends Tray {
                     return;
                 }
 
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (tray == null) {
-                            tray = SystemTray.getSystemTray();
-                        }
-
-                        // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                        final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-                        trayImage.flush();
-
-                        if (trayIcon == null) {
-                            // here we init. everything
-                            trayIcon = new TrayIcon(trayImage);
-
-                            JPopupMenu popupMenu = (JPopupMenu) _native;
-                            popupMenu.pack();
-                            popupMenu.setFocusable(true);
-
-                            // appindicators DO NOT support anything other than PLAIN gtk-menus, which do not support tooltips
-                            if (tooltipText != null && !tooltipText.isEmpty()) {
-                                trayIcon.setToolTip(tooltipText);
-                            }
-
-                            trayIcon.addMouseListener(new MouseAdapter() {
-                                @Override
-                                public
-                                void mousePressed(MouseEvent e) {
-                                    TrayPopup popupMenu = (TrayPopup) _native;
-                                    popupMenu.doShow(e.getPoint(), 0);
-                                }
-                            });
-
-                            try {
-                                tray.add(trayIcon);
-                            } catch (AWTException e) {
-                                dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
-                            }
-                        } else {
-                            trayIcon.setImage(trayImage);
-                        }
-
-                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                        // want to make sure keep the tooltip text the same as before.
-                        trayIcon.setToolTip(tooltipText);
-
-                        ((TrayPopup) _native).setTitleBarImage(imageFile);
+                SwingUtil.invokeLater(()->{
+                    if (tray == null) {
+                        tray = SystemTray.getSystemTray();
                     }
+
+                    // stupid java won't scale it right away, so we have to do this twice to get the correct size
+                    final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
+                    trayImage.flush();
+
+                    if (trayIcon == null) {
+                        // here we init. everything
+                        trayIcon = new TrayIcon(trayImage);
+
+                        JPopupMenu popupMenu = (JPopupMenu) _native;
+                        popupMenu.pack();
+                        popupMenu.setFocusable(true);
+
+                        // appindicators DO NOT support anything other than PLAIN gtk-menus, which do not support tooltips
+                        if (tooltipText != null && !tooltipText.isEmpty()) {
+                            trayIcon.setToolTip(tooltipText);
+                        }
+
+                        trayIcon.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public
+                            void mousePressed(MouseEvent e) {
+                                TrayPopup popupMenu = (TrayPopup) _native;
+                                popupMenu.doShow(e.getPoint(), 0);
+                            }
+                        });
+
+                        try {
+                            tray.add(trayIcon);
+                        } catch (AWTException e) {
+                            dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
+                        }
+                    } else {
+                        trayIcon.setImage(trayImage);
+                    }
+
+                    // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                    // want to make sure keep the tooltip text the same as before.
+                    trayIcon.setToolTip(tooltipText);
+
+                    ((TrayPopup) _native).setTitleBarImage(imageFile);
                 });
             }
 
@@ -188,15 +181,11 @@ class _SwingTray extends Tray {
 
                 tooltipText = text;
 
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                        // want to make sure keep the tooltip text the same as before.
-                        if (trayIcon != null) {
-                            trayIcon.setToolTip(text);
-                        }
+                SwingUtil.invokeLater(()->{
+                    // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                    // want to make sure keep the tooltip text the same as before.
+                    if (trayIcon != null) {
+                        trayIcon.setToolTip(text);
                     }
                 });
             }
@@ -204,19 +193,15 @@ class _SwingTray extends Tray {
             @Override
             public
             void remove() {
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (trayIcon != null) {
-                            if (tray != null) {
-                                tray.remove(trayIcon);
-                            }
-                            trayIcon = null;
+                SwingUtil.invokeLater(()->{
+                    if (trayIcon != null) {
+                        if (tray != null) {
+                            tray.remove(trayIcon);
                         }
-
-                        tray = null;
+                        trayIcon = null;
                     }
+
+                    tray = null;
                 });
 
                 super.remove();

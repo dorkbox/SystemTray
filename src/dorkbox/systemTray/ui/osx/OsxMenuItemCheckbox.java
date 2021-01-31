@@ -18,13 +18,13 @@ package dorkbox.systemTray.ui.osx;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import dorkbox.jna.macos.cocoa.NSCellStateValue;
+import dorkbox.jna.macos.cocoa.NSString;
+import dorkbox.jna.macos.cocoa.OsxClickCallback;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
-import dorkbox.jna.macos.cocoa.NSCellStateValue;
-import dorkbox.jna.macos.cocoa.NSString;
-import dorkbox.jna.macos.cocoa.OsxClickCallback;
 
 class OsxMenuItemCheckbox extends OsxBaseMenuItem implements CheckboxPeer, OsxClickCallback {
 
@@ -94,27 +94,19 @@ class OsxMenuItemCheckbox extends OsxBaseMenuItem implements CheckboxPeer, OsxCl
                     menuItem.setChecked(!isChecked);
 
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }
             };
         } else {
-            callback = new ActionListener() {
-                @Override
-                public
-                void actionPerformed(ActionEvent e) {
-                    // This can ALSO recursively call the callback
-                    menuItem.setChecked(!isChecked);
-                }
+            callback = e->{
+                // This can ALSO recursively call the callback
+                menuItem.setChecked(!isChecked);
             };
         }
     }

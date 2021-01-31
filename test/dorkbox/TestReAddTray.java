@@ -16,8 +16,6 @@
 
 package dorkbox;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.net.URL;
 
 import dorkbox.systemTray.MenuItem;
@@ -45,9 +43,7 @@ class TestReAddTray {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
         // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
-        new CacheUtil("SystemTrayImages").clear();
-        new CacheUtil("CheckMarks").clear();
-
+        CacheUtil.clear("SysTrayExample");
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
@@ -61,13 +57,9 @@ class TestReAddTray {
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                systemTray.shutdown();
-                //System.exit(0);  not necessary if all non-daemon threads have stopped.
-            }
+        systemTray.getMenu().add(new MenuItem("Quit", e->{
+            systemTray.shutdown();
+            //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
 
 
@@ -88,13 +80,9 @@ class TestReAddTray {
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                systemTray.shutdown();
-                //System.exit(0);  not necessary if all non-daemon threads have stopped.
-            }
+        systemTray.getMenu().add(new MenuItem("Quit", e->{
+            systemTray.shutdown();
+            //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
     }
 }

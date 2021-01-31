@@ -68,10 +68,6 @@ class LinuxSwingUI implements SwingUIFactory {
         }
     }
 
-    private static PopupMenuUI popupMenuUI = null;
-    private static MenuItemUI menuItemUI = null;
-    private static SeparatorUI separatorUI = null;
-
     /**
      * Allows one to specify the Look & Feel of the menus (The main SystemTray and sub-menus)
      *

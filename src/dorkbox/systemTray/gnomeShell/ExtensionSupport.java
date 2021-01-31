@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -41,7 +40,7 @@ import dorkbox.os.OSUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
 
-@SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess"})
 public
 class ExtensionSupport {
     public static
@@ -103,14 +102,8 @@ class ExtensionSupport {
             }
         }
 
-        ArrayList<String> strings = new ArrayList<String>(Arrays.asList(split));
-        for (Iterator<String> iterator = strings.iterator(); iterator.hasNext(); ) {
-            final String string = iterator.next();
-            if (string.trim()
-                      .isEmpty()) {
-                iterator.remove();
-            }
-        }
+        ArrayList<String> strings = new ArrayList<>(Arrays.asList(split));
+        strings.removeIf(string->string.trim().isEmpty());
 
         if (SystemTray.DEBUG) {
             logger.debug("Installed extensions are: {}", strings);
@@ -266,6 +259,7 @@ class ExtensionSupport {
     /**
      * @return true if successful, false if there was a failure
      */
+    @SuppressWarnings("SameParameterValue")
     protected static
     boolean installFile(final String resourceName, final File targetDirectory, final String appName) {
         final File outputFile = new File(targetDirectory, resourceName);
@@ -314,6 +308,7 @@ class ExtensionSupport {
     /**
      * @return true if successful, false if there was a failure
      */
+    @SuppressWarnings("SameParameterValue")
     protected static
     boolean installZip(final String zipResourceName, final File targetDirectory) {
         ZipInputStream inputStream = null;
@@ -328,21 +323,19 @@ class ExtensionSupport {
                     String name = entry.getName();
 
                     try {
-                        if (!entry.isDirectory()) {
-                            File specificOutput = new File(targetDirectory, name);
-                            File parentFile = specificOutput.getParentFile();
+                        File specificOutput = new File(targetDirectory, name);
+                        File parentFile = specificOutput.getParentFile();
 
-                            if (!parentFile.exists()) {
-                                boolean mkdirs = parentFile.mkdirs();
-                                if (!mkdirs) {
-                                    SystemTray.logger.error("Error creating target directory '{}' for Zip support.", parentFile);
-                                }
+                        if (!parentFile.exists()) {
+                            boolean mkdirs = parentFile.mkdirs();
+                            if (!mkdirs) {
+                                SystemTray.logger.error("Error creating target directory '{}' for Zip support.", parentFile);
                             }
-
-                            fileOutputStream = new FileOutputStream(specificOutput);
-
-                            IO.copyStream(inputStream, fileOutputStream);
                         }
+
+                        fileOutputStream = new FileOutputStream(specificOutput);
+
+                        IO.copyStream(inputStream, fileOutputStream);
                     } catch (IOException e) {
                         SystemTray.logger.error("Error extracting zip contents to {}", targetDirectory);
                     } finally {
@@ -415,6 +408,7 @@ class ExtensionSupport {
     /**
      * @return true if we need to upgrade/re-install the extension, false if we do not need to do anything
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected static
     boolean needsUpgrade(final String metadata, final File metaDatafile) {
         String existingMetadata = ExtensionSupport.readFile(metaDatafile);

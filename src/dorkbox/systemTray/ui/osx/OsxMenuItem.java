@@ -18,14 +18,14 @@ package dorkbox.systemTray.ui.osx;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import dorkbox.systemTray.MenuItem;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.peer.MenuItemPeer;
-import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.jna.macos.cocoa.NSCellStateValue;
 import dorkbox.jna.macos.cocoa.NSImage;
 import dorkbox.jna.macos.cocoa.NSString;
 import dorkbox.jna.macos.cocoa.OsxClickCallback;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.peer.MenuItemPeer;
+import dorkbox.systemTray.util.EventDispatch;
 
 class OsxMenuItem extends OsxBaseMenuItem implements MenuItemPeer, OsxClickCallback {
 
@@ -108,15 +108,11 @@ class OsxMenuItem extends OsxBaseMenuItem implements MenuItemPeer, OsxClickCallb
                 public
                 void actionPerformed(ActionEvent e) {
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }

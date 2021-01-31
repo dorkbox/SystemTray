@@ -40,13 +40,9 @@ class SwingMenuItemSeparator implements EntryPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                parent._native.remove(_native);
-                _native.removeAll();
-            }
+        SwingUtil.invokeLater(()->{
+            parent._native.remove(_native);
+            _native.removeAll();
         });
     }
 }

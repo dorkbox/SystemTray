@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -56,13 +55,9 @@ class Checkbox extends Entry {
             if (actionListeners.length == 1) {
                 setCallback(actionListeners[0]);
             } else {
-                ActionListener actionListener = new ActionListener() {
-                    @Override
-                    public
-                    void actionPerformed(final ActionEvent e) {
-                        for (ActionListener actionListener : actionListeners) {
-                            actionListener.actionPerformed(e);
-                        }
+                ActionListener actionListener = e->{
+                    for (ActionListener actionListener1 : actionListeners) {
+                        actionListener1.actionPerformed(e);
                     }
                 };
                 setCallback(actionListener);

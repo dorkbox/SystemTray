@@ -46,23 +46,20 @@ class _OsxNativeTray extends Tray {
     private volatile NSString statusItemTooltip;
     private volatile NSImage statusItemImage;
 
+    @SuppressWarnings("unused")
     public
     _OsxNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
         super(onRemoveEvent);
 
         // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
         // all platforms.
-        keepAliveThread = new Thread(new Runnable() {
-            @Override
-            public
-            void run() {
-                synchronized (keepAliveLock) {
-                    keepAliveLock.notifyAll();
+        keepAliveThread = new Thread(()->{
+            synchronized (keepAliveLock) {
+                keepAliveLock.notifyAll();
 
-                    try {
-                        keepAliveLock.wait();
-                    } catch (InterruptedException ignored) {
-                    }
+                try {
+                    keepAliveLock.wait();
+                } catch (InterruptedException ignored) {
                 }
             }
         }, "TrayKeepAliveThread");

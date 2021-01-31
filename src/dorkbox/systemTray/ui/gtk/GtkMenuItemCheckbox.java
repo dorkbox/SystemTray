@@ -36,7 +36,6 @@ import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 
-@SuppressWarnings("deprecation")
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
     private static volatile String checkedFile;
 
@@ -169,13 +168,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void setEnabled(final Checkbox menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
-            }
-        });
+        GtkEventDispatch.dispatch(()->Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled()));
     }
 
     @Override
@@ -201,17 +194,13 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
             textWithMnemonic = menuItem.getText();
         }
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk2.gtk_widget_show_all(_native);
-            }
+        GtkEventDispatch.dispatch(()->{
+            Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+            Gtk2.gtk_widget_show_all(_native);
         });
     }
 
-    @SuppressWarnings({"Duplicates", "StatementWithEmptyBody"})
+    @SuppressWarnings({"Duplicates"})
     @Override
     public
     void setCallback(final Checkbox menuItem) {
@@ -228,15 +217,11 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
                     menuItem.setChecked(!isChecked);
 
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu checkbox entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu checkbox entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }
@@ -253,21 +238,17 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
         if (checked != this.isChecked) {
             this.isChecked = checked;
 
-            GtkEventDispatch.dispatch(new Runnable() {
-                @Override
-                public
-                void run() {
-                    if (useFakeCheckMark) {
-                        setCheckedIconForFakeCheckMarks();
-                    } else {
-                        // note: this will trigger "activate", which will then trigger the callback.
-                        // we assume this is consistent across ALL versions and variants of GTK
-                        // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
-                        // this disables the signal handler, then enables it
-                        GObject.g_signal_handler_block(_native, handlerId);
-                        Gtk2.gtk_check_menu_item_set_active(_native, isChecked);
-                        GObject.g_signal_handler_unblock(_native, handlerId);
-                    }
+            GtkEventDispatch.dispatch(()->{
+                if (useFakeCheckMark) {
+                    setCheckedIconForFakeCheckMarks();
+                } else {
+                    // note: this will trigger "activate", which will then trigger the callback.
+                    // we assume this is consistent across ALL versions and variants of GTK
+                    // https://github.com/GNOME/gtk/blob/master/gtk/gtkcheckmenuitem.c#L317
+                    // this disables the signal handler, then enables it
+                    GObject.g_signal_handler_block(_native, handlerId);
+                    Gtk2.gtk_check_menu_item_set_active(_native, isChecked);
+                    GObject.g_signal_handler_unblock(_native, handlerId);
                 }
             });
         }
@@ -276,14 +257,10 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void setTooltip(final Checkbox menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // NOTE: this will not work for AppIndicator tray types!
-                // null will remove the tooltip
-                Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
-            }
+        GtkEventDispatch.dispatch(()->{
+            // NOTE: this will not work for AppIndicator tray types!
+            // null will remove the tooltip
+            Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
         });
     }
 
@@ -328,23 +305,19 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                GtkMenuItemCheckbox.super.remove();
+        GtkEventDispatch.dispatch(()->{
+            GtkMenuItemCheckbox.super.remove();
 
-                callback = null;
+            callback = null;
 
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
+            Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
-                if (image != null) {
-                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
-                    image = null;
-                }
-
-                parent.remove(GtkMenuItemCheckbox.this);
+            if (image != null) {
+                Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                image = null;
             }
+
+            parent.remove(GtkMenuItemCheckbox.this);
         });
     }
 }

@@ -54,25 +54,15 @@ class SwingMenuItemStatus implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setText(menuItem.getText());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setText(menuItem.getText()));
     }
 
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                parent._native.remove(_native);
-                _native.removeAll();
-            }
+        SwingUtil.invokeLater(()->{
+            parent._native.remove(_native);
+            _native.removeAll();
         });
     }
 }

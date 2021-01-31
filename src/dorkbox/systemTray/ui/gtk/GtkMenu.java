@@ -32,10 +32,9 @@ import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
 import dorkbox.systemTray.peer.MenuPeer;
 
-@SuppressWarnings("deprecation")
 class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
-    private final List<GtkBaseMenuItem> menuEntries = new ArrayList<GtkBaseMenuItem>();
+    private final List<GtkBaseMenuItem> menuEntries = new ArrayList<>();
 
     private final GtkMenu parent;  // null when we are the main menu attached to the tray icon
 
@@ -49,7 +48,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     private volatile char mnemonicKey = 0;
 
     // have to make sure no other methods can call obliterate, delete, or create menu once it's already started
-    private AtomicBoolean obliterateInProgress = new AtomicBoolean(false);
+    private final AtomicBoolean obliterateInProgress = new AtomicBoolean(false);
 
     // called by the system tray constructors
     // This is NOT a copy constructor!
@@ -178,7 +177,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
 
             // a copy is made because sub-menus remove themselves from parents when .remove() is called. If we don't
             // do this, errors will be had because indices don't line up anymore.
-            ArrayList<GtkBaseMenuItem> menuEntriesCopy = new ArrayList<GtkBaseMenuItem>(menuEntries);
+            ArrayList<GtkBaseMenuItem> menuEntriesCopy = new ArrayList<>(menuEntries);
             menuEntries.clear();
 
             for (int i = 0, menuEntriesSize = menuEntriesCopy.size(); i < menuEntriesSize; i++) {
@@ -198,67 +197,63 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the GTK dispatch. This must be dispatchAndWait() so it will properly executed immediately
-        GtkEventDispatch.dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
-                // To work around this issue, we destroy then recreate the menu every time something is changed.
+        GtkEventDispatch.dispatchAndWait(()->{
+            // some GTK libraries DO NOT let us add items AFTER the menu has been attached to the indicator.
+            // To work around this issue, we destroy then recreate the menu every time something is changed.
 
-                // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
-                deleteMenu(false);
+            // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
+            deleteMenu(false);
 
-                GtkBaseMenuItem item = null;
+            GtkBaseMenuItem item = null;
 
-                if (entry instanceof Menu) {
-                    // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
-                    // see: https://bugs.launchpad.net/glipper/+bug/1203888
-                    item = new GtkMenu(GtkMenu.this);
-                    menuEntries.add(index, item);
-                }
-                else if (entry instanceof Separator) {
-                    item = new GtkMenuItemSeparator(GtkMenu.this);
-                    menuEntries.add(index, item);
-                }
-                else if (entry instanceof Checkbox) {
-                    item = new GtkMenuItemCheckbox(GtkMenu.this);
-                    menuEntries.add(index, item);
-                }
-                else if (entry instanceof Status) {
-                    item = new GtkMenuItemStatus(GtkMenu.this);
-                    menuEntries.add(index, item);
-                }
-                else if (entry instanceof MenuItem) {
-                    item = new GtkMenuItem(GtkMenu.this);
-                    menuEntries.add(index, item);
-                }
+            if (entry instanceof Menu) {
+                // some implementations of appindicator, do NOT like having a menu added, which has no menu items yet.
+                // see: https://bugs.launchpad.net/glipper/+bug/1203888
+                item = new GtkMenu(GtkMenu.this);
+                menuEntries.add(index, item);
+            }
+            else if (entry instanceof Separator) {
+                item = new GtkMenuItemSeparator(GtkMenu.this);
+                menuEntries.add(index, item);
+            }
+            else if (entry instanceof Checkbox) {
+                item = new GtkMenuItemCheckbox(GtkMenu.this);
+                menuEntries.add(index, item);
+            }
+            else if (entry instanceof Status) {
+                item = new GtkMenuItemStatus(GtkMenu.this);
+                menuEntries.add(index, item);
+            }
+            else if (entry instanceof MenuItem) {
+                item = new GtkMenuItem(GtkMenu.this);
+                menuEntries.add(index, item);
+            }
 
 
-                // we must create the menu BEFORE binding the menu, otherwise the menus' children's GTK element can be added before
-                // their parent GTK elements are added (and the menu won't show up)
-                if (entry instanceof Menu) {
-                    ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Separator) {
-                    ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Checkbox) {
-                    ((Checkbox) entry).bind((GtkMenuItemCheckbox) item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Status) {
-                    ((Status) entry).bind((GtkMenuItemStatus) item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof MenuItem) {
-                    ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getImageResizeUtil());
-                }
+            // we must create the menu BEFORE binding the menu, otherwise the menus' children's GTK element can be added before
+            // their parent GTK elements are added (and the menu won't show up)
+            if (entry instanceof Menu) {
+                ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Separator) {
+                ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Checkbox) {
+                ((Checkbox) entry).bind((GtkMenuItemCheckbox) item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Status) {
+                ((Status) entry).bind((GtkMenuItemStatus) item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof MenuItem) {
+                ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getImageResizeUtil());
+            }
 
-                // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
-                createMenu(false);
+            // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!
+            createMenu(false);
 
-                // only call show on the ROOT menu!
-                if (parent == null) {
-                    Gtk2.gtk_widget_show_all(_nativeMenu);
-                }
+            // only call show on the ROOT menu!
+            if (parent == null) {
+                Gtk2.gtk_widget_show_all(_nativeMenu);
             }
         });
     }
@@ -276,25 +271,21 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
         // is overridden by system tray
         setLegitImage(menuItem.getImage() != null);
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (image != null) {
-                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
-                    image = null;
-                }
-
-                if (menuItem.getImage() != null) {
-                    image = Gtk2.gtk_image_new_from_file(menuItem.getImage().getAbsolutePath());
-                    Gtk2.gtk_image_menu_item_set_image(_native, image);
-
-                    //  must always re-set always-show after setting the image
-                    Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
-                }
-
-                Gtk2.gtk_widget_show_all(_native);
+        GtkEventDispatch.dispatch(()->{
+            if (image != null) {
+                Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                image = null;
             }
+
+            if (menuItem.getImage() != null) {
+                image = Gtk2.gtk_image_new_from_file(menuItem.getImage().getAbsolutePath());
+                Gtk2.gtk_image_menu_item_set_image(_native, image);
+
+                //  must always re-set always-show after setting the image
+                Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
+            }
+
+            Gtk2.gtk_widget_show_all(_native);
         });
     }
 
@@ -303,13 +294,7 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     public
     void setEnabled(final MenuItem menuItem) {
         // is overridden by system tray
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
-            }
-        });
+        GtkEventDispatch.dispatch(()->Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled()));
     }
 
     // is overridden in tray impl
@@ -342,13 +327,9 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
             textWithMnemonic = menuItem.getText();
         }
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk2.gtk_widget_show_all(_native);
-            }
+        GtkEventDispatch.dispatch(()->{
+            Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+            Gtk2.gtk_widget_show_all(_native);
         });
     }
 
@@ -377,14 +358,10 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @Override
     public
     void setTooltip(final MenuItem menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // NOTE: this will not work for AppIndicator tray types!
-                // null will remove the tooltip
-                Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
-            }
+        GtkEventDispatch.dispatch(()->{
+            // NOTE: this will not work for AppIndicator tray types!
+            // null will remove the tooltip
+            Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
         });
     }
 
@@ -406,28 +383,24 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                GtkMenu parent = getParent();
+        GtkEventDispatch.dispatch(()->{
+            GtkMenu parent = getParent();
 
-                if (parent != null) {
-                    // have to remove from the  parent.menuEntries first
-                    parent.menuEntries.remove(GtkMenu.this);
-                }
+            if (parent != null) {
+                // have to remove from the  parent.menuEntries first
+                parent.menuEntries.remove(GtkMenu.this);
+            }
 
-                // delete all of the children of this submenu (must happen before the menuEntry is removed)
-                obliterateMenu(); // must be on EDT
+            // delete all of the children of this submenu (must happen before the menuEntry is removed)
+            obliterateMenu(); // must be on EDT
 
-                if (parent != null) {
-                    // remove the gtk entry item from our menu NATIVE components
-                    Gtk2.gtk_menu_item_set_submenu(_native, null);
+            if (parent != null) {
+                // remove the gtk entry item from our menu NATIVE components
+                Gtk2.gtk_menu_item_set_submenu(_native, null);
 
-                    // have to rebuild the menu now...
-                    parent.deleteMenu(true);  // must be on EDT
-                    parent.createMenu(true);  // must be on EDT
-                }
+                // have to rebuild the menu now...
+                parent.deleteMenu(true);  // must be on EDT
+                parent.createMenu(true);  // must be on EDT
             }
         });
     }

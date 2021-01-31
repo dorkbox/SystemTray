@@ -78,25 +78,13 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @Override
     public
     void setEnabled(final Checkbox menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(menuItem.getEnabled());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
     @Override
     public
     void setText(final Checkbox menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setText(menuItem.getText());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setText(menuItem.getText()));
     }
 
     @SuppressWarnings("Duplicates")
@@ -120,15 +108,11 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                     menuItem.setChecked(!isChecked);
 
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu checkbox entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu checkbox entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }
@@ -144,13 +128,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
         final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setMnemonic(vKey);
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setMnemonic(vKey));
     }
 
     @Override
@@ -162,16 +140,12 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
         if (checked != this.isChecked) {
             this.isChecked = checked;
 
-            SwingUtil.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    if (isChecked) {
-                        _native.setIcon(checkedIcon);
-                    }
-                    else {
-                        _native.setIcon(SwingMenuItem.transparentIcon);
-                    }
+            SwingUtil.invokeLater(()->{
+                if (isChecked) {
+                    _native.setIcon(checkedIcon);
+                }
+                else {
+                    _native.setIcon(SwingMenuItem.transparentIcon);
                 }
             });
         }
@@ -180,12 +154,6 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     @Override
     public
     void setTooltip(final Checkbox menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setToolTipText(menuItem.getTooltip());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setToolTipText(menuItem.getTooltip()));
     }
 }

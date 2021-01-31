@@ -81,9 +81,13 @@ class SystemTray {
 
     public enum TrayType {
         /** Will choose as a 'best guess' which tray type to use */
-        AutoDetect, Gtk,
-        AppIndicator, WindowsNative,
-        Swing, Osx, Awt
+        AutoDetect,
+        Gtk,
+        AppIndicator,
+        WindowsNative,
+        Swing,
+        Osx,
+        Awt
     }
 
     @Property
@@ -664,16 +668,12 @@ class SystemTray {
 
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
-            Runnable onRemoveEvent = new Runnable() {
-                @Override
-                public
-                void run() {
-                    // must remove ourselves from the init() map (since we want to be able to access things)
-                    AutoDetectTrayType.removeSystemTrayHook(trayName);
+            Runnable onRemoveEvent = ()->{
+                // must remove ourselves from the init() map (since we want to be able to access things)
+                AutoDetectTrayType.removeSystemTrayHook(trayName);
 
-                    // this is thread-safe
-                    EventDispatch.shutdown();
-                }
+                // this is thread-safe
+                EventDispatch.shutdown();
             };
 
             CacheUtil cache = new CacheUtil(trayName + "Cache");
@@ -681,7 +681,7 @@ class SystemTray {
 
 
             // the "menu" in this case is the ACTUAL menu that shows up in the system tray (the icon + submenu, etc)
-            final AtomicReference<Tray> reference = new AtomicReference<Tray>();
+            final AtomicReference<Tray> reference = new AtomicReference<>();
 
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
@@ -690,14 +690,11 @@ class SystemTray {
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
-                SwingUtil.invokeAndWait(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        try {
-                            reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
-                        } catch (Exception ignored) {
-                        }
+                SwingUtil.invokeAndWait(()->{
+                    try {
+                        reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
+                    } catch (Exception e) {
+                        logger.error("Unable to create tray type: '{}'", finalTrayType.getSimpleName(), e);
                     }
                 });
             }

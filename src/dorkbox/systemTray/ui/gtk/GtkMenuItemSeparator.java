@@ -37,14 +37,10 @@ class GtkMenuItemSeparator extends GtkBaseMenuItem implements SeparatorPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
+        GtkEventDispatch.dispatch(()->{
+            Gtk2.gtk_container_remove(parent._nativeMenu, _native);  // will automatically get destroyed if no other references to it
 
-                parent.remove(GtkMenuItemSeparator.this);
-            }
+            parent.remove(GtkMenuItemSeparator.this);
         });
     }
 

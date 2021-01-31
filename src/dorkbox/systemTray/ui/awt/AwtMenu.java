@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.ui.awt;
 
-
 import java.awt.MenuShortcut;
 import java.awt.PopupMenu;
 
@@ -29,7 +28,6 @@ import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both
-@SuppressWarnings("ForLoopReplaceableByForEach")
 class AwtMenu implements MenuPeer {
 
     volatile java.awt.Menu _native;
@@ -54,30 +52,26 @@ class AwtMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeAndWaitQuietly(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (entry instanceof Menu) {
-                    AwtMenu menu = new AwtMenu(AwtMenu.this);
-                    ((Menu) entry).bind(menu, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Separator) {
-                    AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
-                    entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Checkbox) {
-                    AwtMenuItemCheckbox item = new AwtMenuItemCheckbox(AwtMenu.this);
-                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Status) {
-                    AwtMenuItemStatus item = new AwtMenuItemStatus(AwtMenu.this);
-                    ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof MenuItem) {
-                    AwtMenuItem item = new AwtMenuItem(AwtMenu.this);
-                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
+        SwingUtil.invokeAndWaitQuietly(()->{
+            if (entry instanceof Menu) {
+                AwtMenu menu = new AwtMenu(AwtMenu.this);
+                ((Menu) entry).bind(menu, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Separator) {
+                AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
+                entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Checkbox) {
+                AwtMenuItemCheckbox item = new AwtMenuItemCheckbox(AwtMenu.this);
+                ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Status) {
+                AwtMenuItemStatus item = new AwtMenuItemStatus(AwtMenu.this);
+                ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof MenuItem) {
+                AwtMenuItem item = new AwtMenuItem(AwtMenu.this);
+                ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
         });
     }
@@ -93,26 +87,14 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(menuItem.getEnabled());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
     // is overridden in tray impl
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setLabel(menuItem.getText());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setLabel(menuItem.getText()));
     }
 
     @Override
@@ -128,13 +110,7 @@ class AwtMenu implements MenuPeer {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
         final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setShortcut(new MenuShortcut(vKey));
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setShortcut(new MenuShortcut(vKey)));
     }
 
     @Override
@@ -146,18 +122,14 @@ class AwtMenu implements MenuPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.removeAll();
-                _native.deleteShortcut();
-                _native.setEnabled(false);
-                _native.removeNotify();
+        SwingUtil.invokeLater(()->{
+            _native.removeAll();
+            _native.deleteShortcut();
+            _native.setEnabled(false);
+            _native.removeNotify();
 
-                if (parent != null) {
-                    parent._native.remove(_native);
-                }
+            if (parent != null) {
+                parent._native.remove(_native);
             }
         });
     }

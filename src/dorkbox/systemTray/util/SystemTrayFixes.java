@@ -37,6 +37,7 @@ import javassist.bytecode.ConstPool;
 import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
+import javassist.bytecode.Opcode;
 
 
 /*
@@ -99,6 +100,7 @@ class SystemTrayFixes {
         return true;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static
     boolean isOracleVM() {
         String vendor = System.getProperty("java.vendor")
@@ -155,7 +157,7 @@ class SystemTrayFixes {
 
 
                 CtMethod method = trayClass.getDeclaredMethod("getTrayIconSize");
-                CtBehavior methodInfos[] = new CtBehavior[]{ method };
+                CtBehavior[] methodInfos = new CtBehavior[]{method};
 
                 fixTraySize(methodInfos, 16, trayIconSize);
 
@@ -539,7 +541,7 @@ class SystemTrayFixes {
                 CtMethod method1 = trayIconClass.getDeclaredMethod("getBounds");
                 CtMethod method2 = trayPeerClass.getDeclaredMethod("getTrayIconSize");
 
-                CtBehavior methodInfos[] = new CtBehavior[]{constructor, method1, method2};
+                CtBehavior[] methodInfos = new CtBehavior[]{constructor, method1, method2};
 
                 fixTraySize(methodInfos, 24, trayIconSize);
 
@@ -733,15 +735,12 @@ class SystemTrayFixes {
                 try {
                     index = methodIterator.next();
                     int opcode = methodIterator.byteAt(index);
+                    if (opcode == Opcode.BIPUSH) {
+                        int i = methodIterator.byteAt(index + 1);
 
-                    switch (opcode) {
-                        case javassist.bytecode.Opcode.BIPUSH: {
-                            int i = methodIterator.byteAt(index + 1);
-
-                            if (i == oldTraySize) {
-                                // re-write this to be our custom size.
-                                methodIterator.writeByte((byte) newTraySize, index + 1);
-                            }
+                        if (i == oldTraySize) {
+                            // re-write this to be our custom size.
+                            methodIterator.writeByte((byte) newTraySize, index + 1);
                         }
                     }
                 } catch (BadBytecode badBytecode) {
@@ -751,6 +750,7 @@ class SystemTrayFixes {
         }
     }
 
+    @SuppressWarnings("unused")
     private static
     void showMethodBytecode(final CtBehavior constructorOrMethod) throws BadBytecode {
         MethodInfo methodInfo = constructorOrMethod.getMethodInfo(); // only 1 constructor

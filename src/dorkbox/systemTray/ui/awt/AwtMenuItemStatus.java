@@ -39,36 +39,26 @@ class AwtMenuItemStatus implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                Font font = _native.getFont();
-                if (font == null) {
-                    font = new Font(DIALOG, Font.BOLD, 12); // the default font used for dialogs.
-                }
-                else {
-                    font = font.deriveFont(Font.BOLD);
-                }
-
-                _native.setFont(font);
-                _native.setLabel(menuItem.getText());
-
-                // this makes sure it can't be selected
-                _native.setEnabled(false);
+        SwingUtil.invokeLater(()->{
+            Font font = _native.getFont();
+            if (font == null) {
+                font = new Font(DIALOG, Font.BOLD, 12); // the default font used for dialogs.
             }
+            else {
+                font = font.deriveFont(Font.BOLD);
+            }
+
+            _native.setFont(font);
+            _native.setLabel(menuItem.getText());
+
+            // this makes sure it can't be selected
+            _native.setEnabled(false);
         });
     }
 
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                parent._native.remove(_native);
-            }
-        });
+        SwingUtil.invokeLater(()->parent._native.remove(_native));
     }
 }

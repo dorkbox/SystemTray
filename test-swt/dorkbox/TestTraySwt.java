@@ -16,7 +16,6 @@
 
 package dorkbox;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
@@ -80,8 +79,7 @@ class TestTraySwt {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
         // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
-        new CacheUtil("SystemTrayImages").clear();
-        new CacheUtil("CheckMarks").clear();
+        CacheUtil.clear("SysTrayExample");
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
@@ -95,38 +93,30 @@ class TestTraySwt {
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
 
-        callbackGray = new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                final MenuItem entry = (MenuItem) e.getSource();
-                systemTray.setStatus(null);
-                systemTray.setImage(BLACK_TRAIN);
+        callbackGray = e->{
+            final MenuItem entry = (MenuItem) e.getSource();
+            systemTray.setStatus(null);
+            systemTray.setImage(BLACK_TRAIN);
 
-                entry.setCallback(null);
+            entry.setCallback(null);
 //                systemTray.setStatus("Mail Empty");
-                systemTray.getMenu().remove(entry);
-                System.err.println("POW");
-            }
+            systemTray.getMenu().remove(entry);
+            System.err.println("POW");
         };
 
 
         Menu mainMenu = systemTray.getMenu();
 
-        MenuItem greenEntry = new MenuItem("Green Mail", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                final MenuItem entry = (MenuItem) e.getSource();
-                systemTray.setStatus("Some Mail!");
-                systemTray.setImage(GREEN_TRAIN);
+        MenuItem greenEntry = new MenuItem("Green Mail", e->{
+            final MenuItem entry = (MenuItem) e.getSource();
+            systemTray.setStatus("Some Mail!");
+            systemTray.setImage(GREEN_TRAIN);
 
-                entry.setCallback(callbackGray);
-                entry.setImage(BLACK_MAIL);
-                entry.setText("Delete Mail");
-                entry.setTooltip(null); // remove the tooltip
+            entry.setCallback(callbackGray);
+            entry.setImage(BLACK_MAIL);
+            entry.setText("Delete Mail");
+            entry.setTooltip(null); // remove the tooltip
 //                systemTray.remove(menuEntry);
-            }
         });
         greenEntry.setImage(GREEN_MAIL);
         // case does not matter
@@ -135,25 +125,15 @@ class TestTraySwt {
         mainMenu.add(greenEntry);
 
 
-        Checkbox checkbox = new Checkbox("Euro € Mail", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                System.err.println("Am i checked? " + ((Checkbox) e.getSource()).getChecked());
-            }
-        });
+        Checkbox checkbox = new Checkbox("Euro € Mail", e->System.err.println("Am i checked? " + ((Checkbox) e.getSource()).getChecked()));
         checkbox.setShortcut('€');
         mainMenu.add(checkbox);
 
-        MenuItem removeTest = new MenuItem("This should not be here", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                try {
-                    Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+        MenuItem removeTest = new MenuItem("This should not be here", e->{
+            try {
+                Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
+            } catch (IOException e1) {
+                e1.printStackTrace();
             }
         });
         mainMenu.add(removeTest);
@@ -161,27 +141,19 @@ class TestTraySwt {
 
         mainMenu.add(new Separator());
 
-        mainMenu.add(new MenuItem("About", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                try {
-                    Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+        mainMenu.add(new MenuItem("About", e->{
+            try {
+                Desktop.browseURL("https://git.dorkbox.com/dorkbox/SystemTray");
+            } catch (IOException e1) {
+                e1.printStackTrace();
             }
         }));
 
-        mainMenu.add(new MenuItem("Temp Directory", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                try {
-                    Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+        mainMenu.add(new MenuItem("Temp Directory", e->{
+            try {
+                Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
+            } catch (IOException e1) {
+                e1.printStackTrace();
             }
         }));
 
@@ -189,59 +161,31 @@ class TestTraySwt {
         submenu.setShortcut('t');
 
 
-        MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                MenuItem source = (MenuItem) e.getSource();
-                source.getParent().setEnabled(false);
-            }
+        MenuItem disableMenu = new MenuItem("Disable menu", BLACK_BUS, e->{
+            MenuItem source = (MenuItem) e.getSource();
+            source.getParent().setEnabled(false);
         });
         submenu.add(disableMenu);
 
 
-        submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                systemTray.setEnabled(false);
-            }
+        submenu.add(new MenuItem("Hide tray", LT_GRAY_BUS, e->systemTray.setEnabled(false)));
+        submenu.add(new MenuItem("Remove menu", BLACK_FIRE, e->{
+            MenuItem source = (MenuItem) e.getSource();
+            source.getParent().remove();
         }));
-        submenu.add(new MenuItem("Remove menu", BLACK_FIRE, new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                MenuItem source = (MenuItem) e.getSource();
-                source.getParent().remove();
-            }
-        }));
-        submenu.add(new MenuItem("Add new entry to tray", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                systemTray.getMenu().add(new MenuItem("Random " + Integer.toString(new Random().nextInt(10))));
-            }
-        }));
+        submenu.add(new MenuItem("Add new entry to tray",
+                                 e->systemTray.getMenu().add(new MenuItem("Random " + new Random().nextInt(10)))));
         mainMenu.add(submenu);
 
         MenuItem entry = new MenuItem("Type: " + systemTray.getType().toString());
         entry.setEnabled(false);
         systemTray.getMenu().add(entry);
 
-        systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
-            @Override
-            public
-            void actionPerformed(final ActionEvent e) {
-                systemTray.shutdown();
-                // necessary to shut down SWT
-                display.asyncExec(new Runnable() {
-                    @Override
-                    public void run() {
-                        shell.dispose();
-                    }
-                });
-                //System.exit(0);  not necessary if all non-daemon threads have stopped.
-            }
+        systemTray.getMenu().add(new MenuItem("Quit", e->{
+            systemTray.shutdown();
+            // necessary to shut down SWT
+            display.asyncExec(shell::dispose);
+            //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
 
 

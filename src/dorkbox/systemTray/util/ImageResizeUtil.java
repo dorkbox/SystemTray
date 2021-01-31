@@ -337,17 +337,15 @@ class ImageResizeUtil {
             InputStream imageInputStream = new ByteArrayInputStream(os.toByteArray());
 
 
+            File file;
             if (SystemTray.AUTO_SIZE) {
-                File file = resizeAndCache(getSize(isTrayImage), imageInputStream);
-                imageInputStream.close(); // BAOS doesn't do anything, but here for completeness + documentation
-
-                return file;
+                file = resizeAndCache(getSize(isTrayImage), imageInputStream);
             } else {
-                File file = cache.save(imageInputStream);
-                imageInputStream.close(); // BAOS doesn't do anything, but here for completeness + documentation
-
-                return file;
+                file = cache.save(imageInputStream);
             }
+
+            imageInputStream.close(); // ByteArrayOutputStream doesn't do anything, but here for completeness + documentation
+            return file;
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);

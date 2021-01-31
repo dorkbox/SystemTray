@@ -33,7 +33,6 @@ import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.util.SwingUtil;
 
 // this is a weird composite class, because it must be a Menu, but ALSO a Entry -- so it has both (and duplicate code)
-@SuppressWarnings("ForLoopReplaceableByForEach")
 public
 class SwingMenu implements MenuPeer {
     private final SwingMenu parent;
@@ -75,36 +74,32 @@ class SwingMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeAndWaitQuietly(new Runnable() {
-            @Override
-            public
-            void run() {
-                // don't add this entry if it's already been added via another method. Because of threading via swing/gtk, entries can
-                // POSSIBLY get added twice. Once via add() and once via bind().
-                if (entry.hasPeer()) {
-                    return;
-                }
+        SwingUtil.invokeAndWaitQuietly(()->{
+            // don't add this entry if it's already been added via another method. Because of threading via swing/gtk, entries can
+            // POSSIBLY get added twice. Once via add() and once via bind().
+            if (entry.hasPeer()) {
+                return;
+            }
 
-                if (entry instanceof Menu) {
-                    SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
-                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Separator) {
-                    SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this);
-                    entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Checkbox) {
-                    SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
-                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof Status) {
-                    SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
-                    ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
-                else if (entry instanceof MenuItem) {
-                    SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
-                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
-                }
+            if (entry instanceof Menu) {
+                SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
+                ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Separator) {
+                SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this);
+                entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Checkbox) {
+                SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
+                ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof Status) {
+                SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
+                ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
+            }
+            else if (entry instanceof MenuItem) {
+                SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
+                ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
         });
     }
@@ -113,18 +108,14 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                File imageFile = menuItem.getImage();
-                if (imageFile != null) {
-                    ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
-                    ((JMenu) _native).setIcon(origIcon);
-                }
-                else {
-                    ((JMenu) _native).setIcon(null);
-                }
+        SwingUtil.invokeLater(()->{
+            File imageFile = menuItem.getImage();
+            if (imageFile != null) {
+                ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
+                ((JMenu) _native).setIcon(origIcon);
+            }
+            else {
+                ((JMenu) _native).setIcon(null);
             }
         });
     }
@@ -133,13 +124,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setEnabled(menuItem.getEnabled());
-            }
-        });
+        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
 
@@ -147,13 +132,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                ((JMenu) _native).setText(menuItem.getText());
-            }
-        });
+        SwingUtil.invokeLater(()->((JMenu) _native).setText(menuItem.getText()));
     }
 
     @Override
@@ -169,13 +148,7 @@ class SwingMenu implements MenuPeer {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
         final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    ((JMenu) _native).setMnemonic(vKey);
-                }
-            });
+        SwingUtil.invokeLater(()->((JMenu) _native).setMnemonic(vKey));
     }
 
     @Override
@@ -190,20 +163,16 @@ class SwingMenu implements MenuPeer {
     @Override
     public synchronized
     void remove() {
-        SwingUtil.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                _native.setVisible(false);
-                _native.removeAll();
+        SwingUtil.invokeLater(()->{
+            _native.setVisible(false);
+            _native.removeAll();
 
-                if (parent != null) {
-                    parent._native.remove(_native);
-                }
-                else {
-                    // have to dispose of the tray popup hidden frame, otherwise the app will never close (because this will hold it open)
-                    ((TrayPopup) _native).close();
-                }
+            if (parent != null) {
+                parent._native.remove(_native);
+            }
+            else {
+                // have to dispose of the tray popup hidden frame, otherwise the app will never close (because this will hold it open)
+                ((TrayPopup) _native).close();
             }
         });
     }

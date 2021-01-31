@@ -126,14 +126,10 @@ class GtkBaseMenuItem implements EntryPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (spacerImage != null) {
-                    Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
-                    spacerImage = null;
-                }
+        GtkEventDispatch.dispatch(()->{
+            if (spacerImage != null) {
+                Gtk2.gtk_container_remove(_native, spacerImage); // will automatically get destroyed if no other references to it
+                spacerImage = null;
             }
         });
     }

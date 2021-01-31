@@ -42,18 +42,14 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // AppIndicator strips out markup text.
-                // https://mail.gnome.org/archives/commits-list/2016-March/msg05444.html
+        GtkEventDispatch.dispatch(()->{
+            // AppIndicator strips out markup text.
+            // https://mail.gnome.org/archives/commits-list/2016-March/msg05444.html
 
-                Gtk2.gtk_menu_item_set_label(_native, menuItem.getText());
-                Gtk2.gtk_widget_show_all(_native);
+            Gtk2.gtk_menu_item_set_label(_native, menuItem.getText());
+            Gtk2.gtk_widget_show_all(_native);
 
-                Gtk2.gtk_widget_set_sensitive(_native, false);
-            }
+            Gtk2.gtk_widget_set_sensitive(_native, false);
         });
     }
 
@@ -61,16 +57,12 @@ class GtkMenuItemStatus extends GtkBaseMenuItem implements StatusPeer {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                GtkMenuItemStatus.super.remove();
+        GtkEventDispatch.dispatch(()->{
+            GtkMenuItemStatus.super.remove();
 
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
+            Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
-                parent.remove(GtkMenuItemStatus.this);
-            }
+            parent.remove(GtkMenuItemStatus.this);
         });
     }
 }

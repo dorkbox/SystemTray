@@ -83,7 +83,7 @@ class _AppIndicatorNativeTray extends Tray {
     private boolean isActive = false;
 
     // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
-    private AtomicBoolean shuttingDown = new AtomicBoolean();
+    private final AtomicBoolean shuttingDown = new AtomicBoolean();
 
     // is the system tray visible or not.
     private volatile boolean visible = true;
@@ -141,21 +141,17 @@ class _AppIndicatorNativeTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                GtkEventDispatch.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        boolean enabled = menuItem.getEnabled();
+                GtkEventDispatch.dispatch(()->{
+                    boolean enabled = menuItem.getEnabled();
 
-                        if (visible && !enabled) {
-                            // STATUS_PASSIVE hides the indicator
-                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
-                            visible = false;
-                        }
-                        else if (!visible && enabled) {
-                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
-                            visible = true;
-                        }
+                    if (visible && !enabled) {
+                        // STATUS_PASSIVE hides the indicator
+                        appIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
+                        visible = false;
+                    }
+                    else if (!visible && enabled) {
+                        appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
+                        visible = true;
                     }
                 });
             }
@@ -168,16 +164,12 @@ class _AppIndicatorNativeTray extends Tray {
                     return;
                 }
 
-                GtkEventDispatch.dispatch(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        appIndicator.app_indicator_set_icon(imageFile.getAbsolutePath());
+                GtkEventDispatch.dispatch(()->{
+                    appIndicator.app_indicator_set_icon(imageFile.getAbsolutePath());
 
-                        if (!isActive) {
-                            isActive = true;
-                            appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
-                        }
+                    if (!isActive) {
+                        isActive = true;
+                        appIndicator.app_indicator_set_status(AppIndicator.STATUS_ACTIVE);
                     }
                 });
             }
@@ -207,38 +199,30 @@ class _AppIndicatorNativeTray extends Tray {
                 if (!shuttingDown.getAndSet(true)) {
                     super.remove();
 
-                    GtkEventDispatch.dispatch(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            // must happen asap, so our hook properly notices we are in shutdown mode
-                            final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
-                            appIndicator = null;
+                    GtkEventDispatch.dispatch(()->{
+                        // must happen asap, so our hook properly notices we are in shutdown mode
+                        final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
+                        appIndicator = null;
 
-                            // STATUS_PASSIVE hides the indicator
-                            savedAppIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
-                            Pointer p = savedAppIndicator.getPointer();
-                            GObject.g_object_unref(p);
+                        // STATUS_PASSIVE hides the indicator
+                        savedAppIndicator.app_indicator_set_status(AppIndicator.STATUS_PASSIVE);
+                        Pointer p = savedAppIndicator.getPointer();
+                        GObject.g_object_unref(p);
 
-                            GtkEventDispatch.shutdownGui();
-                        }
+                        GtkEventDispatch.shutdownGui();
                     });
                 }
             }
         };
 
-        GtkEventDispatch.dispatchAndWait(new Runnable() {
-            @Override
-            public
-            void run() {
-                String id = "DBST" + System.nanoTime();
+        GtkEventDispatch.dispatchAndWait(()->{
+            String id = "DBST" + System.nanoTime();
 
-                // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
-                // Ubuntu 17.10 REQUIRES this to be the correct tray image size, otherwise we get the error:
-                // GLib-GIO-CRITICAL **: g_dbus_proxy_new: assertion 'G_IS_DBUS_CONNECTION (connection)' failed
-                File image = imageResizeUtil.getTransparentImage(SizeAndScalingUtil.TRAY_MENU_SIZE);
-                appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
-            }
+            // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
+            // Ubuntu 17.10 REQUIRES this to be the correct tray image size, otherwise we get the error:
+            // GLib-GIO-CRITICAL **: g_dbus_proxy_new: assertion 'G_IS_DBUS_CONNECTION (connection)' failed
+            File image = imageResizeUtil.getTransparentImage(SizeAndScalingUtil.TRAY_MENU_SIZE);
+            appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
         });
 
         GtkEventDispatch.waitForEventsToComplete();

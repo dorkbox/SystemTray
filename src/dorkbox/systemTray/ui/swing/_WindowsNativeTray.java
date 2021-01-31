@@ -67,6 +67,7 @@ class _WindowsNativeTray extends Tray {
     private volatile HICONWrap imageIcon;
     private volatile String tooltipText = "";
 
+    @SuppressWarnings("unused")
     public
     _WindowsNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
         super(onRemoveEvent);
@@ -102,19 +103,15 @@ class _WindowsNativeTray extends Tray {
                 // want to make sure keep the tooltip text the same as before.
                 setTooltip_(tooltipText);
 
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (popupMenu == null) {
-                            TrayPopup popupMenu = (TrayPopup) _native;
-                            popupMenu.pack();
-                            popupMenu.setFocusable(true);
-                            _WindowsNativeTray.this.popupMenu = popupMenu;
-                        }
-
-                        popupMenu.setTitleBarImage(imageFile);
+                SwingUtil.invokeLater(()->{
+                    if (popupMenu == null) {
+                        TrayPopup popupMenu = (TrayPopup) _native;
+                        popupMenu.pack();
+                        popupMenu.setFocusable(true);
+                        _WindowsNativeTray.this.popupMenu = popupMenu;
                     }
+
+                    popupMenu.setTitleBarImage(imageFile);
                 });
             }
 

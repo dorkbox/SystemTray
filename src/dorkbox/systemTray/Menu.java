@@ -46,7 +46,7 @@ import dorkbox.util.SwingUtil;
 public
 class Menu extends MenuItem {
     // access on this object must be synchronized for object visibility
-    final List<Entry> menuEntries = new ArrayList<Entry>();
+    final List<Entry> menuEntries = new ArrayList<>();
 
     public
     Menu() {
@@ -160,7 +160,7 @@ class Menu extends MenuItem {
         synchronized (menuEntries) {
             // access on this object must be synchronized for object visibility
             // a copy is made to prevent deadlocks from occurring when operating in different threads
-            copy = new ArrayList<Entry>(menuEntries);
+            copy = new ArrayList<>(menuEntries);
         }
 
         for (int i = 0, menuEntriesSize = copy.size(); i < menuEntriesSize; i++) {
@@ -239,13 +239,7 @@ class Menu extends MenuItem {
 
         if (peer != null) {
             // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-            EventDispatch.run(new Runnable() {
-                @Override
-                public
-                void run() {
-                    ((MenuPeer) peer).add(Menu.this, entry, insertIndex);
-                }
-            });
+            EventDispatch.run(()->((MenuPeer) peer).add(Menu.this, entry, insertIndex));
         }
 
         return entry;
@@ -320,7 +314,7 @@ class Menu extends MenuItem {
     List<Entry> getEntries() {
         synchronized (menuEntries) {
             // access on this object must be synchronized for object visibility
-            return Collections.unmodifiableList(new ArrayList<Entry>(menuEntries));
+            return Collections.unmodifiableList(new ArrayList<>(menuEntries));
         }
     }
 
@@ -396,13 +390,7 @@ class Menu extends MenuItem {
             if (toRemove != null) {
                 final Entry reference = toRemove;
                 // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-                EventDispatch.run(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        reference.remove();
-                    }
-                });
+                EventDispatch.run(()->reference.remove());
 
                 toRemove = null;
             }
@@ -449,13 +437,7 @@ class Menu extends MenuItem {
         }
 
         // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-        EventDispatch.run(new Runnable() {
-            @Override
-            public
-            void run() {
-                Menu.this.remove_();
-            }
-        });
+        EventDispatch.run(()->Menu.this.remove_());
     }
 
     private

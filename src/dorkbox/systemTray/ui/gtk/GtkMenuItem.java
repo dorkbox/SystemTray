@@ -76,47 +76,37 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
         final boolean hadImage = hasImage();
         setLegitImage(menuItem.getImage() != null);
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                if (image != null) {
-                    Gtk2.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
-                    image = null;
-                }
-
-                if (menuItem.getImage() != null) {
-                    // always remove the spacer image in case it's there. The spacer image will correctly added when the menu is created.
-                    removeSpacerImage();
-
-                    image = Gtk2.gtk_image_new_from_file(menuItem.getImage()
-                                                                 .getAbsolutePath());
-                    Gtk2.gtk_image_menu_item_set_image(_native, image);
-
-                    //  must always re-set always-show after setting the image
-                    Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
-                }
-                else if (hadImage) {
-                    // if at one point, we had an image, we should set the spacer image back, so that menu spacing looks correct.
-                    // since we USED to have an image, it is safe to assume that we should have a spacer image.
-                    addSpacerImage();
-                }
-
-                Gtk2.gtk_widget_show_all(_native);
+        GtkEventDispatch.dispatch(()->{
+            if (image != null) {
+                Gtk2.gtk_container_remove(_native, image);  // will automatically get destroyed if no other references to it
+                image = null;
             }
+
+            if (menuItem.getImage() != null) {
+                // always remove the spacer image in case it's there. The spacer image will correctly added when the menu is created.
+                removeSpacerImage();
+
+                image = Gtk2.gtk_image_new_from_file(menuItem.getImage()
+                                                             .getAbsolutePath());
+                Gtk2.gtk_image_menu_item_set_image(_native, image);
+
+                //  must always re-set always-show after setting the image
+                Gtk2.gtk_image_menu_item_set_always_show_image(_native, true);
+            }
+            else if (hadImage) {
+                // if at one point, we had an image, we should set the spacer image back, so that menu spacing looks correct.
+                // since we USED to have an image, it is safe to assume that we should have a spacer image.
+                addSpacerImage();
+            }
+
+            Gtk2.gtk_widget_show_all(_native);
         });
     }
 
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled());
-            }
-        });
+        GtkEventDispatch.dispatch(()->Gtk2.gtk_widget_set_sensitive(_native, menuItem.getEnabled()));
     }
 
     @SuppressWarnings("Duplicates")
@@ -147,13 +137,9 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
             textWithMnemonic = menuItem.getText();
         }
 
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
-                Gtk2.gtk_widget_show_all(_native);
-            }
+        GtkEventDispatch.dispatch(()->{
+            Gtk2.gtk_menu_item_set_label(_native, textWithMnemonic);
+            Gtk2.gtk_widget_show_all(_native);
         });
     }
 
@@ -171,15 +157,11 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
                 public
                 void actionPerformed(ActionEvent e) {
                     // we want it to run on our own with our own action event info (so it is consistent across all platforms)
-                    EventDispatch.runLater(new Runnable() {
-                        @Override
-                        public
-                        void run() {
-                            try {
-                                cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
-                            } catch (Throwable throwable) {
-                                SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
-                            }
+                    EventDispatch.runLater(()->{
+                        try {
+                            cb.actionPerformed(new ActionEvent(menuItem, ActionEvent.ACTION_PERFORMED, ""));
+                        } catch (Throwable throwable) {
+                            SystemTray.logger.error("Error calling menu entry {} click event.", menuItem.getText(), throwable);
                         }
                     });
                 }
@@ -204,14 +186,10 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void setTooltip(final MenuItem menuItem) {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                // NOTE: this will not work for AppIndicator tray types!
-                // null will remove the tooltip
-                Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
-            }
+        GtkEventDispatch.dispatch(()->{
+            // NOTE: this will not work for AppIndicator tray types!
+            // null will remove the tooltip
+            Gtk2.gtk_widget_set_tooltip_text(_native, menuItem.getTooltip());
         });
     }
 
@@ -219,23 +197,19 @@ class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     @Override
     public
     void remove() {
-        GtkEventDispatch.dispatch(new Runnable() {
-            @Override
-            public
-            void run() {
-                GtkMenuItem.super.remove();
+        GtkEventDispatch.dispatch(()->{
+            GtkMenuItem.super.remove();
 
-                callback = null;
+            callback = null;
 
-                Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
+            Gtk2.gtk_container_remove(parent._nativeMenu, _native); // will automatically get destroyed if no other references to it
 
-                if (image != null) {
-                    Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
-                    image = null;
-                }
-
-                parent.remove(GtkMenuItem.this);
+            if (image != null) {
+                Gtk2.gtk_container_remove(_native, image); // will automatically get destroyed if no other references to it
+                image = null;
             }
+
+            parent.remove(GtkMenuItem.this);
         });
     }
 }

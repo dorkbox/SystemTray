@@ -56,7 +56,7 @@ import dorkbox.systemTray.SystemTray;
  *         - installs it alongside non-free software
  *         - packs it into an aggregate file for distribution and installation (an ISO image)
  */
-@SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess", "unused"})
 public
 class AppIndicatorExtension extends ExtensionSupport {
     private static final String UID = "appindicatorsupport@rgcjonas.gmail.com";
@@ -127,10 +127,13 @@ class AppIndicatorExtension extends ExtensionSupport {
         boolean success = ExtensionSupport.writeFile(metadata, metaDatafile);
         if (success) {
             // copies our provided extension files to the correct location on disk
-            ExtensionSupport.installZip("appindicator.zip", directory);
-
-            if (SystemTray.DEBUG) {
-                logger.debug("Enabling appindicator gnome-shell extension");
+            boolean installedZip = ExtensionSupport.installZip("appindicator.zip", directory);
+            if (!installedZip) {
+                logger.error("Unable to install appindicator gnome-shell extension!");
+            } else {
+                if (SystemTray.DEBUG) {
+                    logger.debug("Enabling appindicator gnome-shell extension");
+                }
             }
 
             if (!enabledExtensions.contains(UID)) {

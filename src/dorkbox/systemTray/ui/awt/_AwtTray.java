@@ -42,7 +42,7 @@ import dorkbox.util.SwingUtil;
  *
  * Also, on linux, this WILL NOT CLOSE properly -- there is a frame handle that keeps the JVM open. MacOS does not have this problem.
  */
-@SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess"})
 public final
 class _AwtTray extends Tray {
     private volatile SystemTray tray;
@@ -57,6 +57,7 @@ class _AwtTray extends Tray {
     private volatile Thread keepAliveThread;
 
     // Called in the EDT
+    @SuppressWarnings("unused")
     public
     _AwtTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
         super(onRemoveEvent);
@@ -71,60 +72,52 @@ class _AwtTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (tray == null) {
-                            tray = SystemTray.getSystemTray();
-                        }
+                SwingUtil.invokeLater(()->{
+                    if (tray == null) {
+                        tray = SystemTray.getSystemTray();
+                    }
 
-                        boolean enabled = menuItem.getEnabled();
+                    boolean enabled = menuItem.getEnabled();
 
-                        if (OS.isMacOsX()) {
-                            if (keepAliveThread != null) {
-                                synchronized (keepAliveLock) {
-                                    keepAliveLock.notifyAll();
-                                }
-                            }
-                            keepAliveThread = null;
-
-                            if (visible && !enabled) {
-                                // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
-                                // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
-                                keepAliveThread = new Thread(new Runnable() {
-                                    @Override
-                                    public
-                                    void run() {
-                                        synchronized (keepAliveLock) {
-                                            keepAliveLock.notifyAll();
-
-                                            try {
-                                                keepAliveLock.wait();
-                                            } catch (InterruptedException ignored) {
-                                            }
-                                        }
-                                    }
-                                }, "TrayKeepAliveThread");
-                                keepAliveThread.start();
+                    if (OS.isMacOsX()) {
+                        if (keepAliveThread != null) {
+                            synchronized (keepAliveLock) {
+                                keepAliveLock.notifyAll();
                             }
                         }
+                        keepAliveThread = null;
 
                         if (visible && !enabled) {
-                            tray.remove(trayIcon);
-                            visible = false;
-                        }
-                        else if (!visible && enabled && trayIcon != null) {
-                            try {
-                                tray.add(trayIcon);
-                                visible = true;
+                            // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
+                            // all platforms. This was only noticed on MacOS (where the app would quit after calling setEnabled(false);
+                            keepAliveThread = new Thread(()->{
+                                synchronized (keepAliveLock) {
+                                    keepAliveLock.notifyAll();
 
-                                // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                                // want to make sure keep the tooltip text the same as before.
-                                trayIcon.setToolTip(tooltipText);
-                            } catch (AWTException e) {
-                                dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
-                            }
+                                    try {
+                                        keepAliveLock.wait();
+                                    } catch (InterruptedException ignored) {
+                                    }
+                                }
+                            }, "TrayKeepAliveThread");
+                            keepAliveThread.start();
+                        }
+                    }
+
+                    if (visible && !enabled) {
+                        tray.remove(trayIcon);
+                        visible = false;
+                    }
+                    else if (!visible && enabled && trayIcon != null) {
+                        try {
+                            tray.add(trayIcon);
+                            visible = true;
+
+                            // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                            // want to make sure keep the tooltip text the same as before.
+                            trayIcon.setToolTip(tooltipText);
+                        } catch (AWTException e) {
+                            dorkbox.systemTray.SystemTray.logger.error("Error adding the icon back to the tray", e);
                         }
                     }
                 });
@@ -138,38 +131,34 @@ class _AwtTray extends Tray {
                     return;
                 }
 
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (tray == null) {
-                            tray = SystemTray.getSystemTray();
-                        }
-
-                        // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                        Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-                        trayImage = ImageUtil.getImageImmediate(trayImage);
-
-                        if (trayIcon == null) {
-                            // here we init. everything
-                            trayIcon = new TrayIcon(trayImage);
-
-                            trayIcon.setPopupMenu((PopupMenu) _native);
-
-                            try {
-                                tray.add(trayIcon);
-                                visible = true;
-                            } catch (AWTException e) {
-                                dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
-                            }
-                        } else {
-                            trayIcon.setImage(trayImage);
-                        }
-
-                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                        // want to make sure keep the tooltip text the same as before.
-                        trayIcon.setToolTip(tooltipText);
+                SwingUtil.invokeLater(()->{
+                    if (tray == null) {
+                        tray = SystemTray.getSystemTray();
                     }
+
+                    // stupid java won't scale it right away, so we have to do this twice to get the correct size
+                    Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
+                    trayImage = ImageUtil.getImageImmediate(trayImage);
+
+                    if (trayIcon == null) {
+                        // here we init. everything
+                        trayIcon = new TrayIcon(trayImage);
+
+                        trayIcon.setPopupMenu((PopupMenu) _native);
+
+                        try {
+                            tray.add(trayIcon);
+                            visible = true;
+                        } catch (AWTException e) {
+                            dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
+                        }
+                    } else {
+                        trayIcon.setImage(trayImage);
+                    }
+
+                    // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                    // want to make sure keep the tooltip text the same as before.
+                    trayIcon.setToolTip(tooltipText);
                 });
             }
 
@@ -197,15 +186,11 @@ class _AwtTray extends Tray {
 
                 tooltipText = text;
 
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
-                        // want to make sure keep the tooltip text the same as before.
-                        if (trayIcon != null) {
-                            trayIcon.setToolTip(text);
-                        }
+                SwingUtil.invokeLater(()->{
+                    // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
+                    // want to make sure keep the tooltip text the same as before.
+                    if (trayIcon != null) {
+                        trayIcon.setToolTip(text);
                     }
                 });
             }
@@ -213,21 +198,17 @@ class _AwtTray extends Tray {
             @Override
             public
             void remove() {
-                SwingUtil.invokeLater(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        if (trayIcon != null) {
-                            trayIcon.setPopupMenu(null);
-                            if (tray != null) {
-                                tray.remove(trayIcon);
-                            }
-
-                            trayIcon = null;
+                SwingUtil.invokeLater(()->{
+                    if (trayIcon != null) {
+                        trayIcon.setPopupMenu(null);
+                        if (tray != null) {
+                            tray.remove(trayIcon);
                         }
 
-                        tray = null;
+                        trayIcon = null;
                     }
+
+                    tray = null;
                 });
 
                 super.remove();
