@@ -112,15 +112,21 @@ class EventDispatch {
     }
 
     /**
-     * Shutdown the event dispatch
+     * Shutdown the event dispatch at the end of our current dispatch queue
      */
     public static
     void shutdown() {
-        synchronized(EventDispatch.class) {
-            if (eventDispatchExecutor != null) {
-                eventDispatchExecutor.shutdownNow();
-                eventDispatchExecutor = null;
+        runLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                synchronized (EventDispatch.class) {
+                    if (eventDispatchExecutor != null) {
+                        eventDispatchExecutor.shutdownNow();
+                        eventDispatchExecutor = null;
+                    }
+                }
             }
-        }
+        });
     }
 }
