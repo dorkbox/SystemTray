@@ -35,7 +35,7 @@ class LegacyExtension extends ExtensionSupport {
      * Only install a version that specifically moves only our icon next to the clock
      */
     public static
-    void install() {
+    void install(final String trayName) {
         if (OSUtil.DesktopEnv.isWayland()) {
             if (SystemTray.DEBUG) {
                 SystemTray.logger.debug("Gnome-shell legacy extension not possible with wayland.");
@@ -77,7 +77,7 @@ class LegacyExtension extends ExtensionSupport {
         // have to create the metadata.json file (and make it so that it's **always** current).
         // we do this via getting the shell version
 
-        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), SystemTray.APP_NAME, gnomeVersion);
+        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), trayName, gnomeVersion);
 
         if (SystemTray.DEBUG) {
             logger.debug("Checking the legacy gnome-shell extension");
@@ -99,7 +99,7 @@ class LegacyExtension extends ExtensionSupport {
 
         if (success && !hasSystemTray) {
             // copies our provided extension files to the correct location on disk. Also sets the APP NAME in the extension file
-            ExtensionSupport.installFile("extension.js", directory, SystemTray.APP_NAME);
+            ExtensionSupport.installFile("extension.js", directory, trayName);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Enabling legacy gnome-shell extension");

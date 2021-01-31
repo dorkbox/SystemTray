@@ -36,6 +36,7 @@ import javax.swing.JSeparator;
 
 import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.systemTray.util.EventDispatch;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -149,11 +150,11 @@ class Menu extends MenuItem {
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param imageResizeUtil the utility used to resize images. This can be Tray specific because of cache requirements
      */
     public
-    void bind(final MenuPeer peer, final Menu parent, final SystemTray systemTray) {
-        super.bind(peer, parent, systemTray);
+    void bind(final MenuPeer peer, final Menu parent, ImageResizeUtil imageResizeUtil) {
+        super.bind(peer, parent, imageResizeUtil);
 
         List<Entry> copy;
         synchronized (menuEntries) {

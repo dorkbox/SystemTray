@@ -18,6 +18,7 @@ package dorkbox.systemTray;
 import javax.swing.JMenuItem;
 
 import dorkbox.systemTray.peer.StatusPeer;
+import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**
  * This represents a common menu-status entry, that is cross platform in nature
@@ -33,11 +34,11 @@ class Status extends Entry {
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param imageResizeUtil the utility used to resize images. This can be Tray specific because of cache requirements
      */
     public
-    void bind(final StatusPeer peer, final Menu parent, final SystemTray systemTray) {
-        super.bind(peer, parent, systemTray);
+    void bind(final StatusPeer peer, final Menu parent, ImageResizeUtil imageResizeUtil) {
+        super.bind(peer, parent, imageResizeUtil);
 
         peer.setText(this);
     }

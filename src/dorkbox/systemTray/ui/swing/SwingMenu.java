@@ -38,15 +38,13 @@ public
 class SwingMenu implements MenuPeer {
     private final SwingMenu parent;
 
-    final SystemTray systemTray;
     final JComponent _native;
 
     // called by the system tray constructors
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    SwingMenu(final SystemTray systemTray) {
+    SwingMenu() {
         this.parent = null;
-        this.systemTray = systemTray;
 
         TrayPopup trayPopup = new TrayPopup();
         if (SystemTray.SWING_UI != null) {
@@ -60,7 +58,6 @@ class SwingMenu implements MenuPeer {
     public
     SwingMenu(final SwingMenu parent, final Menu entry) {
         this.parent = parent;
-        this.systemTray = parent.systemTray;
 
         JMenu jMenu = new JMenu();
         JPopupMenu popupMenu = jMenu.getPopupMenu(); // ensure the popup menu is created
@@ -90,23 +87,23 @@ class SwingMenu implements MenuPeer {
 
                 if (entry instanceof Menu) {
                     SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
-                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getSystemTray());
+                    ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Separator) {
                     SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this);
-                    entry.bind(item, parentMenu, parentMenu.getSystemTray());
+                    entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Checkbox) {
                     SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
-                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Status) {
                     SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
-                    ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof MenuItem) {
                     SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
-                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
             }
         });

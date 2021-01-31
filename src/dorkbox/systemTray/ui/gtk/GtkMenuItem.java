@@ -22,13 +22,13 @@ import java.awt.event.ActionListener;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.jna.linux.GCallback;
+import dorkbox.jna.linux.GObject;
+import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuItemPeer;
 import dorkbox.systemTray.util.EventDispatch;
-import dorkbox.jna.linux.GCallback;
-import dorkbox.jna.linux.GObject;
-import dorkbox.jna.linux.GtkEventDispatch;
 
 class GtkMenuItem extends GtkBaseMenuItem implements MenuItemPeer, GCallback {
     private final GtkMenu parent;

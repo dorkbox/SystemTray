@@ -60,23 +60,23 @@ class AwtMenu implements MenuPeer {
             void run() {
                 if (entry instanceof Menu) {
                     AwtMenu menu = new AwtMenu(AwtMenu.this);
-                    ((Menu) entry).bind(menu, parentMenu, parentMenu.getSystemTray());
+                    ((Menu) entry).bind(menu, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Separator) {
                     AwtMenuItemSeparator item = new AwtMenuItemSeparator(AwtMenu.this);
-                    entry.bind(item, parentMenu, parentMenu.getSystemTray());
+                    entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Checkbox) {
                     AwtMenuItemCheckbox item = new AwtMenuItemCheckbox(AwtMenu.this);
-                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Status) {
                     AwtMenuItemStatus item = new AwtMenuItemStatus(AwtMenu.this);
-                    ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof MenuItem) {
                     AwtMenuItem item = new AwtMenuItem(AwtMenu.this);
-                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+                    ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
                 }
             }
         });

@@ -20,14 +20,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
-import dorkbox.systemTray.MenuItem;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.jna.linux.AppIndicator;
 import dorkbox.jna.linux.GObject;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.jna.linux.structs.AppIndicatorInstanceStruct;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 
 /**
  * Class for handling all system tray interactions.
@@ -97,13 +97,18 @@ class _AppIndicatorNativeTray extends Tray {
     //  https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
 
     public
-    _AppIndicatorNativeTray(final SystemTray systemTray) {
-        super(systemTray);
+    _AppIndicatorNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
+        super(onRemoveEvent);
 
         isLoaded = true;
 
+        // setup some GTK menu bits...
+        GtkBaseMenuItem.transparentIcon = imageResizeUtil.getTransparentImage();
+        GtkMenuItemCheckbox.uncheckedFile = imageResizeUtil.getTransparentImage().getAbsolutePath();
+
+
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final GtkMenu gtkMenu = new GtkMenu(systemTray) {
+        final GtkMenu gtkMenu = new GtkMenu() {
             /**
              * MUST BE AFTER THE ITEM IS ADDED/CHANGED from the menu
              *
@@ -129,7 +134,7 @@ class _AppIndicatorNativeTray extends Tray {
                     //  in extension.js, so don't change it
 
                     // additionally, this is required to be set HERE (not somewhere else)
-                    appIndicator.app_indicator_set_title(SystemTray.APP_NAME);
+                    appIndicator.app_indicator_set_title(trayName);
                 }
             }
 
@@ -231,14 +236,14 @@ class _AppIndicatorNativeTray extends Tray {
                 // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
                 // Ubuntu 17.10 REQUIRES this to be the correct tray image size, otherwise we get the error:
                 // GLib-GIO-CRITICAL **: g_dbus_proxy_new: assertion 'G_IS_DBUS_CONNECTION (connection)' failed
-                File image = ImageResizeUtil.getTransparentImage(systemTray.getTrayImageSize());
+                File image = imageResizeUtil.getTransparentImage(SizeAndScalingUtil.TRAY_MENU_SIZE);
                 appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
             }
         });
 
         GtkEventDispatch.waitForEventsToComplete();
 
-        bind(gtkMenu, null, systemTray);
+        bind(gtkMenu, null, imageResizeUtil);
     }
 
     @Override

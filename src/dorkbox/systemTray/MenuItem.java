@@ -41,6 +41,7 @@ class MenuItem extends Entry {
     static boolean alreadyEmittedTooltipWarning = false;
 
     private volatile String text;
+    private volatile Object unknownImage = null;
     private volatile File imageFile;
     private volatile ActionListener callback;
 
@@ -53,17 +54,17 @@ class MenuItem extends Entry {
 
     public
     MenuItem() {
-        this(null, null, null, false);
     }
 
     public
     MenuItem(final String text) {
-        this(text, null, null, false);
+        this.text = text;
     }
 
     public
     MenuItem(final String text, final ActionListener callback) {
-        this(text, null, callback, false);
+        this.text = text;
+        this.callback = callback;
     }
 
     public
@@ -93,32 +94,44 @@ class MenuItem extends Entry {
 
     public
     MenuItem(final String text, final String imagePath, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, imagePath), callback, false);
+        this.text = text;
+        this.unknownImage = imagePath; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
     MenuItem(final String text, final File imageFile, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageFile), callback, false);
+        this.text = text;
+        this.unknownImage = imageFile; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
     MenuItem(final String text, final URL imageUrl, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageUrl), callback, false);
+        this.text = text;
+        this.unknownImage = imageUrl; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
-    MenuItem(final String text, final InputStream imageStream, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageStream), callback, false);
+    MenuItem(final String text, final InputStream inputStream, final ActionListener callback) {
+        this.text = text;
+        this.unknownImage = inputStream; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
     MenuItem(final String text, final Image image, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, image), callback, false);
+        this.text = text;
+        this.unknownImage = image; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
     MenuItem(final String text, final ImageInputStream imageStream, final ActionListener callback) {
-        this(text, ImageResizeUtil.shouldResizeOrCache(false, imageStream), callback, false);
+        this.text = text;
+        this.unknownImage = imageStream; // imageFile is set in the 'bind' call
+        this.callback = callback;
     }
 
     public
@@ -154,22 +167,38 @@ class MenuItem extends Entry {
         setText(jMenuItem.getText());
     }
 
-    // the last parameter (unused) is there so the signature is different
-    private
-    MenuItem(final String text, final File imageFile, final ActionListener callback, final boolean unused) {
-        this.text = text;
-        this.imageFile = imageFile;
-        this.callback = callback;
+    private void realizeImageFile() {
+        if (this.unknownImage instanceof String) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (String) this.unknownImage);
+        }
+        else if (this.unknownImage instanceof File) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (File) this.unknownImage);
+        }
+        else if (this.unknownImage instanceof URL) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (URL) this.unknownImage);
+        }
+        else if (this.unknownImage instanceof InputStream) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (InputStream) this.unknownImage);
+        }
+        else if (this.unknownImage instanceof Image) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (Image) this.unknownImage);
+        }
+        else if (this.unknownImage instanceof ImageInputStream) {
+            this.imageFile = imageResizeUtil.shouldResizeOrCache(false, (ImageInputStream) this.unknownImage);
+        }
+        this.unknownImage = null;
     }
 
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param imageResizeUtil the utility used to resize images. This can be Tray specific because of cache requirements
      */
     public
-    void bind(final MenuItemPeer peer, final Menu parent, final SystemTray systemTray) {
-        super.bind(peer, parent, systemTray);
+    void bind(final MenuItemPeer peer, Menu parent, ImageResizeUtil imageResizeUtil) {
+        super.bind(peer, parent, imageResizeUtil);
+
+        realizeImageFile();
 
         peer.setImage(this);
         peer.setEnabled(this);
@@ -180,10 +209,11 @@ class MenuItem extends Entry {
     }
 
     protected
-    void setImage_(final File imageFile) {
+    void setImageFromTray(final File imageFile) {
         this.imageFile = imageFile;
 
         if (peer != null) {
+            realizeImageFile();
             ((MenuItemPeer) peer).setImage(this);
         }
     }
@@ -257,7 +287,12 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final File imageFile) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageFile));
+        this.unknownImage = imageFile;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
     /**
@@ -269,7 +304,12 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final String imagePath) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imagePath));
+        this.unknownImage = imagePath;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
     /**
@@ -281,7 +321,12 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final URL imageUrl) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageUrl));
+        this.unknownImage = imageUrl;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
     /**
@@ -289,11 +334,16 @@ class MenuItem extends Entry {
      * <p>
      * This method will cache the image if it needs to be resized to fit.
      *
-     * @param imageStream the InputStream of the image to use
+     * @param inputStream the InputStream of the image to use
      */
     public
-    void setImage(final InputStream imageStream) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageStream));
+    void setImage(final InputStream inputStream) {
+        this.unknownImage = inputStream;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
     /**
@@ -305,7 +355,12 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final Image image) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, image));
+        this.unknownImage = image;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
     /**
@@ -317,7 +372,12 @@ class MenuItem extends Entry {
      */
     public
     void setImage(final ImageInputStream imageStream) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(false, imageStream));
+        this.unknownImage = imageStream;
+
+        if (peer != null) {
+            realizeImageFile(); // imageResizeUtil is set in the 'bind' call (which is also when peer is assigned)
+            ((MenuItemPeer) peer).setImage(this);
+        }
     }
 
 

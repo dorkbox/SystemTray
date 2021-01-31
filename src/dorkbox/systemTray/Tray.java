@@ -22,14 +22,12 @@ import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
 
-import dorkbox.systemTray.util.ImageResizeUtil;
-
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
 class Tray extends Menu {
     // true if we are using gnome (and we have to implement workarounds) or false
     public static volatile boolean gtkGnomeWorkaround = false;
-    private final SystemTray systemTray;
+    private final Runnable onRemoveEvent;
 
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
@@ -38,9 +36,9 @@ class Tray extends Menu {
     private volatile String statusText;
 
     public
-    Tray(final SystemTray systemTray) {
+    Tray(final Runnable onRemoveEvent) {
         super();
-        this.systemTray = systemTray;
+        this.onRemoveEvent = onRemoveEvent;
     }
 
     /**
@@ -102,7 +100,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final File imageFile) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageFile));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageFile));
     }
 
     /**
@@ -115,7 +113,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final String imagePath) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imagePath));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imagePath));
     }
 
     /**
@@ -128,7 +126,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final URL imageUrl) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageUrl));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageUrl));
     }
 
     /**
@@ -141,7 +139,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final InputStream imageStream) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageStream));
     }
 
     /**
@@ -154,7 +152,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final Image image) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, image));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, image));
     }
 
     /**
@@ -167,7 +165,7 @@ class Tray extends Menu {
     @Override
     public
     void setImage(final ImageInputStream imageStream) {
-        setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
+        setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageStream));
     }
 
     /**
@@ -182,7 +180,8 @@ class Tray extends Menu {
 
         // we have to tell our parent that we have been removed.
         // This is HERE instead of inside of the tray implementations because of visibility requirements.
-        //  remove_() is internal and should NEVER be called by someone else!
-        systemTray.remove_();
+
+        // This is internal and should NEVER be called by someone else or ANYWHERE else!
+        onRemoveEvent.run();
     }
 }

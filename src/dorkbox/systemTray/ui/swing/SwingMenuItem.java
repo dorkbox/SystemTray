@@ -33,10 +33,15 @@ import dorkbox.util.SwingUtil;
 
 class SwingMenuItem implements MenuItemPeer {
     // necessary to have the correct scaling + padding for the menu entries.
-    private static ImageIcon transparentIcon = null;
+    static ImageIcon transparentIcon = null;
 
+    /**
+     * This should ONLY be called by _SwingTray!
+     *
+     * @param menuImageSize this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+     */
     static
-    ImageIcon getTransparentIcon(SystemTray systemTray) {
+    void createTransparentIcon(int menuImageSize, ImageResizeUtil imageResizeUtil) {
         if (transparentIcon == null) {
             try {
                 JMenuItem jMenuItem = new JMenuItem();
@@ -46,17 +51,12 @@ class SwingMenuItem implements MenuItemPeer {
                     jMenuItem.setUI(SystemTray.SWING_UI.getItemUI(jMenuItem, null));
                 }
 
-                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                int menuImageSize = systemTray.getMenuImageSize();
-
-                transparentIcon = new ImageIcon(ImageResizeUtil.getTransparentImage(menuImageSize)
+                transparentIcon = new ImageIcon(imageResizeUtil.getTransparentImage(menuImageSize)
                                                                .getAbsolutePath());
             } catch (Exception e) {
                 SystemTray.logger.error("Error creating transparent image.", e);
             }
         }
-
-        return transparentIcon;
     }
 
 
@@ -67,7 +67,7 @@ class SwingMenuItem implements MenuItemPeer {
 
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItem(final SwingMenu parent, Entry entry) {
+    SwingMenuItem(final SwingMenu parent, final Entry entry) {
         this.parent = parent;
 
         if (SystemTray.SWING_UI != null) {
@@ -77,7 +77,7 @@ class SwingMenuItem implements MenuItemPeer {
         _native.setHorizontalAlignment(SwingConstants.LEFT);
         parent._native.add(_native);
 
-        _native.setIcon(getTransparentIcon(parent.systemTray));
+        _native.setIcon(transparentIcon);
     }
 
     @Override

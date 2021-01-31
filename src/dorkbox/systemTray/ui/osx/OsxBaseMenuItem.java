@@ -17,24 +17,26 @@ package dorkbox.systemTray.ui.osx;
 
 import java.awt.image.BufferedImage;
 
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.peer.EntryPeer;
-import dorkbox.util.ImageUtil;
 import dorkbox.jna.macos.cocoa.NSImage;
 import dorkbox.jna.macos.cocoa.NSInteger;
 import dorkbox.jna.macos.cocoa.NSMenuItem;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.peer.EntryPeer;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.util.ImageUtil;
 
 abstract
 class OsxBaseMenuItem implements EntryPeer {
     // these are necessary BECAUSE OSX menus look funky when there are some menu entries WITH icons and some WITHOUT
     private static NSImage transparentIcon = null;
 
-    static NSImage getTransparentIcon(final SystemTray systemTray) {
+    /**
+     * @param menuImageSize this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+     */
+    static NSImage getTransparentIcon(int menuImageSize) {
         if (transparentIcon == null) {
             NSImage transparentIcon_;
             try {
-                int menuImageSize = systemTray.getMenuImageSize();
-
                 final BufferedImage image = ImageUtil.createImageAsBufferedImage(3, menuImageSize, null);
                 transparentIcon_ = new NSImage(ImageUtil.toBytes(image));
             } catch (Exception e) {
@@ -59,11 +61,9 @@ class OsxBaseMenuItem implements EntryPeer {
     OsxBaseMenuItem(final OsxMenu parent) {
         this.parent = parent;
 
-
-
         // this is to provide reasonable spacing for the menu item, otherwise it looks weird
         _native.setIndentationLevel(indentationLevel);
-        _native.setImage(getTransparentIcon(parent.systemTray));
+        _native.setImage(getTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE));
 
         parent.addItem(_native);
     }

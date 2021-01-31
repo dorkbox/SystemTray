@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JCheckBoxMenuItem;
 
 import dorkbox.systemTray.peer.CheckboxPeer;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -83,11 +84,11 @@ class Checkbox extends Entry {
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param imageResizeUtil the utility used to resize images. This can be Tray specific because of cache requirements
      */
     public
-    void bind(final CheckboxPeer peer, final Menu parent, final SystemTray systemTray) {
-        super.bind(peer, parent, systemTray);
+    void bind(final CheckboxPeer peer, final Menu parent, ImageResizeUtil imageResizeUtil) {
+        super.bind(peer, parent, imageResizeUtil);
 
         peer.setEnabled(this);
         peer.setText(this);

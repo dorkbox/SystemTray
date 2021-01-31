@@ -36,11 +36,6 @@ import javax.swing.ImageIcon;
 import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.WinDef.POINT;
 
-import dorkbox.systemTray.MenuItem;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.Tray;
-import dorkbox.util.ImageUtil;
-import dorkbox.util.SwingUtil;
 import dorkbox.jna.windows.HBITMAPWrap;
 import dorkbox.jna.windows.HICONWrap;
 import dorkbox.jna.windows.Listener;
@@ -48,6 +43,13 @@ import dorkbox.jna.windows.Shell32;
 import dorkbox.jna.windows.User32;
 import dorkbox.jna.windows.WindowsEventDispatch;
 import dorkbox.jna.windows.structs.NOTIFYICONDATA;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.util.ImageUtil;
+import dorkbox.util.SwingUtil;
 
 
 /**
@@ -66,11 +68,16 @@ class _WindowsNativeTray extends Tray {
     private volatile String tooltipText = "";
 
     public
-    _WindowsNativeTray(final SystemTray systemTray) {
-        super(systemTray);
+    _WindowsNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
+        super(onRemoveEvent);
+
+        // setup some swing menu bits...
+        // This creates the transparent icon
+        SwingMenuItem.createTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE, imageResizeUtil);
+        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScalingUtil.TRAY_MENU_SIZE);
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu(systemTray) {
+        final SwingMenu swingMenu = new SwingMenu() {
             @Override
             public
             void setImage(final MenuItem menuItem) {
@@ -214,7 +221,7 @@ class _WindowsNativeTray extends Tray {
 
         show();
 
-        bind(swingMenu, null, systemTray);
+        bind(swingMenu, null, imageResizeUtil);
     }
 
     private

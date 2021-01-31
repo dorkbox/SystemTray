@@ -122,12 +122,10 @@ class TestTrayJavaFX {
         new CacheUtil("SystemTrayImages").clear();
         new CacheUtil("CheckMarks").clear();
 
-        SystemTray.APP_NAME = "SysTrayExample";
-
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
 
-        this.systemTray = SystemTray.get();
+        this.systemTray = SystemTray.get("SysTrayExample");
         if (systemTray == null) {
             throw new RuntimeException("Unable to load SystemTray!");
         }
@@ -274,6 +272,7 @@ class TestTrayJavaFX {
             public
             void actionPerformed(final java.awt.event.ActionEvent e) {
                 systemTray.shutdown();
+
                 if (!JavaFx.isEventThread()) {
                     JavaFx.dispatch(new Runnable() {
                         @Override

@@ -17,13 +17,13 @@ package dorkbox.systemTray.ui.osx;
 
 import java.io.File;
 
-import dorkbox.systemTray.MenuItem;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.Tray;
 import dorkbox.jna.macos.cocoa.NSImage;
 import dorkbox.jna.macos.cocoa.NSStatusBar;
 import dorkbox.jna.macos.cocoa.NSStatusItem;
 import dorkbox.jna.macos.cocoa.NSString;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**
  *
@@ -47,8 +47,8 @@ class _OsxNativeTray extends Tray {
     private volatile NSImage statusItemImage;
 
     public
-    _OsxNativeTray(final SystemTray systemTray) {
-        super(systemTray);
+    _OsxNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
+        super(onRemoveEvent);
 
         // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
         // all platforms.
@@ -70,7 +70,7 @@ class _OsxNativeTray extends Tray {
 
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final OsxMenu osxMenu = new OsxMenu(systemTray) {
+        final OsxMenu osxMenu = new OsxMenu() {
 
             @Override
             public
@@ -189,7 +189,7 @@ class _OsxNativeTray extends Tray {
 
         statusBar = NSStatusBar.systemStatusBar();
 
-        bind(osxMenu, null, systemTray);
+        bind(osxMenu, null, imageResizeUtil);
     }
 
     @Override

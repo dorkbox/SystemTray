@@ -34,14 +34,15 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
-import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 
 @SuppressWarnings("deprecation")
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
     private static volatile String checkedFile;
 
     // here, it doesn't matter what size the image is, as long as there is an image, the text in the menu will be shifted correctly
-    private static final String uncheckedFile = ImageResizeUtil.getTransparentImage().getAbsolutePath();
+    // This is set from _AppIndicatorNativeTray or _GtkStatusIconNativeTray
+    static String uncheckedFile = null;
 
     // Note:  So far, ONLY Ubuntu has managed to fail at rendering (via bad layouts) checkbox menu items.
     //          If there are OTHER OSes that fail, checks for them should be added here
@@ -97,7 +98,10 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
      * show this as a GTK Status Icon (not an AppIndicator), this way the "proper" checkbox is shown.
      */
     GtkMenuItemCheckbox(final GtkMenu parent) {
-        super(useFakeCheckMark ? Gtk2.gtk_image_menu_item_new_with_mnemonic("") : Gtk2.gtk_check_menu_item_new_with_mnemonic(""));
+        super(useFakeCheckMark ?
+                Gtk2.gtk_image_menu_item_new_with_mnemonic("") :
+                Gtk2.gtk_check_menu_item_new_with_mnemonic(""));
+
         this.parent = parent;
 
         handlerId = GObject.g_signal_connect_object(_native, "activate", this, null, 0);
@@ -114,7 +118,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 if (checkedFile == null) {
                     Rectangle size = GtkTheme.getPixelTextHeight("X");
-                    int imageHeight = parent.systemTray.getMenuImageSize();
+                    int imageHeight = SizeAndScalingUtil.TRAY_MENU_SIZE;
                     int height = size.height;
 
                     if (SystemTray.DEBUG) {

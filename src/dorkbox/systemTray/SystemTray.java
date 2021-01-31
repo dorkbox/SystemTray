@@ -56,6 +56,7 @@ import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.systemTray.util.WindowsSwingUI;
+import dorkbox.util.CacheUtil;
 import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 
@@ -88,10 +89,6 @@ class SystemTray {
     @Property
     /** Enables auto-detection for the system tray. This should be mostly successful. */
     public static boolean AUTO_SIZE = true;
-
-    @Property
-    /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
-    public static String APP_NAME = "SystemTray";
 
     @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
@@ -150,16 +147,33 @@ class SystemTray {
      */
     public static boolean DEBUG = false;
 
+    /**
+     * Gets the version number.
+     */
+    public static
+    String getVersion() {
+        return "3.17";
+    }
 
-    private static volatile SystemTray systemTray = null;
-    private static volatile Tray systemTrayMenu = null;
-    private static volatile boolean shutdownHooksAdded = false;
-
+    /**
+     * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu. The drawback is
+     * that this menu is native, and sometimes native menus looks absolutely HORRID.
+     * <p>
+     * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
+     * supported, in which case this will return NULL.
+     * <p>
+     * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
+     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
+     */
+    public static
+    SystemTray get() {
+        return get("SystemTray");
+    }
 
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
-    private static
-    void init() {
-        // have to RECREATE the menu if we call get() after remove()!
+    public static
+    SystemTray get(String trayName) {
+        // we must recreate the menu if we call get() after remove()!
 
 //        if (DEBUG) {
 //            Properties properties = System.getProperties();
@@ -172,14 +186,13 @@ class SystemTray {
         if (GraphicsEnvironment.isHeadless()) {
             logger.error("Cannot use the SystemTray in a headless environment");
 
-            systemTrayMenu = null;
-            systemTray = null;
-            return;
+            return null;
         }
 
         boolean isNix = OS.isLinux() || OS.isUnix();
         boolean isWindows = OS.isWindows();
         boolean isMacOsX = OS.isMacOsX();
+
 
         // Windows can ONLY use Swing (non-native) or WindowsNotifyIcon (native) - AWT looks absolutely horrid and is not an option
         // OSx can use Swing (non-native) or AWT (native).
@@ -200,9 +213,7 @@ class SystemTray {
                 if (Swt.getVersion() < 4430) {
                     logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+");
 
-                    systemTrayMenu = null;
-                    systemTray = null;
-                    return;
+                    return null;
                 }
 
                 // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
@@ -217,9 +228,7 @@ class SystemTray {
                         logger.error("Unable to load Swing + SWT (for all versions of Java). " +
                                      "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.\"");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                        return null;
                     }
                 }
             }
@@ -284,9 +293,7 @@ class SystemTray {
                         logger.error("Unable to use the SystemTray when there is a mismatch for GTK loaded preferences. Please correctly " +
                                      "set `SystemTray.FORCE_GTK2=true` or set `SystemTray.AUTO_FIX_INCONSISTENCIES=true`.  Aborting...");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                        return null;
                     }
                 }
             }
@@ -379,9 +386,7 @@ class SystemTray {
                                              "GTK2. Please set `SystemTray.FORCE_GTK2=false;`  Aborting.");
                             }
 
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
+                            return null;
                         }
                     }
                     else if (Swt.isLoaded) {
@@ -393,9 +398,7 @@ class SystemTray {
                                          "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
                                          "initialized, or set `SystemTray.FORCE_GTK2=false;`");
 
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
+                            return null;
                         }
                     }
 
@@ -403,9 +406,7 @@ class SystemTray {
                         logger.error("Unable to use the SystemTray when Swing is configured to use GTK3 and the SystemTray is " +
                                     "configured to use GTK2. Aborting.");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                        return null;
                     }
                 }
             }
@@ -452,7 +453,7 @@ class SystemTray {
         // this has to happen BEFORE any sort of swing system tray stuff is accessed
         Class<? extends Tray> trayType;
         if (SystemTray.FORCE_TRAY_TYPE == TrayType.AutoDetect) {
-            trayType = AutoDetectTrayType.get();
+            trayType = AutoDetectTrayType.get(trayName);
         } else {
             trayType = selectType(SystemTray.FORCE_TRAY_TYPE);
         }
@@ -462,9 +463,7 @@ class SystemTray {
                 logger.error("ChromeOS detected and it is not supported. Aborting.");
             }
 
-            systemTrayMenu = null;
-            systemTray = null;
-            return;
+            return null;
         }
 
 
@@ -496,9 +495,7 @@ class SystemTray {
                                      " the SystemTray will not work. " +
                                      "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                        return null;
                     }
                 }
 
@@ -545,9 +542,7 @@ class SystemTray {
                         logger.error("Unable to use the SystemTray as-is with this version of ElementaryOS. By default, tray icons *are not* supported, but a" +
                                      " workaround has been developed. Please see: https://git.dorkbox.com/dorkbox/elementary-indicators");
 
-                        systemTrayMenu = null;
-                        systemTray = null;
-                        return;
+                        return null;
                     }
                 }
             }
@@ -599,9 +594,7 @@ class SystemTray {
                             // no swing, have to emit instructions how to fix the error.
                             logger.error("AppIndicator unable to load.  " + AppIndicator.getInstallString(GtkCheck.isGtk2));
 
-                            systemTrayMenu = null;
-                            systemTray = null;
-                            return;
+                            return null;
                         }
                     }
                 }
@@ -657,9 +650,7 @@ class SystemTray {
                 logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
                              "(EDT). Something is seriously wrong.");
 
-                systemTrayMenu = null;
-                systemTray = null;
-                return;
+                return null;
             }
 
             if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.WindowsNative)) {
@@ -667,19 +658,33 @@ class SystemTray {
                 java.awt.Toolkit.getDefaultToolkit();
             }
 
+            // initialize the tray icon height
+            // this is during init, so we can statically access this everywhere else. Multiple instances of this will always have the same value
+            SizeAndScalingUtil.getMenuImageSize(trayType);
 
+
+            //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
+            Runnable onRemoveEvent = new Runnable() {
+                @Override
+                public
+                void run() {
+                    // must remove ourselves from the init() map (since we want to be able to access things)
+                    AutoDetectTrayType.removeSystemTrayHook(trayName);
+
+                    // this is thread-safe
+                    EventDispatch.shutdown();
+                }
+            };
+
+            CacheUtil cache = new CacheUtil(trayName + "Cache");
+            ImageResizeUtil imageResizeUtil = new ImageResizeUtil(cache);
+
+
+            // the "menu" in this case is the ACTUAL menu that shows up in the system tray (the icon + submenu, etc)
+            final AtomicReference<Tray> reference = new AtomicReference<Tray>();
 
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
-            systemTray = new SystemTray();
-        } catch (Exception e) {
-            logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
-        }
-
-
-        // the "menu" in this case is the ACTUAL menu that shows up in the system tray (the icon + submenu, etc)
-        final AtomicReference<Tray> reference = new AtomicReference<Tray>();
-        try {
             // AWT/Swing must be constructed on the EDT however...
             if (!JavaFx.isLoaded && !Swt.isLoaded &&
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
@@ -690,24 +695,24 @@ class SystemTray {
                     public
                     void run() {
                         try {
-                            reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(systemTray));
-                        } catch (Exception e) {
-                            logger.error("Unable to create tray type: '" + finalTrayType.getSimpleName() + "'", e);
+                            reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
+                        } catch (Exception ignored) {
                         }
                     }
                 });
             }
             else {
-                reference.set((Tray) trayType.getConstructors()[0].newInstance(systemTray));
+                reference.set((Tray) trayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
             }
-        } catch (Exception e) {
-            logger.error("Unable to create tray type: '" + trayType.getSimpleName() + "'", e);
-        }
 
+            // we have a weird circle dependency thing going on!
+            Tray systemTrayMenu = reference.get();
 
-        systemTrayMenu = reference.get();
+            if (systemTrayMenu == null) {
+                logger.error("Unable to create tray type: '{}'", trayType.getSimpleName());
+                return null;
+            }
 
-        if (systemTrayMenu != null) {
             if (DEBUG) {
                 logger.info("Successfully loaded type: {}", trayType.getSimpleName());
             } else {
@@ -723,28 +728,17 @@ class SystemTray {
             logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
         }
 
-    /**
-     * Gets the version number.
-     */
-    public static
-    String getVersion() {
-        return "3.17";
+        return null;
     }
 
-    /**
-     * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu. The drawback is
-     * that this menu is native, and sometimes native menus looks absolutely HORRID.
-     * <p>
-     * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
-     * supported, in which case this will return NULL.
-     * <p>
-     * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
-     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
-     */
-    public static
-    SystemTray get() {
-        init();
-        return systemTray;
+    /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
+    private final Tray menu;
+    private final ImageResizeUtil imageResizeUtil;
+
+    private
+    SystemTray(Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil) {
+        this.menu = systemTrayMenu;
+        this.imageResizeUtil = imageResizeUtil;
     }
 
     /**
@@ -753,13 +747,8 @@ class SystemTray {
      */
     public
     void shutdown() {
-        // this is thread-safe
-        EventDispatch.shutdown();
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            // this will shutdown and do what it needs to
-            menu.remove();
-        }
+        // this will shutdown and do what it needs to
+        menu.remove();
     }
 
     /**
@@ -767,12 +756,7 @@ class SystemTray {
      */
     public
     String getStatus() {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            return menu.getStatus();
-        }
-
-        return "";
+        return menu.getStatus();
     }
 
     /**
@@ -781,11 +765,9 @@ class SystemTray {
      * @param statusText the text you want displayed, null if you want to remove the 'status' string
      */
     public
-    void setStatus(String statusText) {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setStatus(statusText);
-        }
+    Menu setStatus(String statusText) {
+        menu.setStatus(statusText);
+        return menu;
     }
 
     /**
@@ -793,7 +775,7 @@ class SystemTray {
      */
     public
     Menu getMenu() {
-        return systemTrayMenu;
+        return menu;
     }
 
     /**
@@ -805,29 +787,25 @@ class SystemTray {
      */
     public
     Menu setMenu(final JMenu jMenu) {
-        Menu menu = systemTrayMenu;
+        Icon icon = jMenu.getIcon();
+        if (icon != null) {
+            BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+            setImage(bimage);
+        }
 
-        if (menu != null) {
-            Icon icon = jMenu.getIcon();
-            if (icon != null) {
-                BufferedImage bimage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                setImage(bimage);
+        Component[] menuComponents = jMenu.getMenuComponents();
+        for (Component c : menuComponents) {
+            if (c instanceof JMenu) {
+                menu.add((JMenu) c);
             }
-
-            Component[] menuComponents = jMenu.getMenuComponents();
-            for (Component c : menuComponents) {
-                if (c instanceof JMenu) {
-                    menu.add((JMenu) c);
-                }
-                else if (c instanceof JCheckBoxMenuItem) {
-                    menu.add((JCheckBoxMenuItem) c);
-                }
-                else if (c instanceof JMenuItem) {
-                    menu.add((JMenuItem) c);
-                }
-                else if (c instanceof JSeparator) {
-                    menu.add((JSeparator) c);
-                }
+            else if (c instanceof JCheckBoxMenuItem) {
+                menu.add((JCheckBoxMenuItem) c);
+            }
+            else if (c instanceof JMenuItem) {
+                menu.add((JMenuItem) c);
+            }
+            else if (c instanceof JSeparator) {
+                menu.add((JSeparator) c);
             }
         }
 
@@ -839,11 +817,9 @@ class SystemTray {
      * Shows (if hidden), or hides (if showing) the system tray.
      */
     public
-    void setEnabled(final boolean enabled) {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setEnabled(enabled);
-        }
+    Menu setEnabled(final boolean enabled) {
+        menu.setEnabled(enabled);
+        return menu;
     }
 
     /**
@@ -857,11 +833,9 @@ class SystemTray {
      * @param tooltipText the text to use as tooltip for the tray icon, null to remove
      */
     public
-    void setTooltip(final String tooltipText) {
-        final Tray tray = systemTrayMenu;
-        if (tray != null) {
-            tray.setTooltip(tooltipText);
-        }
+    Menu setTooltip(final String tooltipText) {
+        menu.setTooltip(tooltipText);
+        return menu;
     }
 
 
@@ -878,10 +852,7 @@ class SystemTray {
             throw new NullPointerException("imageFile");
         }
 
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageFile));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageFile));
     }
 
     /**
@@ -892,15 +863,13 @@ class SystemTray {
      * @param imagePath the full path of the image to use or null
      */
     public
-    void setImage(final String imagePath) {
+    Menu setImage(final String imagePath) {
         if (imagePath == null) {
             throw new NullPointerException("imagePath");
         }
 
-        final Tray tray = systemTrayMenu;
-        if (tray != null) {
-            tray.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imagePath));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imagePath));
+        return menu;
     }
 
     /**
@@ -911,15 +880,13 @@ class SystemTray {
      * @param imageUrl the URL of the image to use or null
      */
     public
-    void setImage(final URL imageUrl) {
+    Menu setImage(final URL imageUrl) {
         if (imageUrl == null) {
             throw new NullPointerException("imageUrl");
         }
 
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageUrl));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageUrl));
+        return menu;
     }
 
     /**
@@ -930,15 +897,13 @@ class SystemTray {
      * @param imageStream the InputStream of the image to use
      */
     public
-    void setImage(final InputStream imageStream) {
+    Menu setImage(final InputStream imageStream) {
         if (imageStream == null) {
             throw new NullPointerException("imageStream");
         }
 
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageStream));
+        return menu;
     }
 
     /**
@@ -949,15 +914,13 @@ class SystemTray {
      * @param image the image of the image to use
      */
     public
-    void setImage(final Image image) {
+    Menu setImage(final Image image) {
         if (image == null) {
             throw new NullPointerException("image");
         }
 
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, image));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, image));
+        return menu;
     }
 
     /**
@@ -968,15 +931,13 @@ class SystemTray {
      *@param imageStream the ImageInputStream of the image to use
      */
     public
-    void setImage(final ImageInputStream imageStream) {
+    Menu setImage(final ImageInputStream imageStream) {
         if (imageStream == null) {
             throw new NullPointerException("image");
         }
 
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            menu.setImage_(ImageResizeUtil.shouldResizeOrCache(true, imageStream));
-        }
+        menu.setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageStream));
+        return menu;
     }
 
     /**
@@ -989,17 +950,13 @@ class SystemTray {
 
 
     /**
-     * @return the system tray menu image size, accounting for OS and theme differences. 0 if the menu does not exist
+     * This is called during tray initialization. Since multiple tray menus will always be the same type, this is can be cached
+     *
+     * @return the system tray menu image size, accounting for OS and theme differences.
      */
     public
     int getMenuImageSize() {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            return SizeAndScalingUtil.getMenuImageSize(menu.getClass());
-        }
-        else {
-            return 0;
-        }
+        return SizeAndScalingUtil.TRAY_MENU_SIZE;
     }
 
     /**
@@ -1007,13 +964,7 @@ class SystemTray {
      */
     public
     TrayType getType() {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            return fromClass(systemTrayMenu.getClass());
-        }
-        else {
-            return null;
-        }
+        return fromClass(menu.getClass());
     }
 
     /**
@@ -1023,19 +974,8 @@ class SystemTray {
      */
     public
     void remove() {
-        final Tray menu = systemTrayMenu;
-        if (menu != null) {
-            systemTrayMenu.remove();
-        }
-    }
-
-    /**
-     * Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
-     */
-    void remove_() {
-        // we just check for null
-        systemTrayMenu = null;
-        EventDispatch.shutdown();
+        // we must recreate the menu via init() if we call get() after remove()!
+        menu.remove();
     }
 }
 

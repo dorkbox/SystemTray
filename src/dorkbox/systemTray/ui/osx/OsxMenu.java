@@ -15,24 +15,22 @@
  */
 package dorkbox.systemTray.ui.osx;
 
-import dorkbox.systemTray.Checkbox;
-import dorkbox.systemTray.Entry;
-import dorkbox.systemTray.Menu;
-import dorkbox.systemTray.MenuItem;
-import dorkbox.systemTray.Separator;
-import dorkbox.systemTray.Status;
-import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.jna.macos.cocoa.NSCellStateValue;
 import dorkbox.jna.macos.cocoa.NSImage;
 import dorkbox.jna.macos.cocoa.NSInteger;
 import dorkbox.jna.macos.cocoa.NSMenu;
 import dorkbox.jna.macos.cocoa.NSMenuItem;
 import dorkbox.jna.macos.cocoa.NSString;
+import dorkbox.systemTray.Checkbox;
+import dorkbox.systemTray.Entry;
+import dorkbox.systemTray.Menu;
+import dorkbox.systemTray.MenuItem;
+import dorkbox.systemTray.Separator;
+import dorkbox.systemTray.Status;
+import dorkbox.systemTray.peer.MenuPeer;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 
 class OsxMenu implements MenuPeer {
-    final SystemTray systemTray;
-
     // the native OSX components
     protected final OsxMenu parent;
     protected final NSMenuItem _native = new NSMenuItem();
@@ -50,14 +48,12 @@ class OsxMenu implements MenuPeer {
     // called by the system tray constructors
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    OsxMenu(final SystemTray systemTray) {
+    OsxMenu() {
         this.parent = null;
-        this.systemTray = systemTray;
     }
 
     OsxMenu(final OsxMenu parent) {
         this.parent = parent;
-        this.systemTray = parent.systemTray;
         _nativeMenu = new NSMenu();
 
         _native.setSubmenu(_nativeMenu);
@@ -65,7 +61,7 @@ class OsxMenu implements MenuPeer {
 
         // this is to provide reasonable spacing for the menu item, otherwise it looks weird
         _native.setIndentationLevel(indentationLevel);
-        _native.setImage(OsxBaseMenuItem.getTransparentIcon(parent.systemTray));
+        _native.setImage(OsxBaseMenuItem.getTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE));
     }
 
     @Override
@@ -73,23 +69,23 @@ class OsxMenu implements MenuPeer {
     void add(final Menu parentMenu, final Entry entry, final int index) {
         if (entry instanceof Menu) {
             OsxMenu menu = new OsxMenu(OsxMenu.this);
-            ((Menu) entry).bind(menu, parentMenu, parentMenu.getSystemTray());
+            ((Menu) entry).bind(menu, parentMenu, parentMenu.getImageResizeUtil());
         }
         else if (entry instanceof Separator) {
             OsxMenuItemSeparator item = new OsxMenuItemSeparator(OsxMenu.this);
-            entry.bind(item, parentMenu, parentMenu.getSystemTray());
+            entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
         }
         else if (entry instanceof Checkbox) {
             OsxMenuItemCheckbox item = new OsxMenuItemCheckbox(OsxMenu.this);
-            ((Checkbox) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+            ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
         }
         else if (entry instanceof Status) {
             OsxMenuItemStatus item = new OsxMenuItemStatus(OsxMenu.this);
-            ((Status) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+            ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
         }
         else if (entry instanceof MenuItem) {
             OsxMenuItem item = new OsxMenuItem(OsxMenu.this);
-            ((MenuItem) entry).bind(item, parentMenu, parentMenu.getSystemTray());
+            ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
         }
     }
 

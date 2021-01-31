@@ -23,22 +23,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
+import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.Status;
-import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.MenuPeer;
-import dorkbox.jna.linux.GtkEventDispatch;
 
 @SuppressWarnings("deprecation")
 class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // this is a list (that mirrors the actual list) BECAUSE we have to create/delete the entire menu in GTK every time something is changed
     private final List<GtkBaseMenuItem> menuEntries = new ArrayList<GtkBaseMenuItem>();
 
-    final SystemTray systemTray;
     private final GtkMenu parent;  // null when we are the main menu attached to the tray icon
 
     volatile Pointer _nativeMenu;  // must ONLY be created at the end of delete!
@@ -56,10 +54,9 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     // called by the system tray constructors
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    GtkMenu(final SystemTray systemTray) {
+    GtkMenu() {
         super(null);
         this.parent = null;
-        this.systemTray = systemTray;
     }
 
     // This is NOT a copy constructor!
@@ -68,9 +65,6 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
     GtkMenu(final GtkMenu parent) {
         super(Gtk2.gtk_image_menu_item_new_with_mnemonic("")); // is what is added to the parent menu (so images work)
         this.parent = parent;
-
-        // we have to propagate instances of the system tray
-        this.systemTray = parent.systemTray;
     }
 
     GtkMenu getParent() {
@@ -243,19 +237,19 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 // we must create the menu BEFORE binding the menu, otherwise the menus' children's GTK element can be added before
                 // their parent GTK elements are added (and the menu won't show up)
                 if (entry instanceof Menu) {
-                    ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getSystemTray());
+                    ((Menu) entry).bind((GtkMenu) item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Separator) {
-                    ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getSystemTray());
+                    ((Separator)entry).bind((GtkMenuItemSeparator) item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Checkbox) {
-                    ((Checkbox) entry).bind((GtkMenuItemCheckbox) item, parentMenu, parentMenu.getSystemTray());
+                    ((Checkbox) entry).bind((GtkMenuItemCheckbox) item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof Status) {
-                    ((Status) entry).bind((GtkMenuItemStatus) item, parentMenu, parentMenu.getSystemTray());
+                    ((Status) entry).bind((GtkMenuItemStatus) item, parentMenu, parentMenu.getImageResizeUtil());
                 }
                 else if (entry instanceof MenuItem) {
-                    ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getSystemTray());
+                    ((MenuItem) entry).bind((GtkMenuItem) item, parentMenu, parentMenu.getImageResizeUtil());
                 }
 
                 // when adding/removing menus DURING the `add` operation for a menu, we DO NOT want to recursively add/remove menus!

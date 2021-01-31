@@ -30,6 +30,8 @@ import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.ImageResizeUtil;
+import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -53,13 +55,19 @@ class _SwingTray extends Tray {
 
     // Called in the EDT
     public
-    _SwingTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray);
+    _SwingTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
+        super(onRemoveEvent);
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
                                        "type and configuration");
         }
+
+        // setup some swing menu bits...
+        // This creates the transparent icon
+        SwingMenuItem.createTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE, imageResizeUtil);
+        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScalingUtil.TRAY_MENU_SIZE);
+
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final SwingMenu swingMenu = new SwingMenu(null, null) {
@@ -222,7 +230,7 @@ class _SwingTray extends Tray {
             }
         };
 
-        bind(swingMenu, null, systemTray);
+        bind(swingMenu, null, imageResizeUtil);
     }
 
     @Override

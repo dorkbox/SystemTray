@@ -37,8 +37,13 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
     private static ImageIcon checkedIcon;
 
-    private static
-    ImageIcon getCheckedIcon(SystemTray systemTray) {
+    /**
+     * This should ONLY be called by _SwingTray!
+     *
+     * @param menuImageSize this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
+     */
+    static
+    void createCheckedIcon(int menuImageSize) {
         if (checkedIcon == null) {
             try {
                 JMenuItem jMenuItem = new JMenuItem();
@@ -50,9 +55,6 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
 
                 // Having the checkmark size the same size as the letter X is a reasonably nice size.
                 int size = FontUtil.getFontHeight(jMenuItem.getFont(), "X");
-
-                // this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
-                int menuImageSize = systemTray.getMenuImageSize();
 
                 String checkmarkPath;
                 if (SystemTray.SWING_UI != null) {
@@ -66,15 +68,11 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 SystemTray.logger.error("Error creating check-mark image.", e);
             }
         }
-
-        return checkedIcon;
     }
 
     // this is ALWAYS called on the EDT.
     SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
         super(parent, entry);
-
-
     }
 
     @Override
@@ -169,10 +167,10 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
                 public
                 void run() {
                     if (isChecked) {
-                        _native.setIcon(getCheckedIcon(parent.systemTray));
+                        _native.setIcon(checkedIcon);
                     }
                     else {
-                        _native.setIcon(SwingMenuItem.getTransparentIcon(parent.systemTray));
+                        _native.setIcon(SwingMenuItem.transparentIcon);
                     }
                 }
             });

@@ -27,6 +27,7 @@ import javax.swing.ImageIcon;
 import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
 
@@ -57,8 +58,8 @@ class _AwtTray extends Tray {
 
     // Called in the EDT
     public
-    _AwtTray(final dorkbox.systemTray.SystemTray systemTray) {
-        super(systemTray);
+    _AwtTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
+        super(onRemoveEvent);
 
         if (!SystemTray.isSupported()) {
             throw new RuntimeException("System Tray is not supported in this configuration! Please write an issue and include your OS " +
@@ -240,7 +241,7 @@ class _AwtTray extends Tray {
             }
         };
 
-        bind(awtMenu, null, systemTray);
+        bind(awtMenu, null, imageResizeUtil);
     }
 
     @Override

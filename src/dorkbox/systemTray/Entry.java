@@ -18,6 +18,7 @@ package dorkbox.systemTray;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dorkbox.systemTray.peer.EntryPeer;
+import dorkbox.systemTray.util.ImageResizeUtil;
 
 /**
  * This represents a common menu-entry, that is cross platform in nature
@@ -29,9 +30,9 @@ class Entry {
     private final int id = Entry.MENU_ID_COUNTER.getAndIncrement();
 
     private volatile Menu parent;
-    private volatile SystemTray systemTray;
 
     protected volatile EntryPeer peer;
+    protected volatile ImageResizeUtil imageResizeUtil;
 
     public
     Entry() {
@@ -43,14 +44,13 @@ class Entry {
     /**
      * @param peer the platform specific implementation for all actions for this type
      * @param parent the parent of this menu, null if the parent is the system tray
-     * @param systemTray the system tray (which is the object that sits in the system tray)
+     * @param imageResizeUtil the utility used to resize images. This can be Tray specific because of cache requirements
      */
     public
-    void bind(final EntryPeer peer, final Menu parent, final SystemTray systemTray) {
+    void bind(final EntryPeer peer, final Menu parent, ImageResizeUtil imageResizeUtil) {
         this.parent = parent;
-        this.systemTray = systemTray;
-
         this.peer = peer;
+        this.imageResizeUtil = imageResizeUtil;
     }
 
     // END methods for hooking into the system tray, menu's, and entries.
@@ -73,13 +73,12 @@ class Entry {
     }
 
     /**
-     * @return the system tray that this menu is ultimately attached to
+     * @return the Image Resize Utility (with Tray specific cache) that this menu uses
      */
     public final
-    SystemTray getSystemTray() {
-        return this.systemTray;
+    ImageResizeUtil getImageResizeUtil() {
+        return this.imageResizeUtil;
     }
-
     /**
      * Removes this menu entry from the menu and releases all system resources associated with this menu entry.
      */
@@ -89,7 +88,6 @@ class Entry {
             peer.remove();
 
             this.parent = null;
-            this.systemTray = null;
             peer = null;
         }
     }
