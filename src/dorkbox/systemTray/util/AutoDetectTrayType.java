@@ -481,4 +481,11 @@ class AutoDetectTrayType {
             traySingletons.remove(trayName);
         }
     }
+
+    public static
+    boolean hasOtherTrays() {
+        synchronized (traySingletons) {
+            return !traySingletons.isEmpty();
+        }
+    }
 }
