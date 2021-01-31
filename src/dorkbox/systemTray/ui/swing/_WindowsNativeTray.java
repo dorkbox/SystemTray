@@ -67,6 +67,8 @@ class _WindowsNativeTray extends Tray {
     private volatile HICONWrap imageIcon;
     private volatile String tooltipText = "";
 
+    private final WindowsEventDispatch edt;
+
     @SuppressWarnings("unused")
     public
     _WindowsNativeTray(final String trayName, final ImageResizeUtil imageResizeUtil, final Runnable onRemoveEvent) {
@@ -76,6 +78,8 @@ class _WindowsNativeTray extends Tray {
         // This creates the transparent icon
         SwingMenuItem.createTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE, imageResizeUtil);
         SwingMenuItemCheckbox.createCheckedIcon(SizeAndScalingUtil.TRAY_MENU_SIZE);
+
+        edt = WindowsEventDispatch.start();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final SwingMenu swingMenu = new SwingMenu() {
@@ -90,7 +94,7 @@ class _WindowsNativeTray extends Tray {
                 imageIcon = convertImage(imageFile);
 
                 NOTIFYICONDATA nid = new NOTIFYICONDATA();
-                nid.hWnd = WindowsEventDispatch.get();
+                nid.hWnd = edt.get();
                 if (imageIcon != null) {
                     nid.setIcon(imageIcon);
                 }
@@ -154,17 +158,13 @@ class _WindowsNativeTray extends Tray {
             public
             void remove() {
                 hide();
-
                 super.remove();
 
-                User32.User32.PostMessage(WindowsEventDispatch.get(), WM_QUIT, new WPARAM(0), new LPARAM(0));
+                edt.stop();
             }
         };
 
-        // will wait until it's started up.
-        WindowsEventDispatch.start();
-
-        HWND hWnd = WindowsEventDispatch.get();
+        HWND hWnd = edt.get();
         if (hWnd == null) {
             throw new RuntimeException("The Windows System Tray is not supported! Please write an issue and include your OS type and configuration");
         }
@@ -180,11 +180,11 @@ class _WindowsNativeTray extends Tray {
             @Override
             public
             void run(final HWND hWnd, final WPARAM wParam, final LPARAM lParam) {
-                WindowsEventDispatch.stop();
+                edt.removeListener(showListener);
+                edt.removeListener(quitListener);
+                edt.removeListener(menuListener);
 
-                WindowsEventDispatch.removeListener(showListener);
-                WindowsEventDispatch.removeListener(quitListener);
-                WindowsEventDispatch.removeListener(menuListener);
+                edt.stop();
             }
         };
 
@@ -212,9 +212,9 @@ class _WindowsNativeTray extends Tray {
             }
         };
 
-        WindowsEventDispatch.addListener(WM_TASKBARCREATED, showListener);
-        WindowsEventDispatch.addListener(WM_QUIT, quitListener);
-        WindowsEventDispatch.addListener(WM_SHELLNOTIFY, menuListener);
+        edt.addListener(WM_TASKBARCREATED, showListener);
+        edt.addListener(WM_QUIT, quitListener);
+        edt.addListener(WM_SHELLNOTIFY, menuListener);
 
         show();
 
@@ -230,7 +230,7 @@ class _WindowsNativeTray extends Tray {
         tooltipText = text;
 
         NOTIFYICONDATA nid = new NOTIFYICONDATA();
-        nid.hWnd = WindowsEventDispatch.get();
+        nid.hWnd = edt.get();
 
         if (text != null) {
             nid.setTooltip(text);
@@ -248,7 +248,7 @@ class _WindowsNativeTray extends Tray {
 
         if (visible) {
             NOTIFYICONDATA nid = new NOTIFYICONDATA();
-            nid.hWnd = WindowsEventDispatch.get();
+            nid.hWnd = edt.get();
 
             if (!Shell32.Shell_NotifyIcon(NIM_DELETE, nid)) {
                 SystemTray.logger.error("Error hiding tray. {}", Kernel32Util.getLastErrorMessage());
@@ -265,7 +265,7 @@ class _WindowsNativeTray extends Tray {
         imageIcon = convertImage(imageFile);
 
         NOTIFYICONDATA nid = new NOTIFYICONDATA();
-        nid.hWnd = WindowsEventDispatch.get();
+        nid.hWnd = edt.get();
         nid.setTooltip(tooltipText);
         nid.setIcon(imageIcon);
         nid.setCallback(WM_SHELLNOTIFY);
