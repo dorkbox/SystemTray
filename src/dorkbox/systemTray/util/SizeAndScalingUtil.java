@@ -41,8 +41,8 @@ import dorkbox.util.SwingUtil;
 public
 class SizeAndScalingUtil {
     // the tray size as best as possible for the current OS
-    static int TRAY_SIZE = 0;
-    static int TRAY_MENU_SIZE = 0;
+    public static int TRAY_SIZE = 0;
+    public static int TRAY_MENU_SIZE = 0;
 
     public static
     int getMacOSScaleFactor() {
