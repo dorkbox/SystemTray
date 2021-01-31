@@ -114,23 +114,11 @@ sourceSets {
         }
     }
 
-//    test {
-//        java {
-//            setSrcDirs(listOf("test"))
-//
-//            // only want to include java files for the source. 'setSrcDirs' resets includes...
-//            include("**/*.java")
-//
-//            // this is required because we reset the srcDirs to 'test' above, and 'main' must manually be added back
-//            srcDir(sourceSets["main"].allJava)
-//
-//
-//            resources {
-//                setSrcDirs(listOf("test"))
-//                include("dorkbox/*.png")
-//            }
-//        }
-//    }
+    test {
+        java {
+            setSrcDirs(listOf("test")) // no includes
+        }
+    }
 
     example {
         java {
@@ -149,7 +137,6 @@ sourceSets {
         }
 
         compileClasspath += sourceSets.main.get().runtimeClasspath
-//        runtimeClasspath += sourceSets.main.get().runtimeClasspath
     }
 
     javaFxExample {
@@ -270,7 +257,7 @@ dependencies {
     }
 
     // This is really SWT version 4.xx? no idea how the internal versions are tracked
-    // 4.4 is the oldest version that works with us. We use reflection to access SWT, so we can compile the project without needing SWT
+    // 4.4 is the oldest version that works with us.
     //  because the eclipse release of SWT is sPecIaL!
     swtExampleCompile(GradleUtils.getSwtMavenId("3.115.100")) {
         isTransitive = false
@@ -365,7 +352,6 @@ task<Jar>("jarSwtExample") {
     }
 }
 
-
 task("jarAllExamples") {
     dependsOn("jarExample")
     dependsOn("jarJavaFxExample")
@@ -374,4 +360,3 @@ task("jarAllExamples") {
     group = BasePlugin.BUILD_GROUP
     description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
 }
-
