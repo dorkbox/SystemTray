@@ -25,7 +25,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JMenuItem;
 
+import com.sun.jna.platform.win32.WinDef.POINT;
+import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.ptr.IntByReference;
+
 import dorkbox.jna.linux.GtkTheme;
+import dorkbox.jna.windows.ShCore;
 import dorkbox.jna.windows.User32;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
@@ -47,6 +52,20 @@ class SizeAndScalingUtil {
         GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         GraphicsConfiguration graphicsConfig = graphicsDevice.getDefaultConfiguration();
         return (int) graphicsConfig.getDefaultTransform().getScaleX();
+    }
+
+    public static
+    double getWindowsDpiScaleForMouseClick(int mousePositionX, int mousePositionY) {
+        POINT.ByValue pointValue = new POINT.ByValue(mousePositionX, mousePositionY);
+        WinUser.HMONITOR monitorFromPoint = User32.User32.MonitorFromPoint(pointValue, WinUser.MONITOR_DEFAULTTONEAREST);
+
+        // I don't know why this has 2 options, but the scale is always the same in both directions...
+        IntByReference xScalePtr = new IntByReference();
+        IntByReference yScalePtr = new IntByReference();
+        ShCore.GetDpiForMonitor(monitorFromPoint, 0, xScalePtr, yScalePtr);
+
+        // 96 is the default scale on windows
+        return 96.0D / xScalePtr.getValue();
     }
 
 

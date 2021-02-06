@@ -201,7 +201,8 @@ class _WindowsNativeTray extends Tray {
                     case WM_LBUTTONUP:
                     case WM_RBUTTONUP:
                         if (popupMenu != null && User32.User32.GetCursorPos(mousePosition)) {
-                            Point point = new Point(mousePosition.x, mousePosition.y);
+                            double scale = SizeAndScalingUtil.getWindowsDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                            Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
                             popupMenu.doShow(point, 0);
                         }
                         break;

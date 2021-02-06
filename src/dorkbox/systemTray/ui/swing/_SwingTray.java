@@ -17,6 +17,7 @@ package dorkbox.systemTray.ui.swing;
 
 import java.awt.AWTException;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.MouseAdapter;
@@ -136,7 +137,11 @@ class _SwingTray extends Tray {
                             public
                             void mousePressed(MouseEvent e) {
                                 TrayPopup popupMenu = (TrayPopup) _native;
-                                popupMenu.doShow(e.getPoint(), 0);
+                                Point mousePosition = e.getPoint();
+
+                                double scale = SizeAndScalingUtil.getWindowsDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                                Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
+                                popupMenu.doShow(point, 0);
                             }
                         });
 
