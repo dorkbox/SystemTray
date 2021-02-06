@@ -41,7 +41,9 @@ public class HeavyCheckMark {
     // - swing version loads as an image (which can be stream or path, we use path)
 
     // this is shared, because we are unique based on the details of the checkmark
-    private static final CacheUtil cache = new CacheUtil("SystemTrayCheckMarks");
+    // the tray name **MUST** be combined with the currently logged in user, otherwise permissions get screwed up with
+    // the image cache when there is more than 1 user logged in at the same time!
+    private static final CacheUtil cache = new CacheUtil("SystemTrayCheckMarks_" + System.getProperty("user.name"));
 
     /**
      * This saves a vector CheckMark to a correctly sized PNG file. The checkmark image will ALWAYS be centered in the targetImageSize

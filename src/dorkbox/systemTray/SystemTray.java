@@ -689,7 +689,9 @@ class SystemTray {
                 }
             };
 
-            CacheUtil cache = new CacheUtil(trayName + "Cache");
+            // the cache name **MUST** be combined with the currently logged in user, otherwise permissions get screwed up
+            // when there is more than 1 user logged in at the same time!
+            CacheUtil cache = new CacheUtil(trayName + "Cache" + "_" + System.getProperty("user.name"));
             ImageResizeUtil imageResizeUtil = new ImageResizeUtil(cache);
 
 
