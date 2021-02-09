@@ -34,6 +34,7 @@ import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.collections.ArrayMap;
 
 /**
  * Class for handling all system tray interaction, via Swing.
@@ -53,6 +54,12 @@ class _SwingTray extends Tray {
     private volatile boolean visible = true;
     private volatile File imageFile;
     private volatile String tooltipText = "";
+
+    // The image resources are cached, so that if someone is trying to create an animation, the image resource is re-used instead of
+    // constantly created/destroyed -- which over time leads to issues.
+    // This cache isn't anything fancy, it just lets us reuse what we have. It's cleared on hide(), and it will auto-grow as necessary.
+    // If someone uses a different file every time, then this will cause problems. An error log is added if a different image is created 100x
+    private final ArrayMap<String, Image> imageCache = new ArrayMap<>(false, 10);
 
     // Called in the EDT
     @SuppressWarnings("unused")
@@ -106,23 +113,41 @@ class _SwingTray extends Tray {
             public
             void setImage(final MenuItem menuItem) {
                 imageFile = menuItem.getImage();
-                if (imageFile == null) {
-                    return;
-                }
 
                 SwingUtil.invokeLater(()->{
                     if (tray == null) {
                         tray = SystemTray.getSystemTray();
                     }
 
-                    // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                    final Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-                    trayImage.flush();
+                    final Image trayImage;
+                    if (imageFile != null) {
+                        String path = imageFile.getAbsolutePath();
+                        synchronized (imageCache) {
+                            Image previousImage = imageCache.get(path);
+                            if (previousImage == null) {
+                                previousImage = new ImageIcon(path).getImage();
+                                imageCache.put(path, previousImage);
+                                if (imageCache.size > 120) {
+                                    dorkbox.systemTray.SystemTray.logger.error("More than 120 different images used for the SystemTray icon. This will lead to performance issues.");
+                                }
+                            }
+
+                            trayImage = previousImage;
+                        }
+                    } else {
+                        trayImage = null;
+                    }
+
 
                     if (trayIcon == null) {
-                        // here we init. everything
-                        trayIcon = new TrayIcon(trayImage);
+                        if (trayImage == null) {
+                            // we can't do anything!
+                            return;
+                        } else {
+                            trayIcon = new TrayIcon(trayImage);
+                        }
 
+                        // here we init. everything
                         JPopupMenu popupMenu = (JPopupMenu) _native;
                         popupMenu.pack();
                         popupMenu.setFocusable(true);
@@ -150,7 +175,7 @@ class _SwingTray extends Tray {
                         } catch (AWTException e) {
                             dorkbox.systemTray.SystemTray.logger.error("TrayIcon could not be added.", e);
                         }
-                    } else {
+                    } else if (trayImage != null) {
                         trayIcon.setImage(trayImage);
                     }
 
@@ -158,7 +183,9 @@ class _SwingTray extends Tray {
                     // want to make sure keep the tooltip text the same as before.
                     trayIcon.setToolTip(tooltipText);
 
-                    ((TrayPopup) _native).setTitleBarImage(imageFile);
+                    if (imageFile != null) {
+                        ((TrayPopup) _native).setTitleBarImage(imageFile);
+                    }
                 });
             }
 
@@ -198,6 +225,14 @@ class _SwingTray extends Tray {
             @Override
             public
             void remove() {
+                synchronized (imageCache) {
+                    for (final Image value : imageCache.values()) {
+                        value.flush();
+                    }
+
+                    imageCache.clear();
+                }
+
                 SwingUtil.invokeLater(()->{
                     if (trayIcon != null) {
                         if (tray != null) {

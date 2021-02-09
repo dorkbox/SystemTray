@@ -28,8 +28,8 @@ import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.collections.ArrayMap;
 
 /**
  * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
@@ -55,6 +55,12 @@ class _AwtTray extends Tray {
 
     private final Object keepAliveLock = new Object[0];
     private volatile Thread keepAliveThread;
+
+    // The image resources are cached, so that if someone is trying to create an animation, the image resource is re-used instead of
+    // constantly created/destroyed -- which over time leads to issues.
+    // This cache isn't anything fancy, it just lets us reuse what we have. It's cleared on hide(), and it will auto-grow as necessary.
+    // If someone uses a different file every time, then this will cause problems. An error log is added if a different image is created 100x
+    private final ArrayMap<String, Image> imageCache = new ArrayMap<>(false, 10);
 
     // Called in the EDT
     @SuppressWarnings("unused")
@@ -127,22 +133,39 @@ class _AwtTray extends Tray {
             public
             void setImage(final MenuItem menuItem) {
                 imageFile = menuItem.getImage();
-                if (imageFile == null) {
-                    return;
-                }
 
                 SwingUtil.invokeLater(()->{
                     if (tray == null) {
                         tray = SystemTray.getSystemTray();
                     }
 
-                    // stupid java won't scale it right away, so we have to do this twice to get the correct size
-                    Image trayImage = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-                    trayImage = ImageUtil.getImageImmediate(trayImage);
+                    final Image trayImage;
+                    if (imageFile != null) {
+                        String path = imageFile.getAbsolutePath();
+                        synchronized (imageCache) {
+                            Image previousImage = imageCache.get(path);
+                            if (previousImage == null) {
+                                previousImage = new ImageIcon(path).getImage();
+                                imageCache.put(path, previousImage);
+                                if (imageCache.size > 120) {
+                                    dorkbox.systemTray.SystemTray.logger.error("More than 120 different images used for the SystemTray icon. This will lead to performance issues.");
+                                }
+                            }
+
+                            trayImage = previousImage;
+                        }
+                    } else {
+                        trayImage = null;
+                    }
+
 
                     if (trayIcon == null) {
-                        // here we init. everything
-                        trayIcon = new TrayIcon(trayImage);
+                        if (trayImage == null) {
+                            // we can't do anything!
+                            return;
+                        } else {
+                            trayIcon = new TrayIcon(trayImage);
+                        }
 
                         trayIcon.setPopupMenu((PopupMenu) _native);
 
@@ -198,6 +221,14 @@ class _AwtTray extends Tray {
             @Override
             public
             void remove() {
+                synchronized (imageCache) {
+                    for (final Image value : imageCache.values()) {
+                        value.flush();
+                    }
+
+                    imageCache.clear();
+                }
+
                 SwingUtil.invokeLater(()->{
                     if (trayIcon != null) {
                         trayIcon.setPopupMenu(null);

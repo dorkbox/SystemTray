@@ -50,6 +50,7 @@ import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
+import dorkbox.util.collections.ArrayMap;
 
 
 /**
@@ -60,14 +61,20 @@ class _WindowsNativeTray extends Tray {
     private final Listener quitListener;
     private final Listener menuListener;
     private final Listener showListener;
+
     private volatile TrayPopup popupMenu;
     // is the system tray visible or not.
     private volatile boolean visible = true;
     private volatile File imageFile;
-    private volatile HICONWrap imageIcon;
     private volatile String tooltipText = "";
 
     private final WindowsEventDispatch edt;
+
+    // The image resources are cached, so that if someone is trying to create an animation, the image resource is re-used instead of
+    // constantly created/destroyed -- which over time leads to issues.
+    // This cache isn't anything fancy, it just lets us reuse what we have. It's cleared on hide(), and it will auto-grow as necessary.
+    // If someone uses a different file every time, then this will cause problems. An error log is added if a different image is created 100x
+    private final ArrayMap<File, HICONWrap> imageCache = new ArrayMap<>(false, 10);
 
     @SuppressWarnings("unused")
     public
@@ -88,14 +95,11 @@ class _WindowsNativeTray extends Tray {
             void setImage(final MenuItem menuItem) {
                 imageFile = menuItem.getImage();
 
-                if (imageIcon != null) {
-                    imageIcon.close();
-                }
-                imageIcon = convertImage(imageFile);
-
                 NOTIFYICONDATA nid = new NOTIFYICONDATA();
                 nid.hWnd = edt.get();
-                if (imageIcon != null) {
+
+                if (imageFile != null) {
+                    HICONWrap imageIcon = convertImage(imageFile);
                     nid.setIcon(imageIcon);
                 }
 
@@ -242,9 +246,11 @@ class _WindowsNativeTray extends Tray {
 
     private
     void hide() {
-        if (imageIcon != null) {
-            imageIcon.close();
-            imageIcon = null;
+        synchronized (imageCache) {
+            for (final HICONWrap value : imageCache.values()) {
+                value.close();
+            }
+            imageCache.clear();
         }
 
         if (visible) {
@@ -260,35 +266,47 @@ class _WindowsNativeTray extends Tray {
 
     private
     void show() {
-        if (imageIcon != null) {
-            imageIcon.close();
+        if (visible) {
+            // for some reason, it is trying to show twice. This can happen when changing the display scale)
+            hide();
         }
-        imageIcon = convertImage(imageFile);
 
         NOTIFYICONDATA nid = new NOTIFYICONDATA();
         nid.hWnd = edt.get();
         nid.setTooltip(tooltipText);
-        nid.setIcon(imageIcon);
+        if (imageFile != null) {
+            HICONWrap imageIcon = convertImage(imageFile);
+            nid.setIcon(imageIcon);
+        }
         nid.setCallback(WM_SHELLNOTIFY);
 
         if (!Shell_NotifyIcon(NIM_ADD, nid)) {
-            SystemTray.logger.error("Error showing tray. {}", Kernel32Util.getLastErrorMessage());
+            SystemTray.logger.error("Error showing tray. {}, {}", Kernel32Util.getLastErrorMessage(), Thread.currentThread().getStackTrace());
         }
         visible = true;
     }
 
-    private static
+    private
     HICONWrap convertImage(final File imageFile) {
-        if (imageFile != null) {
-            ImageIcon imageIcon = new ImageIcon(imageFile.getAbsolutePath());
-            // fully loads the image and returns when it's done loading the image
-            imageIcon = new ImageIcon(imageIcon.getImage());
+        synchronized (imageCache) {
+            HICONWrap hiconWrap = imageCache.get(imageFile);
+            if (hiconWrap == null) {
+                ImageIcon imageIcon = new ImageIcon(imageFile.getAbsolutePath());
+                // fully loads the image and returns when it's done loading the image
+                imageIcon = new ImageIcon(imageIcon.getImage());
 
-            HBITMAPWrap hbitmapTrayIcon = new HBITMAPWrap(ImageUtil.getBufferedImage(imageIcon));
-            return new HICONWrap(hbitmapTrayIcon);
+                HBITMAPWrap hbitmapTrayIcon = new HBITMAPWrap(ImageUtil.getBufferedImage(imageIcon));
+                hiconWrap = new HICONWrap(hbitmapTrayIcon);
+
+                imageCache.put(imageFile, hiconWrap);
+
+                if (imageCache.size > 120) {
+                    SystemTray.logger.error("More than 120 different images used for the SystemTray icon. This will lead to performance issues.");
+                }
+            }
+
+            return hiconWrap;
         }
-
-        return null;
     }
 
     @Override
