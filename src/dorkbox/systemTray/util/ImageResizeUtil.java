@@ -229,7 +229,8 @@ class ImageResizeUtil {
         // if it's already there, we have to delete it
         newFile.delete();
 
-        Image image = ImageUtil.getImageImmediate(ImageIO.read(inputStream));
+        Image image = ImageIO.read(inputStream);
+        ImageUtil.waitForImageLoad(image);
 
         BufferedImage bufferedImage = ImageUtil.getBufferedImage(image);
 
@@ -329,8 +330,8 @@ class ImageResizeUtil {
         }
 
         try {
-            final Image trayImage =  ImageUtil.getImageImmediate(image);
-            BufferedImage bufferedImage = ImageUtil.getBufferedImage(trayImage);
+            ImageUtil.waitForImageLoad(image);
+            BufferedImage bufferedImage = ImageUtil.getBufferedImage(image);
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "png", os);
