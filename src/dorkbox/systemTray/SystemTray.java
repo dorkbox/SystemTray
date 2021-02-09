@@ -47,6 +47,7 @@ import dorkbox.jna.linux.GtkCheck;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.os.OS;
 import dorkbox.os.OSUtil;
+import dorkbox.propertyLoader.Property;
 import dorkbox.swt.Swt;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.systemTray.util.AutoDetectTrayType;
@@ -57,7 +58,6 @@ import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.systemTray.util.WindowsSwingUI;
 import dorkbox.util.CacheUtil;
-import dorkbox.util.Property;
 import dorkbox.util.SwingUtil;
 
 
