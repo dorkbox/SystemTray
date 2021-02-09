@@ -214,10 +214,10 @@ class SystemTray {
         // Linux can use Swing (non-native), AWT (native), GtkStatusIcon (native), or AppIndicator (native)
         if (isWindows) {
             if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.WindowsNative) {
+                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type on windows, auto-detecting implementation!");
+
                 // windows MUST use swing/windows-notify-icon only!
                 FORCE_TRAY_TYPE = TrayType.AutoDetect;
-
-                logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type, defaulting to swing implementation");
             }
         }
         else if (isMacOsX) {
