@@ -60,7 +60,7 @@ class TestTray {
     public
     TestTray() {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
-        SystemTray.FORCE_TRAY_TYPE = SystemTray.TrayType.Swing;
+        // SystemTray.FORCE_TRAY_TYPE = SystemTray.TrayType.Swing;
 
         // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
         CacheUtil.clear("SysTrayExample");
