@@ -1,6 +1,10 @@
+SystemTray
 ==========
 
-###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/SystemTray) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/SystemTray) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/SystemTray)
+######
+[![Git](https://img.shields.io/badge/Git-Dorkbox-blue?)](https://git.dorkbox.com/dorkbox/SystemTray)
+[![Github](https://img.shields.io/badge/Github-Dorkbox-green?logo=github)](https://github.com/dorkbox/SystemTray)
+[![Gitlab](https://img.shields.io/badge/Gitlab-Dorkbox-orange?logo=gitlab)](https://gitlab.com/dorkbox/SystemTray)
 
 
 Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 6+.  
@@ -37,23 +41,15 @@ This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windo
 
 Linux
 -
-
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-1.png">
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-2.png">
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-3.png">
-<img height="30%" src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/linux-4.png">
+![](misc/linux-1.png) ![](misc/linux-2.png) ![](misc/linux-3.png) ![](misc/linux-4.png)
 
 MacOS
 -
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/macosx.png">
+![](misc/macosx.png)
 
 Windows
 -
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-7.png">
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-8.png">
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-10.png">
-<img src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/windows-10-125.png">
-
+![](misc/windows-7.png) ![](misc/windows-8.png) ![](misc/windows-10.png) ![](misc/windows-10-125.png)
 
 
 
@@ -181,7 +177,7 @@ Notes:
   
        For example:
    
-    <img width="324" alt="steam launcher screen shot" src="https://git.dorkbox.com/dorkbox/SystemTray/raw/branch/master/misc/steam_screenshot.png">
+    ![steam launcher screen shot](misc/steam_screenshot.png)
       
   ```ini
   [Desktop Entry]
