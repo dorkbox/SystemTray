@@ -1,6 +1,10 @@
+SystemTray
 ==========
 
-###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/SystemTray) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/SystemTray) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/SystemTray)
+######
+[![Git](https://img.shields.io/badge/Git-Dorkbox-blue?)](https://git.dorkbox.com/dorkbox/SystemTray)
+[![Github](https://img.shields.io/badge/Github-Dorkbox-green?logo=github)](https://github.com/dorkbox/SystemTray)
+[![Gitlab](https://img.shields.io/badge/Gitlab-Dorkbox-orange?logo=gitlab)](https://gitlab.com/dorkbox/SystemTray)
 
 
 Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 6+.  
