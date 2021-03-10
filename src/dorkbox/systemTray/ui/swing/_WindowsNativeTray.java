@@ -64,7 +64,7 @@ class _WindowsNativeTray extends Tray {
 
     private volatile TrayPopup popupMenu;
     // is the system tray visible or not.
-    private volatile boolean visible = true;
+    private volatile boolean visible = false;
     private volatile File imageFile;
     private volatile String tooltipText = "";
 
@@ -257,7 +257,7 @@ class _WindowsNativeTray extends Tray {
             NOTIFYICONDATA nid = new NOTIFYICONDATA();
             nid.hWnd = edt.get();
 
-            if (!Shell32.Shell_NotifyIcon(NIM_DELETE, nid)) {
+            if (nid.hWnd != null && !Shell32.Shell_NotifyIcon(NIM_DELETE, nid)) {
                 SystemTray.logger.error("Error hiding tray. {}", Kernel32Util.getLastErrorMessage());
             }
             visible = false;
@@ -267,7 +267,7 @@ class _WindowsNativeTray extends Tray {
     private
     void show() {
         if (visible) {
-            // for some reason, it is trying to show twice. This can happen when changing the display scale)
+            // for some reason, it is trying to show twice. This can happen when changing the display scale or on startup)
             hide();
         }
 
