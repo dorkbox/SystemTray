@@ -207,7 +207,7 @@ jar.apply {
 
 dependencies {
     implementation("com.dorkbox:Executor:2.2")
-    implementation("com.dorkbox:SwtJavaFx:1.0")
+    implementation("com.dorkbox:SwtJavaFx:1.1")
     implementation("com.dorkbox:Utilities:1.9")
     implementation("com.dorkbox:PropertyLoader:1.0")
 
