@@ -53,7 +53,7 @@
        Copyright 2021
          QOS.ch
 
-     - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 11+
+     - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 8+
        [The Apache Software License, Version 2.0]
        https://git.dorkbox.com/dorkbox/Executor
        Copyright 2021
@@ -435,3 +435,15 @@
                http://www.slf4j.org
                Copyright 2021
                  QOS.ch
+
+         - PropertyLoader - Property annotation and loader for fields
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/PropertyLoader
+           Copyright 2021
+             Dorkbox LLC
+
+     - PropertyLoader - Property annotation and loader for fields
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/PropertyLoader
+       Copyright 2021
+         Dorkbox LLC
