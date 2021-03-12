@@ -259,6 +259,7 @@ class SystemTray {
             // linux/unix can use all of the tray types. AWT looks horrid. GTK versions are really sensitive...
 
             // this checks to see if Swing/SWT/JavaFX has loaded GTK yet, and if so, what version they loaded.
+            // if swing is used, we have to do some extra checks...
             int loadedGtkVersion = GtkCheck.getLoadedGtkVersion();
             if (loadedGtkVersion == 2) {
                 if (AUTO_FIX_INCONSISTENCIES) {
@@ -392,8 +393,8 @@ class SystemTray {
                             // if we are java9, then we can change it -- otherwise we cannot.
                             if (OS.javaVersion == 9) {
                                 logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
-                                            "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
-                                            "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Aborting.");
+                                             "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
+                                             "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Aborting.");
 
                             }
                             else {
@@ -419,9 +420,54 @@ class SystemTray {
 
                     else if (FORCE_GTK2) {
                         logger.error("Unable to use the SystemTray when Swing is configured to use GTK3 and the SystemTray is " +
-                                    "configured to use GTK2. Aborting.");
+                                     "configured to use GTK2. Aborting.");
 
                         return null;
+                    }
+                }
+            }
+            else {
+                // we don't know what was loaded.
+                // this is only a big deal for us if we are DIFFERENT than what SWING is using. Since swing isn't always used
+                // (ie: headless/javaFX can also be used), we ** DO NOT ** want to accidentally load swing if we don't have to
+
+                if (!JavaFx.isLoaded && !Swt.isLoaded) {
+                    // we have to make sure that SWING/GTK stuff is GTK2!
+                    // THIS IS NOT DOCUMENTED ANYWHERE...
+                    // NOTE: Refer to bug 4912613 for details regarding support for GTK 2.0/2.2
+
+                    // only do this is values have not already been set!
+                    String previousValue = System.getProperty("swing.gtk.version", "0");
+                    if (previousValue != null && previousValue.startsWith("3")) {
+                        if (FORCE_GTK2) {
+                            // whoops! there is something setting GTK to version 3! abort with an error message.
+                            logger.error("Unable to use the SystemTray when there is a mismatch for GTK loaded preferences. Please correctly " +
+                                         "set `SystemTray.FORCE_GTK2=true` and System property `swing.gtk.version=\"2.2\".  Aborting...");
+                            return null;
+                        }
+                    }
+
+                    // now check another setting
+                    previousValue = System.getProperty("jdk.gtk.version", "0");
+                    if (previousValue != null && previousValue.startsWith("3")) {
+                        if (FORCE_GTK2) {
+                            // whoops! there is something setting GTK to version 3! abort with an error message.
+                            logger.error("Unable to use the SystemTray when there is a mismatch for GTK loaded preferences. Please correctly " +
+                                         "set `SystemTray.FORCE_GTK2=true` and System property `jdk.gtk.version=\"2.2\".  Aborting...");
+                            return null;
+                        }
+                    }
+
+                    if ("0".equals(previousValue) && AUTO_FIX_INCONSISTENCIES) {
+                        // this means nothing was set!
+
+                        if (PREFER_GTK3) {
+                            System.setProperty("swing.gtk.version", "3");
+                            System.setProperty("jdk.gtk.version", "3");
+                        } else {
+                            System.setProperty("swing.gtk.version", "2");
+                            System.setProperty("jdk.gtk.version", "2");
+                        }
                     }
                 }
             }
@@ -534,7 +580,7 @@ class SystemTray {
                         trayType = selectType(TrayType.Swing);
 
                         logger.warn("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
-                                     "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
+                                    "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
                                     "how to work around this.");
 
                     } else {
