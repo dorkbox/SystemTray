@@ -61,7 +61,8 @@ Problems and Restrictions
 ---------
  - **JavaFX** uses *GTK2* for Java <8, and *GTK2* or *GTK3* for Java 9+. We try to autodetect this, and are mostly successful. In *some* situations where it doesn't work. Please set `SystemTray.FORCE_GTK2=true;`, or to change JavaFX (9+), use `-Djdk.gtk.version=3` to solve this.
  
- - **SWT** can use *GTK2* or *GTK3*. If you want to use *GTK2* you must force SWT into *GTK2 mode* via `System.setProperty("SWT_GTK3", "0");` before SWT is initialized and only if there are problems with the autodetection, you can also set `SystemTray.FORCE_GTK2=true;`.
+ - **SWT** can use *GTK2*, *GTK3*, or *GTK4*. We do not support GTK4, and recommend GTK3 (now the default for SWT) If you want to use 
+   something else, you must configure both SWT and the SystemTray to same, before SWT is initialized and only if there are  problems with the autodetection, via `SystemTray.FORCE_GTK2=true;`.
  
  - **AppIndicators** under Ubuntu 16.04 (and possibly other distro's) **will not** work as a different user without extra work (ie: as a sudo'd user to `root`), since AppIndicators require a dbus connection to the current user's window manager. (see the `Notes` below for the details)
  

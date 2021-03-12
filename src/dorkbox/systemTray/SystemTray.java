@@ -279,7 +279,7 @@ class SystemTray {
                         }
                         else if (Swt.isLoaded && !Swt.isGtk3) {
                             // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
-                            // System.setProperty("SWT_GTK3", "0");
+                            // System.setProperty("SWT_GTK3", "0"); // this doesn't have any affect on newer versions of SWT
 
                             // we must use GTK2, because SWT is GTK2
                             FORCE_GTK2 = true;
@@ -342,14 +342,10 @@ class SystemTray {
                         }
                     }
                     else if (Swt.isLoaded) {
-                        // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
-                        // System.setProperty("SWT_GTK3", "0");
-
                         if (FORCE_GTK2) {
                             FORCE_GTK2 = false;
                             logger.warn("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
-                                        "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
-                                        "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+                                        "GTK2. Please set `SystemTray.FORCE_GTK2=false;`");
                         }
 
                         if (!PREFER_GTK3) {
@@ -407,12 +403,9 @@ class SystemTray {
                     }
                     else if (Swt.isLoaded) {
                         // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
-                        // System.setProperty("SWT_GTK3", "0");
-
                         if (FORCE_GTK2) {
                             logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
-                                         "GTK2. Please configure SWT to use GTK2, via `System.setProperty(\"SWT_GTK3\", \"0\");` before SWT is " +
-                                         "initialized, or set `SystemTray.FORCE_GTK2=false;`");
+                                         "GTK2. Please set `SystemTray.FORCE_GTK2=false;`");
 
                             return null;
                         }

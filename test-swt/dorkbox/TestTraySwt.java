@@ -58,8 +58,6 @@ class TestTraySwt {
     public static
     void main(String[] args) {
         // make sure JNA jar is on the classpath!
-        System.setProperty("SWT_GTK3", "0"); // Can change between GTK2 and GTK3
-
         new TestTraySwt();
     }
 
