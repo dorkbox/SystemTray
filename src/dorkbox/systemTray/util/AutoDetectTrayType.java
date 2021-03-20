@@ -136,15 +136,6 @@ class AutoDetectTrayType {
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
-            // https://github.com/dorkbox/SystemTray/issues/100
-            if (OSUtil.Linux.isIgel()) {
-                de = OSUtil.DesktopEnv.Env.XFCE;   // special case for IgelOS! (it is ubuntu-like, but does not set the DE)
-
-                if (DEBUG) {
-                    logger.debug("Detected IgelOS! Using 'XFCE' for that configuration.");
-                }
-            }
-
             if (DEBUG) {
                 logger.debug("Currently using the '{}' desktop environment" + OS.LINE_SEPARATOR + OSUtil.Linux.getInfo(), de);
             }
