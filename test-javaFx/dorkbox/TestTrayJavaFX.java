@@ -58,6 +58,9 @@ class TestTrayJavaFX {
     public static final URL GREEN_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.39AC39.32.png");
     public static final URL LT_GRAY_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.666666.32.png");
 
+    // from issue 123
+    public static final URL NOTIFY_IMAGE = TestTray.class.getResource("RemoteNotifications.png");
+
     private static TestTrayJavaFX testTrayJavaFX;
 
     public static
@@ -184,6 +187,16 @@ class TestTrayJavaFX {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
+        }));
+
+        mainMenu.add(new MenuItem("Notify", e->{
+            final MenuItem entry = (MenuItem) e.getSource();
+            systemTray.setStatus("Notification!");
+            systemTray.setImage(NOTIFY_IMAGE);
+
+            entry.setImage(NOTIFY_IMAGE);
+            entry.setText("Did notify");
+            System.err.println("NOTIFICATION!");
         }));
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);

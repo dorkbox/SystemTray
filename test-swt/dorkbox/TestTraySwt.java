@@ -55,6 +55,9 @@ class TestTraySwt {
     public static final URL GREEN_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.39AC39.32.png");
     public static final URL LT_GRAY_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.666666.32.png");
 
+    // from issue 123
+    public static final URL NOTIFY_IMAGE = TestTray.class.getResource("RemoteNotifications.png");
+
     public static
     void main(String[] args) {
         // make sure JNA jar is on the classpath!
@@ -75,7 +78,7 @@ class TestTraySwt {
 
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
-        // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
+        // for test apps, make sure the cache is always reset. These are the o  nes used, and you should never do this in production.
         CacheUtil.clear("SysTrayExample");
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
@@ -152,6 +155,16 @@ class TestTraySwt {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
+        }));
+
+        mainMenu.add(new MenuItem("Notify", e->{
+            final MenuItem entry = (MenuItem) e.getSource();
+            systemTray.setStatus("Notification!");
+            systemTray.setImage(NOTIFY_IMAGE);
+
+            entry.setImage(NOTIFY_IMAGE);
+            entry.setText("Did notify");
+            System.err.println("NOTIFICATION!");
         }));
 
         Menu submenu = new Menu("Options", BLUE_CAMPING);
