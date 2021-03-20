@@ -206,7 +206,7 @@ jar.apply {
 }
 
 dependencies {
-    implementation("com.dorkbox:Executor:2.2")
+    implementation("com.dorkbox:Executor:3.0")
     implementation("com.dorkbox:SwtJavaFx:1.1")
     implementation("com.dorkbox:Utilities:1.9")
     implementation("com.dorkbox:PropertyLoader:1.0")
@@ -226,10 +226,8 @@ dependencies {
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
-    val current = JavaVersion.current()
-
-    // Java 8 include JavaFX separately. Newer versions of java bundle it (or, you can download/install it separately)
-    if (current == JavaVersion.VERSION_1_8) {
+    // Java 8 includes JavaFX separately, Java11+ must use openjfx
+    if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
         // Paths for the various executables in the Java 'bin' directory
         val javaFxFile = File("${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar")
 //        val javaFxFile = File("D:/Code/extras/jdk1.8.0_181-oracle/jre/lib/ext/jfxrt.jar")

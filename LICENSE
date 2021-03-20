@@ -72,13 +72,11 @@
            Copyright 2014
              The Apache Software Foundation
 
-         - Kotlin - 
+         - Logback - Logback is a logging framework for Java applications
            [The Apache Software License, Version 2.0]
-           https://github.com/JetBrains/kotlin
-           Copyright 2020
-             JetBrains s.r.o. and Kotlin Programming Language contributors
-           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
-           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+           http://logback.qos.ch
+           Copyright 2021
+             QOS.ch
 
          - kotlinx.coroutines - Library support for Kotlin coroutines with multiplatform support
            [The Apache Software License, Version 2.0]
@@ -131,6 +129,14 @@
                [Public Domain, per Creative Commons CC0]
                https://github.com/str4d/ed25519-java
                  https://github.com/str4d
+
+         - Kotlin - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/JetBrains/kotlin
+           Copyright 2020
+             JetBrains s.r.o. and Kotlin Programming Language contributors
+           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
      - SwtJavaFx - Swt and JavaFx Utilities
        [The Apache Software License, Version 2.0]
@@ -351,13 +357,11 @@
                Copyright 2014
                  The Apache Software Foundation
 
-             - Kotlin - 
+             - Logback - Logback is a logging framework for Java applications
                [The Apache Software License, Version 2.0]
-               https://github.com/JetBrains/kotlin
-               Copyright 2020
-                 JetBrains s.r.o. and Kotlin Programming Language contributors
-               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
-               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+               http://logback.qos.ch
+               Copyright 2021
+                 QOS.ch
 
              - kotlinx.coroutines - Library support for Kotlin coroutines with multiplatform support
                [The Apache Software License, Version 2.0]
@@ -410,6 +414,14 @@
                    [Public Domain, per Creative Commons CC0]
                    https://github.com/str4d/ed25519-java
                      https://github.com/str4d
+
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
          - SwtJavaFx - Swt and JavaFx Utilities
            [The Apache Software License, Version 2.0]
