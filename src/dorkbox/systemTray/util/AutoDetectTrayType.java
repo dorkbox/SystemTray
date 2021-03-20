@@ -136,6 +136,15 @@ class AutoDetectTrayType {
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
             OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
 
+            // https://github.com/dorkbox/SystemTray/issues/100
+            if (OSUtil.Linux.isIgel()) {
+                de = OSUtil.DesktopEnv.Env.XFCE;   // special case for IgelOS! (it is ubuntu-like, but does not set the DE)
+
+                if (DEBUG) {
+                    logger.debug("Detected IgelOS! Using 'XFCE' for that configuration.");
+                }
+            }
+
             if (DEBUG) {
                 logger.debug("Currently using the '{}' desktop environment" + OS.LINE_SEPARATOR + OSUtil.Linux.getInfo(), de);
             }
@@ -152,8 +161,7 @@ class AutoDetectTrayType {
                         }
 
                         // see: https://github.com/dorkbox/SystemTray/issues/125
-                        boolean isPop = OS.isLinux() && OSUtil.Linux.getInfo("pop");
-                        if (isPop) {
+                        if (OSUtil.Linux.isPop()) {
                             GDM = "ubuntu";   // special case for popOS! (it is ubuntu-like, but does not set GDMSESSION)
 
                             if (DEBUG) {
@@ -161,7 +169,6 @@ class AutoDetectTrayType {
                             }
                         }
                     }
-
 
                     if (DEBUG) {
                         logger.debug("Currently using the '{}' session type", GDM);
@@ -247,7 +254,7 @@ class AutoDetectTrayType {
                             }
                         }
                         else {
-                            logger.error("GNOME shell detected, but UNKNOWN shell version. This should never happen. Falling back to GtkStatusIcon. " +
+                            logger.error("GNOME shell detected, but UNSUPPORTED shell version (" + gnomeVersion + "). Falling back to GtkStatusIcon. " +
                                          "Please create an issue with as many details as possible.");
 
                             return selectType(TrayType.Gtk);
