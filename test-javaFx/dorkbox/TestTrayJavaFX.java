@@ -59,7 +59,7 @@ class TestTrayJavaFX {
     public static final URL LT_GRAY_TRAIN = TestTrayJavaFX.class.getResource("transport_train_station.p.666666.32.png");
 
     // from issue 123
-    public static final URL NOTIFY_IMAGE = TestTray.class.getResource("RemoteNotifications.png");
+    public static final URL NOTIFY_IMAGE = TestTrayJavaFX.class.getResource("RemoteNotifications.png");
 
     private static TestTrayJavaFX testTrayJavaFX;
 

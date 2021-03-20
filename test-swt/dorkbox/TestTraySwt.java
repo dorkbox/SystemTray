@@ -56,7 +56,7 @@ class TestTraySwt {
     public static final URL LT_GRAY_TRAIN = TestTraySwt.class.getResource("transport_train_station.p.666666.32.png");
 
     // from issue 123
-    public static final URL NOTIFY_IMAGE = TestTray.class.getResource("RemoteNotifications.png");
+    public static final URL NOTIFY_IMAGE = TestTraySwt.class.getResource("RemoteNotifications.png");
 
     public static
     void main(String[] args) {
