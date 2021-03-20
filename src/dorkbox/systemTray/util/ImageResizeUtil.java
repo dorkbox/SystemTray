@@ -65,7 +65,7 @@ class ImageResizeUtil {
 
     public synchronized
     File getErrorImage(int size) {
-        if (size == 0) {
+        if (size <= 0) {
             // default size
             size = 32;
         }
@@ -108,6 +108,10 @@ class ImageResizeUtil {
     File resizeAndCache(final int size, final String fileName) {
         if (fileName == null) {
             return null;
+        }
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Resizing image to " + size + " : " + fileName);
         }
 
         try {
@@ -261,7 +265,12 @@ class ImageResizeUtil {
         }
 
         if (SystemTray.AUTO_SIZE) {
-            return resizeAndCache(getSize(isTrayImage), imageFile);
+            int size = getSize(isTrayImage);
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("Resizing image to " + size + " : " + imageFile);
+            }
+
+            return resizeAndCache(size, imageFile);
         } else {
             return imageFile;
         }
@@ -275,7 +284,13 @@ class ImageResizeUtil {
         }
 
         if (SystemTray.AUTO_SIZE) {
-            return resizeAndCache(getSize(isTrayImage), imagePath);
+            int size = getSize(isTrayImage);
+
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("Resizing image to " + size + " : " + imagePath);
+            }
+
+            return resizeAndCache(size, imagePath);
         } else {
             return new File(imagePath);
         }
@@ -287,10 +302,16 @@ class ImageResizeUtil {
             return null;
         }
 
+        int size = getSize(isTrayImage);
+
         try {
             if (SystemTray.AUTO_SIZE) {
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.debug("Resizing image to " + size + " : " + imageUrl);
+                }
+
                 InputStream inputStream = imageUrl.openStream();
-                File file = resizeAndCache(getSize(isTrayImage), inputStream);
+                File file = resizeAndCache(size, inputStream);
                 inputStream.close();
 
                 return file;
@@ -300,7 +321,7 @@ class ImageResizeUtil {
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
-            return getErrorImage(getSize(isTrayImage));
+            return getErrorImage(size);
         }
     }
 
@@ -310,14 +331,18 @@ class ImageResizeUtil {
             return null;
         }
 
+        int size = getSize(isTrayImage);
         if (SystemTray.AUTO_SIZE) {
-            return resizeAndCache(getSize(isTrayImage), imageStream);
+            if (SystemTray.DEBUG) {
+                SystemTray.logger.debug("Resizing image-stream to " + size);
+            }
+            return resizeAndCache(size, imageStream);
         } else {
             try {
                 return cache.save(imageStream);
             } catch (IOException e) {
                 SystemTray.logger.error("Error checking cache for information. Using error icon instead", e);
-                return getErrorImage(0);
+                return getErrorImage(size);
             }
         }
     }
@@ -328,6 +353,8 @@ class ImageResizeUtil {
         if (image == null) {
             return null;
         }
+
+        int size = getSize(isTrayImage);
 
         try {
             ImageUtil.waitForImageLoad(image);
@@ -340,7 +367,10 @@ class ImageResizeUtil {
 
             File file;
             if (SystemTray.AUTO_SIZE) {
-                file = resizeAndCache(getSize(isTrayImage), imageInputStream);
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.debug("Resizing image to " + size);
+                }
+                file = resizeAndCache(size, imageInputStream);
             } else {
                 file = cache.save(imageInputStream);
             }
@@ -350,7 +380,7 @@ class ImageResizeUtil {
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
-            return getErrorImage(getSize(isTrayImage));
+            return getErrorImage(size);
         }
     }
 
@@ -360,19 +390,23 @@ class ImageResizeUtil {
             return null;
         }
 
+        int size = getSize(isTrayImage);
         try {
             ByteArrayOutputStream byteArrayOutputStream = IO.copyStream(imageStream);
             ByteArrayInputStream fileStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
 
             if (SystemTray.AUTO_SIZE) {
-                return resizeAndCache(getSize(isTrayImage), fileStream);
+                if (SystemTray.DEBUG) {
+                    SystemTray.logger.debug("Resizing image-stream to " + size);
+                }
+                return resizeAndCache(size, fileStream);
             } else {
                 return cache.save(fileStream);
             }
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
-            return getErrorImage(getSize(isTrayImage));
+            return getErrorImage(size);
         }
     }
 
