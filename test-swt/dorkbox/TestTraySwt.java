@@ -89,6 +89,7 @@ class TestTraySwt {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
+        systemTray.installShutdownHook();
         systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
@@ -194,7 +195,9 @@ class TestTraySwt {
         systemTray.getMenu().add(new MenuItem("Quit", e->{
             systemTray.shutdown();
             // necessary to shut down SWT
-            display.asyncExec(shell::dispose);
+            if (!display.isDisposed()) {
+                display.asyncExec(shell::dispose);
+            }
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
 

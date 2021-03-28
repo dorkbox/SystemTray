@@ -112,18 +112,6 @@ class SystemTray {
 
     @Property
     /**
-     * When in compatibility mode, and the JavaFX/SWT primary windows are closed, we want to make sure that the SystemTray is also closed.
-     * Additionally, when using the Swing tray type, Windows does not always remove the tray icon if the JVM is stopped, and this makes
-     * sure that the tray is also removed from the notification area.
-     * <p>
-     * This property is available to disable this functionality in situations where you don't want this to happen.
-     * <p>
-     * This is an advanced feature, and it is recommended to leave as true.
-     */
-    public static boolean ENABLE_SHUTDOWN_HOOK = true;
-
-    @Property
-    /**
      * Allows the SystemTray logic to resolve OS inconsistencies for the SystemTray.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
@@ -175,7 +163,7 @@ class SystemTray {
     }
 
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
-    public static
+    public static synchronized
     SystemTray get(String trayName) {
         // we must recreate the menu if we call get() after remove()!
 
@@ -783,11 +771,14 @@ class SystemTray {
                 logger.info("Successfully loaded");
             }
 
-            if (ENABLE_SHUTDOWN_HOOK) {
-                AutoDetectTrayType.installShutdownHooks(trayName, trayType);
-            }
+            Runnable shutdownRunnable = AutoDetectTrayType.getShutdownHook(trayName);
+            SystemTray systemTray = new SystemTray(trayName, systemTrayMenu, imageResizeUtil, shutdownRunnable);
+            AutoDetectTrayType.setInstance(trayName, systemTray);
 
-            return new SystemTray(systemTrayMenu, imageResizeUtil);
+            // we ALWAYS want to add a **JVM** shutdown hook!
+            Runtime.getRuntime().addShutdownHook(new Thread(shutdownRunnable));
+
+            return systemTray;
         } catch (Exception e) {
             logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
         }
@@ -796,22 +787,35 @@ class SystemTray {
     }
 
     /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
+    private final String trayName;
     private final Tray menu;
     private final ImageResizeUtil imageResizeUtil;
+    private final Runnable shutdownRunnable;
 
     private
-    SystemTray(Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil) {
+    SystemTray(final String trayName, final Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil, final Runnable shutdownRunnable) {
+        this.trayName = trayName;
         this.menu = systemTrayMenu;
         this.imageResizeUtil = imageResizeUtil;
+        this.shutdownRunnable = shutdownRunnable;
     }
 
     /**
-     * Shuts-down the SystemTray, by removing the menus + tray icon. After calling this method, you MUST call `get()` or `getNative()`
-     * again to obtain a new reference to the SystemTray.
+     * When the JavaFX/SWT/etc primary windows are closed, we want to make sure that the SystemTray is also closed.
+     *
+     * NOTE: Windows does not always remove the tray icon if the JVM is killed!
+     */
+    public void installShutdownHook() {
+        AutoDetectTrayType.installShutdownHooks(trayName, getType(), shutdownRunnable);
+    }
+
+    /**
+     * Shuts-down the SystemTray, by removing the menus + tray icon. After calling this method, you MUST call `get()` or `get(name)`
+     * again to obtain a new SystemTray instance.
      */
     public
     void shutdown() {
-        // this will shutdown and do what it needs to
+        // this will shutdown and do what it needs to. The onRemoveEvent cleans up.
         menu.remove();
     }
 
@@ -1038,7 +1042,7 @@ class SystemTray {
      */
     public
     void remove() {
-        // we must recreate the menu via init() if we call get() after remove()!
+        // we must recreate the menu via init() if we call get() after remove()! (onRemoveEvent does this)
         menu.remove();
     }
 }

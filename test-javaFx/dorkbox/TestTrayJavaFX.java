@@ -121,6 +121,7 @@ class TestTrayJavaFX {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
+        systemTray.installShutdownHook();
         systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
@@ -226,14 +227,15 @@ class TestTrayJavaFX {
         systemTray.getMenu().add(new MenuItem("Quit", e->{
             systemTray.shutdown();
 
-            if (!JavaFx.isEventThread()) {
-                JavaFx.dispatch(()->{
-                    primaryStage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
-                    Platform.exit();  // necessary to close javaFx
-                });
-            } else {
+            Runnable runnable = ()->{
                 primaryStage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
                 Platform.exit();  // necessary to close javaFx
+            };
+
+            if (!JavaFx.isEventThread()) {
+                JavaFx.dispatch(runnable);
+            } else {
+                runnable.run();
             }
 
             //System.exit(0);  not necessary if all non-daemon threads have stopped.

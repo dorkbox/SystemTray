@@ -74,6 +74,7 @@ class TestMultiTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
+        systemTray2.installShutdownHook();
         systemTray2.setTooltip("Choo-Choo!");
         systemTray2.setImage(GREEN_TRAIN);
         systemTray2.setStatus("HONK");
