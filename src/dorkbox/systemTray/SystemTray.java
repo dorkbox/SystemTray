@@ -271,10 +271,23 @@ class SystemTray {
                             // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
                             // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                            // we must use GTK2, because JavaFX is GTK2
-                            FORCE_GTK2 = true;
-                            if (DEBUG) {
-                                logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                            if (OS.javaVersion < 11) {
+                                // we must use GTK2, because JavaFX is GTK2 (java9 had javafx, but java11 DOES NOT)
+                                FORCE_GTK2 = true;
+                                if (DEBUG) {
+                                    logger.debug("Forcing GTK2 because JavaFX is GTK2");
+                                }
+                            } else {
+                                // java 11+
+                                // https://github.com/javafxports/openjdk-jfx/issues/217
+                                // uses GTK3 by default now. so UNLESS we set the javafx parameter to force GTK2, we don't.
+                                String gtkVer = System.getProperty("jdk.gtk.version", "0");
+                                if (gtkVer.startsWith("2")) {
+                                    FORCE_GTK2 = true;
+                                    if (DEBUG) {
+                                        logger.debug("Forcing GTK2 because JavaFX System property `jdk.gtk.version` was set to 2 (so we force GTK2)");
+                                    }
+                                }
                             }
                         }
                         else if (Swt.isLoaded && !Swt.isGtk3) {
