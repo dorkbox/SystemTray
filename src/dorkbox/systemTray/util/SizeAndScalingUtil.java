@@ -94,7 +94,7 @@ class SizeAndScalingUtil {
         }
 
         return TRAY_SIZE;
-}
+    }
 
     public static
     int getMenuImageSize(final Class<? extends Tray> trayType) {
