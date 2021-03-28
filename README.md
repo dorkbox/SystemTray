@@ -118,10 +118,14 @@ Fedora 29 | ✓ |
  | |
 FreeBSD 11 + Gnome3 | ✓ |
  | |
+IGEL OS 9.5 | ✓ |
+ | |
 Kali 2016 | ✓ |
 Kali 2017 | ✓ |
  | |
 LinuxMint 18 | ✓ |
+LinuxMint 19 | ✓ |
+LinuxMint 20 | ✓ |
  | |
 Ubuntu 12.04 | ✓ |
 Ubuntu 14.04 | ✓ |
