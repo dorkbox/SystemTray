@@ -239,7 +239,7 @@ class Menu extends MenuItem {
 
         if (peer != null) {
             // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-            EventDispatch.run(()->((MenuPeer) peer).add(Menu.this, entry, insertIndex));
+            EventDispatch.runLater(()->((MenuPeer) peer).add(Menu.this, entry, insertIndex));
         }
 
         return entry;
@@ -390,7 +390,7 @@ class Menu extends MenuItem {
             if (toRemove != null) {
                 final Entry reference = toRemove;
                 // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-                EventDispatch.run(()->reference.remove());
+                EventDispatch.runLater(()->reference.remove());
 
                 toRemove = null;
             }
@@ -437,7 +437,7 @@ class Menu extends MenuItem {
         }
 
         // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-        EventDispatch.run(()->Menu.this.remove_());
+        EventDispatch.runLater(()->Menu.this.remove_());
     }
 
     private
