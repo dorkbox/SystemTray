@@ -47,21 +47,22 @@ class OsxMenu implements MenuPeer {
 
     // called by the system tray constructors
     // This is NOT a copy constructor!
-    @SuppressWarnings("IncompleteCopyConstructor")
     OsxMenu() {
-        this.parent = null;
+        this(null);
     }
 
     OsxMenu(final OsxMenu parent) {
         this.parent = parent;
         _nativeMenu = new NSMenu();
 
-        _native.setSubmenu(_nativeMenu);
-        parent.addItem(_native);
+        if (parent != null) {
+            _native.setSubmenu(_nativeMenu);
+            parent.addItem(_native);
 
-        // this is to provide reasonable spacing for the menu item, otherwise it looks weird
-        _native.setIndentationLevel(indentationLevel);
-        _native.setImage(OsxBaseMenuItem.getTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE));
+            // this is to provide reasonable spacing for the menu item, otherwise it looks weird
+            _native.setIndentationLevel(indentationLevel);
+            _native.setImage(OsxBaseMenuItem.getTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE));
+        }
     }
 
     @Override
