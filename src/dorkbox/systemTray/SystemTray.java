@@ -148,20 +148,36 @@ class SystemTray {
     }
 
     /**
-     * Enables native menus on Linux/OSX instead of the custom swing menu. Windows will always use a custom Swing menu. The drawback is
-     * that this menu is native, and sometimes native menus looks absolutely HORRID.
+     * Enables native menus on Windows/Linux/OSX instead of the swing menu. The drawback is that this menu is native, and sometimes
+     * native menus looks absolutely HORRID.
      * <p>
      * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
      * supported, in which case this will return NULL.
      * <p>
      * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
      * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
+     *
+     * If you create MORE than 1 system tray, you should use {{@link SystemTray#get(String)}} instead, and specify a unique name for
+     * each instance
      */
     public static
     SystemTray get() {
         return get("SystemTray");
     }
 
+    /**
+     * Enables native menus on Windows/Linux/OSX instead of the swing menu. The drawback is that this menu is native, and sometimes
+     * native menus looks absolutely HORRID.
+     * <p>
+     * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
+     * supported, in which case this will return NULL.
+     * <p>
+     * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
+     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
+     *
+     * @param trayName This is the name assigned to the system tray instance. If you create MORE than 1 system tray,
+     *                  you must make sure to use different names (or un-predicable things can happen!).
+     */
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
     public static synchronized
     SystemTray get(String trayName) {
