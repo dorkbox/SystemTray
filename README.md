@@ -323,15 +323,34 @@ ISSUES:
       This is a known appindicator bug, and is rather old. Some distributions use 
       an OLD version of libappindicator, and will see this error. 
          See: https://github.com/ValveSoftware/steam-for-linux/issues/1077
+      -----------------------   
          
          
       'gsignal.c: signal 'child-added' is invalid for instance 'xyz' of type 'GtkMenu''
+      
       This is a known appindicator bug, and is rather old. Some distributions use an 
       OLD version of libappindicator, and will see this error. 
       
       The fallout from this issue (ie: menu entries not displaying) has been 
       *worked around*, so the menus should still show correctly.
          See: https://askubuntu.com/questions/364594/has-the-appindicator-or-gtkmenu-api-changed-in-saucy
+      -----------------------   
+         
+         
+      Gdk-WARNING XSetErrorHandler() called with a GDK error trap pushed. Don't do that.
+      
+      This is a bug specifically with JavaFX +GTK3. From what I can tell, this not something that can be fixed.
+        (bugs)
+        https://stackoverflow.com/questions/55446534/how-to-fix-java22494-gdk-warning
+        https://bugs.openjdk.java.net/browse/JDK-8156779
+        https://bugs.openjdk.java.net/browse/JDK-8211305
+
+        (Source files)
+        https://github.com/openjdk/jfx/blob/master/modules/javafx.graphics/src/main/java/com/sun/glass/ui/gtk/GtkApplication.java
+        https://github.com/openjdk/jfx/blob/master/modules/javafx.graphics/src/main/native-glass/gtk/GlassApplication.cpp
+
+        (Where the error occurs)
+        https://gitlab.gnome.org/GNOME/gtk/-/blob/master/gdk/x11/gdkmain-x11.c
   
 ````
 &nbsp; 
