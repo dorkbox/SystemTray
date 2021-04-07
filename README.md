@@ -255,6 +255,14 @@ SystemTray.SWING_UI    (type SwingUIFactory, default value 'null')
  
 SystemTray.DEBUG    (type boolean, default value 'false')
  -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
+
+
+GtkTheme.TRAY_IMAGE_SIZE_FALLBACK    (type int, default value '24')
+ - Fallback for an unknown tray image size for GTK 
+
+
+GtkTheme.TRAY_MENU_IMAGE_SIZE_FALLBACK    (type int, default value '16')
+ - Fallback for an unknown tray menu image size for GTK
 ```
    
    
