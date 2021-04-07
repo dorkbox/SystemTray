@@ -638,16 +638,21 @@ class SystemTray {
                     if (!AppIndicator.isLoaded) {
                         // YIKES. AppIndicator couldn't load.
 
+                        String installer = AppIndicator.getInstallString(GtkCheck.isGtk2);
+                        String packageInstall = OSUtil.Linux.PackageManager.get().installString() + " " + installer;
+                        String installString = "Please install " + installer + ", for example: '" + packageInstall + "'.";
+
+
                         // can we fallback to swing? KDE does not work for this...
                         if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported() && !OSUtil.DesktopEnv.isKDE()) {
                             trayType = selectType(TrayType.Swing);
 
                             logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
-                            logger.warn(AppIndicator.getInstallString(GtkCheck.isGtk2));
+                            logger.warn(installString);
                         }
                         else {
                             // no swing, have to emit instructions how to fix the error.
-                            logger.error("AppIndicator unable to load.  " + AppIndicator.getInstallString(GtkCheck.isGtk2));
+                            logger.error("AppIndicator unable to load.  " + installString);
 
                             return null;
                         }
