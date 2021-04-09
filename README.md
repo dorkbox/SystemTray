@@ -90,6 +90,8 @@ AutoDetect Compatibility List
 OS | Supported 
 --- | --- |
 Arch Linux + Gnome3 | ✓ |
+| |
+Manjaro Linux + KDE | ✓ |
  | |
 ChromeOS | x |
  | |
@@ -353,12 +355,13 @@ ISSUES:
         https://gitlab.gnome.org/GNOME/gtk/-/blob/master/gdk/x11/gdkmain-x11.c
   
 ````
+
 &nbsp; 
 &nbsp; 
 
 Maven Info
 ---------
-````
+```
 <dependencies>
     ...
     <dependency>
@@ -367,31 +370,19 @@ Maven Info
       <version>3.17</version>
     </dependency>
 </dependencies>
-````
+```
 
 Gradle Info
 ---------
-````
+```
 dependencies {
     ...
-    compile 'com.dorkbox:SystemTray:3.17'
+    implementation("com.dorkbox:SystemTray:3.17")
 }
-````
-
-Or if you don't want to use Maven, you can access the latest files and source-code directly from here:  
-https://git.dorkbox.com/dorkbox/SystemTray/releases  
-
-https://repo1.maven.org/maven2/com/dorkbox/SystemTray/  
-https://repo1.maven.org/maven2/com/dorkbox/ShellExecutor/    
-
-
-https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
-https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
-https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
-https://repo1.maven.org/maven2/org/javassist/javassist/  
-
+```
 
 License
 ---------
-This project is © 2014 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
+This project is © 2021 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further 
+references.
 

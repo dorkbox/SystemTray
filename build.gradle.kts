@@ -44,6 +44,7 @@ object Extras {
     const val name = "SystemTray"
     const val id = "SystemTray"
     const val vendor = "Dorkbox LLC"
+    const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
     val buildDate = Instant.now().toString()
 
