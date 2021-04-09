@@ -209,6 +209,7 @@ dependencies {
     implementation("com.dorkbox:Executor:3.0")
     implementation("com.dorkbox:SwtJavaFx:1.1")
     implementation("com.dorkbox:Utilities:1.9")
+    implementation("com.dorkbox:Updates:1.0")
     implementation("com.dorkbox:PropertyLoader:1.0")
 
     implementation("org.javassist:javassist:3.27.0-GA")

@@ -147,6 +147,11 @@ class SystemTray {
         return "3.17";
     }
 
+    static {
+        // Add this project to the updates system, which verifies this class + UUID + version information
+        dorkbox.updates.Updates.INSTANCE.add(SystemTray.class, "b35c107332d844559a3f877fcef42a21", getVersion());
+    }
+
     /**
      * Enables native menus on Windows/Linux/OSX instead of the swing menu. The drawback is that this menu is native, and sometimes
      * native menus looks absolutely HORRID.
