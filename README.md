@@ -59,7 +59,7 @@ Windows
 
 Problems and Restrictions
 ---------
- - **JavaFX** uses *GTK2* for Java <8, and *GTK2* or *GTK3* for Java 9+. We try to autodetect this, and are mostly successful. In *some* situations where it doesn't work. Please set `SystemTray.FORCE_GTK2=true;`, or to change JavaFX (9+), use `-Djdk.gtk.version=3` to solve this.
+ - **JavaFX** uses *GTK2* for Java <8, and *GTK2* or *GTK3* for Java 9, and GTK3 for Java 10+. We try to autodetect this, and are mostly successful. In *some* situations where it doesn't work. Please set `SystemTray.FORCE_GTK2=true;`, or to change JavaFX (9+), use `-Djdk.gtk.version=3` to solve this.
  
  - **SWT** can use *GTK2*, *GTK3*, or *GTK4*. We do not support GTK4, and recommend GTK3 (now the default for SWT) If you want to use 
    something else, you must configure both SWT and the SystemTray to same, before SWT is initialized and only if there are  problems with the autodetection, via `SystemTray.FORCE_GTK2=true;`.
@@ -68,9 +68,11 @@ Problems and Restrictions
  
  - **MacOSX** is a *special snowflake* in how it handles GUI events, and so there are some bizzaro combinations of SWT, JavaFX, and Swing that do not work together. (see the `Notes` below for the details)
  
-  - **MacOSX** *native* menus cannot display images attached to menu entries. If desired, one could override the default for MacOSX so that it uses *Swing* instead of *AWT*, however this will result the SystemTray no-longer supporting the OS theme and transparency. The default of *AWT* was chosen because it looks much, much better than *Swing*. 
+  - **MacOSX** *original* menus cannot display images attached to menu entries. The *native* implementation supports images. If forced to *Swing* instead, the tray-menu will no longer support the OS theme and transparancy. 
  
- - **Gnome 3: 3.16 - 3.25** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Top Icons](https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* (it is normally collapsed) at the bottom left corner of the screen to the menu panel next to the clock.
+ - **Gnome 3: 3.16 - 3.25** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This 
+   has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Top Icons]
+   (https://extensions.gnome.org/extension/1031/topicons/) plugin which moves icons from the *notification drawer* sometimes at the bottom left (collapsed) corner of the screen to the menu panel next to the clock.
  
  - **Gnome 3: 3.26+** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Appindicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) plugin which allows the addition of app-indicator icons where one would expect. Additionally, you will need to install `libappindicator-gtk3`.
   
@@ -147,6 +149,9 @@ Windows XP  | ✓ |
 Windows 7   | ✓ |
 Windows 8.1 | ✓ |
 Windows 10  | ✓ |
+| |
+WSL 1  | x |
+WSL 2  | x |
 
 Notes:
 -------
@@ -154,8 +159,7 @@ Notes:
  
  - The compatibility list only applies while the SystemTray is in `AutoDetect` mode. Not all OSes support forcing a custom tray type.
  
- - Some Linux operating systems with `GNOME 3` might require the installation of the app-indicator library as well. We provide feedback when
-    this is necessary. (Arch, Fedora, etc)
+ - Some Linux operating systems with `GNOME 3` might require the installation of the app-indicator library as well. We usually provide feedback when this is necessary. (Arch, Fedora, etc)
  
  - The menu item callbacks occur on **their own dispatch thread** (instead of being on whatever OS's event dispatch thread), in order to 
     provide consistent actions across all platforms. It is critical to make sure that access to Swing/etc that depend on running events
