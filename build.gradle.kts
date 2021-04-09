@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import dorkbox.gradle.SwtType
 import java.time.Instant
 
 ///////////////////////////////
@@ -26,15 +25,13 @@ gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always sh
 gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "1.16"
+    id("com.dorkbox.GradleUtils") version "1.17"
     id("com.dorkbox.Licensing") version "2.5.5"
-    id("com.dorkbox.VersionUpdate") version "2.1"
+    id("com.dorkbox.VersionUpdate") version "2.3"
     id("com.dorkbox.GradlePublish") version "1.10"
 //    id("com.dorkbox.GradleModuleInfo") version "1.0"
 
-//    id("com.dorkbox.CrossCompile") version "1.1"
-
-    kotlin("jvm") version "1.4.31"
+    kotlin("jvm") version "1.4.32"
 }
 
 object Extras {
@@ -54,6 +51,7 @@ object Extras {
     // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
     // 3.108.0 is the MOST RECENT version supported by x86. All newer version no longer support x86
     const val swtVersion = "3.115.100"
+    const val jnaVersion = "5.8.0"
 }
 
 ///////////////////////////////
@@ -91,10 +89,10 @@ licensing {
 val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 
-val javaFxDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
-val linux64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
-val mac64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
-val win64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+//val javaFxDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+//val linux64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+//val mac64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+//val win64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 
 val SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
@@ -179,7 +177,6 @@ sourceSets {
 
 repositories {
     mavenLocal() // this must be first!
-
     jcenter()
 }
 
@@ -214,9 +211,8 @@ dependencies {
 
     implementation("org.javassist:javassist:3.27.0-GA")
 
-    val jnaVersion = "5.7.0"
-    implementation("net.java.dev.jna:jna:$jnaVersion")
-    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+    implementation("net.java.dev.jna:jna:${Extras.jnaVersion}")
+    implementation("net.java.dev.jna:jna-platform:${Extras.jnaVersion}")
 
     implementation("org.slf4j:slf4j-api:1.7.30")
     val log = runtimeOnly("ch.qos.logback:logback-classic:1.2.3")!!
@@ -236,7 +232,7 @@ dependencies {
 
         if (javaFxFile.exists()) {
             javaFxExampleCompile(files(javaFxFile))
-            javaFxDeps(files(javaFxFile))
+//            javaFxDeps(files(javaFxFile))
         } else {
             println("\tJavaFX not found, unable to add JavaFX 8 dependency!")
         }
@@ -249,16 +245,17 @@ dependencies {
             currentOS.isMacOsX -> { "mac" }
             else -> { "unknown" }
         }
+
         javaFxExampleCompile("org.openjfx:javafx-base:11:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-graphics:11:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-controls:11:${platform}")
 
-        // include all distro for jars
-        listOf("win", "linux", "mac").forEach {
-            javaFxDeps("org.openjfx:javafx-base:11:${it}")
-            javaFxDeps("org.openjfx:javafx-graphics:11:${it}")
-            javaFxDeps("org.openjfx:javafx-controls:11:${it}")
-        }
+//        // include all distro for jars
+//        listOf("win", "linux", "mac").forEach {
+//            javaFxDeps("org.openjfx:javafx-base:11:${it}")
+//            javaFxDeps("org.openjfx:javafx-graphics:11:${it}")
+//            javaFxDeps("org.openjfx:javafx-controls:11:${it}")
+//        }
     }
 
     swtExampleCompile(GradleUtils.getSwtMavenId(Extras.swtVersion)) {
@@ -270,35 +267,35 @@ dependencies {
     javaFxExampleCompile.dependencies += log
     swtExampleCompile.dependencies += log
 
-    javaFxDeps.dependencies += log
-
-    // add all SWT dependencies for all supported OS configurations to a "mega" jar
-    linux64SwtDeps(SwtType.LINUX_64.fullId(Extras.swtVersion)) { isTransitive = false }
-    mac64SwtDeps(SwtType.MAC_64.fullId(Extras.swtVersion)) { isTransitive = false }
-    win64SwtDeps(SwtType.WIN_64.fullId(Extras.swtVersion)) { isTransitive = false }
-
-    linux64SwtDeps.dependencies += log
-    mac64SwtDeps.dependencies += log
-    win64SwtDeps.dependencies += log
-
-    linux64SwtDeps.resolutionStrategy {
-        dependencySubstitution {
-            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
-                .with(module(SwtType.LINUX_64.fullId(Extras.swtVersion)))
-        }
-    }
-    mac64SwtDeps.resolutionStrategy {
-        dependencySubstitution {
-            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
-                .with(module(SwtType.MAC_64.fullId(Extras.swtVersion)))
-        }
-    }
-    mac64SwtDeps.resolutionStrategy {
-        dependencySubstitution {
-            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
-                .with(module(SwtType.WIN_64.fullId(Extras.swtVersion)))
-        }
-    }
+//    javaFxDeps.dependencies += log
+//
+//    // add all SWT dependencies for all supported OS configurations to a "mega" jar
+//    linux64SwtDeps(SwtType.LINUX_64.fullId(Extras.swtVersion)) { isTransitive = false }
+//    mac64SwtDeps(SwtType.MAC_64.fullId(Extras.swtVersion)) { isTransitive = false }
+//    win64SwtDeps(SwtType.WIN_64.fullId(Extras.swtVersion)) { isTransitive = false }
+//
+//    linux64SwtDeps.dependencies += log
+//    mac64SwtDeps.dependencies += log
+//    win64SwtDeps.dependencies += log
+//
+//    linux64SwtDeps.resolutionStrategy {
+//        dependencySubstitution {
+//            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
+//                .with(module(SwtType.LINUX_64.fullId(Extras.swtVersion)))
+//        }
+//    }
+//    mac64SwtDeps.resolutionStrategy {
+//        dependencySubstitution {
+//            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
+//                .with(module(SwtType.MAC_64.fullId(Extras.swtVersion)))
+//        }
+//    }
+//    mac64SwtDeps.resolutionStrategy {
+//        dependencySubstitution {
+//            substitute(module("org.eclipse.platform:org.eclipse.swt.\${osgi.platform}"))
+//                .with(module(SwtType.WIN_64.fullId(Extras.swtVersion)))
+//        }
+//    }
 }
 
 ///////////////////////////////
@@ -359,9 +356,9 @@ task<Jar>("jarJavaFxExample") {
         exclude("META-INF/*.DSA", "META-INF/*.SF")
     }
 
-    from(javaFxDeps.map { if (it.isDirectory) it else zipTree(it) }) {
-        exclude("META-INF/*.DSA", "META-INF/*.SF")
-    }
+//    from(javaFxDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+//        exclude("META-INF/*.DSA", "META-INF/*.SF")
+//    }
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
@@ -380,14 +377,14 @@ task<Jar>("jarSwtExample") {
     from(sourceSets.swtExample.output.classesDirs)
     from(sourceSets.swtExample.output.resourcesDir)
 
-//    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
-
-    // include ALL versions of SWT (so a single jar can run on all OS,
-    from(linux64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.DSA", "META-INF/*.SF")
     }
+
+    // include ALL versions of SWT (so a single jar can run on all OS,
+//    from(linux64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+//        exclude("META-INF/*.DSA", "META-INF/*.SF")
+//    }
 //    from(mac64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
 //        exclude("META-INF/*.DSA", "META-INF/*.SF")
 //    }
@@ -407,4 +404,29 @@ task("jarAllExamples") {
 
     group = BasePlugin.BUILD_GROUP
     description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
+}
+
+
+publishToSonatype {
+    groupId = Extras.group
+    artifactId = Extras.id
+    version = Extras.version
+
+    name = Extras.name
+    description = Extras.description
+    url = Extras.url
+
+    vendor = Extras.vendor
+    vendorUrl = Extras.vendorUrl
+
+    issueManagement {
+        url = "${Extras.url}/issues"
+        nickname = "Gitea Issues"
+    }
+
+    developer {
+        id = "dorkbox"
+        name = Extras.vendor
+        email = "email@dorkbox.com"
+    }
 }
