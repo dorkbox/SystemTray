@@ -72,6 +72,14 @@
            Copyright 2014
              The Apache Software Foundation
 
+         - Kotlin - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/JetBrains/kotlin
+           Copyright 2020
+             JetBrains s.r.o. and Kotlin Programming Language contributors
+           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
          - Logback - Logback is a logging framework for Java applications
            [The Apache Software License, Version 2.0]
            http://logback.qos.ch
@@ -130,13 +138,26 @@
                https://github.com/str4d/ed25519-java
                  https://github.com/str4d
 
-         - Kotlin - 
+         - Updates - Software Update Management
            [The Apache Software License, Version 2.0]
-           https://github.com/JetBrains/kotlin
-           Copyright 2020
-             JetBrains s.r.o. and Kotlin Programming Language contributors
-           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
-           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+           https://git.dorkbox.com/dorkbox/Updates
+           Copyright 2021
+             Dorkbox LLC
+
+           Extra license information
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+             - PropertyLoader - Property annotation and loader for fields
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/PropertyLoader
+               Copyright 2021
+                 Dorkbox LLC
 
      - SwtJavaFx - Swt and JavaFx Utilities
        [The Apache Software License, Version 2.0]
@@ -447,6 +468,27 @@
                http://www.slf4j.org
                Copyright 2021
                  QOS.ch
+
+         - PropertyLoader - Property annotation and loader for fields
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/PropertyLoader
+           Copyright 2021
+             Dorkbox LLC
+
+     - Updates - Software Update Management
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/Updates
+       Copyright 2021
+         Dorkbox LLC
+
+       Extra license information
+         - Kotlin - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/JetBrains/kotlin
+           Copyright 2020
+             JetBrains s.r.o. and Kotlin Programming Language contributors
+           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
          - PropertyLoader - Property annotation and loader for fields
            [The Apache Software License, Version 2.0]
