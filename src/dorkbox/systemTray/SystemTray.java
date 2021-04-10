@@ -144,7 +144,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "4.0";
+        return "4.1";
     }
 
     static {

@@ -38,7 +38,7 @@ object Extras {
     // set for the project
     const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+"
     const val group = "com.dorkbox"
-    const val version = "4.0"
+    const val version = "4.1"
 
     // set as project.ext
     const val name = "SystemTray"

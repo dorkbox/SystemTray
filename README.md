@@ -371,7 +371,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SystemTray</artifactId>
-      <version>4.0</version>
+      <version>4.1</version>
     </dependency>
 </dependencies>
 ```
@@ -381,7 +381,7 @@ Gradle Info
 ```
 dependencies {
     ...
-    implementation("com.dorkbox:SystemTray:4.0")
+    implementation("com.dorkbox:SystemTray:4.1")
 }
 ```
 
