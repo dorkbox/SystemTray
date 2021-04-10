@@ -42,10 +42,10 @@ class SwingMenu implements MenuPeer {
     // called by the system tray constructors
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
-    SwingMenu() {
+    SwingMenu(final String trayName) {
         this.parent = null;
 
-        TrayPopup trayPopup = new TrayPopup();
+        TrayPopup trayPopup = new TrayPopup(trayName);
         if (SystemTray.SWING_UI != null) {
             trayPopup.setUI(SystemTray.SWING_UI.getMenuUI(trayPopup, null));
         }

@@ -52,12 +52,12 @@ class TrayPopup extends JPopupMenu {
 
     @SuppressWarnings("unchecked")
     public
-    TrayPopup() {
+    TrayPopup(final String trayName) {
         super();
         setFocusable(true);
 
         // Initialize the hidden dialog as a headless, title-less dialog window
-        hiddenDialog = new JDialog((Frame)null, "Tray menu");
+        hiddenDialog = new JDialog((Frame)null, trayName);
         hiddenDialog.setUndecorated(true);
         hiddenDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         hiddenDialog.setAlwaysOnTop(true);

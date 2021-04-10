@@ -89,7 +89,7 @@ class _WindowsNativeTray extends Tray {
         edt = WindowsEventDispatch.start();
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
-        final SwingMenu swingMenu = new SwingMenu() {
+        final SwingMenu swingMenu = new SwingMenu(trayName) {
             @Override
             public
             void setImage(final MenuItem menuItem) {
