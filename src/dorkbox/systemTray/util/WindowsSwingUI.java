@@ -28,9 +28,9 @@ import javax.swing.plaf.SeparatorUI;
 import dorkbox.systemTray.Entry;
 import dorkbox.systemTray.Menu;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
-import dorkbox.util.swing.DefaultMenuItemUI;
-import dorkbox.util.swing.DefaultPopupMenuUI;
-import dorkbox.util.swing.DefaultSeparatorUI;
+import dorkbox.systemTray.util.swing.DefaultMenuItemUI;
+import dorkbox.systemTray.util.swing.DefaultPopupMenuUI;
+import dorkbox.systemTray.util.swing.DefaultSeparatorUI;
 
 /**
  * Factory to allow for Look & Feel of the Swing UI components in the SystemTray.
