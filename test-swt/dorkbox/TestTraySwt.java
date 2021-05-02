@@ -89,7 +89,16 @@ class TestTraySwt {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        systemTray.installShutdownHook();
+        // SWT/JavaFX "shutdown hooks" have changed. Since it's no longer available with JPMS, it is no longer supported.
+        // Developers must add the shutdown hooks themselves.
+        shell.addListener(org.eclipse.swt.SWT.Close, new org.eclipse.swt.widgets.Listener() {
+            @Override
+            public
+            void handleEvent(final org.eclipse.swt.widgets.Event event) {
+                systemTray.shutdown();
+            }
+        });
+
         systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");

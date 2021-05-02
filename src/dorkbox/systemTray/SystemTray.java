@@ -746,13 +746,19 @@ class SystemTray {
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
             Runnable onRemoveEvent = ()->{
-                // must remove ourselves from the init() map (since we want to be able to access things)
-                AutoDetectTrayType.removeSystemTrayHook(trayName);
+                // guarantee that we are running on the event dispatch. It doesn't matter if we are "double-looping" on the EventDispatch,
+                // so extra checks are unnecessary.
 
-                // this is thread-safe
-                if (!AutoDetectTrayType.hasOtherTrays()) {
-                    EventDispatch.shutdown();
-                }
+                // we have to make sure we shutdown on our own thread (and not the JavaFX/SWT/AWT/etc thread)
+                EventDispatch.runLater(()->{
+                    // must remove ourselves from the init() map (since we want to be able to access things)
+                    AutoDetectTrayType.removeSystemTrayHook(trayName);
+
+                    // this is thread-safe
+                    if (!AutoDetectTrayType.hasOtherTrays()) {
+                        EventDispatch.shutdown();
+                    }
+                });
             };
 
             // the cache name **MUST** be combined with the currently logged in user, otherwise permissions get screwed up
@@ -797,11 +803,11 @@ class SystemTray {
                 logger.info("Successfully loaded");
             }
 
-            Runnable shutdownRunnable = AutoDetectTrayType.getShutdownHook(trayName);
-            SystemTray systemTray = new SystemTray(trayName, systemTrayMenu, imageResizeUtil, shutdownRunnable);
+            SystemTray systemTray = new SystemTray(trayName, systemTrayMenu, imageResizeUtil);
             AutoDetectTrayType.setInstance(trayName, systemTray);
 
             // we ALWAYS want to add a **JVM** shutdown hook!
+            Runnable shutdownRunnable = AutoDetectTrayType.getShutdownHook(trayName);
             Runtime.getRuntime().addShutdownHook(new Thread(shutdownRunnable));
 
             return systemTray;
@@ -816,23 +822,12 @@ class SystemTray {
     private final String trayName;
     private final Tray menu;
     private final ImageResizeUtil imageResizeUtil;
-    private final Runnable shutdownRunnable;
 
     private
-    SystemTray(final String trayName, final Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil, final Runnable shutdownRunnable) {
+    SystemTray(final String trayName, final Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil) {
         this.trayName = trayName;
         this.menu = systemTrayMenu;
         this.imageResizeUtil = imageResizeUtil;
-        this.shutdownRunnable = shutdownRunnable;
-    }
-
-    /**
-     * When the JavaFX/SWT/etc primary windows are closed, we want to make sure that the SystemTray is also closed.
-     *
-     * NOTE: Windows does not always remove the tray icon if the JVM is killed!
-     */
-    public void installShutdownHook() {
-        AutoDetectTrayType.installShutdownHooks(trayName, getType(), shutdownRunnable);
     }
 
     /**

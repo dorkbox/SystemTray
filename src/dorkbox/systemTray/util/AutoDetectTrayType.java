@@ -24,10 +24,8 @@ import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import dorkbox.javaFx.JavaFx;
 import dorkbox.os.OS;
 import dorkbox.os.OSUtil;
-import dorkbox.swt.Swt;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTray.TrayType;
 import dorkbox.systemTray.Tray;
@@ -412,7 +410,7 @@ class AutoDetectTrayType {
     public static
     Runnable getShutdownHook(final String trayName) {
         return ()->{
-            // check if we have been removed or not (when we stop via SystemTray.remove(), we dont' want to run the EventDispatch again)
+            // check if we have been removed or not (when we stop via SystemTray.remove(), we don't want to run the EventDispatch again)
             synchronized (traySingletons) {
                 if (traySingletons.containsKey(trayName)) {
                     // we haven't been removed by anything else
@@ -439,29 +437,6 @@ class AutoDetectTrayType {
         // new one getting created)
         synchronized (traySingletons) {
             traySingletons.put(trayName, systemTray);
-        }
-    }
-
-    public static
-    void installShutdownHooks(final String trayName, final TrayType trayType, final Runnable shutdownRunnable) {
-        // These install a shutdown hook in JavaFX/SWT, so that when the main window is closed -- the system tray is ALSO closed.
-        if (JavaFx.isLoaded) {
-            if (DEBUG) {
-                logger.debug("Installing JavaFX shutdown hook");
-            }
-
-            // Necessary because javaFX **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive.
-            // Also, it's nice to have us shutdown at the same time as the main application
-            JavaFx.onShutdown(shutdownRunnable);
-        }
-        else if (Swt.isLoaded) {
-            if (DEBUG) {
-                logger.debug("Installing SWT shutdown hook");
-            }
-
-            // this is because SWT **ALSO** runs a gtk main loop, and when it stops (if we don't stop first), we become unresponsive
-            // Also, it's nice to have us shutdown at the same time as the main application
-            Swt.onShutdown(shutdownRunnable);
         }
     }
 

@@ -74,7 +74,9 @@ class TestMultiTray {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        systemTray2.installShutdownHook();
+        // SWT/JavaFX "shutdown hooks" have changed. Since it's no longer available with JPMS, it is no longer supported.
+        // Developers must add the shutdown hooks themselves.
+
         systemTray2.setTooltip("Choo-Choo!");
         systemTray2.setImage(GREEN_TRAIN);
         systemTray2.setStatus("HONK");

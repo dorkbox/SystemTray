@@ -78,6 +78,14 @@ class TestTrayJavaFX {
 
             testTrayJavaFX.doJavaFxStuff(stage);
         }
+
+        @Override
+        public
+        void stop() throws Exception {
+            // SWT/JavaFX "shutdown hooks" have changed. Since it's no longer available with JPMS, it is no longer supported.
+            // Developers must add the shutdown hooks themselves.
+            testTrayJavaFX.shutdown();
+        }
     }
 
     public static
@@ -121,7 +129,9 @@ class TestTrayJavaFX {
             throw new RuntimeException("Unable to load SystemTray!");
         }
 
-        systemTray.installShutdownHook();
+        // SWT/JavaFX "shutdown hooks" have changed. Since it's no longer available with JPMS, it is no longer supported.
+        // Developers must add the shutdown hooks themselves.
+
         systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
@@ -240,5 +250,12 @@ class TestTrayJavaFX {
 
             //System.exit(0);  not necessary if all non-daemon threads have stopped.
         })).setShortcut('q'); // case does not matter
+    }
+
+    private
+    void shutdown() {
+        // SWT/JavaFX "shutdown hooks" have changed. Since it's no longer available with JPMS, it is no longer supported.
+        // Developers must add the shutdown hooks themselves.
+        systemTray.shutdown();
     }
 }
