@@ -48,6 +48,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScalingWindows;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
 import dorkbox.util.collections.ArrayMap;
@@ -205,7 +206,7 @@ class _WindowsNativeTray extends Tray {
                     case WM_LBUTTONUP:
                     case WM_RBUTTONUP:
                         if (popupMenu != null && User32.User32.GetCursorPos(mousePosition)) {
-                            double scale = SizeAndScalingUtil.getWindowsDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                            double scale = SizeAndScalingWindows.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
                             Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
                             popupMenu.doShow(point, 0);
                         }
