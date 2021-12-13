@@ -71,8 +71,8 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
     }
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry) {
-        super(parent, entry);
+    SwingMenuItemCheckbox(final SwingMenu parent, final Entry entry, final int index) {
+        super(parent, entry, index);
     }
 
     @Override

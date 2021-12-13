@@ -27,14 +27,14 @@ class SwingMenuItemSeparator implements EntryPeer {
     private final JSeparator _native = new JSeparator(JSeparator.HORIZONTAL);
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItemSeparator(final SwingMenu parent) {
+    SwingMenuItemSeparator(final SwingMenu parent, final int index) {
         this.parent = parent;
 
         if (SystemTray.SWING_UI != null) {
             _native.setUI(SystemTray.SWING_UI.getSeparatorUI(_native));
         }
 
-        parent._native.add(_native);
+        parent._native.add(_native, index);
     }
 
     @Override

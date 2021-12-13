@@ -67,7 +67,7 @@ class SwingMenuItem implements MenuItemPeer {
 
 
     // this is ALWAYS called on the EDT.
-    SwingMenuItem(final SwingMenu parent, final Entry entry) {
+    SwingMenuItem(final SwingMenu parent, final Entry entry, final int index) {
         this.parent = parent;
 
         if (SystemTray.SWING_UI != null) {
@@ -75,7 +75,7 @@ class SwingMenuItem implements MenuItemPeer {
         }
 
         _native.setHorizontalAlignment(SwingConstants.LEFT);
-        parent._native.add(_native);
+        parent._native.add(_native, index);
 
         _native.setIcon(transparentIcon);
     }

@@ -55,7 +55,7 @@ class SwingMenu implements MenuPeer {
     // This is NOT a copy constructor!
     @SuppressWarnings("IncompleteCopyConstructor")
     public
-    SwingMenu(final SwingMenu parent, final Menu entry) {
+    SwingMenu(final SwingMenu parent, final Menu entry, final int index) {
         this.parent = parent;
 
         JMenu jMenu = new JMenu();
@@ -67,7 +67,7 @@ class SwingMenu implements MenuPeer {
         }
 
         this._native = jMenu;
-        parent._native.add(jMenu);
+        parent._native.add(jMenu, index);
     }
 
     @Override
@@ -82,23 +82,24 @@ class SwingMenu implements MenuPeer {
             }
 
             if (entry instanceof Menu) {
-                SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry);
+                SwingMenu swingMenu = new SwingMenu(SwingMenu.this, (Menu) entry, index);
                 ((Menu) entry).bind(swingMenu, parentMenu, parentMenu.getImageResizeUtil());
             }
             else if (entry instanceof Separator) {
-                SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this);
+                SwingMenuItemSeparator item = new SwingMenuItemSeparator(SwingMenu.this, index);
                 entry.bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
             else if (entry instanceof Checkbox) {
-                SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry);
+                SwingMenuItemCheckbox item = new SwingMenuItemCheckbox(SwingMenu.this, entry, index);
                 ((Checkbox) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
             else if (entry instanceof Status) {
+                // Note: Status is always index 0
                 SwingMenuItemStatus item = new SwingMenuItemStatus(SwingMenu.this, entry);
                 ((Status) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
             else if (entry instanceof MenuItem) {
-                SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry);
+                SwingMenuItem item = new SwingMenuItem(SwingMenu.this, entry, index);
                 ((MenuItem) entry).bind(item, parentMenu, parentMenu.getImageResizeUtil());
             }
         });
