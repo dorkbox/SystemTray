@@ -263,6 +263,30 @@ SystemTray.DEBUG    (type boolean, default value 'false')
  -  This property is provided for debugging any errors in the logic used to determine the system-tray type and initialization feedback.
 
 
+SizeAndScalingLinux.OVERRIDE_MENU_SIZE    (type int, default value '0')
+ - Allows overriding of the LINUX system tray MENU size (this is what shows in the system tray).
+
+
+SizeAndScalingLinux.OVERRIDE_TRAY_SIZE    (type int, default value '0')
+ - Allows overriding of the LINX system tray ICON size (this is what shows in the system tray).
+
+
+SizeAndScalingMacOS.OVERRIDE_MENU_SIZE    (type int, default value '0')
+ - Allows overriding of the MACOS system tray MENU size (this is what shows in the system tray).
+
+
+SizeAndScalingMacOS.OVERRIDE_TRAY_SIZE    (type int, default value '0')
+ - Allows overriding of the MACOS system tray ICON size (this is what shows in the system tray).
+
+
+SizeAndScalingWindows.OVERRIDE_MENU_SIZE    (type int, default value '0')
+ - Allows overriding of the WINDOWS system tray MENU size (this is what shows in the system tray).
+ 
+ 
+SizeAndScalingWindows.OVERRIDE_TRAY_SIZE    (type int, default value '0')
+ - Allows overriding of the WINDWOS system tray ICON size (this is what shows in the system tray).
+
+
 GtkTheme.TRAY_IMAGE_SIZE_FALLBACK    (type int, default value '24')
  - Fallback for an unknown tray image size for GTK 
 
@@ -371,7 +395,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SystemTray</artifactId>
-      <version>4.1</version>
+      <version>4.2</version>
     </dependency>
 </dependencies>
 ```
@@ -381,7 +405,7 @@ Gradle Info
 ```
 dependencies {
     ...
-    implementation("com.dorkbox:SystemTray:4.1")
+    implementation("com.dorkbox:SystemTray:4.2")
 }
 ```
 

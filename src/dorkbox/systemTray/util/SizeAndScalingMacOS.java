@@ -24,6 +24,20 @@ import java.awt.GraphicsEnvironment;
  */
 public
 class SizeAndScalingMacOS {
+    /**
+     * Allows overriding of the system tray MENU size (this is what shows in the system tray).
+     *
+     * NOTE: Any value >0 will be used.
+     */
+    public static volatile int OVERRIDE_MENU_SIZE = 0;
+
+    /**
+     * Allows overriding of the system tray ICON size (this is what shows in the system tray)
+     *
+     * NOTE: Any value >0 will be used.
+     */
+    public static volatile int OVERRIDE_TRAY_SIZE = 0;
+
     public static
     int getMacOSScaleFactor() {
         // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
@@ -36,6 +50,10 @@ class SizeAndScalingMacOS {
 
     public static
     int getMenuImageSize() {
+        if (OVERRIDE_MENU_SIZE > 0) {
+            return OVERRIDE_MENU_SIZE;
+        }
+
         // Note: Mac (AWT) does not have images in the menu.
         // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
         // we obviously do not want to be the exact same size, so we give 2px padding on each side.
@@ -44,6 +62,10 @@ class SizeAndScalingMacOS {
 
     public static
     int getTrayImageSize() {
+        if (OVERRIDE_TRAY_SIZE > 0) {
+            return OVERRIDE_TRAY_SIZE;
+        }
+
         // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
         // we obviously do not want to be the exact same size, so we give 2px padding on each side.
         return SizeAndScalingMacOS.getMacOSScaleFactor() * 18;

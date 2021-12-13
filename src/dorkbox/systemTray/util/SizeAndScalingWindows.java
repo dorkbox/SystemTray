@@ -30,6 +30,20 @@ import dorkbox.jna.windows.User32;
  */
 public
 class SizeAndScalingWindows {
+    /**
+     * Allows overriding of the system tray MENU size (this is what shows in the system tray).
+     *
+     * NOTE: Any value >0 will be used.
+     */
+    public static volatile int OVERRIDE_MENU_SIZE = 0;
+
+    /**
+     * Allows overriding of the system tray ICON size (this is what shows in the system tray)
+     *
+     * NOTE: Any value >0 will be used.
+     */
+    public static volatile int OVERRIDE_TRAY_SIZE = 0;
+
     public static
     double getDpiScaleForMouseClick(int mousePositionX, int mousePositionY) {
         WinDef.POINT.ByValue pointValue = new WinDef.POINT.ByValue(mousePositionX, mousePositionY);
@@ -46,6 +60,9 @@ class SizeAndScalingWindows {
 
     public static
     int getMenuImageSize() {
+        if (OVERRIDE_MENU_SIZE > 0) {
+            return OVERRIDE_MENU_SIZE;
+        }
 
         // http://kynosarges.org/WindowsDpi.html
 
@@ -65,6 +82,10 @@ class SizeAndScalingWindows {
 
     public static
     int getTrayImageSize() {
+        if (OVERRIDE_TRAY_SIZE > 0) {
+            return OVERRIDE_TRAY_SIZE;
+        }
+
         return User32.User32.GetSystemMetrics(SM_CYSMICON);
     }
 }
