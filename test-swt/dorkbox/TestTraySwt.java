@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
@@ -75,6 +76,9 @@ class TestTraySwt {
         Text helloWorldTest = new Text(shell, SWT.NONE);
         helloWorldTest.setText("Hello World SWT  .................  ");
         helloWorldTest.pack();
+
+        // required, so the rendering back-end knows that we are using SWT
+        RenderProvider.set(new SwtProvider());
 
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 

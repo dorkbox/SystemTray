@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Random;
 
-import dorkbox.javaFx.JavaFx;
+import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.Menu;
@@ -61,10 +61,11 @@ class TestTrayJavaFX {
     // from issue 123
     public static final URL NOTIFY_IMAGE = TestTrayJavaFX.class.getResource("RemoteNotifications.png");
 
-    private static TestTrayJavaFX testTrayJavaFX;
 
     public static
     class MyApplication extends Application {
+        private TestTrayJavaFX testTrayJavaFX = new TestTrayJavaFX();
+
         public
         MyApplication() {
         }
@@ -72,10 +73,6 @@ class TestTrayJavaFX {
         @Override
         public
         void start(final Stage stage) {
-            if (testTrayJavaFX == null) {
-                testTrayJavaFX = new TestTrayJavaFX();
-            }
-
             testTrayJavaFX.doJavaFxStuff(stage);
         }
 
@@ -90,8 +87,6 @@ class TestTrayJavaFX {
 
     public static
     void main(String[] args) {
-        testTrayJavaFX = new TestTrayJavaFX();
-
         // NOTE: make sure JNA jar is on the classpath!
         Application.launch(MyApplication.class);
     }
@@ -105,16 +100,19 @@ class TestTrayJavaFX {
     }
 
     public
-    void doJavaFxStuff(final Stage primaryStage) {
-        primaryStage.setTitle("Hello World JavaFx!");
+    void doJavaFxStuff(final Stage stage) {
+        stage.setTitle("Hello World JavaFx!");
         Button btn = new Button();
         btn.setText("Say 'Hello World JavaFx'");
         btn.setOnAction(event->System.out.println("Hello World JavaFx!"));
 
         StackPane root = new StackPane();
         root.getChildren().add(btn);
-        primaryStage.setScene(new Scene(root, 300, 250));
-        primaryStage.show();
+        stage.setScene(new Scene(root, 300, 250));
+        stage.show();
+
+        // required, so the rendering back-end knows that we are using JavaFX
+        RenderProvider.set(new JavaFxProvider());
 
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
@@ -238,12 +236,12 @@ class TestTrayJavaFX {
             systemTray.shutdown();
 
             Runnable runnable = ()->{
-                primaryStage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
+                stage.hide(); // must do this BEFORE Platform.exit() otherwise odd errors show up
                 Platform.exit();  // necessary to close javaFx
             };
 
-            if (!JavaFx.isEventThread()) {
-                JavaFx.dispatch(runnable);
+            if (!RenderProvider.isEventThread()) {
+                RenderProvider.dispatch(runnable);
             } else {
                 runnable.run();
             }
