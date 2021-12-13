@@ -27,6 +27,11 @@ import dorkbox.util.NamedThreadFactory;
  */
 public
 class EventDispatch {
+    /**
+     * Specifies the thread priority used by the SystemTray event dispatch. By default, the "normal priority" is used.
+     */
+    private static int THREAD_PRIORITY = Thread.NORM_PRIORITY;
+
     private static ExecutorService eventDispatchExecutor = null;
 
     /**
@@ -38,7 +43,7 @@ class EventDispatch {
     void runLater(final Runnable runnable) {
         synchronized(EventDispatch.class) {
             if (eventDispatchExecutor == null) {
-                eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTrayEventDispatch", false));
+                eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTrayEventDispatch", THREAD_PRIORITY, false));
             }
         }
 
@@ -55,6 +60,7 @@ class EventDispatch {
         runLater(()->{
             synchronized (EventDispatch.class) {
                 if (eventDispatchExecutor != null) {
+                    // we do not want to continue processing anything, so all non-executed events will be tossed.
                     eventDispatchExecutor.shutdownNow();
                     eventDispatchExecutor = null;
                 }
