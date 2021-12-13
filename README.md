@@ -137,6 +137,7 @@ Ubuntu 16.04 | ✓ |
 Ubuntu 17.04 | ✓ |
 Ubuntu 17.10 | ✓ |
 Ubuntu 18.04 | ✓ |
+Ubuntu 20.04 | ✓ |
  | |
 UbuntuGnome 16.04 | ✓ |
 UbuntuGnome 17.04 | ✓ |
@@ -149,6 +150,7 @@ Windows XP  | ✓ |
 Windows 7   | ✓ |
 Windows 8.1 | ✓ |
 Windows 10  | ✓ |
+Windows 11  | ✓ |
 | |
 WSL 1  | x |
 WSL 2  | x |
