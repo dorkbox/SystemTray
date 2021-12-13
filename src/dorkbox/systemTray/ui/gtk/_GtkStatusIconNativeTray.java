@@ -22,11 +22,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Pointer;
 
-import dorkbox.javaFx.JavaFx;
 import dorkbox.jna.linux.GEventCallback;
 import dorkbox.jna.linux.GObject;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.jna.linux.structs.GdkEventButton;
+import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -193,7 +193,7 @@ class _GtkStatusIconNativeTray extends Tray {
             //     BUT   this is REQUIRED when running JavaFX or Gnome For unknown reasons, the title isn't pushed to GTK, so our
             //           gnome-shell extension cannot see our tray icon -- so naturally, it won't move it to the "top" area and
             //           we appear broken.
-            if (JavaFx.isLoaded || Tray.gtkGnomeWorkaround) {
+            if (RenderProvider.isJavaFX() || Tray.gtkGnomeWorkaround) {
                 Gtk2.gtk_status_icon_set_name(trayIcon, trayName);
             }
         });

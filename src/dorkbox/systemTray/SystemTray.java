@@ -40,15 +40,13 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dorkbox.javaFx.JavaFx;
 import dorkbox.jna.linux.AppIndicator;
 import dorkbox.jna.linux.Gtk;
 import dorkbox.jna.linux.GtkCheck;
 import dorkbox.jna.linux.GtkEventDispatch;
+import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.os.OS;
 import dorkbox.os.OSUtil;
-import dorkbox.propertyLoader.Property;
-import dorkbox.swt.Swt;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.systemTray.util.AutoDetectTrayType;
 import dorkbox.systemTray.util.EventDispatch;
@@ -87,7 +85,15 @@ class SystemTray {
         WindowsNative,
         Swing,
         Osx,
-        Awt
+        Awt;
+
+        public TrayType safeFromString(String trayName) {
+            try {
+                return valueOf(trayName);
+            } catch (Exception e) {
+                return AutoDetect;
+            }
+        }
     }
 
     /** Enables auto-detection for the system tray. This should be mostly successful. */
@@ -138,7 +144,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "4.1";
+        return "4.2";
     }
 
     static {
@@ -196,6 +202,18 @@ class SystemTray {
             return null;
         }
 
+        // if we have a render provider, we must make sure that it is supported
+        if (!RenderProvider.isSupported()) {
+            // versions of SWT older than v4.4, are INCOMPATIBLE with us.
+            // Of note, v4.3 is the "last released" version of SWT by eclipse AND IT WILL NOT WORK!!
+            // for NEWER versions of SWT via maven, use http://maven-eclipse.github.io/maven
+            if (RenderProvider.isSwt()) {
+                logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+");
+            }
+
+            return null;
+        }
+
         // if we already have a system tray by this name, return it (do not allow duplicate tray names)
         SystemTray existingTray = AutoDetectTrayType.getInstance(trayName);
         if (existingTray != null) {
@@ -224,30 +242,19 @@ class SystemTray {
             }
         }
         else if (isMacOsX) {
-            if (Swt.isLoaded) {
-                // versions of SWT older than v4.4, are INCOMPATIBLE with us.
-                // Of note, v4.3 is the "last released" version of SWT by eclipse AND IT WILL NOT WORK!!
-                // for NEWER versions of SWT via maven, use http://maven-eclipse.github.io/maven
-                if (Swt.getVersion() < 4430) {
-                    logger.error("Unable to use currently loaded version of SWT, it is TOO OLD. Please use version 4.4+");
-
-                    return null;
-                }
-
+            if (RenderProvider.isSwt() && FORCE_TRAY_TYPE == TrayType.Swing) {
                 // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
                 // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
-                if (FORCE_TRAY_TYPE == TrayType.Swing) {
-                    if (AUTO_FIX_INCONSISTENCIES) {
-                        logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
+                if (AUTO_FIX_INCONSISTENCIES) {
+                    logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
 
-                        FORCE_TRAY_TYPE = TrayType.Awt;
-                    }
-                    else {
-                        logger.error("Unable to load Swing + SWT (for all versions of Java). " +
-                                     "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.\"");
+                    FORCE_TRAY_TYPE = TrayType.Awt;
+                }
+                else {
+                    logger.error("Unable to load Swing + SWT (for all versions of Java). " +
+                                 "Please set `SystemTray.AUTO_FIX_INCONSISTENCIES=true;` to automatically fix this problem.\"");
 
-                        return null;
-                    }
+                    return null;
                 }
             }
 
@@ -267,7 +274,7 @@ class SystemTray {
             if (loadedGtkVersion == 2) {
                 if (AUTO_FIX_INCONSISTENCIES) {
                     if (!FORCE_GTK2) {
-                        if (JavaFx.isLoaded) {
+                        if (RenderProvider.isJavaFX()) {
                             // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                             // see
                             // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -293,7 +300,7 @@ class SystemTray {
                                 }
                             }
                         }
-                        else if (Swt.isLoaded && !Swt.isGtk3) {
+                        else if (RenderProvider.isSwt() && RenderProvider.getGtkVersion() != 3) {
                             // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                             // System.setProperty("SWT_GTK3", "0"); // this doesn't have any affect on newer versions of SWT
 
@@ -331,7 +338,7 @@ class SystemTray {
             }
             else if (loadedGtkVersion == 3) {
                 if (AUTO_FIX_INCONSISTENCIES) {
-                    if (JavaFx.isLoaded) {
+                    if (RenderProvider.isJavaFX()) {
                         // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                         // see
                         // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -357,7 +364,7 @@ class SystemTray {
                             }
                         }
                     }
-                    else if (Swt.isLoaded) {
+                    else if (RenderProvider.isSwt()) {
                         if (FORCE_GTK2) {
                             FORCE_GTK2 = false;
                             logger.warn("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
@@ -394,7 +401,7 @@ class SystemTray {
                 } else {
                     // !AUTO_FIX_INCONSISTENCIES
 
-                    if (JavaFx.isLoaded) {
+                    if (RenderProvider.isJavaFX()) {
                         // JavaFX Java7,8 is GTK2 only. Java9 can MAYBE have it be GTK3 if `-Djdk.gtk.version=3` is specified
                         // see
                         // http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
@@ -417,7 +424,7 @@ class SystemTray {
                             return null;
                         }
                     }
-                    else if (Swt.isLoaded) {
+                    else if (RenderProvider.isSwt()) {
                         // Necessary for us to work with SWT based on version info. We can try to set us to be compatible with whatever it is set to
                         if (FORCE_GTK2) {
                             logger.error("Unable to use the SystemTray when SWT is configured to use GTK3 and the SystemTray is configured to use " +
@@ -440,7 +447,7 @@ class SystemTray {
                 // this is only a big deal for us if we are DIFFERENT than what SWING is using. Since swing isn't always used
                 // (ie: headless/javaFX can also be used), we ** DO NOT ** want to accidentally load swing if we don't have to
 
-                if (!JavaFx.isLoaded && !Swt.isLoaded) {
+                if (RenderProvider.isDefault()) {
                     // we have to make sure that SWING/GTK stuff is GTK2!
                     // THIS IS NOT DOCUMENTED ANYWHERE...
                     // NOTE: Refer to bug 4912613 for details regarding support for GTK 2.0/2.2
@@ -495,11 +502,8 @@ class SystemTray {
 
 
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
-            logger.debug("Is JavaFX detected? {}", JavaFx.isLoaded);
-            logger.debug("Is SWT detected? {}", Swt.isLoaded);
-            if (Swt.isLoaded) {
-                logger.debug("SWT version: {}", Swt.getVersion());
-            }
+            logger.debug("Is JavaFX detected? {}", RenderProvider.isJavaFX());
+            logger.debug("Is SWT detected? {}", RenderProvider.isSwt());
 
             logger.debug("Java Swing L&F: {}", UIManager.getLookAndFeel().getID());
             if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
@@ -720,7 +724,7 @@ class SystemTray {
 
 
 
-            if ((JavaFx.isLoaded || Swt.isLoaded) && SwingUtilities.isEventDispatchThread()) {
+            if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
                 // This WILL NOT WORK. Let the dev know
                 logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
                              "(EDT). Something is seriously wrong.");
@@ -767,7 +771,7 @@ class SystemTray {
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
             // AWT/Swing must be constructed on the EDT however...
-            if (!JavaFx.isLoaded && !Swt.isLoaded &&
+            if (RenderProvider.isDefault() &&
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
