@@ -258,6 +258,9 @@ class AutoDetectTrayType {
                     else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
                         return selectType(TrayType.Gtk);
                     }
+                    else if ("awesome".equalsIgnoreCase(GDM)) {
+                        return selectType(TrayType.Gtk);
+                    }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
                         // NOTE: popOS can also get here. It will also version check (since it's ubuntu-like)
                         int[] version = OSUtil.Linux.getUbuntuVersion();
