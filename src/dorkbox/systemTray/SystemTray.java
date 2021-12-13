@@ -90,54 +90,48 @@ class SystemTray {
         Awt
     }
 
-    @Property
     /** Enables auto-detection for the system tray. This should be mostly successful. */
-    public static boolean AUTO_SIZE = true;
+    public static volatile boolean AUTO_SIZE = OS.getBoolean(SystemTray.class.getCanonicalName() + ".AUTO_SIZE", true);
 
-    @Property
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static boolean FORCE_GTK2 = false;
+    public static volatile boolean FORCE_GTK2 = OS.getBoolean(SystemTray.class.getCanonicalName() + ".FORCE_GTK2", false);
 
-    @Property
     /** Prefer to load GTK3 before trying to load GTK2. */
-    public static boolean PREFER_GTK3 = true;
+    public static volatile boolean PREFER_GTK3 = OS.getBoolean(SystemTray.class.getCanonicalName() + ".PREFER_GTK3", true);
 
-    @Property
     /**
      * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, WindowsNotifyIcon, Swing, or AWT.
      * <p>
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
-    public static TrayType FORCE_TRAY_TYPE = TrayType.AutoDetect;
+    public static volatile TrayType FORCE_TRAY_TYPE = TrayType.AppIndicator.safeFromString(
+            OS.getProperty(SystemTray.class.getCanonicalName() + ".FORCE_TRAY_TYPE", TrayType.AutoDetect.name()));
 
-    @Property
     /**
      * Allows the SystemTray logic to resolve OS inconsistencies for the SystemTray.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static boolean AUTO_FIX_INCONSISTENCIES = true;
+    public static volatile boolean AUTO_FIX_INCONSISTENCIES = OS.getBoolean(SystemTray.class.getCanonicalName() +
+                                                                            ".AUTO_FIX_INCONSISTENCIES", true);
 
-    @Property
     /**
      * Allows the SystemTray logic to ignore if root is detected. Usually when running as root it won't work (because of how DBUS
      * operates), but in rare situations, it might work.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static boolean ENABLE_ROOT_CHECK = true;
+    public static volatile boolean ENABLE_ROOT_CHECK = OS.getBoolean(SystemTray.class.getCanonicalName() + ".ENABLE_ROOT_CHECK", true);
 
-    @Property
-    /**
-     * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
-     */
-    public static SwingUIFactory SWING_UI = null;
-
-    @Property
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static boolean DEBUG = false;
+    public static volatile boolean DEBUG = OS.getBoolean(SystemTray.class.getCanonicalName() + ".DEBUG", false);
+
+    /**
+     * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
+     */
+    public static volatile SwingUIFactory SWING_UI = null;
 
     /**
      * Gets the version number.
