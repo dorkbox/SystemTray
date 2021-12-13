@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
@@ -36,6 +37,9 @@ import dorkbox.util.ImageUtil;
 
 public
 class ImageResizeUtil {
+
+    // very simple regex.
+    private static final Pattern JAR_URL_REGEX = Pattern.compile(".*.jar!.*");
 
     // - appIndicator/gtk require strings (which is the path)
     // - swing version loads as an image (which can be stream or path, we use path)
@@ -71,6 +75,7 @@ class ImageResizeUtil {
         }
 
         try {
+            @SuppressWarnings("ConstantConditions")
             InputStream imageStream = ImageResizeUtil.class.getResource("error_32.png").openStream();
 
             // have to resize the image to be whatever size we specify
@@ -114,16 +119,34 @@ class ImageResizeUtil {
             SystemTray.logger.debug("Resizing image to " + size + " : " + fileName);
         }
 
+        InputStream inputStream = null;
         try {
-            FileInputStream fileInputStream = new FileInputStream(fileName);
-            File file = resizeAndCache(size, fileInputStream);
-            fileInputStream.close();
+            // if this is a JAR path, we have to load that. It is entirely possible that the PATH to a
+            // resource (instead of the resource itself) is passed in.
 
-            return file;
+
+            if (JAR_URL_REGEX.matcher(fileName)
+                             .matches()) {
+                // this is a JAR path, not a normal string!
+
+                URL jarResource = new URL(fileName);
+                inputStream = jarResource.openStream();
+            } else {
+                inputStream = new FileInputStream(fileName);
+            }
+
+            return resizeAndCache(size, inputStream);
         } catch (Exception e) {
             // have to serve up the error image instead.
             SystemTray.logger.error("Error reading image. Using error icon instead", e);
             return getErrorImage(size);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException ignored) {
+                }
+            }
         }
     }
 
