@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import dorkbox.os.OS;
-import dorkbox.os.OSUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.SystemTray.TrayType;
 import dorkbox.systemTray.Tray;
@@ -118,24 +117,24 @@ class AutoDetectTrayType {
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public static
     Class<? extends Tray> get(final String trayName) {
-        if (OS.isWindows()) {
+        if (OS.INSTANCE.isWindows()) {
             return selectType(TrayType.WindowsNative);
         }
-        else if (OS.isMacOsX()) {
+        else if (OS.INSTANCE.isMacOsX()) {
             // macos can ONLY use the OSXStatusItem or AWT if you want it to follow the L&F of the OS. It is the default.
             return selectType(TrayType.Osx);
         }
-        else if ((OS.isLinux() || OS.isUnix())) {
+        else if ((OS.INSTANCE.isLinux() || OS.INSTANCE.isUnix())) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
 
             // For funsies, SyncThing did a LOT of work on compatibility (unfortunate for us) in python.
             // https://github.com/syncthing/syncthing-gtk/blob/b7a3bc00e3bb6d62365ae62b5395370f3dcc7f55/syncthing_gtk/statusicon.py
 
             // quick check, because we know that unity uses app-indicator. Maybe REALLY old versions do not. We support 14.04 LTE at least
-            OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
+            OS.DesktopEnv.Env de = OS.DesktopEnv.INSTANCE.getEnv();
 
             if (DEBUG) {
-                logger.debug("Currently using the '{}' desktop environment" + OS.LINE_SEPARATOR + OSUtil.Linux.getInfo(), de);
+                logger.debug("Currently using the '{}' desktop environment" + OS.INSTANCE.getLINE_SEPARATOR() + OS.Linux.INSTANCE.getInfo(), de);
             }
 
             switch (de) {
@@ -150,7 +149,7 @@ class AutoDetectTrayType {
                         }
 
                         // see: https://github.com/dorkbox/SystemTray/issues/125
-                        if (OSUtil.Linux.isPop()) {
+                        if (OS.Linux.INSTANCE.isPop()) {
                             GDM = "ubuntu";   // special case for popOS! (it is ubuntu-like, but does not set GDMSESSION)
 
                             if (DEBUG) {
@@ -165,7 +164,7 @@ class AutoDetectTrayType {
 
                     if ("gnome".equalsIgnoreCase(GDM) || "default".equalsIgnoreCase(GDM)) {
                         // UGH. At least ubuntu un-butchers gnome.
-                        if (OSUtil.Linux.isUbuntu()) {
+                        if (OS.Linux.INSTANCE.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
                             return selectType(TrayType.Gtk);
                         }
@@ -181,7 +180,7 @@ class AutoDetectTrayType {
                         //   >= 3.26 - (3.26 removed the legacy tray) app-indicator icons via shell extensions + libappindicator work
 
 
-                        String gnomeVersion = OSUtil.DesktopEnv.getGnomeVersion();
+                        String gnomeVersion = OS.DesktopEnv.INSTANCE.getGnomeVersion();
                         if (gnomeVersion == null) {
                             // this shouldn't ever happen!
 
@@ -263,7 +262,7 @@ class AutoDetectTrayType {
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
                         // NOTE: popOS can also get here. It will also version check (since it's ubuntu-like)
-                        int[] version = OSUtil.Linux.getUbuntuVersion();
+                        int[] version = OS.Linux.INSTANCE.getUbuntuVersion();
 
                         // ubuntu 17.10+ uses the NEW gnome DE, which screws up previous Ubuntu workarounds, since it's now mostly Gnome
                         if (version[0] == 17 && version[1] == 10) {
@@ -289,7 +288,7 @@ class AutoDetectTrayType {
                 case KDE: {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
 
-                    double plasmaVersion = OSUtil.DesktopEnv.getPlasmaVersion();
+                    double plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersion();
 
                     if (DEBUG) {
                         logger.debug("KDE Plasma Version: {}", plasmaVersion);
@@ -392,12 +391,12 @@ class AutoDetectTrayType {
                 }
             }
 
-            if (OS.isLinux()) {
+            if (OS.INSTANCE.isLinux()) {
                 // now just blanket query what we are to guess...
-                if (OSUtil.Linux.isUbuntu()) {
+                if (OS.Linux.INSTANCE.isUbuntu()) {
                     return selectType(TrayType.AppIndicator);
                 }
-                else if (OSUtil.Linux.isFedora()) {
+                else if (OS.Linux.INSTANCE.isFedora()) {
                     return selectType(TrayType.AppIndicator);
                 } else {
                     // AppIndicators are now the "default" for most linux distro's.

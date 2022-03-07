@@ -46,7 +46,6 @@ import dorkbox.jna.linux.GtkCheck;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.os.OS;
-import dorkbox.os.OSUtil;
 import dorkbox.systemTray.ui.swing.SwingUIFactory;
 import dorkbox.systemTray.util.AutoDetectTrayType;
 import dorkbox.systemTray.util.EventDispatch;
@@ -97,13 +96,13 @@ class SystemTray {
     }
 
     /** Enables auto-detection for the system tray. This should be mostly successful. */
-    public static volatile boolean AUTO_SIZE = OS.getBoolean(SystemTray.class.getCanonicalName() + ".AUTO_SIZE", true);
+    public static volatile boolean AUTO_SIZE = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".AUTO_SIZE", true);
 
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static volatile boolean FORCE_GTK2 = OS.getBoolean(SystemTray.class.getCanonicalName() + ".FORCE_GTK2", false);
+    public static volatile boolean FORCE_GTK2 = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".FORCE_GTK2", false);
 
     /** Prefer to load GTK3 before trying to load GTK2. */
-    public static volatile boolean PREFER_GTK3 = OS.getBoolean(SystemTray.class.getCanonicalName() + ".PREFER_GTK3", true);
+    public static volatile boolean PREFER_GTK3 = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".PREFER_GTK3", true);
 
     /**
      * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, WindowsNotifyIcon, Swing, or AWT.
@@ -111,14 +110,14 @@ class SystemTray {
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
     public static volatile TrayType FORCE_TRAY_TYPE = TrayType.AppIndicator.safeFromString(
-            OS.getProperty(SystemTray.class.getCanonicalName() + ".FORCE_TRAY_TYPE", TrayType.AutoDetect.name()));
+            OS.INSTANCE.getProperty(SystemTray.class.getCanonicalName() + ".FORCE_TRAY_TYPE", TrayType.AutoDetect.name()));
 
     /**
      * Allows the SystemTray logic to resolve OS inconsistencies for the SystemTray.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static volatile boolean AUTO_FIX_INCONSISTENCIES = OS.getBoolean(SystemTray.class.getCanonicalName() +
+    public static volatile boolean AUTO_FIX_INCONSISTENCIES = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() +
                                                                             ".AUTO_FIX_INCONSISTENCIES", true);
 
     /**
@@ -127,12 +126,12 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static volatile boolean ENABLE_ROOT_CHECK = OS.getBoolean(SystemTray.class.getCanonicalName() + ".ENABLE_ROOT_CHECK", true);
+    public static volatile boolean ENABLE_ROOT_CHECK = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".ENABLE_ROOT_CHECK", true);
 
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static volatile boolean DEBUG = OS.getBoolean(SystemTray.class.getCanonicalName() + ".DEBUG", false);
+    public static volatile boolean DEBUG = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".DEBUG", false);
 
     /**
      * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
@@ -225,9 +224,9 @@ class SystemTray {
 
 
 
-        boolean isNix = OS.isLinux() || OS.isUnix();
-        boolean isWindows = OS.isWindows();
-        boolean isMacOsX = OS.isMacOsX();
+        boolean isNix = OS.INSTANCE.isLinux() || OS.INSTANCE.isUnix();
+        boolean isWindows = OS.INSTANCE.isWindows();
+        boolean isMacOsX = OS.INSTANCE.isMacOsX();
 
 
         // Windows can ONLY use Swing (non-native) or WindowsNotifyIcon (native) - AWT looks absolutely horrid and is not an option
@@ -281,7 +280,7 @@ class SystemTray {
                             // https://docs.oracle.com/javafx/2/system_requirements_2-2-3/jfxpub-system_requirements_2-2-3.htm
                             // from the page: JavaFX 2.2.3 for Linux requires gtk2 2.18+.
 
-                            if (OS.javaVersion < 11) {
+                            if (OS.INSTANCE.getJavaVersion() < 11) {
                                 // we must use GTK2, because JavaFX is GTK2 (java9 had javafx, but java11 DOES NOT)
                                 FORCE_GTK2 = true;
                                 if (DEBUG) {
@@ -347,7 +346,7 @@ class SystemTray {
 
                         if (FORCE_GTK2) {
                             // if we are java9, then we can change it -- otherwise we cannot.
-                            if (OS.javaVersion >= 9) {
+                            if (OS.INSTANCE.getJavaVersion() >= 9) {
                                 FORCE_GTK2 = false;
                                 logger.warn("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
                                             "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
@@ -410,7 +409,7 @@ class SystemTray {
 
                         if (FORCE_GTK2) {
                             // if we are java9, then we can change it -- otherwise we cannot.
-                            if (OS.javaVersion == 9) {
+                            if (OS.INSTANCE.getJavaVersion() >= 9) {
                                 logger.error("Unable to use the SystemTray when JavaFX is configured to use GTK3 and the SystemTray is " +
                                              "configured to use GTK2. Please configure JavaFX to use GTK2 (via `System.setProperty(\"jdk.gtk.version\", \"3\");`) " +
                                              "before JavaFX is initialized, or set `SystemTray.FORCE_GTK2=false;`  Aborting.");
@@ -513,7 +512,7 @@ class SystemTray {
                 logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
             }
 
-            if (OS.isLinux()) {
+            if (OS.INSTANCE.isLinux()) {
                 logger.debug("Force GTK2: {}", FORCE_GTK2);
                 logger.debug("Prefer GTK3: {}", PREFER_GTK3);
             }
@@ -533,7 +532,7 @@ class SystemTray {
         }
 
         if (trayType == null) {
-            if (OSUtil.DesktopEnv.isChromeOS()) {
+            if (OS.DesktopEnv.INSTANCE.isChromeOS()) {
                 logger.error("ChromeOS detected and it is not supported. Aborting.");
             }
 
@@ -546,9 +545,9 @@ class SystemTray {
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
             if (isTrayType(trayType, TrayType.Gtk)) {
-                OSUtil.DesktopEnv.Env de = OSUtil.DesktopEnv.get();
+                OS.DesktopEnv.Env de = OS.DesktopEnv.INSTANCE.getEnv();
 
-                if (OSUtil.Linux.isUbuntu() && OSUtil.DesktopEnv.isUnity(de)) {
+                if (OS.Linux.INSTANCE.isUbuntu() && OS.DesktopEnv.INSTANCE.isUnity(de)) {
                     if (AUTO_FIX_INCONSISTENCIES) {
                         // GTK2 does not support AppIndicators!
                         if (Gtk.isGtk2) {
@@ -573,8 +572,8 @@ class SystemTray {
                     }
                 }
 
-                if (de == OSUtil.DesktopEnv.Env.Gnome) {
-                    boolean hasWeirdOsProblems = OSUtil.Linux.isKali() || (OSUtil.Linux.isFedora());
+                if (de == OS.DesktopEnv.Env.Gnome) {
+                    boolean hasWeirdOsProblems = OS.Linux.INSTANCE.isKali() || (OS.Linux.INSTANCE.isFedora());
                     if (hasWeirdOsProblems) {
                         // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
                         PREFER_GTK3 = false;
@@ -587,7 +586,7 @@ class SystemTray {
             }
 
             if (isTrayType(trayType, TrayType.AppIndicator)) {
-                if (SystemTray.ENABLE_ROOT_CHECK &&  OSUtil.Linux.isRoot()) {
+                if (SystemTray.ENABLE_ROOT_CHECK && OS.Linux.INSTANCE.isRoot()) {
                     // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
                     if (AUTO_FIX_INCONSISTENCIES) {
                         trayType = selectType(TrayType.Swing);
@@ -603,7 +602,7 @@ class SystemTray {
                 }
 
 
-                if (OSUtil.Linux.isElementaryOS() && OSUtil.Linux.getElementaryOSVersion()[0] >= 5) {
+                if (OS.Linux.INSTANCE.isElementaryOS() && OS.Linux.INSTANCE.getElementaryOSVersion()[0] >= 5) {
                     // in version 5.0+, they REMOVED support for appindicators. You can add it back via some extra work.
                     // see: https://git.dorkbox.com/dorkbox/elementary-indicators
 
@@ -658,12 +657,12 @@ class SystemTray {
                         // YIKES. AppIndicator couldn't load.
 
                         String installer = AppIndicator.getInstallString(GtkCheck.isGtk2);
-                        String packageInstall = OSUtil.Linux.PackageManager.get().installString() + " " + installer;
+                        String packageInstall = OS.Linux.PackageManager.INSTANCE.getType().getInstallString() + " " + installer;
                         String installString = "Please install " + installer + ", for example: '" + packageInstall + "'.";
 
 
                         // can we fallback to swing? KDE does not work for this...
-                        if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported() && !OSUtil.DesktopEnv.isKDE()) {
+                        if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported() && !OS.DesktopEnv.INSTANCE.isKDE()) {
                             trayType = selectType(TrayType.Swing);
 
                             logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");

@@ -247,7 +247,7 @@ class _SwingTray extends Tray {
                 super.remove();
 
 
-                if (OS.isLinux() || OS.isUnix()) {
+                if (OS.INSTANCE.isLinux() || OS.INSTANCE.isUnix()) {
                     // does not need to be called on the dispatch (it does that). Startup happens in the SystemTray (in a special block),
                     // because we MUST startup the system tray BEFORE to access GTK before we create the swing version (to get size info)
                     GtkEventDispatch.shutdownGui();

@@ -43,7 +43,9 @@ class EventDispatch {
     void runLater(final Runnable runnable) {
         synchronized(EventDispatch.class) {
             if (eventDispatchExecutor == null) {
-                eventDispatchExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("SystemTrayEventDispatch", THREAD_PRIORITY, false));
+                eventDispatchExecutor = Executors.newSingleThreadExecutor(
+                        new NamedThreadFactory("SystemTrayEventDispatch",
+                                               Thread.currentThread().getThreadGroup(), THREAD_PRIORITY, false));
             }
         }
 

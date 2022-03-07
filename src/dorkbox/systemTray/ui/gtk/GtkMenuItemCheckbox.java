@@ -28,7 +28,7 @@ import dorkbox.jna.linux.GCallback;
 import dorkbox.jna.linux.GObject;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.jna.linux.GtkTheme;
-import dorkbox.os.OSUtil;
+import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
@@ -51,10 +51,10 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
         if (SystemTray.AUTO_FIX_INCONSISTENCIES &&
             _AppIndicatorNativeTray.isLoaded &&
-            OSUtil.Linux.isUbuntu()) {
+            OS.Linux.INSTANCE.isUbuntu()) {
 
             // Ubuntu < 17.10 (so 14.04, 14.10, 15.04, 15.10, 16.04, 16.10, 17.04) SCREW UP checkboxes. Ubuntu 17.10 uses gnome-shell properly and thus works correctly.
-            int[] version = OSUtil.Linux.getUbuntuVersion();
+            int[] version = OS.Linux.INSTANCE.getUbuntuVersion();
             useFakeCheckMark = (version[0] < 17 || (version[0] == 17 && version[1] == 4));
         } else {
             useFakeCheckMark = false;

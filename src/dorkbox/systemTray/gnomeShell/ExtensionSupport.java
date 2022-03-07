@@ -36,7 +36,6 @@ import java.util.zip.ZipInputStream;
 import dorkbox.executor.Executor;
 import dorkbox.executor.processResults.SyncProcessResult;
 import dorkbox.os.OS;
-import dorkbox.os.OSUtil;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.IO;
 
@@ -278,7 +277,7 @@ class ExtensionSupport {
             FileWriter fileWriter = new FileWriter(outputFile);
             InputStreamReader inputStreamReader = new InputStreamReader(reader);
             try {
-                String lineSeparator = OS.LINE_SEPARATOR;
+                String lineSeparator = OS.INSTANCE.getLINE_SEPARATOR();
                 BufferedReader bin = new BufferedReader(inputStreamReader);
                 String line;
 
@@ -390,7 +389,7 @@ class ExtensionSupport {
 
     protected static
     String getGnomeVersion() {
-        String gnomeVersion = OSUtil.DesktopEnv.getGnomeVersion();
+        String gnomeVersion = OS.DesktopEnv.INSTANCE.getGnomeVersion();
         if (gnomeVersion == null) {
             return null;
         }

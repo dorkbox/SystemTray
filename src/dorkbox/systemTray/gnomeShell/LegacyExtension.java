@@ -20,7 +20,7 @@ import static dorkbox.systemTray.SystemTray.logger;
 import java.io.File;
 import java.util.List;
 
-import dorkbox.os.OSUtil;
+import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
 
 @SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
@@ -36,7 +36,7 @@ class LegacyExtension extends ExtensionSupport {
      */
     public static
     void install(final String trayName) {
-        if (OSUtil.DesktopEnv.isWayland()) {
+        if (OS.DesktopEnv.INSTANCE.isWayland()) {
             if (SystemTray.DEBUG) {
                 SystemTray.logger.debug("Gnome-shell legacy extension not possible with wayland.");
             }
@@ -119,12 +119,12 @@ class LegacyExtension extends ExtensionSupport {
 
     public static
     void unInstall() {
-        if (OSUtil.DesktopEnv.isWayland()) {
-            if (OSUtil.Linux.isUbuntu() && OSUtil.Linux.getUbuntuVersion()[0] == 17) {
+        if (OS.DesktopEnv.INSTANCE.isWayland()) {
+            if (OS.Linux.INSTANCE.isUbuntu() && OS.Linux.INSTANCE.getUbuntuVersion()[0] == 17) {
                 // ubuntu 17.04 is NOT WAYLAND (it's MIR) and ubuntu 17.10 is WAYLAND (and doesn't support this)
                 return;
             }
-            else if (OSUtil.Linux.isFedora()) {
+            else if (OS.Linux.INSTANCE.isFedora()) {
                 // fedora doesn't support this
                 return;
 

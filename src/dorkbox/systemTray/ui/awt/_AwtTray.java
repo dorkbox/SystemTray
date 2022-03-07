@@ -85,7 +85,7 @@ class _AwtTray extends Tray {
 
                     boolean enabled = menuItem.getEnabled();
 
-                    if (OS.isMacOsX()) {
+                    if (OS.INSTANCE.isMacOsX()) {
                         if (keepAliveThread != null) {
                             synchronized (keepAliveLock) {
                                 keepAliveLock.notifyAll();

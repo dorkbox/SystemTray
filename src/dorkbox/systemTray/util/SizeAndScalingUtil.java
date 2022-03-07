@@ -34,7 +34,7 @@ class SizeAndScalingUtil {
 
     public static
     double getDpiScaleForMouseClick(int mousePositionX, int mousePositionY) {
-        if (OS.isWindows()) {
+        if (OS.INSTANCE.isWindows()) {
             // manual scaling is only necessary for windows
             return SizeAndScalingWindows.getDpiScaleForMouseClick(mousePositionX, mousePositionY);
         } else {
@@ -46,13 +46,13 @@ class SizeAndScalingUtil {
     public static
     int getTrayImageSize() {
         if (TRAY_SIZE == 0) {
-            if (OS.isLinux()) {
+            if (OS.INSTANCE.isLinux()) {
                 TRAY_SIZE = SizeAndScalingLinux.getTrayImageSize();
             }
-            else if (OS.isMacOsX()) {
+            else if (OS.INSTANCE.isMacOsX()) {
                 TRAY_SIZE = SizeAndScalingMacOS.getTrayImageSize();
             }
-            else if (OS.isWindows()) {
+            else if (OS.INSTANCE.isWindows()) {
                 TRAY_SIZE = SizeAndScalingWindows.getTrayImageSize();
             } else {
                 // reasonable default
@@ -71,20 +71,20 @@ class SizeAndScalingUtil {
     public static
     int getMenuImageSize(final Class<? extends Tray> trayType) {
         if (TRAY_MENU_SIZE == 0) {
-            if (OS.isMacOsX()) {
+            if (OS.INSTANCE.isMacOsX()) {
                 TRAY_MENU_SIZE = SizeAndScalingMacOS.getMenuImageSize();
             }
             else if ((trayType == _SwingTray.class) || (trayType == _WindowsNativeTray.class)) {
                 // Java does not scale the menu item IMAGE **AT ALL**, we must provide the correct size to begin with
 
-                if (OS.isWindows()) {
+                if (OS.INSTANCE.isWindows()) {
                     TRAY_MENU_SIZE = SizeAndScalingWindows.getMenuImageSize();
                 } else {
                     // generic method to do this, but not as accurate
                     TRAY_MENU_SIZE = getMenuImageSizeGeneric();
                 }
             }
-            else if (OS.isLinux()) {
+            else if (OS.INSTANCE.isLinux()) {
                 TRAY_MENU_SIZE = SizeAndScalingLinux.getMenuImageSize();
             } else {
                 // reasonable default

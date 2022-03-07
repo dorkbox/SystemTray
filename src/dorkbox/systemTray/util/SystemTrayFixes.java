@@ -73,10 +73,10 @@ class SystemTrayFixes {
     boolean isSwingTrayLoaded() {
         String className;
 
-        if (OS.isWindows()) {
+        if (OS.INSTANCE.isWindows()) {
             className = "sun.awt.windows.WTrayIconPeer";
         }
-        else if (OS.isMacOsX()){
+        else if (OS.INSTANCE.isMacOsX()){
             className = "sun.lwawt.macosx.CTrayIcon";
         }
         else {
@@ -127,7 +127,7 @@ class SystemTrayFixes {
         }
 
         // ONLY java <= 8
-        if (OS.javaVersion > 8) {
+        if (OS.INSTANCE.getJavaVersion() > 8) {
             // there are problems with java 9+
             return;
         }
@@ -270,7 +270,7 @@ class SystemTrayFixes {
         }
 
         // ONLY java <= 8
-        if (OS.javaVersion > 8) {
+        if (OS.INSTANCE.getJavaVersion() > 8) {
             // there are problems with java 9+
             return;
         }
@@ -467,7 +467,7 @@ class SystemTrayFixes {
         }
 
         // ONLY java <= 8
-        if (OS.javaVersion > 8) {
+        if (OS.INSTANCE.getJavaVersion() > 8) {
             // there are problems with java 9+
             return;
         }
