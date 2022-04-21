@@ -3,14 +3,14 @@ module dorkbox.systemtray {
     exports dorkbox.systemTray.peer;
     exports dorkbox.systemTray.util;
 
-    requires dorkbox.executor;
-    requires dorkbox.updates;
-    requires dorkbox.utilities;
+    requires transitive dorkbox.executor;
+    requires transitive dorkbox.updates;
+    requires transitive dorkbox.utilities;
 
-    requires org.slf4j;
+    requires transitive org.slf4j;
 
-    requires com.sun.jna;
-    requires com.sun.jna.platform;
+    requires transitive com.sun.jna;
+    requires transitive com.sun.jna.platform;
 
     // when running javaFX
     // requires static javafx.graphics;
@@ -21,7 +21,8 @@ module dorkbox.systemtray {
     // requires static org.eclipse.swt.win32.win32.x86_64;
     // requires static org.eclipse.swt.cocoa.macosx.x86_64;
 
-    requires java.desktop;
-    requires java.base;
+    requires transitive java.desktop;
     requires kotlin.stdlib;
+
+    requires java.base;
 }

@@ -36,6 +36,7 @@ import javax.swing.ImageIcon;
 import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.WinDef.POINT;
 
+import dorkbox.collections.ArrayMap;
 import dorkbox.jna.windows.HBITMAPWrap;
 import dorkbox.jna.windows.HICONWrap;
 import dorkbox.jna.windows.Listener;
@@ -51,7 +52,6 @@ import dorkbox.systemTray.util.SizeAndScalingUtil;
 import dorkbox.systemTray.util.SizeAndScalingWindows;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.collections.ArrayMap;
 
 
 /**

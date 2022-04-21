@@ -148,6 +148,12 @@
          Dorkbox LLC
 
        Extra license information
+         - AhoCorasickDoubleArrayTrie - Utilities for use within Java projects
+           [The Apache Software License, Version 2.0]
+           https://github.com/hankcs/AhoCorasickDoubleArrayTrie
+           Copyright 2018
+             hankcs <me@hankcs.com>
+
          - MersenneTwisterFast - 
            [BSD 3-Clause License]
            https://git.dorkbox.com/dorkbox/Utilities

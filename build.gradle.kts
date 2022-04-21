@@ -22,23 +22,21 @@ import java.time.Instant
 ///////////////////////////////
 
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
-gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "1.17"
-    id("com.dorkbox.Licensing") version "2.5.5"
-    id("com.dorkbox.VersionUpdate") version "2.3"
-    id("com.dorkbox.GradlePublish") version "1.10"
-//    id("com.dorkbox.GradleModuleInfo") version "1.0"
+    id("com.dorkbox.GradleUtils") version "2.14"
+    id("com.dorkbox.Licensing") version "2.10"
+    id("com.dorkbox.VersionUpdate") version "2.4"
+    id("com.dorkbox.GradlePublish") version "1.11"
 
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.6.10"
 }
 
 object Extras {
     // set for the project
     const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+"
     const val group = "com.dorkbox"
-    const val version = "4.1"
+    const val version = "4.2"
 
     // set as project.ext
     const val name = "SystemTray"
@@ -46,24 +44,23 @@ object Extras {
     const val vendor = "Dorkbox LLC"
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
+
     val buildDate = Instant.now().toString()
 
     // This is really SWT version 4.xx? no idea how the internal versions are tracked
     // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
     // 3.108.0 is the MOST RECENT version supported by x86. All newer version no longer support x86
     const val swtVersion = "3.115.100"
-    const val jnaVersion = "5.8.0"
+    const val jnaVersion = "5.11.0"
 }
 
 ///////////////////////////////
 /////  assign 'Extras'
 ///////////////////////////////
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
-GradleUtils.fixIntellijPaths()
-GradleUtils.defaultResolutionStrategy()
-// NOTE: Only support java 8 as the lowest target now. We use Multi-Release Jars to provide additional functionality as needed
+GradleUtils.defaults()
 GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
-
+GradleUtils.jpms(JavaVersion.VERSION_1_9)
 
 licensing {
     license(License.APACHE_2) {
@@ -72,21 +69,21 @@ licensing {
         author(Extras.vendor)
 
         extra("Lantern", License.APACHE_2) {
-            it.copyright(2010)
-            it.author("Brave New Software Project, Inc.")
-            it.url("https://github.com/getlantern/lantern")
+            copyright(2010)
+            author("Brave New Software Project, Inc.")
+            url("https://github.com/getlantern/lantern")
         }
         extra("QZTray", License.APACHE_2) {
-            it.copyright(2016)
-            it.author("Tres Finocchiaro")
-            it.author("QZ Industries, LLC")
-            it.url("https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java")
-            it.note("Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.")
+            copyright(2016)
+            author("Tres Finocchiaro")
+            author("QZ Industries, LLC")
+            url("https://github.com/tresf/tray/blob/dorkbox/src/qz/utils/ShellUtilities.java")
+            note("Partial code released as Apache 2.0 for use in the SystemTray project by dorkbox, llc. Used with permission.")
         }
     }
 }
 
-
+val exampleCompile by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 
@@ -103,11 +100,6 @@ fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.appl
 sourceSets {
     main {
         java {
-            setSrcDirs(listOf("src"))
-
-            // want to include java files for the source. 'setSrcDirs' resets includes...
-            include("**/*.java")
-
             resources {
                 setSrcDirs(listOf("src"))
                 include("dorkbox/systemTray/gnomeShell/extension.js",
@@ -119,10 +111,6 @@ sourceSets {
 
     test {
         java {
-            setSrcDirs(listOf("test"))
-            // only want to include java files for the source. 'setSrcDirs' resets includes...
-            include("**/*.java")
-
             srcDir(sourceSets["main"].allJava)
         }
 
@@ -175,18 +163,17 @@ sourceSets {
         compileClasspath += sourceSets.test.get().runtimeClasspath
     }
 }
-
-repositories {
-    mavenLocal() // this must be first!
-    jcenter()
-}
+//
+//repositories {
+//    mavenLocal() // this must be first!
+//    mavenCentral()
+//}
 
 
 ///////////////////////////////
 //////    Task defaults
 ///////////////////////////////
-val jar: Jar by tasks
-jar.apply {
+tasks.jar.get().apply {
     manifest {
         // https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
         attributes["Name"] = Extras.name
@@ -198,25 +185,27 @@ jar.apply {
         attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
         attributes["Implementation-Version"] = Extras.buildDate
         attributes["Implementation-Vendor"] = Extras.vendor
-
-        attributes["Automatic-Module-Name"] = Extras.id
     }
 }
 
 dependencies {
-    implementation("com.dorkbox:Executor:3.1")
-    implementation("com.dorkbox:SwtJavaFx:1.1")
-    implementation("com.dorkbox:Utilities:1.9")
-    implementation("com.dorkbox:Updates:1.0")
-    implementation("com.dorkbox:PropertyLoader:1.0")
+    api("com.dorkbox:Executor:3.9")
+    api("com.dorkbox:Utilities:1.22")
+    api("com.dorkbox:Updates:1.1")
+    api("com.dorkbox:OS:1.0")
 
-    implementation("org.javassist:javassist:3.27.0-GA")
+    api("org.javassist:javassist:3.28.0-GA")
 
-    implementation("net.java.dev.jna:jna:${Extras.jnaVersion}")
-    implementation("net.java.dev.jna:jna-platform:${Extras.jnaVersion}")
+    api("net.java.dev.jna:jna-jpms:${Extras.jnaVersion}")
+    api("net.java.dev.jna:jna-platform-jpms:${Extras.jnaVersion}")
 
-    implementation("org.slf4j:slf4j-api:1.7.30")
-    val log = runtimeOnly("ch.qos.logback:logback-classic:1.2.3")!!
+    // note: this has support for JPMS, so it's required
+    api("org.slf4j:slf4j-api:1.8.0-beta4")
+    val logbackVer = "1.3.0-alpha5"
+
+
+
+
 
 
     // NOTE: we must have GRADLE ITSELF using the Oracle 1.8 JDK (which includes JavaFX).
@@ -263,8 +252,12 @@ dependencies {
         isTransitive = false
     }
 
-    configurations["testCompile"].dependencies += configurations["implementation"].dependencies
-    configurations["testCompile"].dependencies += log
+
+    val log = testImplementation("ch.qos.logback:logback-classic:$logbackVer")!!
+
+//    configurations["testCompile"].dependencies += configurations["implementation"].dependencies
+//    configurations["testCompile"].dependencies += log
+     exampleCompile.dependencies += log
     javaFxExampleCompile.dependencies += log
     swtExampleCompile.dependencies += log
 
@@ -299,31 +292,31 @@ dependencies {
 //    }
 }
 
-///////////////////////////////
-//////    Tasks to launch examples from gradle
-///////////////////////////////
+/////////////////////////////
+////    Tasks to launch examples from gradle
+/////////////////////////////
 task<JavaExec>("example") {
     classpath = sourceSets.test.get().runtimeClasspath
-    main = "dorkbox.TestTray"
+    mainClass.set("dorkbox.TestTray")
     standardInput = System.`in`
 }
 
 task<JavaExec>("javaFxExample") {
     classpath = sourceSets.javaFxExample.runtimeClasspath
-    main = "dorkbox.TestTrayJavaFX"
+    mainClass.set("dorkbox.TestTrayJavaFX")
     standardInput = System.`in`
 }
 
 task<JavaExec>("swtExample") {
     classpath = sourceSets.swtExample.runtimeClasspath
-    main = "dorkbox.TestTraySwt"
+    mainClass.set("dorkbox.TestTraySwt")
     standardInput = System.`in`
 }
 
 
-/////////////////////////////
-////    Jar Tasks
-/////////////////////////////
+///////////////////////////
+//    Jar Tasks
+///////////////////////////
 task<Jar>("jarExample") {
     archiveBaseName.set("SystemTray-Example")
     group = BasePlugin.BUILD_GROUP
@@ -334,7 +327,7 @@ task<Jar>("jarExample") {
     from(sourceSets.test.get().output.classesDirs)
     from(sourceSets.test.get().output.resourcesDir)
 
-    from(configurations["testCompile"].map { if (it.isDirectory) it else zipTree(it) }) {
+    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.DSA", "META-INF/*.SF")
     }
 
@@ -353,9 +346,9 @@ task<Jar>("jarJavaFxExample") {
     from(sourceSets.javaFxExample.output.classesDirs)
     from(sourceSets.javaFxExample.output.resourcesDir)
 
-    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-        exclude("META-INF/*.DSA", "META-INF/*.SF")
-    }
+//    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+//        exclude("META-INF/*.DSA", "META-INF/*.SF")
+//    }
 
 //    from(javaFxDeps.map { if (it.isDirectory) it else zipTree(it) }) {
 //        exclude("META-INF/*.DSA", "META-INF/*.SF")
@@ -378,9 +371,9 @@ task<Jar>("jarSwtExample") {
     from(sourceSets.swtExample.output.classesDirs)
     from(sourceSets.swtExample.output.resourcesDir)
 
-    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-        exclude("META-INF/*.DSA", "META-INF/*.SF")
-    }
+//    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+//        exclude("META-INF/*.DSA", "META-INF/*.SF")
+//    }
 
     // include ALL versions of SWT (so a single jar can run on all OS,
 //    from(linux64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {

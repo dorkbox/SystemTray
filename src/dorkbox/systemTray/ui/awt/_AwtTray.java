@@ -24,12 +24,12 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 
+import dorkbox.collections.ArrayMap;
 import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
-import dorkbox.util.collections.ArrayMap;
 
 /**
  * Class for handling all system tray interaction, via AWT. Pretty much EXCLUSIVELY for on MacOS, because that is the only time this
