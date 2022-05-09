@@ -148,12 +148,6 @@
          Dorkbox LLC
 
        Extra license information
-         - AhoCorasickDoubleArrayTrie - Utilities for use within Java projects
-           [The Apache Software License, Version 2.0]
-           https://github.com/hankcs/AhoCorasickDoubleArrayTrie
-           Copyright 2018
-             hankcs <me@hankcs.com>
-
          - MersenneTwisterFast - 
            [BSD 3-Clause License]
            https://git.dorkbox.com/dorkbox/Utilities
@@ -202,56 +196,6 @@
              Damien Miller (djm@mindrot.org)
            GWT modified version
 
-         - Bias, BinarySearch - 
-           [MIT License]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://github.com/timboudreau/util
-           Copyright 2013
-             Tim Boudreau
-
-         - ConcurrentEntry - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           Copyright 2016
-             bennidi
-             dorkbox
-
-         - Collection Utilities (Array, ArrayMap, BooleanArray, ByteArray, CharArray, FloatArray, IdentityMap, IntArray, IntFloatMap, IntIntMap, IntMap, IntSet, LongArray, LongMap, ObjectFloatMap, ObjectIntMap, ObjectMap, ObjectSet, OrderedMap, OrderedSet) - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
-           Copyright 2011
-             LibGDX
-             Mario Zechner (badlogicgames@gmail.com)
-             Nathan Sweet (nathan.sweet@gmail.com)
-
-         - Predicate - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
-           Copyright 2011
-             LibGDX
-             Mario Zechner (badlogicgames@gmail.com)
-             Nathan Sweet (nathan.sweet@gmail.com)
-             xoppa
-
-         - Select, QuickSelect - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
-           Copyright 2011
-             LibGDX
-             Mario Zechner (badlogicgames@gmail.com)
-             Nathan Sweet (nathan.sweet@gmail.com)
-             Jon Renner
-
-         - TimSort, ComparableTimSort - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
-           Copyright 2008
-             The Android Open Source Project
-
          - Modified hex conversion utility methods - 
            [The Apache Software License, Version 2.0]
            https://git.dorkbox.com/dorkbox/Utilities
@@ -277,12 +221,6 @@
            Copyright 2017
              Pronghorn Technology LLC
              Dorkbox LLC
-
-         - ConcurrentWeakIdentityHashMap - Concurrent WeakIdentity HashMap
-           [The Apache Software License, Version 2.0]
-           https://github.com/spring-projects/spring-loaded/blob/master/springloaded/src/main/java/org/springsource/loaded/support/ConcurrentWeakIdentityHashMap.java
-           Copyright 2016
-             zhanhb
 
          - UrlRewriteFilter - UrlRewriteFilter is a Java Web Filter for any J2EE compliant web application server
            [BSD 3-Clause License]
@@ -366,6 +304,98 @@
            https://github.com/jhalterman/typetools
            Copyright 2022
              Jonathan Halterman and friends
+
+         - Collections - Niche collections to augment what is already available.
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Collections
+           Copyright 2022
+             Dorkbox LLC
+
+           Extra license information
+             - AhoCorasickDoubleArrayTrie - Niche collections to augment what is already available.
+               [The Apache Software License, Version 2.0]
+               https://github.com/hankcs/AhoCorasickDoubleArrayTrie
+               Copyright 2018
+                 hankcs <me@hankcs.com>
+
+             - Bias, BinarySearch - 
+               [MIT License]
+               https://git.dorkbox.com/dorkbox/Collections
+               https://github.com/timboudreau/util
+               Copyright 2013
+                 Tim Boudreau
+
+             - ConcurrentEntry - 
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Collections
+               Copyright 2016
+                 bennidi
+                 dorkbox
+
+             - Collection Utilities (Array, ArrayMap, BooleanArray, ByteArray, CharArray, FloatArray, IdentityMap, IntArray, IntFloatMap, IntIntMap, IntMap, IntSet, LongArray, LongMap, ObjectFloatMap, ObjectIntMap, ObjectMap, ObjectSet, OrderedMap, OrderedSet) - 
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Collections
+               https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+               Copyright 2011
+                 LibGDX
+                 Mario Zechner (badlogicgames@gmail.com)
+                 Nathan Sweet (nathan.sweet@gmail.com)
+
+             - Predicate - 
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Collections
+               https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+               Copyright 2011
+                 LibGDX
+                 Mario Zechner (badlogicgames@gmail.com)
+                 Nathan Sweet (nathan.sweet@gmail.com)
+                 xoppa
+
+             - Select, QuickSelect - 
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Collections
+               https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+               Copyright 2011
+                 LibGDX
+                 Mario Zechner (badlogicgames@gmail.com)
+                 Nathan Sweet (nathan.sweet@gmail.com)
+                 Jon Renner
+
+             - TimSort, ComparableTimSort - 
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Collections
+               https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
+               Copyright 2008
+                 The Android Open Source Project
+
+             - ConcurrentWeakIdentityHashMap - Concurrent WeakIdentity HashMap
+               [The Apache Software License, Version 2.0]
+               https://github.com/spring-projects/spring-loaded/blob/master/springloaded/src/main/java/org/springsource/loaded/support/ConcurrentWeakIdentityHashMap.java
+               Copyright 2016
+                 zhanhb
+
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+             - Updates - Software Update Management
+               [The Apache Software License, Version 2.0]
+               https://git.dorkbox.com/dorkbox/Updates
+               Copyright 2021
+                 Dorkbox LLC
+
+               Extra license information
+                 - Kotlin - 
+                   [The Apache Software License, Version 2.0]
+                   https://github.com/JetBrains/kotlin
+                   Copyright 2020
+                     JetBrains s.r.o. and Kotlin Programming Language contributors
+                   Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+                   See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
          - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 8+
            [The Apache Software License, Version 2.0]
@@ -461,21 +491,6 @@
                    Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
                    See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
-         - Updates - Software Update Management
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Updates
-           Copyright 2021
-             Dorkbox LLC
-
-           Extra license information
-             - Kotlin - 
-               [The Apache Software License, Version 2.0]
-               https://github.com/JetBrains/kotlin
-               Copyright 2020
-                 JetBrains s.r.o. and Kotlin Programming Language contributors
-               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
-               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
-
          - OS - Information about the system, Java runtime, OS, Window Manager, and Desktop Environment.
            [The Apache Software License, Version 2.0]
            https://git.dorkbox.com/dorkbox/OS
@@ -505,6 +520,21 @@
                      JetBrains s.r.o. and Kotlin Programming Language contributors
                    Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
                    See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+         - Updates - Software Update Management
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Updates
+           Copyright 2021
+             Dorkbox LLC
+
+           Extra license information
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
      - Updates - Software Update Management
        [The Apache Software License, Version 2.0]
