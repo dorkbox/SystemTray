@@ -165,7 +165,7 @@ class TestTraySwt {
 
         mainMenu.add(new MenuItem("Temp Directory", e->{
             try {
-                Desktop.browseDirectory(OS.TEMP_DIR.getAbsolutePath());
+                Desktop.browseDirectory(OS.INSTANCE.getTEMP_DIR().getAbsolutePath());
             } catch (IOException e1) {
                 e1.printStackTrace();
             }

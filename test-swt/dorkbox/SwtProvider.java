@@ -65,14 +65,14 @@ public class SwtProvider implements Renderer {
     @Override
     public
     int getGtkVersion() {
-        if (!OS.isLinux()) {
+        if (!OS.INSTANCE.isLinux()) {
             return 0;
         }
 
         // Swt has a property that tells us the version information
         //        "org.eclipse.swt.internal.gtk.version=3.12.2"
         // Only possible Java9+ (so our case, Java11+ since 9 is no longer available, 11 is officially LTS)
-        String version = OS.getProperty("org.eclipse.swt.internal.gtk.version", "2");
+        String version = OS.INSTANCE.getProperty("org.eclipse.swt.internal.gtk.version", "2");
         if ("3".equals(version) || version.startsWith("3.")) {
             return 3;
         } else {

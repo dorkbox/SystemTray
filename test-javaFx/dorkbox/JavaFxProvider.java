@@ -51,7 +51,7 @@ class JavaFxProvider implements Renderer {
     @Override
     public
     int getGtkVersion() {
-        if (!OS.isLinux()) {
+        if (!OS.INSTANCE.isLinux()) {
             return 0;
         }
 
@@ -66,7 +66,7 @@ class JavaFxProvider implements Renderer {
 
         // https://github.com/teamfx/openjfx-9-dev-rt/blob/master/modules/javafx.graphics/src/main/java/com/sun/glass/ui/gtk/GtkApplication.java
 
-        if (OS.javaVersion < 9) {
+        if (OS.INSTANCE.getJavaVersion() < 9) {
             // JavaFX from Oracle Java 8 is GTK2 only. Java9 can have it be GTK3 if -Djdk.gtk.version=3 is specified
             // see http://mail.openjdk.java.net/pipermail/openjfx-dev/2016-May/019100.html
             return 2;
@@ -74,7 +74,7 @@ class JavaFxProvider implements Renderer {
 
 
         // Only possible Java9+ (so our case, Java11+ since 9 is no longer available, 11 is officially LTS)
-        String version = OS.getProperty("jdk.gtk.version", "2");
+        String version = OS.INSTANCE.getProperty("jdk.gtk.version", "2");
         if ("3".equals(version) || version.startsWith("3.")) {
             return 3;
         }
