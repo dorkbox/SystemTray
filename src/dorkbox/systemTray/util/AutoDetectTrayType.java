@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import dorkbox.os.OS;
@@ -37,7 +38,7 @@ import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
 import dorkbox.systemTray.ui.osx._OsxNativeTray;
 import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.systemTray.ui.swing._WindowsNativeTray;
-import dorkbox.util.IO;
+import dorkbox.util.FileUtil;
 
 /**
  * Auto-Detection of system tray type, with basic conversion utilities
@@ -372,16 +373,10 @@ class AutoDetectTrayType {
                             continue;
                         }
 
-                        try {
-                            bin = new BufferedReader(new FileReader(status));
-                            String readLine = bin.readLine();
-
-                            if (readLine != null && readLine.contains("indicator-app")) {
-                                // make sure we can also load the library (it might be the wrong version)
-                                return selectType(TrayType.AppIndicator);
-                            }
-                        } finally {
-                            IO.closeQuietly(bin);
+                        String line = FileUtil.INSTANCE.readFirstLine(status);
+                        if (line != null && line.contains("indicator-app")) {
+                            // make sure we can also load the library (it might be the wrong version)
+                            return selectType(TrayType.AppIndicator);
                         }
                     }
                 }
