@@ -1064,4 +1064,3 @@ class SystemTray {
         menu.remove();
     }
 }
-
