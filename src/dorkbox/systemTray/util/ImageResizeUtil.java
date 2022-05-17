@@ -172,7 +172,7 @@ class ImageResizeUtil {
 
             // if we already have this fileName, reuse it
             final File check = cache.check(cacheName);
-            if (check != null) {
+            if (check != null && check.canRead()) {
                 return check;
             }
 
