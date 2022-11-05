@@ -30,6 +30,7 @@ import javax.swing.JPopupMenu;
 import dorkbox.collections.ArrayMap;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.os.OS;
+import dorkbox.systemTray.ButtonConfig;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -161,12 +162,32 @@ class _SwingTray extends Tray {
                             @Override
                             public
                             void mousePressed(MouseEvent e) {
-                                TrayPopup popupMenu = (TrayPopup) _native;
-                                Point mousePosition = e.getPoint();
 
-                                double scale = SizeAndScalingUtil.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
-                                Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
-                                popupMenu.doShow(point, 0);
+                                ButtonConfig.PerButtonConfig config = null;
+                                switch (e.getButton()) {
+                                    case 1: //left click
+                                        config = getButtonConfig().getLeft();
+                                        break;
+                                    case 3:  //right click
+                                        config = getButtonConfig().getRight();
+                                        break;
+                                }
+                                if(config != null) {
+                                    switch (config.getActionType()) {
+                                        case SHOW_MENU:
+                                            TrayPopup popupMenu = (TrayPopup) _native;
+                                            Point mousePosition = e.getPoint();
+
+                                            double scale = SizeAndScalingUtil.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                                            Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
+                                            popupMenu.doShow(point, 0);
+
+                                            break;
+                                        case CUSTOM:
+                                            config.getCustomAction().run();
+                                            break;
+                                    }
+                                }
                             }
                         });
 

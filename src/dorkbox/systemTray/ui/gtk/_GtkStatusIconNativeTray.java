@@ -27,6 +27,7 @@ import dorkbox.jna.linux.GObject;
 import dorkbox.jna.linux.GtkEventDispatch;
 import dorkbox.jna.linux.structs.GdkEventButton;
 import dorkbox.jna.rendering.RenderProvider;
+import dorkbox.systemTray.ButtonConfig;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -164,10 +165,27 @@ class _GtkStatusIconNativeTray extends Tray {
                 public
                 void callback(Pointer notUsed, final GdkEventButton event) {
                     // show the swing menu on the EDT
-                    // BUTTON_PRESS only (any mouse click)
-                    if (event.type == 4) {
-                        Gtk2.gtk_menu_popup(gtkMenu._nativeMenu, null, null, Gtk2.gtk_status_icon_position_menu,
+                    if(event.type == 4) { // only single click events
+                        ButtonConfig.PerButtonConfig config = null;
+                        switch (event.button) {
+                            case 1: //left click
+                                config = getButtonConfig().getLeft();
+                                break;
+                            case 3:  //right click
+                                config = getButtonConfig().getRight();
+                                break;
+                        }
+                        if (config != null) {
+                            switch (config.getActionType()) {
+                                case SHOW_MENU:
+                                    Gtk2.gtk_menu_popup(gtkMenu._nativeMenu, null, null, Gtk2.gtk_status_icon_position_menu,
                                             trayIcon, 0, event.time);
+                                    break;
+                                case CUSTOM:
+                                    config.getCustomAction().run();
+                                    break;
+                            }
+                        }
                     }
                 }
             };

@@ -44,6 +44,7 @@ import dorkbox.jna.windows.Shell32;
 import dorkbox.jna.windows.User32;
 import dorkbox.jna.windows.WindowsEventDispatch;
 import dorkbox.jna.windows.structs.NOTIFYICONDATA;
+import dorkbox.systemTray.ButtonConfig;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
@@ -200,20 +201,29 @@ class _WindowsNativeTray extends Tray {
             @Override
             public
             void run(final HWND hWnd, final WPARAM wParam, final LPARAM lParam) {
-                int lp = lParam.intValue();
 
-                switch (lp) {
-                    case WM_LBUTTONUP:
-                    case WM_RBUTTONUP:
-                        if (popupMenu != null && User32.User32.GetCursorPos(mousePosition)) {
-                            double scale = SizeAndScalingWindows.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
-                            Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
-                            popupMenu.doShow(point, 0);
-                        }
+                ButtonConfig.PerButtonConfig config = null;
+                switch (lParam.intValue()) {
+                    case WM_LBUTTONUP: //left click
+                        config = getButtonConfig().getLeft();
                         break;
-
-                    default:
+                    case WM_RBUTTONUP:  //right click
+                        config = getButtonConfig().getRight();
                         break;
+                }
+                if(config != null) {
+                    switch (config.getActionType()) {
+                        case SHOW_MENU:
+                            if (popupMenu != null && User32.User32.GetCursorPos(mousePosition)) {
+                                double scale = SizeAndScalingWindows.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                                Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
+                                popupMenu.doShow(point, 0);
+                            }
+                            break;
+                        case CUSTOM:
+                            config.getCustomAction().run();
+                            break;
+                    }
                 }
             }
         };

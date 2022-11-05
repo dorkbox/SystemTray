@@ -82,6 +82,9 @@ class TestTray {
         systemTray.setTooltip("Mail Checker");
         systemTray.setImage(LT_GRAY_TRAIN);
         systemTray.setStatus("No Mail");
+        systemTray.getButtonConfig().left().custom(() -> {
+            System.out.println("left click");
+        });
 
         callbackGray = e->{
             final MenuItem entry = (MenuItem) e.getSource();

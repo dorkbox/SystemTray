@@ -899,6 +899,11 @@ class SystemTray {
     }
 
 
+    public ButtonConfig getButtonConfig() {
+        return menu.getButtonConfig();
+    }
+
+
     /**
      * Shows (if hidden), or hides (if showing) the system tray.
      */

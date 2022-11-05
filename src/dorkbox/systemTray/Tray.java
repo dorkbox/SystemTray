@@ -29,6 +29,8 @@ class Tray extends Menu {
     public static volatile boolean gtkGnomeWorkaround = false;
     private final Runnable onRemoveEvent;
 
+    private final ButtonConfig buttonConfig = new ButtonConfig();
+
     // appindicators DO NOT support anything other than PLAIN gtk-menus
     //   they ALSO do not support tooltips!
     // https://bugs.launchpad.net/indicator-application/+bug/527458/comments/12
@@ -166,6 +168,11 @@ class Tray extends Menu {
     public
     void setImage(final ImageInputStream imageStream) {
         setImageFromTray(imageResizeUtil.shouldResizeOrCache(true, imageStream));
+    }
+
+
+    public ButtonConfig getButtonConfig() {
+        return buttonConfig;
     }
 
     /**
