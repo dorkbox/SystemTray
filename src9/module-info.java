@@ -6,6 +6,7 @@ module dorkbox.systemtray {
     requires transitive dorkbox.executor;
     requires transitive dorkbox.updates;
     requires transitive dorkbox.utilities;
+    requires transitive dorkbox.os;
 
     requires transitive org.slf4j;
 
