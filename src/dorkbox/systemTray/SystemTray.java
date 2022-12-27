@@ -71,7 +71,7 @@ import dorkbox.util.SwingUtil;
  *     </li>
  * </ul>
  */
-@SuppressWarnings({"unused", "Duplicates", "DanglingJavadoc", "WeakerAccess"})
+@SuppressWarnings({"unused", "Duplicates", "WeakerAccess"})
 public final
 class SystemTray {
     public static final Logger logger = LoggerFactory.getLogger(SystemTray.class);
@@ -152,14 +152,14 @@ class SystemTray {
     }
 
     /**
-     * Enables native menus on Windows/Linux/OSX instead of the swing menu. The drawback is that this menu is native, and sometimes
+     * Enables native menus on Windows/Linux/macOS instead of the swing menu. The drawback is that this menu is native, and sometimes
      * native menus looks absolutely HORRID.
      * <p>
      * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
      * supported, in which case this will return NULL.
      * <p>
      * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
-     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
+     * be granted in order to get the {@code SystemTray} instance. Otherwise, this will return null.
      *
      * If you create MORE than 1 system tray, you should use {{@link SystemTray#get(String)}} instead, and specify a unique name for
      * each instance
@@ -170,14 +170,14 @@ class SystemTray {
     }
 
     /**
-     * Enables native menus on Windows/Linux/OSX instead of the swing menu. The drawback is that this menu is native, and sometimes
+     * Enables native menus on Windows/Linux/macOS instead of the swing menu. The drawback is that this menu is native, and sometimes
      * native menus looks absolutely HORRID.
      * <p>
      * This always returns the same instance per JVM (it's a singleton), and on some platforms the system tray may not be
      * supported, in which case this will return NULL.
      * <p>
      * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
-     * be granted in order to get the {@code SystemTray} instance. Otherwise this will return null.
+     * be granted in order to get the {@code SystemTray} instance. Otherwise, this will return null.
      *
      * @param trayName This is the name assigned to the system tray instance. If you create MORE than 1 system tray,
      *                  you must make sure to use different names (or un-predicable things can happen!).
@@ -242,7 +242,7 @@ class SystemTray {
         }
         else if (isMacOsX) {
             if (RenderProvider.isSwt() && FORCE_TRAY_TYPE == TrayType.Swing) {
-                // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force native menus instead, which work just fine with SWT
+                // cannot mix Swing and SWT on MacOSX (for all versions of java) so we force ATW menus instead, which work just fine with SWT
                 // http://mail.openjdk.java.net/pipermail/bsd-port-dev/2008-December/000173.html
                 if (AUTO_FIX_INCONSISTENCIES) {
                     logger.warn("Unable to load Swing + SWT (for all versions of Java). Using the AWT Tray type instead.");
@@ -265,7 +265,7 @@ class SystemTray {
             }
         }
         else if (isNix) {
-            // linux/unix can use all of the tray types. AWT looks horrid. GTK versions are really sensitive...
+            // linux/unix can use all the tray types. AWT looks horrid. GTK versions are really sensitive...
 
             // this checks to see if Swing/SWT/JavaFX has loaded GTK yet, and if so, what version they loaded.
             // if swing is used, we have to do some extra checks...
@@ -701,8 +701,27 @@ class SystemTray {
                 logger.debug("Tray menu image size: {}", menuImageSize);
             }
 
+            if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
+                // This WILL NOT WORK. Let the dev know
+                logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
+                             "(EDT). Something is seriously wrong.");
+
+                return null;
+            }
+
+            if (isTrayType(trayType, TrayType.Swing) ||
+                isTrayType(trayType, TrayType.Awt) ||
+                isTrayType(trayType, TrayType.Osx) ||
+                isTrayType(trayType, TrayType.WindowsNative)) {
+
+                // ensure AWT toolkit is initialized.
+                // OSX is based off of AWT now, instead of creating our own dispatch
+                java.awt.Toolkit.getDefaultToolkit();
+            }
+
+
             if (AUTO_FIX_INCONSISTENCIES) {
-                // this logic has to be before we create the system Tray, but after GTK is started (if applicable)
+                // this logic has to be before we create the system Tray, but after AWT/GTK is started (if applicable)
                 if (isWindows && isTrayType(trayType, TrayType.Swing)) {
                     // we don't permit AWT for windows (it looks absolutely HORRID)
 
@@ -710,7 +729,10 @@ class SystemTray {
                     // windows hard-codes the image size for AWT/SWING tray types
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
-                else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.Swing))) {
+                else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) ||
+                                      isTrayType(trayType, TrayType.Swing) ||
+                                      isTrayType(trayType, TrayType.Osx))) {
+
                     // macosx doesn't respond to all buttons (but should)
                     SystemTrayFixes.fixMacOS();
                 }
@@ -723,18 +745,7 @@ class SystemTray {
 
 
 
-            if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
-                // This WILL NOT WORK. Let the dev know
-                logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
-                             "(EDT). Something is seriously wrong.");
 
-                return null;
-            }
-
-            if (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.WindowsNative)) {
-                // ensure AWT toolkit is initialized.
-                java.awt.Toolkit.getDefaultToolkit();
-            }
 
             // initialize the tray icon height
             // this is during init, so we can statically access this everywhere else. Multiple instances of this will always have the same value
@@ -746,7 +757,7 @@ class SystemTray {
                 // guarantee that we are running on the event dispatch. It doesn't matter if we are "double-looping" on the EventDispatch,
                 // so extra checks are unnecessary.
 
-                // we have to make sure we shutdown on our own thread (and not the JavaFX/SWT/AWT/etc thread)
+                // we have to make sure we shut down on our own thread (and not the JavaFX/SWT/AWT/etc thread)
                 EventDispatch.runLater(()->{
                     // must remove ourselves from the init() map (since we want to be able to access things)
                     AutoDetectTrayType.removeSystemTrayHook(trayName);
@@ -758,7 +769,7 @@ class SystemTray {
                 });
             };
 
-            // the cache name **MUST** be combined with the currently logged in user, otherwise permissions get screwed up
+            // the cache name **MUST** be combined with the currently logged-in user, otherwise permissions get screwed up
             // when there is more than 1 user logged in at the same time!
             CacheUtil cache = new CacheUtil(trayName + "Cache" + "_" + System.getProperty("user.name"));
             ImageResizeUtil imageResizeUtil = new ImageResizeUtil(cache);
@@ -769,9 +780,9 @@ class SystemTray {
 
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
-            // AWT/Swing must be constructed on the EDT however...
+            // AWT + Swing + AWT-macOS must be constructed on the EDT however...
             if (RenderProvider.isDefault() &&
-                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt))) {
+                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.Osx))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
                 SwingUtil.invokeAndWait(()->{
@@ -833,7 +844,7 @@ class SystemTray {
      */
     public
     void shutdown() {
-        // this will shutdown and do what it needs to. The onRemoveEvent cleans up.
+        // this will shut down and do what it needs to. The onRemoveEvent cleans up.
         menu.remove();
     }
 

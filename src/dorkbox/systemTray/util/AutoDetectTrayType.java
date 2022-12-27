@@ -33,7 +33,7 @@ import dorkbox.systemTray.gnomeShell.LegacyExtension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
-import dorkbox.systemTray.ui.osx._OsxNativeTray;
+import dorkbox.systemTray.ui.osx._OsxAwtTray;
 import dorkbox.systemTray.ui.swing._SwingTray;
 import dorkbox.systemTray.ui.swing._WindowsNativeTray;
 import dorkbox.util.FileUtil;
@@ -63,7 +63,7 @@ class AutoDetectTrayType {
             return _SwingTray.class;
         }
         else if (trayType == TrayType.Osx) {
-            return _OsxNativeTray.class;
+            return _OsxAwtTray.class;
         }
         else if (trayType == TrayType.Awt) {
             return _AwtTray.class;
@@ -86,7 +86,7 @@ class AutoDetectTrayType {
         else if (trayClass == _SwingTray.class) {
             return TrayType.Swing;
         }
-        else if (trayClass == _OsxNativeTray.class) {
+        else if (trayClass == _OsxAwtTray.class) {
             return TrayType.Osx;
         }
         else if (trayClass == _AwtTray.class) {
@@ -103,7 +103,7 @@ class AutoDetectTrayType {
             case AppIndicator: return tray == _AppIndicatorNativeTray.class;
             case WindowsNative: return tray == _WindowsNativeTray.class;
             case Swing: return tray == _SwingTray.class;
-            case Osx: return tray == _OsxNativeTray.class;
+            case Osx: return tray == _OsxAwtTray.class;
             case Awt: return tray == _AwtTray.class;
         }
 
@@ -120,7 +120,7 @@ class AutoDetectTrayType {
             return selectType(TrayType.WindowsNative);
         }
         else if (OS.INSTANCE.isMacOsX()) {
-            // macos can ONLY use the OSXStatusItem or AWT if you want it to follow the L&F of the OS. It is the default.
+            // macOS can ONLY use AWT if you want it to follow the L&F of the OS. It is the default.
             return selectType(TrayType.Osx);
         }
         else if ((OS.INSTANCE.isLinux() || OS.INSTANCE.isUnix())) {

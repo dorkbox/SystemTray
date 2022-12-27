@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2022 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,25 @@
  */
 package dorkbox.systemTray.ui.osx;
 
-import dorkbox.jna.macos.cocoa.NSMenuItem;
+
 import dorkbox.systemTray.peer.EntryPeer;
+import dorkbox.util.SwingUtil;
 
-class OsxMenuItemSeparator implements EntryPeer {
+class AwtOsxMenuItemSeparator implements EntryPeer {
 
-    private final NSMenuItem _native = NSMenuItem.separatorItem();
-    private final OsxMenu parent;
+    private final AwtOsxMenu parent;
+    private final java.awt.MenuItem _native = new java.awt.MenuItem("-");
 
-    OsxMenuItemSeparator(final OsxMenu parent) {
+
+    // this is ALWAYS called on the EDT.
+    AwtOsxMenuItemSeparator(final AwtOsxMenu parent) {
         this.parent = parent;
-        parent.addItem(_native);
+        parent._native.add(_native);
     }
 
     @Override
     public
     void remove() {
-        parent.removeItem(_native);
+        SwingUtil.invokeLater(()->parent._native.remove(_native));
     }
 }

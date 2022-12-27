@@ -17,12 +17,12 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
-import java.awt.AWTException;
 import java.util.Locale;
 
-import dorkbox.jna.JnaClassUtils;
+import dorkbox.jna.ClassUtils;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.util.Sys;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
@@ -67,6 +67,7 @@ import javassist.bytecode.Opcode;
 /**
  * Fixes issues with some java runtimes
  */
+@SuppressWarnings("JavadocLinkAsPlainText")
 public
 class SystemTrayFixes {
     private static
@@ -84,13 +85,9 @@ class SystemTrayFixes {
         }
 
         try {
-            // this is important to use reflection, because if JavaFX is not being used, calling getToolkit() will initialize it...
-            java.lang.reflect.Method m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
-            m.setAccessible(true);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
-
-            // if we are using swing the classes are already created and we cannot fix that if it's already loaded.
-            return (null != m.invoke(cl, className)) || (null != m.invoke(cl, "java.awt.SystemTray"));
+            // if we are using swing, the classes are already created and we cannot fix that if it's already loaded.
+            return ClassUtils.isClassLoaded(cl, className) || ClassUtils.isClassLoaded(cl, "java.awt.SystemTray");
         } catch (Throwable e) {
             if (SystemTray.DEBUG) {
                 logger.debug("Error detecting if the Swing SystemTray is loaded, unexpected error.", e);
@@ -113,9 +110,9 @@ class SystemTrayFixes {
 
     /**
      * NOTE: Only for SWING
-     *
+     * <p>
      * oh my. Java likes to think that ALL windows tray icons are 16x16.... Lets fix that!
-     *
+     * <p>
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/native/sun/windows/awt_TrayIcon.cpp
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
      */
@@ -241,8 +238,8 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            JnaClassUtils.defineClass(trayBytes);
-            JnaClassUtils.defineClass(trayIconBytes);
+            ClassUtils.defineClass(trayBytes);
+            ClassUtils.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon size to: {}", trayIconSize);
@@ -254,44 +251,108 @@ class SystemTrayFixes {
 
     /**
      * NOTE: Only for SWING + AWT tray types
-     *
-     * MacOS AWT is hardcoded to respond only to left-click for menus, where it should be any mouse button
-     *
+     * <p>
+     * MacOS AWT is hardcoded to respond only to left-click for menus, where it should be ANY mouse button
+     * <p>
      * https://stackoverflow.com/questions/16378886/java-trayicon-right-click-disabled-on-mac-osx/35919788#35919788
      * https://bugs.openjdk.java.net/browse/JDK-7158615
-     *
+     * <p>
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/macosx/classes/sun/lwawt/macosx/CTrayIcon.java
+     * <p>
+     * The previous, native access we used to create menus NO LONGER works on any OS beyond Big Sur (macos 11), and now the *best* way
+     * to access this (since I do not want to rewrite a LOT of code), is to use AWT hacks to access images + tooltips via reflection. This
+     * has been possible since jdk8. While I don't like reflection, it is sadly the only way to do this.
+     * <p>
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/7fcf35286d52/src/macosx/classes/sun/lwawt/macosx/CMenuItem.java
+     * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/7fcf35286d52/src/macosx/native/sun/awt/CTrayIcon.m
      */
     public static
     void fixMacOS() {
-        if (!isOracleVM()) {
-            // not fixing things that are not broken.
-            return;
-        }
-
-        // ONLY java <= 8
-        if (OS.INSTANCE.getJavaVersion() > 8) {
-            // there are problems with java 9+
-            return;
-        }
-
         if (isSwingTrayLoaded()) {
             // we have to throw a significant error.
             throw new RuntimeException("Unable to initialize the AWT System Tray, it has already been created!");
         }
 
+        ClassPool pool = ClassPool.getDefault();
+
         try {
-            java.awt.Robot robot = new java.awt.Robot();
-            robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
-        } catch (AWTException e) {
-            e.printStackTrace();
+            // allow non-reflection access to sun.awt.AWTAccessor...getPeer()
+            {
+                CtClass dynamicClass = pool.makeClass("java.awt.MenuComponentAccessory");
+                CtMethod method = CtNewMethod.make(
+                        "public static Object getPeer(java.awt.MenuComponent nativeComp) { " +
+                        // "java.lang.System.err.println(\"Getting peer!\" + sun.awt.AWTAccessor.getMenuComponentAccessor().getPeer(nativeComp));" +
+                        "return sun.awt.AWTAccessor.getMenuComponentAccessor().getPeer(nativeComp);" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+                // CMenuItem can only PROPERLY be accessed from the java.awt package. Other locations might work within the JVM, but not
+                // from a library
+                method = CtNewMethod.make(
+                        "public static void setImage(Object peerObj, java.awt.Image img) { " +
+                            "((sun.lwawt.macosx.CMenuItem)peerObj).setImage(img);" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+                method = CtNewMethod.make(
+                        "public static void setToolTipText(Object peerObj, String text) { " +
+                            "((sun.lwawt.macosx.CMenuItem)peerObj).setToolTipText(text);" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+
+                dynamicClass.setModifiers(dynamicClass.getModifiers() & ~Modifier.STATIC);
+
+                final byte[] dynamicClassBytes = dynamicClass.toBytecode();
+                ClassUtils.defineClass(null, dynamicClassBytes);
+            }
+
+            {
+                CtClass classFixer = pool.get("dorkbox.systemTray.util.AwtAccessor");
+
+                CtMethod ctMethod = classFixer.getDeclaredMethod("getPeer");
+                ctMethod.setBody("{" +
+                                    "return java.awt.MenuComponentAccessory.getPeer($1);" +
+                                 "}");
+
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
+                ctMethod = classFixer.getDeclaredMethod("setImage");
+                ctMethod.setBody("{" +
+                                    "java.awt.MenuComponentAccessory.setImage($1, $2);" +
+                                 "}");
+
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
+                ctMethod = classFixer.getDeclaredMethod("setToolTipText");
+                ctMethod.setBody("{" +
+                                    "java.awt.MenuComponentAccessory.setToolTipText($1, $2);" +
+                                 "}");
+
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
+                final byte[] classFixerBytes = classFixer.toBytecode();
+                ClassUtils.defineClass(ClassLoader.getSystemClassLoader(), classFixerBytes);
+            }
+
+            if (SystemTray.DEBUG) {
+                logger.debug("Successfully added images/tooltips to macOS AWT tray menus");
+            }
+        } catch (Exception e) {
+            logger.error("Error adding SystemTray images/tooltips for macOS AWT tray menus.", e);
         }
 
-        ClassPool pool = ClassPool.getDefault();
-        byte[] mouseEventBytes;
-        int mouseDelay = 75;
-
         try {
+            // must call this otherwise the robot call later on will crash.
+            new java.awt.Robot();
+
+
+
+            byte[] mouseEventBytes;
+
             CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
             // now have to make a new "system tray" (that is null) in order to init/load this class completely
             // have to modify the SystemTray.getIconSize as well.
@@ -301,19 +362,28 @@ class SystemTrayFixes {
             CtField ctField = new CtField(CtClass.intType, "lastButton", trayClass);
             trayClass.addField(ctField);
 
-            ctField = new CtField(CtClass.intType, "lastX", trayClass);
-            trayClass.addField(ctField);
-
-            ctField = new CtField(CtClass.intType, "lastY", trayClass);
-            trayClass.addField(ctField);
-
             ctField = new CtField(pool.get("java.awt.Robot"), "robot", trayClass);
             trayClass.addField(ctField);
 
             CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
 
-            String nsEventFQND = "sun.lwawt.macosx.NSEvent";
+            String nsEventFQND;
+            String mouseModInfo;
+            String mousePressEventInfo;
+            String mouseReleaseEventInfo;
 
+            if (OS.INSTANCE.getJavaVersion() <= 8) {
+                nsEventFQND = "sun.lwawt.macosx.event.NSEvent";
+                mouseModInfo = "int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());";
+                mousePressEventInfo = "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
+                mouseReleaseEventInfo = "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
+            }
+            else {
+                nsEventFQND = "sun.lwawt.macosx.NSEvent";
+                mouseModInfo = "int mouseMods = " + nsEventFQND + ".nsToJavaModifiers(event.getModifierFlags());";
+                mousePressEventInfo = "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
+                mouseReleaseEventInfo = "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
+            }
 
             ctMethodGet.setBody("{" +
                 nsEventFQND + " event = $1;" +
@@ -324,16 +394,17 @@ class SystemTrayFixes {
                 "int mouseY = event.getAbsY();" +
 
                 // have to intercept to see if it was a button click redirect to preserve what button was used in the event
-                "if (lastButton == 1 && mouseX == lastX && mouseY == lastY) {" +
-                    // "java.lang.System.err.println(\"Redefining button press to 1\");" +
+                "if (button > 0 && lastButton == 1) {" +
+                    "int eventType = " + nsEventFQND + ".nsToJavaEventType(event.getType());" +
+                    "if (eventType == 501) {" +
+                        // "java.lang.System.err.println(\"Redefining button press to 1: \" + eventType);" +
 
-                    "button = 1;" +
-                    "lastButton = -1;" +
-                    "lastX = 0;" +
-                    "lastY = 0;" +
+                        "button = 1;" +
+                        "lastButton = -1;" +
+                    "}" +
                 "}" +
 
-                "if ((button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
+                "if (button > 0 && (button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
                     "int eventType = " + nsEventFQND + ".nsToJavaEventType(event.getType());" +
                     "int jButton = 0;" +
                     "int jClickCount = 0;" +
@@ -345,14 +416,17 @@ class SystemTrayFixes {
 
                     // "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType);" +
 
-                    "int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());" +
+
+                    //"int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());" +
+                    mouseModInfo +
+
                     // surprisingly, this is false when the popup is showing
                     "boolean popupTrigger = " + nsEventFQND + ".isPopupTrigger(mouseMods);" +
 
                     "int mouseMask = jButton > 0 ? java.awt.event.MouseEvent.getMaskForButton(jButton) : 0;" +
                     "long event0 = System.currentTimeMillis();" +
 
-                    "if(eventType == 501) {" +
+                    "if (eventType == 501) {" +
                         "mouseClickButtons |= mouseMask;" +
                     "} else if(eventType == 506) {" +
                         "mouseClickButtons = 0;" +
@@ -360,36 +434,37 @@ class SystemTrayFixes {
 
 
                     // have to swallow + re-dispatch events in specific cases. (right click)
-                    "if (eventType == 501 && popupTrigger && button == 1) {" +
+                    "if (eventType == 501 && popupTrigger && button != 0) {" +
                         // "java.lang.System.err.println(\"Redispatching mouse press. Has popupTrigger \" + " + "popupTrigger + \" event: \" + " + "eventType);" +
 
                         // we use Robot to left click where we right clicked, in order to "fool" the native part to show the popup
-                        // For what it's worth, this is the only way to get the native bits to behave.
+                        // For what it's worth, this is the only way to get the native bits to behave (since we cannot access the native parts).
                         "if (robot == null) {" +
                             "try {" +
                                 "robot = new java.awt.Robot();" +
-                                "robot.setAutoDelay(40);" +
-                                "robot.setAutoWaitForIdle(true);" +
-                            "} catch (java.awt.AWTException e) {" +
+                                // the delay is necessary for this to work correctly.
+                                "robot.setAutoDelay(10);" +
+                                "robot.setAutoWaitForIdle(false);" +
+                            "} " +
+                            "catch (java.awt.AWTException e) {" +
                                 "e.printStackTrace();" +
                             "}" +
                         "}" +
 
                         "lastButton = 1;" +
-                        "lastX = mouseX;" +
-                        "lastY = mouseY;" +
 
-                        // the delay is necessary for this to work correctly. Mouse release is not necessary.
+                        // Mouse release is not necessary.
                         // this simulates *just enough* of the default behavior so that right click behaves the same as left click.
                         "int maskButton1 = java.awt.event.InputEvent.getMaskForButton(java.awt.event.MouseEvent.BUTTON1);" +
+                        "robot.mouseMove(mouseX, mouseY);" +
                         "robot.mousePress(maskButton1);" +
-                        "robot.delay(" + mouseDelay + ");" +
 
                         "return;" +
-                    "}" +
+                     "}" +
 
 
-                    "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
+                    //"java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
+                    mousePressEventInfo +
 
                     "mEvent.setSource(this.target);" +
                     "this.postEvent(mEvent);" +
@@ -406,7 +481,8 @@ class SystemTrayFixes {
                     // mouse release
                     "if (eventType == 502) {" +
                         "if ((mouseClickButtons & mouseMask) != 0) {" +
-                            "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
+                            // "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
+                            mouseReleaseEventInfo +
 
                             "event7.setSource(this.target);" +
                             "this.postEvent(event7);" +
@@ -418,42 +494,41 @@ class SystemTrayFixes {
             "}");
 
             // perform pre-verification for the modified method
-            ctMethodGet.getMethodInfo().rebuildStackMapForME(trayClass.getClassPool());
-
+            ctMethodGet.getMethodInfo().rebuildStackMapForME(pool);
             mouseEventBytes = trayClass.toBytecode();
 
             // whoosh, past the classloader and directly into memory.
-            JnaClassUtils.defineClass(mouseEventBytes);
+            ClassUtils.defineClass(null, mouseEventBytes);
 
             if (SystemTray.DEBUG) {
-                logger.debug("Successfully changed mouse trigger for MacOSX");
+                logger.debug("Successfully changed mouse trigger for macOS AWT tray menus");
             }
         } catch (Exception e) {
-            logger.error("Error changing SystemTray mouse trigger for MacOSX.", e);
+            logger.error("Error changing SystemTray mouse trigger for macOS AWT tray menus.", e);
         }
     }
 
     /**
      * NOTE: ONLY IS FOR SWING TRAY TYPES!
-     *
+     * <p>
      * Linux/Unix/Solaris use X11 + AWT to add an AWT window to a spot in the notification panel. UNFORTUNATELY, AWT
      * components are heavyweight, and DO NOT support transparency -- so one gets a "grey" box as the background of the icon.
-     *
+     * <p>
      * Spectacularly enough, because this uses X11, it works on any X backend -- regardless of GtkStatusIcon or AppIndicator support. This
      * actually provides **more** support than GtkStatusIcons or AppIndicators, since this will ALWAYS work.
-     *
+     * <p>
      * Additionally, the size of the tray is hard-coded to be 24.
-     *
+     * <p>
      *
      * The down side, is that there is a "grey" box -- so hack around this issue by getting the color of a pixel in the notification area 1
      * off the corner, and setting that as the background.
-     *
+     * <p>
      * It would be better to take a screenshot of the space BEHIND the tray icon, but we can't do that because there is no way to get
      * the info BEFORE the AWT is added to the notification area. See comments below for more details.
-     *
+     * <p>
      * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6453521
      * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6267936
-     *
+     * <p>
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/solaris/classes/sun/awt/X11/XTrayIconPeer.java
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/solaris/classes/sun/awt/X11/XSystemTrayPeer.java
      */
@@ -710,11 +785,11 @@ class SystemTrayFixes {
             }
 
             // whoosh, past the classloader and directly into memory.
-            JnaClassUtils.defineClass(runnableBytes);
-            JnaClassUtils.defineClass(eFrameBytes);
-            JnaClassUtils.defineClass(iconCanvasBytes);
-            JnaClassUtils.defineClass(trayIconBytes);
-            JnaClassUtils.defineClass(trayPeerBytes);
+            ClassUtils.defineClass(runnableBytes);
+            ClassUtils.defineClass(eFrameBytes);
+            ClassUtils.defineClass(iconCanvasBytes);
+            ClassUtils.defineClass(trayIconBytes);
+            ClassUtils.defineClass(trayPeerBytes);
 
             if (SystemTray.DEBUG) {
                 logger.debug("Successfully changed tray icon background color");
