@@ -43,7 +43,7 @@ class SwingMenuItemCheckbox extends SwingMenuItem implements CheckboxPeer {
      * @param menuImageSize this is the largest size of an image used in a JMenuItem, before the size of the JMenuItem is forced to be larger
      */
     static
-    void createCheckedIcon(int menuImageSize) {
+    protected void createCheckedIcon(int menuImageSize) {
         if (checkedIcon == null) {
             try {
                 JMenuItem jMenuItem = new JMenuItem();
