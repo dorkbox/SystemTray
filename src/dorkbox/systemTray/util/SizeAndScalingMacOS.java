@@ -20,20 +20,18 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 
 /**
- * Size and scaling utility functions specific to MacOS
+ * Size and scaling utility functions specific to macOS
  */
 public
 class SizeAndScalingMacOS {
     /**
      * Allows overriding of the system tray MENU size (this is what shows in the system tray).
-     *
      * NOTE: Any value >0 will be used.
      */
     public static volatile int OVERRIDE_MENU_SIZE = 0;
 
     /**
      * Allows overriding of the system tray ICON size (this is what shows in the system tray)
-     *
      * NOTE: Any value >0 will be used.
      */
     public static volatile int OVERRIDE_TRAY_SIZE = 0;
@@ -54,10 +52,10 @@ class SizeAndScalingMacOS {
             return OVERRIDE_MENU_SIZE;
         }
 
-        // Note: Mac (AWT) does not have images in the menu.
-        // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
-        // we obviously do not want to be the exact same size, so we give 2px padding on each side.
-        return SizeAndScalingMacOS.getMacOSScaleFactor() * 18;
+        // scaling isn't in effect for menu images. The larger the image, the larger the menu height. It can be any size you want in reality.
+        // 16 is the max size it can be BEFORE the menu height starts getting larger, which then causes menu items WITH and WITHOUT images
+        // to be different heights.
+        return 16;
     }
 
     public static
@@ -66,9 +64,7 @@ class SizeAndScalingMacOS {
             return OVERRIDE_TRAY_SIZE;
         }
 
-        // The base (non-scaled) height is 22px tall, measured via a screen-shot. From what I can tell, they are Apple defined, and cannot be changed.
-        // we obviously do not want to be the exact same size, so we give 2px padding on each side.
-        return SizeAndScalingMacOS.getMacOSScaleFactor() * 18;
+        // menu items can have scaling applied for a nice looking icon.
+        return SizeAndScalingMacOS.getMacOSScaleFactor() * 16;
     }
 }
-
