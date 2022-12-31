@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import dorkbox.os.OS
+import dorkbox.os.OSType
 import java.time.Instant
 
 ///////////////////////////////
@@ -24,12 +26,12 @@ import java.time.Instant
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "2.16"
-    id("com.dorkbox.Licensing") version "2.12"
-    id("com.dorkbox.VersionUpdate") version "2.4"
-    id("com.dorkbox.GradlePublish") version "1.12"
+    id("com.dorkbox.GradleUtils") version "3.4.7"
+    id("com.dorkbox.Licensing") version "2.17"
+    id("com.dorkbox.VersionUpdate") version "2.5"
+    id("com.dorkbox.GradlePublish") version "1.13"
 
-    kotlin("jvm") version "1.6.10"
+    kotlin("jvm") version "1.7.21"
 }
 
 object Extras {
@@ -46,12 +48,6 @@ object Extras {
     const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
 
     val buildDate = Instant.now().toString()
-
-    // This is really SWT version 4.xx? no idea how the internal versions are tracked
-    // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
-    // 3.108.0 is the MOST RECENT version supported by x86. All newer version no longer support x86
-    const val swtVersion = "3.115.100"
-    const val jnaVersion = "5.11.0"
 }
 
 ///////////////////////////////
@@ -189,19 +185,30 @@ tasks.jar.get().apply {
 }
 
 dependencies {
-    api("com.dorkbox:Executor:3.9")
-    api("com.dorkbox:Utilities:1.22")
+    val jnaVersion = "5.12.1"
+
+    // This is really SWT version 4.xx? no idea how the internal versions are tracked
+    // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
+    // 3.108.0 is the MOST RECENT version supported by x86. All newer version no longer support x86
+    // 3.1116.100 is the MOST RECENT version supported by macos ARM.
+    val swtVersion = "3.122.0"
+
+    api("com.dorkbox:Executor:3.11")
+    api("com.dorkbox:Utilities:1.31")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:OS:1.0")
+    api("com.dorkbox:OS:1.1")
 
-    api("org.javassist:javassist:3.28.0-GA")
+    api("org.javassist:javassist:3.29.2-GA")
 
-    api("net.java.dev.jna:jna-jpms:${Extras.jnaVersion}")
-    api("net.java.dev.jna:jna-platform-jpms:${Extras.jnaVersion}")
+    api("net.java.dev.jna:jna-jpms:${jnaVersion}")
+    api("net.java.dev.jna:jna-platform-jpms:${jnaVersion}")
 
     // note: this has support for JPMS, so it's required
-    api("org.slf4j:slf4j-api:1.8.0-beta4")
-    val logbackVer = "1.3.0-alpha5"
+    api("org.slf4j:slf4j-api:2.0.6")
+
+
+    api("ch.qos.logback:logback-classic:1.4.5")
+    val logbackVer = "1.4.5"
 
 
 
@@ -232,13 +239,22 @@ dependencies {
         val platform = when {
             currentOS.isWindows -> { "win" }
             currentOS.isLinux -> { "linux" }
-            currentOS.isMacOsX -> { "mac" }
+            currentOS.isMacOsX -> {
+                if (OS.isArm) {
+                    "mac-aarch64"
+                } else {
+                    "mac"
+                }
+            }
             else -> { "unknown" }
         }
 
-        javaFxExampleCompile("org.openjfx:javafx-base:11:${platform}")
-        javaFxExampleCompile("org.openjfx:javafx-graphics:11:${platform}")
-        javaFxExampleCompile("org.openjfx:javafx-controls:11:${platform}")
+        val version = "17.0.2"
+//        val version = "11"
+
+        javaFxExampleCompile("org.openjfx:javafx-base:$version:${platform}")
+        javaFxExampleCompile("org.openjfx:javafx-graphics:$version:${platform}")
+        javaFxExampleCompile("org.openjfx:javafx-controls:$version:${platform}")
 
 //        // include all distro for jars
 //        listOf("win", "linux", "mac").forEach {
@@ -248,7 +264,7 @@ dependencies {
 //        }
     }
 
-    swtExampleCompile(GradleUtils.getSwtMavenId(Extras.swtVersion)) {
+    swtExampleCompile(GradleUtils.getSwtMavenId(swtVersion)) {
         isTransitive = false
     }
 
