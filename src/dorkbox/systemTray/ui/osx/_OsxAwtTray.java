@@ -231,9 +231,9 @@ class _OsxAwtTray extends Tray {
                     }
 
                     tray = null;
-                });
 
-                super.remove();
+                    super.remove();
+                });
 
                 // make sure this thread doesn't keep the JVM alive anymore
                 if (keepAliveThread != null) {
