@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.stream.ImageInputStream;
@@ -56,6 +57,7 @@ import dorkbox.systemTray.util.SystemTrayFixes;
 import dorkbox.systemTray.util.WindowsSwingUI;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.SwingUtil;
+import jdk.internal.event.Event;
 
 
 /**
@@ -755,19 +757,13 @@ class SystemTray {
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
             Runnable onRemoveEvent = ()->{
-                // guarantee that we are running on the event dispatch. It doesn't matter if we are "double-looping" on the EventDispatch,
-                // so extra checks are unnecessary.
+                // must remove ourselves from the init() map (since we want to be able to access things)
+                AutoDetectTrayType.removeSystemTrayHook(trayName);
 
-                // we have to make sure we shut down on our own thread (and not the JavaFX/SWT/AWT/etc thread)
-                EventDispatch.runLater(()->{
-                    // must remove ourselves from the init() map (since we want to be able to access things)
-                    AutoDetectTrayType.removeSystemTrayHook(trayName);
-
-                    // this is thread-safe
-                    if (!AutoDetectTrayType.hasOtherTrays()) {
-                        EventDispatch.shutdown();
-                    }
-                });
+                // this is thread-safe
+                if (!AutoDetectTrayType.hasOtherTrays()) {
+                    EventDispatch.shutdown();
+                }
             };
 
             // the cache name **MUST** be combined with the currently logged-in user, otherwise permissions get screwed up
@@ -847,6 +843,36 @@ class SystemTray {
     void shutdown() {
         // this will shut down and do what it needs to. The onRemoveEvent cleans up.
         menu.remove();
+    }
+
+    /**
+     * Shuts-down the SystemTray, by removing the menus + tray icon. After calling this method, you MUST call `get()` or `get(name)`
+     * again to obtain a new SystemTray instance.
+     *
+     * @param runOnShutdown the action to run after the system tray has finished shutting down
+     */
+    public
+    void shutdown(Runnable runOnShutdown) {
+        shutdown();
+
+        // wait for the system tray Event dispatch to finish running, then run our shutdown logic. This must happen on a different thread
+        EventDispatch.runLater(new Runnable() {
+            @Override
+            public
+            void run() {
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public
+                    void run() {
+                        EventDispatch.waitForShutdown();
+                        runOnShutdown.run();
+                    }
+                });
+                thread.setName("Shutdown");
+                thread.setDaemon(true);
+                thread.run();
+            }
+        });
     }
 
     /**

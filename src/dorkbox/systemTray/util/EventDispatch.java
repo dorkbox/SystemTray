@@ -15,9 +15,13 @@
  */
 package dorkbox.systemTray.util;
 
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import dorkbox.systemTray.SystemTray;
 import dorkbox.util.NamedThreadFactory;
 
 /**
@@ -34,6 +38,9 @@ class EventDispatch {
 
     private static ExecutorService eventDispatchExecutor = null;
 
+    private static volatile CountDownLatch shutdownLatch = null;
+    private static volatile boolean insideDispatch = false;
+
     /**
      * Schedule an event to occur sometime in the future. We do not want to WAIT for a `runnable` to finish, because it is POSSIBLE that
      * this runnable wants to perform actions on the SAME dispatch thread that called this, resulting in a deadlock. Because we cannot
@@ -43,6 +50,12 @@ class EventDispatch {
     void runLater(final Runnable runnable) {
         synchronized(EventDispatch.class) {
             if (eventDispatchExecutor == null) {
+                if (insideDispatch) {
+                    SystemTray.logger.error("Unable to create a new event dispatch, while executing within the same context.");
+                    return;
+                }
+
+                shutdownLatch = new CountDownLatch(1);
                 eventDispatchExecutor = Executors.newSingleThreadExecutor(
                         new NamedThreadFactory("SystemTrayEventDispatch",
                                                Thread.currentThread().getThreadGroup(), THREAD_PRIORITY, false));
@@ -50,7 +63,9 @@ class EventDispatch {
         }
 
         eventDispatchExecutor.execute(()->{
+            insideDispatch = true;
             runnable.run();
+            insideDispatch = false;
         });
     }
 
@@ -59,14 +74,44 @@ class EventDispatch {
      */
     public static
     void shutdown() {
+        // we have to make sure we shut down on our own thread (and not the JavaFX/SWT/AWT/etc thread)
         runLater(()->{
+            ExecutorService executorService = null;
             synchronized (EventDispatch.class) {
-                if (eventDispatchExecutor != null) {
-                    // we do not want to continue processing anything, so all non-executed events will be tossed.
-                    eventDispatchExecutor.shutdownNow();
-                    eventDispatchExecutor = null;
+                executorService = eventDispatchExecutor;
+                eventDispatchExecutor = null;
+            }
+
+            if (executorService != null) {
+                final List<Runnable> runnables = executorService.shutdownNow();
+                for (int i = 0; i < runnables.size(); i++) {
+                    try {
+                        runnables.get(i)
+                                 .run();
+                    } catch (Exception e) {
+                        SystemTray.logger.error("Error shutting down EventDispatch", e);
+                    }
                 }
+
+                shutdownLatch.countDown();
             }
         });
+    }
+
+    /**
+     * Waits for the event dispatch to finish shutting down
+     */
+    public static void waitForShutdown() {
+        CountDownLatch latch = null;
+        synchronized (EventDispatch.class) {
+            latch = shutdownLatch;
+        }
+
+        if (latch != null) {
+            try {
+                latch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }

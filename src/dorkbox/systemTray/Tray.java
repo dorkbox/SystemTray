@@ -22,6 +22,8 @@ import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
 
+import dorkbox.systemTray.util.EventDispatch;
+
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
 class Tray extends Menu {
@@ -179,9 +181,10 @@ class Tray extends Menu {
         super.remove();
 
         // we have to tell our parent that we have been removed.
-        // This is HERE instead of inside of the tray implementations because of visibility requirements.
+        // This is HERE instead of inside the tray implementations because of visibility requirements.
 
         // This is internal and should NEVER be called by someone else or ANYWHERE else!
+        // this will run on the event dispatch
         onRemoveEvent.run();
     }
 }

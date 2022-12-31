@@ -206,12 +206,16 @@ class TestTraySwt {
         systemTray.getMenu().add(entry);
 
         systemTray.getMenu().add(new MenuItem("Quit", e->{
-            systemTray.shutdown();
-            // necessary to shut down SWT
-            if (!display.isDisposed()) {
-                display.asyncExec(shell::dispose);
-            }
-            //System.exit(0);  not necessary if all non-daemon threads have stopped.
+            systemTray.shutdown(new Runnable() {
+                @Override
+                public
+                void run() {
+                    if (!display.isDisposed()) {
+                        display.asyncExec(shell::dispose);
+                    }
+                    //System.exit(0);  not necessary if all non-daemon threads have stopped.
+                }
+            });
         })).setShortcut('q'); // case does not matter
 
 

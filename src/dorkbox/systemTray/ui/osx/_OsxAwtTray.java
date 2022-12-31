@@ -21,6 +21,7 @@ import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
 
 import javax.swing.ImageIcon;
 
@@ -47,7 +48,7 @@ class _OsxAwtTray extends Tray {
     private volatile File imageFile;
     private volatile String tooltipText = "";
 
-    private final Object keepAliveLock = new Object[0];
+    private volatile CountDownLatch keepAliveLatch = new CountDownLatch(1);
     private volatile Thread keepAliveThread;
 
     // The image resources are cached, so that if someone is trying to create an animation, the image resource is re-used instead of
@@ -79,8 +80,8 @@ class _OsxAwtTray extends Tray {
                     boolean enabled = menuItem.getEnabled();
 
                     if (keepAliveThread != null) {
-                        synchronized (keepAliveLock) {
-                            keepAliveLock.notifyAll();
+                        synchronized (keepAliveLatch) {
+                            keepAliveLatch.countDown();
                         }
                     }
                     keepAliveThread = null;
@@ -89,13 +90,9 @@ class _OsxAwtTray extends Tray {
                         // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
                         // all platforms. This was only noticed on macOS (where the app would quit after calling setEnabled(false);
                         keepAliveThread = new Thread(()->{
-                            synchronized (keepAliveLock) {
-                                keepAliveLock.notifyAll();
-
-                                try {
-                                    keepAliveLock.wait();
-                                } catch (InterruptedException ignored) {
-                                }
+                            synchronized (keepAliveLatch) {
+                                keepAliveLatch.countDown();
+                                keepAliveLatch = new CountDownLatch(1);
                             }
                         }, "TrayKeepAliveThread");
                         keepAliveThread.start();
@@ -237,8 +234,8 @@ class _OsxAwtTray extends Tray {
 
                 // make sure this thread doesn't keep the JVM alive anymore
                 if (keepAliveThread != null) {
-                    synchronized (keepAliveLock) {
-                        keepAliveLock.notifyAll();
+                    synchronized (keepAliveLatch) {
+                        keepAliveLatch.countDown();
                     }
                 }
             }
