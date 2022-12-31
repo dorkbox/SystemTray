@@ -491,6 +491,7 @@ class SystemTray {
 
 
         if (DEBUG) {
+            logger.debug("Version {}", getVersion());
             logger.debug("OS: {}", System.getProperty("os.name"));
             logger.debug("Arch: {}", System.getProperty("os.arch"));
 
