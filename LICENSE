@@ -1,7 +1,7 @@
  - SystemTray - Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+
    [The Apache Software License, Version 2.0]
    https://git.dorkbox.com/dorkbox/SystemTray
-   Copyright 2022
+   Copyright 2023
      Dorkbox LLC
 
    Extra license information
@@ -23,7 +23,7 @@
        [The Apache Software License, Version 2.0]
        http://www.javassist.org
        https://github.com/jboss-javassist/javassist
-       Copyright 2022
+       Copyright 2023
          Shigeru Chiba
          Bill Burke
          Jason T. Greene
@@ -32,25 +32,25 @@
      - JNA - Simplified native library access for Java.
        [The Apache Software License, Version 2.0]
        https://github.com/twall/jna
-       Copyright 2022
+       Copyright 2023
          Timothy Wall
 
      - JNA-Platform - Mappings for a number of commonly used platform functions
        [The Apache Software License, Version 2.0]
        https://github.com/twall/jna
-       Copyright 2022
+       Copyright 2023
          Timothy Wall
 
      - SLF4J - Simple facade or abstraction for various logging frameworks
        [MIT License]
        http://www.slf4j.org
-       Copyright 2022
+       Copyright 2023
          QOS.ch
 
      - Logback - Logback is a logging framework for Java applications
        [The Apache Software License, Version 2.0]
        http://logback.qos.ch
-       Copyright 2022
+       Copyright 2023
          QOS.ch
 
      - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 8+
