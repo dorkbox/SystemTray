@@ -98,15 +98,6 @@ class SystemTrayFixes {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private static
-    boolean isOracleVM() {
-        String vendor = System.getProperty("java.vendor")
-                              .toLowerCase(Locale.US);
-
-        // spaces at the end to make sure we check for words
-        return vendor.contains("sun ") || vendor.contains("oracle ");
-    }
-
 
     /**
      * NOTE: Only for SWING
@@ -118,11 +109,6 @@ class SystemTrayFixes {
      */
     public static
     void fixWindows(int trayIconSize) {
-        if (!isOracleVM()) {
-            // not fixing things that are not broken.
-            return;
-        }
-
         // ONLY java <= 8
         if (OS.INSTANCE.getJavaVersion() > 8) {
             // there are problems with java 9+
@@ -535,11 +521,6 @@ class SystemTrayFixes {
     public static
     void fixLinux(int trayIconSize) {
         // linux/mac doesn't have transparent backgrounds for "swing" system tray icons
-
-        if (!isOracleVM()) {
-            // not fixing things that are not broken.
-            return;
-        }
 
         // ONLY java <= 8
         if (OS.INSTANCE.getJavaVersion() > 8) {
