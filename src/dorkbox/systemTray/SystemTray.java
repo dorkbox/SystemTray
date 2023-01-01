@@ -733,10 +733,10 @@ class SystemTray {
                     SystemTrayFixes.fixWindows(trayImageSize);
                 }
                 else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) ||
-                                      isTrayType(trayType, TrayType.Swing) ||
                                       isTrayType(trayType, TrayType.Osx))) {
+                    // Swing on macOS is pretty bland. AWT (with fixes) looks fantastic (and is native)
 
-                    // macosx doesn't respond to all buttons (but should)
+                    // AWT on macosx doesn't respond to all buttons (but should)
                     SystemTrayFixes.fixMacOS();
                 }
                 else if (isNix && isTrayType(trayType, TrayType.Swing)) {
