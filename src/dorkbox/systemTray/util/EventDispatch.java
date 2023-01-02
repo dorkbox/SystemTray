@@ -58,7 +58,7 @@ class EventDispatch {
                 shutdownLatch = new CountDownLatch(1);
                 eventDispatchExecutor = Executors.newSingleThreadExecutor(
                         new NamedThreadFactory("SystemTrayEventDispatch",
-                                               Thread.currentThread().getThreadGroup(), THREAD_PRIORITY, false));
+                                               Thread.currentThread().getThreadGroup(), THREAD_PRIORITY, true));
             }
         }
 

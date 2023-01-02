@@ -138,7 +138,7 @@ class _GtkStatusIconNativeTray extends Tray {
             void remove() {
                 // This is required if we have JavaFX or SWT shutdown hooks (to prevent us from shutting down twice...)
                 if (!shuttingDown.getAndSet(true)) {
-                    GtkEventDispatch.dispatch(()->{
+                    GtkEventDispatch.dispatchAndWait(()->{
                         // this hides the indicator
                         Gtk2.gtk_status_icon_set_visible(trayIcon, false);
                         GObject.g_object_unref(trayIcon);

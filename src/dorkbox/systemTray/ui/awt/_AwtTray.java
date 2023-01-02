@@ -226,7 +226,7 @@ class _AwtTray extends Tray {
                     imageCache.clear();
                 }
 
-                SwingUtil.invokeLater(()->{
+                SwingUtil.invokeAndWaitQuietly(()->{
                     if (trayIcon != null) {
                         trayIcon.setPopupMenu(null);
                         if (tray != null) {

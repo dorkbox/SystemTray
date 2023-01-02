@@ -73,6 +73,16 @@ class _OsxAwtTray extends Tray {
                                        "type and configuration");
         }
 
+        // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
+        // all platforms. This was only noticed on macOS (where the app would quit after calling setEnabled(false);
+        keepAliveThread = new Thread(()->{
+            synchronized (keepAliveLatch) {
+                keepAliveLatch.countDown();
+                keepAliveLatch = new CountDownLatch(1);
+            }
+        }, "TrayKeepAliveThread");
+        keepAliveThread.start();
+
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
         final AwtOsxMenu awtMenu = new AwtOsxMenu(null) {
             @Override
@@ -91,18 +101,6 @@ class _OsxAwtTray extends Tray {
                         }
                     }
                     keepAliveThread = null;
-
-                    if (visible && !enabled) {
-                        // THIS WILL NOT keep the app running, so we use a "keep-alive" thread so this behavior is THE SAME across
-                        // all platforms. This was only noticed on macOS (where the app would quit after calling setEnabled(false);
-                        keepAliveThread = new Thread(()->{
-                            synchronized (keepAliveLatch) {
-                                keepAliveLatch.countDown();
-                                keepAliveLatch = new CountDownLatch(1);
-                            }
-                        }, "TrayKeepAliveThread");
-                        keepAliveThread.start();
-                    }
 
                     if (visible && !enabled) {
                         tray.remove(trayIcon);
@@ -246,7 +244,7 @@ class _OsxAwtTray extends Tray {
                     imageCache.clear();
                 }
 
-                SwingUtil.invokeLater(()->{
+                SwingUtil.invokeAndWaitQuietly(()->{
                     if (trayIcon != null) {
                         trayIcon.setPopupMenu(null);
                         if (tray != null) {

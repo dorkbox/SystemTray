@@ -199,7 +199,7 @@ class _AppIndicatorNativeTray extends Tray {
                 if (!shuttingDown.getAndSet(true)) {
                     super.remove();
 
-                    GtkEventDispatch.dispatch(()->{
+                    GtkEventDispatch.dispatchAndWait(()->{
                         // must happen asap, so our hook properly notices we are in shutdown mode
                         final AppIndicatorInstanceStruct savedAppIndicator = appIndicator;
                         appIndicator = null;

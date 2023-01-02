@@ -232,7 +232,7 @@ class _SwingTray extends Tray {
                     imageCache.clear();
                 }
 
-                SwingUtil.invokeLater(()->{
+                SwingUtil.invokeAndWaitQuietly(()->{
                     if (trayIcon != null) {
                         if (tray != null) {
                             tray.remove(trayIcon);
