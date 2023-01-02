@@ -168,11 +168,12 @@ class AwtOsxMenu implements MenuPeer {
             _native.removeAll();
             _native.deleteShortcut();
             _native.setEnabled(false);
-            _native.removeNotify();
 
             if (parent != null) {
                 parent._native.remove(_native);
             }
+
+            _native.removeNotify();
         });
     }
 }
