@@ -17,15 +17,8 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.Robot;
-import java.util.concurrent.atomic.AtomicReference;
-
 import dorkbox.jna.ClassUtils;
-import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.util.SwingUtil;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -92,6 +85,58 @@ class SystemTrayFixesMacOS {
         ClassPool pool = ClassPool.getDefault();
 
         try {
+            {
+                {
+                    // have to make the peer field public
+                    CtClass trayIconClass = pool.get("java.awt.TrayIcon");
+                    CtField peer = trayIconClass.getField("peer");
+                    peer.setModifiers(peer.getModifiers() & Modifier.PUBLIC);
+                    ClassUtils.defineClass(null, trayIconClass.toBytecode());
+                }
+
+                CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
+                {
+                    CtMethod method2 = CtNewMethod.make("public java.awt.geom.Point2D getIconLocation(long ptr) {" +
+                                                            "return nativeGetIconLocation(ptr);" +
+                                                        "}",
+                                                        trayClass);
+                    trayClass.addMethod(method2);
+
+                    // javassist cannot create ANONYMOUS inner classes, but can create normal classes. Such a pain to do it this way
+                    CtClass dynamicClass = pool.makeClass("sun.lwawt.macosx.CTrayIconLocationAccessory");
+                    dynamicClass.addInterface(pool.get("sun.lwawt.macosx.CFRetainedResource$CFNativeAction"));
+
+                    CtField ctField = new CtField(pool.get("java.util.concurrent.atomic.AtomicReference"), "ref", dynamicClass);
+                    dynamicClass.addField(ctField, "new java.util.concurrent.atomic.AtomicReference();");
+
+                    ctField = new CtField(pool.get("sun.lwawt.macosx.CTrayIcon"), "icon", dynamicClass);
+                    dynamicClass.addField(ctField);
+
+                    CtMethod method3 = CtNewMethod.make("public void run(long ptr){" +
+                                                            "ref.set(icon.getIconLocation(ptr));" +
+                                                        "}", dynamicClass);
+                    dynamicClass.addMethod(method3);
+
+                    ClassUtils.defineClass(null, dynamicClass.toBytecode());
+                }
+
+
+                CtMethod method = CtNewMethod.make(
+                        "public java.awt.geom.Point2D getLocation() { " +
+                            "sun.lwawt.macosx.CTrayIconLocationAccessory refAccess = new sun.lwawt.macosx.CTrayIconLocationAccessory();" +
+                            "refAccess.icon = this;" +
+                            "execute(refAccess);" +
+                            "return refAccess.ref.get();" +
+                        "}", trayClass);
+
+                trayClass.addMethod(method);
+                ClassUtils.defineClass(null, trayClass.toBytecode());
+
+                if (SystemTray.DEBUG) {
+                    logger.debug("Successfully added getLocation() to macOS AWT tray menus");
+                }
+            }
+
             // allow non-reflection access to sun.awt.AWTAccessor...getPeer()
             {
                 CtClass dynamicClass = pool.makeClass("java.awt.MenuComponentAccessory");
@@ -116,6 +161,21 @@ class SystemTrayFixesMacOS {
                         "}", dynamicClass);
                 dynamicClass.addMethod(method);
 
+                method = CtNewMethod.make(
+                        "public static void showPopup(java.awt.Component component, java.awt.Menu nativeComponent) { " +
+                            "java.awt.peer.PopupMenuPeer peer = (java.awt.peer.PopupMenuPeer) getPeer(nativeComponent);" +
+                            //"java.lang.System.err.println(\"showing popup peer!\");" +
+                            "peer.show(new java.awt.Event(component, 0L, java.awt.Event.MOUSE_DOWN, 0, 0, 0, 0));" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+                method = CtNewMethod.make(
+                        "public static java.awt.geom.Point2D getLocation(java.awt.TrayIcon trayIcon) { " +
+                            "return ((sun.lwawt.macosx.CTrayIcon) trayIcon.peer).getLocation();" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+
 
                 dynamicClass.setModifiers(dynamicClass.getModifiers() & ~Modifier.STATIC);
 
@@ -130,25 +190,40 @@ class SystemTrayFixesMacOS {
                 ctMethod.setBody("{" +
                                     "return java.awt.MenuComponentAccessory.getPeer($1);" +
                                  "}");
-
                 // perform pre-verification for the modified method
                 ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
 
                 ctMethod = classFixer.getDeclaredMethod("setImage");
                 ctMethod.setBody("{" +
                                     "java.awt.MenuComponentAccessory.setImage($1, $2);" +
                                  "}");
-
                 // perform pre-verification for the modified method
                 ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
 
                 ctMethod = classFixer.getDeclaredMethod("setToolTipText");
                 ctMethod.setBody("{" +
                                     "java.awt.MenuComponentAccessory.setToolTipText($1, $2);" +
                                  "}");
-
                 // perform pre-verification for the modified method
                 ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
+
+                ctMethod = classFixer.getDeclaredMethod("showPopup");
+                ctMethod.setBody("{" +
+                                    "return java.awt.MenuComponentAccessory.showPopup($1, $2);" +
+                                 "}");
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
+                ctMethod = classFixer.getDeclaredMethod("getLocation");
+                ctMethod.setBody("{" +
+                                 "return java.awt.MenuComponentAccessory.getLocation($1);" +
+                        "}");
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
+
 
                 final byte[] classFixerBytes = classFixer.toBytecode();
                 ClassUtils.defineClass(ClassLoader.getSystemClassLoader(), classFixerBytes);
@@ -159,224 +234,6 @@ class SystemTrayFixesMacOS {
             }
         } catch (Exception e) {
             logger.error("Error adding SystemTray images/tooltips for macOS AWT tray menus.", e);
-        }
-
-        try {
-            // must call this otherwise the robot call later on will crash.
-            final Robot robot = new Robot();
-            robot.waitForIdle();
-            Point location = MouseInfo.getPointerInfo()
-                                      .getLocation();
-            final int x = location.x;
-            final int y = location.y;
-
-            robot.setAutoWaitForIdle(true);
-            robot.mouseMove(x+1, y+1);
-
-            location = MouseInfo.getPointerInfo().getLocation();
-
-            final int x2 = location.x;
-            final int y2 = location.y;
-
-            if (x == x2 && y == y2) {
-                // we cannot control the mouse, so we CANNOT rely on click emulation.
-                logger.warn("Unable to control the mouse, please enable Accessibility permissions.");
-                return;
-            }
-
-
-            // NOTE: This ONLY works if accessibility is granted via macOS permissions!
-            byte[] mouseEventBytes;
-
-            CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
-            // now have to make a new "system tray" (that is null) in order to init/load this class completely
-            // have to modify the SystemTray.getIconSize as well.
-            trayClass.setModifiers(trayClass.getModifiers() & Modifier.PUBLIC);
-            trayClass.getConstructors()[0].setModifiers(trayClass.getConstructors()[0].getModifiers() & Modifier.PUBLIC);
-
-            CtField ctField = new CtField(CtClass.intType, "lastButton", trayClass);
-            trayClass.addField(ctField);
-
-            ctField = new CtField(pool.get("java.awt.Robot"), "robot", trayClass);
-            trayClass.addField(ctField);
-
-            CtMethod ctMethodGet = trayClass.getDeclaredMethod("handleMouseEvent");
-
-            Class<?> nsEventClass = null;
-
-            try {
-                nsEventClass = Class.forName("sun.lwawt.macosx.event.NSEvent");
-            } catch (Exception ignored) {
-            }
-            try {
-                nsEventClass = Class.forName("sun.lwawt.macosx.NSEvent");
-            } catch (Exception ignored) {
-            }
-
-            if (nsEventClass == null) {
-                logger.error("Unable to properly check mouse trigger classes for macOS AWT tray menus");
-                return;
-            }
-
-            String nsEventFQND = nsEventClass.getName();
-            String mouseModInfo = "";
-            String mousePressEventInfo = "";
-            String mouseReleaseEventInfo = "";
-            try {
-                if (nsEventClass.getDeclaredMethod("nsToJavaMouseModifiers", int.class, int.class) != null) {
-                    mouseModInfo = "int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());";
-                    mousePressEventInfo = "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
-                    mouseReleaseEventInfo = "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
-
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (nsEventClass.getDeclaredMethod("nsToJavaModifiers", int.class) != null) {
-                    mouseModInfo = "int mouseMods = " + nsEventFQND + ".nsToJavaModifiers(event.getModifierFlags());";
-                    mousePressEventInfo = "java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
-                    mouseReleaseEventInfo = "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, jClickCount, popupTrigger, jButton);";
-                }
-            } catch (Exception ignored) {
-            }
-
-            String mouseClickAction = "";
-            if (OS.INSTANCE.getJavaVersion() > 8) {
-                // java8 on macOS has problems where it doesn't properly assign mouse movement/clicks when emulating left-click behavior.
-                // We aren't going to further support something that is also no longer supported.
-                mouseClickAction =
-                    "int maskButton1 = java.awt.event.InputEvent.getMaskForButton(java.awt.event.MouseEvent.BUTTON1);" +
-                    "robot.mouseMove(mouseX, mouseY);" +
-                    "robot.mousePress(maskButton1);";
-            }
-
-
-            ctMethodGet.setBody("{" +
-                nsEventFQND + " event = $1;" +
-
-                "sun.awt.SunToolkit toolKit = (sun.awt.SunToolkit)java.awt.Toolkit.getDefaultToolkit();" +
-                "int button = event.getButtonNumber();" +
-                "int mouseX = event.getAbsX();" +
-                "int mouseY = event.getAbsY();" +
-
-                // have to intercept to see if it was a button click redirect to preserve what button was used in the event
-                "if (button > 0 && lastButton == 1) {" +
-                    "int eventType = " + nsEventFQND + ".nsToJavaEventType(event.getType());" +
-                    "if (eventType == 501) {" +
-                        // "java.lang.System.err.println(\"Redefining button press to 1: \" + eventType);" +
-
-                        "button = 1;" +
-                        "lastButton = -1;" +
-                    "}" +
-                "}" +
-
-                "if (button > 0 && (button <= 2 || toolKit.areExtraMouseButtonsEnabled()) && button <= toolKit.getNumberOfButtons() - 1) {" +
-                    "int eventType = " + nsEventFQND + ".nsToJavaEventType(event.getType());" +
-                    "int jButton = 0;" +
-                    "int jClickCount = 0;" +
-
-                    "if (eventType != 503) {" +
-                        "jButton = " + nsEventFQND + ".nsToJavaButton(button);" +
-                        "jClickCount = event.getClickCount();" +
-                    "}" +
-
-
-                    // "java.lang.System.err.println(\"Click \" + jButton + \" event: \" + eventType + \" x: \" + mouseX + \" y: \" + mouseY);" +
-
-
-                    //"int mouseMods = " + nsEventFQND + ".nsToJavaMouseModifiers(button, event.getModifierFlags());" +
-                    mouseModInfo +
-
-                    // surprisingly, this is false when the popup is showing
-                    "boolean popupTrigger = " + nsEventFQND + ".isPopupTrigger(mouseMods);" +
-
-                    "int mouseMask = jButton > 0 ? java.awt.event.MouseEvent.getMaskForButton(jButton) : 0;" +
-                    "long event0 = System.currentTimeMillis();" +
-
-                    "if (eventType == 501) {" +
-                        "mouseClickButtons |= mouseMask;" +
-                    "} else if(eventType == 506) {" +
-                        "mouseClickButtons = 0;" +
-                    "}" +
-
-
-                    // have to swallow + re-dispatch events in specific cases. (right click)
-                    "if (eventType == 501 && popupTrigger && button != 0) {" +
-                        // "java.lang.System.err.println(\"Redispatching mouse press. Has popupTrigger \" + " + "popupTrigger + \" event: \" + " + "eventType);" +
-
-                        // we use Robot to left click where we right clicked, in order to "fool" the native part to show the popup
-                        // For what it's worth, this is the only way to get the native bits to behave (since we cannot access the native parts).
-                        "if (robot == null) {" +
-                            "try {" +
-                                "robot = new java.awt.Robot();" +
-                                // the delay is necessary for this to work correctly.
-                                "robot.setAutoDelay(10);" +
-                                "robot.setAutoWaitForIdle(false);" +
-                            "} " +
-                            "catch (java.awt.AWTException e) {" +
-                                "e.printStackTrace();" +
-                            "}" +
-                        "}" +
-
-                        "lastButton = 1;" +
-
-                        // "java.lang.System.err.println(\"Click \" + button + \" x: \" + mouseX + \" y: \" + mouseY);" +
-
-                        // NOTE: This ONLY works if accessibility is granted via macOS permissions!
-                        // Mouse release is not necessary.
-                        // this simulates *just enough* of the default behavior so that right click behaves the same as left click.
-                        // "int maskButton1 = java.awt.event.InputEvent.getMaskForButton(java.awt.event.MouseEvent.BUTTON1);" +
-                        // "robot.mouseMove(mouseX, mouseY);" +
-                        // "robot.mousePress(maskButton1);" +
-                        mouseClickAction +
-
-                        "return;" +
-                     "}" +
-
-
-                    //"java.awt.event.MouseEvent mEvent = new java.awt.event.MouseEvent(this.dummyFrame, eventType, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
-                    mousePressEventInfo +
-
-                    "mEvent.setSource(this.target);" +
-                    "this.postEvent(mEvent);" +
-
-                    // mouse press
-                    "if (eventType == 501) {" +
-                        "if (popupTrigger) {" +
-                            "String event5 = this.target.getActionCommand();" +
-                            "java.awt.event.ActionEvent event6 = new java.awt.event.ActionEvent(this.target, 1001, event5);" +
-                            "this.postEvent(event6);" +
-                        "}" +
-                    "}" +
-
-                    // mouse release
-                    "if (eventType == 502) {" +
-                        "if ((mouseClickButtons & mouseMask) != 0) {" +
-                            // "java.awt.event.MouseEvent event7 = new java.awt.event.MouseEvent(this.dummyFrame, 500, event0, mouseMods, mouseX, mouseY, mouseX, mouseY, jClickCount, popupTrigger, jButton);" +
-                            mouseReleaseEventInfo +
-
-                            "event7.setSource(this.target);" +
-                            "this.postEvent(event7);" +
-                        "}" +
-
-                        "mouseClickButtons &= ~mouseMask;" +
-                    "}" +
-                "}" +
-            "}");
-
-            // perform pre-verification for the modified method
-            ctMethodGet.getMethodInfo().rebuildStackMapForME(pool);
-            mouseEventBytes = trayClass.toBytecode();
-
-            // whoosh, past the classloader and directly into memory.
-            // ClassUtils.defineClass(null, mouseEventBytes);
-
-            if (SystemTray.DEBUG) {
-                logger.debug("Successfully changed mouse trigger for macOS AWT tray menus");
-            }
-        } catch (Exception e) {
-            logger.error("Error changing SystemTray mouse trigger for macOS AWT tray menus.", e);
         }
     }
 }

@@ -41,15 +41,15 @@
        Copyright 2023
          Timothy Wall
 
-     - SLF4J - Simple facade or abstraction for various logging frameworks
-       [MIT License]
-       http://www.slf4j.org
-       Copyright 2023
-         QOS.ch
-
      - Logback - Logback is a logging framework for Java applications
        [The Apache Software License, Version 2.0]
        http://logback.qos.ch
+       Copyright 2023
+         QOS.ch
+
+     - SLF4J - Simple facade or abstraction for various logging frameworks
+       [MIT License]
+       http://www.slf4j.org
        Copyright 2023
          QOS.ch
 
@@ -150,7 +150,7 @@
      - Utilities - Utilities for use within Java projects
        [The Apache Software License, Version 2.0]
        https://git.dorkbox.com/dorkbox/Utilities
-       Copyright 2022
+       Copyright 2023
          Dorkbox LLC
 
        Extra license information
@@ -237,32 +237,32 @@
          - kotlinx.coroutines - Library support for Kotlin coroutines with multiplatform support
            [The Apache Software License, Version 2.0]
            https://github.com/Kotlin/kotlinx.coroutines
-           Copyright 2022
+           Copyright 2023
              JetBrains s.r.o.
 
          - Java Uuid Generator - A set of Java classes for working with UUIDs
            [The Apache Software License, Version 2.0]
            https://github.com/cowtowncoder/java-uuid-generator
-           Copyright 2022
+           Copyright 2023
              Tatu Saloranta (tatu.saloranta@iki.fi)
              Contributors. See source release-notes/CREDITS
 
          - kotlin-logging - Lightweight logging framework for Kotlin
            [The Apache Software License, Version 2.0]
            https://github.com/MicroUtils/kotlin-logging
-           Copyright 2022
+           Copyright 2023
              Ohad Shai
 
          - SLF4J - Simple facade or abstraction for various logging frameworks
            [MIT License]
            http://www.slf4j.org
-           Copyright 2022
+           Copyright 2023
              QOS.ch
 
          - XZ for Java - Complete implementation of XZ data compression in pure Java
            [Public Domain, per Creative Commons CC0]
            https://tukaani.org/xz/java.html
-           Copyright 2022
+           Copyright 2023
              Lasse Collin
              Igor Pavlov
 
@@ -277,38 +277,38 @@
          - JNA - Simplified native library access for Java.
            [The Apache Software License, Version 2.0]
            https://github.com/twall/jna
-           Copyright 2022
+           Copyright 2023
              Timothy Wall
 
          - JNA-Platform - Mappings for a number of commonly used platform functions
            [The Apache Software License, Version 2.0]
            https://github.com/twall/jna
-           Copyright 2022
+           Copyright 2023
              Timothy Wall
 
          - Netty - An event-driven asynchronous network application framework
            [The Apache Software License, Version 2.0]
            https://netty.io
-           Copyright 2022
+           Copyright 2023
              The Netty Project
              Contributors. See source NOTICE
 
          - Bouncy Castle Crypto - Lightweight cryptography API and JCE Extension
            [The Apache Software License, Version 2.0]
            http://www.bouncycastle.org
-           Copyright 2022
+           Copyright 2023
              The Legion of the Bouncy Castle Inc
 
          - Lightweight Java Game Library - Java library that enables cross-platform access to popular native APIs
            [BSD 3-Clause License]
            https://github.com/LWJGL/lwjgl3
-           Copyright 2022
+           Copyright 2023
              Lightweight Java Game Library
 
          - TypeTools - A simple, zero-dependency library for working with types. Supports Java 1.6+ and Android.
            [The Apache Software License, Version 2.0]
            https://github.com/jhalterman/typetools
-           Copyright 2022
+           Copyright 2023
              Jonathan Halterman and friends
 
          - Collections - Niche collections to augment what is already available.
@@ -663,7 +663,7 @@
          - OS - Information about the system, Java runtime, OS, Window Manager, and Desktop Environment.
            [The Apache Software License, Version 2.0]
            https://git.dorkbox.com/dorkbox/OS
-           Copyright 2022
+           Copyright 2023
              Dorkbox LLC
 
            Extra license information
@@ -723,7 +723,7 @@
      - OS - Information about the system, Java runtime, OS, Window Manager, and Desktop Environment.
        [The Apache Software License, Version 2.0]
        https://git.dorkbox.com/dorkbox/OS
-       Copyright 2022
+       Copyright 2023
          Dorkbox LLC
 
        Extra license information

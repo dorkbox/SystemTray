@@ -16,10 +16,15 @@
 package dorkbox.systemTray.ui.osx;
 
 import java.awt.AWTException;
+import java.awt.Component;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 
@@ -28,6 +33,7 @@ import javax.swing.ImageIcon;
 import dorkbox.collections.ArrayMap;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
+import dorkbox.systemTray.util.AwtAccessor;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.util.SwingUtil;
 
@@ -156,6 +162,27 @@ class _OsxAwtTray extends Tray {
                         }
 
                         trayIcon.setPopupMenu((PopupMenu) _native);
+
+                        final AwtOsxMenu awtOsxMenu = this;
+
+                        trayIcon.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public
+                            void mouseClicked(final MouseEvent e) {
+                                final Point2D location = AwtAccessor.getLocation(trayIcon);
+                                final Component component = new Component() {
+                                    @Override
+                                    public
+                                    Point getLocationOnScreen() {
+                                        return new Point((int) location.getX()-5, (int) location.getY()+5);
+                                    }
+                                };
+
+                                AwtAccessor.showPopup(component, _native);
+                            }
+                        });
+
+
 
                         try {
                             tray.add(trayIcon);
