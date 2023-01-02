@@ -165,22 +165,24 @@ class _OsxAwtTray extends Tray {
 
                         final AwtOsxMenu awtOsxMenu = this;
 
-                        trayIcon.addMouseListener(new MouseAdapter() {
-                            @Override
-                            public
-                            void mouseClicked(final MouseEvent e) {
-                                final Point2D location = AwtAccessor.getLocation(trayIcon);
-                                final Component component = new Component() {
-                                    @Override
-                                    public
-                                    Point getLocationOnScreen() {
-                                        return new Point((int) location.getX()-5, (int) location.getY()+5);
-                                    }
-                                };
+                        if (dorkbox.systemTray.SystemTray.AUTO_FIX_INCONSISTENCIES) {
+                            trayIcon.addMouseListener(new MouseAdapter() {
+                                @Override
+                                public
+                                void mouseClicked(final MouseEvent e) {
+                                    final Point2D location = AwtAccessor.getLocation(trayIcon);
+                                    final Component component = new Component() {
+                                        @Override
+                                        public
+                                        Point getLocationOnScreen() {
+                                            return new Point((int) location.getX()-5, (int) location.getY()+5);
+                                        }
+                                    };
 
-                                AwtAccessor.showPopup(component, _native);
-                            }
-                        });
+                                    AwtAccessor.showPopup(component, _native);
+                                }
+                            });
+                        }
 
 
 
