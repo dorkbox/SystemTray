@@ -41,15 +41,15 @@
        Copyright 2023
          Timothy Wall
 
-     - Logback - Logback is a logging framework for Java applications
-       [The Apache Software License, Version 2.0]
-       http://logback.qos.ch
-       Copyright 2023
-         QOS.ch
-
      - SLF4J - Simple facade or abstraction for various logging frameworks
        [MIT License]
        http://www.slf4j.org
+       Copyright 2023
+         QOS.ch
+
+     - Logback - Logback is a logging framework for Java applications
+       [The Apache Software License, Version 2.0]
+       http://logback.qos.ch
        Copyright 2023
          QOS.ch
 
