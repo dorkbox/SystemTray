@@ -65,6 +65,6 @@ class SizeAndScalingMacOS {
         }
 
         // menu items can have scaling applied for a nice looking icon.
-        return SizeAndScalingMacOS.getMacOSScaleFactor() * 16;
+        return SizeAndScalingMacOS.getMacOSScaleFactor() * 20;
     }
 }
