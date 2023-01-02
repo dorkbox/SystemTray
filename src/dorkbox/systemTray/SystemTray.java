@@ -187,6 +187,10 @@ class SystemTray {
     @SuppressWarnings({"ConstantConditions", "StatementWithEmptyBody"})
     public static synchronized
     SystemTray get(String trayName) {
+        // we have to make sure to follow the system appearance (if possible)
+        System.setProperty("apple.awt.application.appearance", "system");
+        System.setProperty("apple.awt.enableTemplateImages", "true");
+
         // we must recreate the menu if we call get() after remove()!
 
 //        if (DEBUG) {
