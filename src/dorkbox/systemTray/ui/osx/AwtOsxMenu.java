@@ -57,6 +57,7 @@ class AwtOsxMenu implements MenuPeer {
             this._native = new java.awt.Menu();
             parent._native.add(this._native);
         }
+        this._native.addNotify();
 
         peerObj = AwtAccessor.getPeer(_native);
     }
