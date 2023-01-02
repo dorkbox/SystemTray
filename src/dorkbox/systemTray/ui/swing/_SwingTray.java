@@ -152,7 +152,6 @@ class _SwingTray extends Tray {
                         popupMenu.pack();
                         popupMenu.setFocusable(true);
 
-                        // appindicators DO NOT support anything other than PLAIN gtk-menus, which do not support tooltips
                         if (tooltipText != null && !tooltipText.isEmpty()) {
                             trayIcon.setToolTip(tooltipText);
                         }
