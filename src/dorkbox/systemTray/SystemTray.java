@@ -501,6 +501,7 @@ class SystemTray {
             String jvmVersion = System.getProperty("java.version", "");
             String jvmVendor = System.getProperty("java.vm.specification.vendor", "");
             logger.debug("{} {} {}", jvmVendor, jvmName, jvmVersion);
+            logger.debug("JPMS enabled: {}", OS.INSTANCE.getUsesJpms());
 
 
             logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
