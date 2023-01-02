@@ -26,7 +26,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.stream.ImageInputStream;
@@ -53,11 +52,12 @@ import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScalingUtil;
-import dorkbox.systemTray.util.SystemTrayFixes;
+import dorkbox.systemTray.util.SystemTrayFixesLinux;
+import dorkbox.systemTray.util.SystemTrayFixesMacOS;
+import dorkbox.systemTray.util.SystemTrayFixesWindows;
 import dorkbox.systemTray.util.WindowsSwingUI;
 import dorkbox.util.CacheUtil;
 import dorkbox.util.SwingUtil;
-import jdk.internal.event.Event;
 
 
 /**
@@ -162,7 +162,7 @@ class SystemTray {
      * <p>
      * If this is using the Swing SystemTray and a SecurityManager is installed, the AWTPermission {@code accessSystemTray} must
      * be granted in order to get the {@code SystemTray} instance. Otherwise, this will return null.
-     *
+     * <p>
      * If you create MORE than 1 system tray, you should use {{@link SystemTray#get(String)}} instead, and specify a unique name for
      * each instance
      */
@@ -312,7 +312,7 @@ class SystemTray {
                             }
                         }
                         else {
-                            // we are NOT using javaFX/SWT and our UI is GTK2 and we want GTK3
+                            // we are NOT using javaFX/SWT and our UI is GTK2, and we want GTK3
                             // JavaFX/SWT can be GTK3, but Swing is not GTK3.
 
                             // we must use GTK2 because Java is configured to use GTK2
@@ -381,7 +381,7 @@ class SystemTray {
                         }
                     }
                     else {
-                        // we are NOT using javaFX/SWT and our UI is GTK3 and we want GTK3
+                        // we are NOT using javaFX/SWT and our UI is GTK3, and we want GTK3
                         // JavaFX/SWT can be GTK3, but Swing is (maybe in the future?) GTK3.
 
                         if (FORCE_GTK2) {
@@ -561,7 +561,7 @@ class SystemTray {
                         }
                         else {
                             // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
-                            SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside of AppIndicator...
+                            SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside AppIndicator...
                             trayType = selectType(TrayType.AppIndicator);
 
                             logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
@@ -689,8 +689,7 @@ class SystemTray {
                 if (isNix && isTrayType(trayType, TrayType.Swing)) {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
-                else if (isWindows &&
-                         (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNative))) {
+                else if (isWindows && (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNative))) {
                     SystemTray.SWING_UI = new WindowsSwingUI();
                 }
             }
@@ -719,7 +718,7 @@ class SystemTray {
                 isTrayType(trayType, TrayType.WindowsNative)) {
 
                 // ensure AWT toolkit is initialized.
-                // OSX is based off of AWT now, instead of creating our own dispatch
+                // OSX is based off of AWT now, insteadof creating our UI + event dispatch
                 java.awt.Toolkit.getDefaultToolkit();
             }
 
@@ -731,23 +730,20 @@ class SystemTray {
 
                     // Our default for windows is now a native tray icon (instead of the swing tray icon), but we preserve the use of Swing
                     // windows hard-codes the image size for AWT/SWING tray types
-                    SystemTrayFixes.fixWindows(trayImageSize);
+                    SystemTrayFixesWindows.fix(trayImageSize);
                 }
                 else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) ||
                                       isTrayType(trayType, TrayType.Osx))) {
                     // Swing on macOS is pretty bland. AWT (with fixes) looks fantastic (and is native)
 
                     // AWT on macosx doesn't respond to all buttons (but should)
-                    SystemTrayFixes.fixMacOS();
+                    SystemTrayFixesMacOS.fix();
                 }
                 else if (isNix && isTrayType(trayType, TrayType.Swing)) {
                     // linux/mac doesn't have transparent backgrounds for swing and hard-codes the image size
-                    SystemTrayFixes.fixLinux(trayImageSize);
+                    SystemTrayFixesLinux.fix(trayImageSize);
                 }
             }
-
-
-
 
 
 
@@ -809,7 +805,7 @@ class SystemTray {
                 logger.info("Successfully loaded");
             }
 
-            SystemTray systemTray = new SystemTray(trayName, systemTrayMenu, imageResizeUtil);
+            SystemTray systemTray = new SystemTray(systemTrayMenu, imageResizeUtil);
             AutoDetectTrayType.setInstance(trayName, systemTray);
 
             // we ALWAYS want to add a **JVM** shutdown hook!
@@ -825,13 +821,11 @@ class SystemTray {
     }
 
     /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
-    private final String trayName;
     private final Tray menu;
     private final ImageResizeUtil imageResizeUtil;
 
     private
-    SystemTray(final String trayName, final Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil) {
-        this.trayName = trayName;
+    SystemTray(final Tray systemTrayMenu, final ImageResizeUtil imageResizeUtil) {
         this.menu = systemTrayMenu;
         this.imageResizeUtil = imageResizeUtil;
     }
@@ -857,22 +851,14 @@ class SystemTray {
         shutdown();
 
         // wait for the system tray Event dispatch to finish running, then run our shutdown logic. This must happen on a different thread
-        EventDispatch.runLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                Thread thread = new Thread(new Runnable() {
-                    @Override
-                    public
-                    void run() {
-                        EventDispatch.waitForShutdown();
-                        runOnShutdown.run();
-                    }
-                });
-                thread.setName("Shutdown");
-                thread.setDaemon(true);
-                thread.run();
-            }
+        EventDispatch.runLater(()->{
+            Thread thread = new Thread(()->{
+                EventDispatch.waitForShutdown();
+                runOnShutdown.run();
+            });
+            thread.setName("SystemTrayShutdown");
+            thread.setDaemon(true);
+            thread.start();
         });
     }
 
