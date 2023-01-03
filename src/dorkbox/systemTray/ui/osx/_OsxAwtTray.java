@@ -173,7 +173,7 @@ class _OsxAwtTray extends Tray {
                                         @Override
                                         public
                                         Point getLocationOnScreen() {
-                                            return new Point((int) location.getX()-5, (int) location.getY()+5);
+                                            return new Point((int) location.getX()-4, (int) location.getY()+6);
                                         }
                                     };
 
