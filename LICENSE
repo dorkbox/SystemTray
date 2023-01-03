@@ -47,12 +47,6 @@
        Copyright 2023
          QOS.ch
 
-     - Logback - Logback is a logging framework for Java applications
-       [The Apache Software License, Version 2.0]
-       http://logback.qos.ch
-       Copyright 2023
-         QOS.ch
-
      - Executor - Shell, JVM, and SSH command execution on Linux, MacOS, or Windows for Java 8+
        [The Apache Software License, Version 2.0]
        https://git.dorkbox.com/dorkbox/Executor
