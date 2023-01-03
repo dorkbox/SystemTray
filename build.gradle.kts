@@ -26,7 +26,7 @@ import java.time.Instant
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "3.4.7"
+    id("com.dorkbox.GradleUtils") version "3.5"
     id("com.dorkbox.Licensing") version "2.17"
     id("com.dorkbox.VersionUpdate") version "2.5"
     id("com.dorkbox.GradlePublish") version "1.13"
@@ -159,11 +159,6 @@ sourceSets {
         compileClasspath += sourceSets.test.get().runtimeClasspath
     }
 }
-//
-//repositories {
-//    mavenLocal() // this must be first!
-//    mavenCentral()
-//}
 
 
 ///////////////////////////////
@@ -194,9 +189,9 @@ dependencies {
     val swtVersion = "3.122.0"
 
     api("com.dorkbox:Executor:3.11")
-    api("com.dorkbox:Utilities:1.31")
+    api("com.dorkbox:Utilities:1.34")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:OS:1.1")
+    api("com.dorkbox:OS:1.2")
 
     api("org.javassist:javassist:3.29.2-GA")
 
@@ -204,11 +199,13 @@ dependencies {
     api("net.java.dev.jna:jna-platform-jpms:${jnaVersion}")
 
     // note: this has support for JPMS, so it's required
-    api("org.slf4j:slf4j-api:2.0.6")
+    api("org.slf4j:slf4j-api:1.8.0-beta4")  // java 8
+//    api("org.slf4j:slf4j-api:2.0.6") // java 11 only
 
 
-    api("ch.qos.logback:logback-classic:1.4.5")
-    val logbackVer = "1.4.5"
+    val logbackVer = "1.3.5" // java 8
+//    val logbackVer = "1.4.5" // java 11 only
+//    api("ch.qos.logback:logback-classic:$logbackVer")
 
 
 
@@ -216,7 +213,7 @@ dependencies {
 
 
     // NOTE: we must have GRADLE ITSELF using the Oracle 1.8 JDK (which includes JavaFX).
-    //       OR we will manually include JavaFx11 (which JavaFx8, for what we use, is compatible)
+    //       OR we will manually include JavaFx11 (JavaFx8, for what we use, is compatible)
 
     // https://stackoverflow.com/questions/52569724/javafx-11-create-a-jar-file-with-gradle
     // JavaFX isn't always added to the compile classpath....
@@ -224,12 +221,10 @@ dependencies {
     if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
         // Paths for the various executables in the Java 'bin' directory
         val javaFxFile = File("${System.getProperty("java.home", ".")}/lib/ext/jfxrt.jar")
-//        val javaFxFile = File("D:/Code/extras/jdk1.8.0_181-oracle/jre/lib/ext/jfxrt.jar")
-        println("\tJavaFX: $javaFxFile")
+        println("\tJava 8, JavaFX: $javaFxFile")
 
         if (javaFxFile.exists()) {
             javaFxExampleCompile(files(javaFxFile))
-//            javaFxDeps(files(javaFxFile))
         } else {
             println("\tJavaFX not found, unable to add JavaFX 8 dependency!")
         }
@@ -250,8 +245,6 @@ dependencies {
         }
 
         val version = "17.0.2"
-//        val version = "11"
-
         javaFxExampleCompile("org.openjfx:javafx-base:$version:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-graphics:$version:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-controls:$version:${platform}")
@@ -271,14 +264,10 @@ dependencies {
 
     val log = testImplementation("ch.qos.logback:logback-classic:$logbackVer")!!
 
-//    configurations["testCompile"].dependencies += configurations["implementation"].dependencies
-//    configurations["testCompile"].dependencies += log
      exampleCompile.dependencies += log
-    javaFxExampleCompile.dependencies += log
-    swtExampleCompile.dependencies += log
+     javaFxExampleCompile.dependencies += log
+     swtExampleCompile.dependencies += log
 
-//    javaFxDeps.dependencies += log
-//
 //    // add all SWT dependencies for all supported OS configurations to a "mega" jar
 //    linux64SwtDeps(SwtType.LINUX_64.fullId(Extras.swtVersion)) { isTransitive = false }
 //    mac64SwtDeps(SwtType.MAC_64.fullId(Extras.swtVersion)) { isTransitive = false }
@@ -311,22 +300,29 @@ dependencies {
 /////////////////////////////
 ////    Tasks to launch examples from gradle
 /////////////////////////////
-task<JavaExec>("example") {
+
+val isMacOS = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem().isMacOsX
+
+task<JavaExec>("SystemTray_default") {
+    group = BasePlugin.BUILD_GROUP
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("dorkbox.TestTray")
     standardInput = System.`in`
 }
 
-task<JavaExec>("javaFxExample") {
+task<JavaExec>("SystemTray_javaFx") {
+    group = BasePlugin.BUILD_GROUP
     classpath = sourceSets.javaFxExample.runtimeClasspath
     mainClass.set("dorkbox.TestTrayJavaFX")
     standardInput = System.`in`
 }
 
-task<JavaExec>("swtExample") {
+task<JavaExec>("SystemTray_swt") {
+    group = BasePlugin.BUILD_GROUP
     classpath = sourceSets.swtExample.runtimeClasspath
     mainClass.set("dorkbox.TestTraySwt")
     standardInput = System.`in`
+    jvmArgs = listOf("-XstartOnFirstThread")
 }
 
 
