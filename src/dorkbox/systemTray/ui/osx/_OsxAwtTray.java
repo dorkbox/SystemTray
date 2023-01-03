@@ -164,20 +164,26 @@ class _OsxAwtTray extends Tray {
                         final AwtOsxMenu awtOsxMenu = this;
 
                         if (dorkbox.systemTray.SystemTray.AUTO_FIX_INCONSISTENCIES) {
+                            dorkbox.systemTray.SystemTray.logger.error("Auto-fixing right-click for macOS system tray");
                             trayIcon.addMouseListener(new MouseAdapter() {
                                 @Override
                                 public
                                 void mouseClicked(final MouseEvent e) {
-                                    final Point2D location = AwtAccessor.getLocation(trayIcon);
-                                    final Component component = new Component() {
-                                        @Override
-                                        public
-                                        Point getLocationOnScreen() {
-                                            return new Point((int) location.getX()-4, (int) location.getY()+6);
-                                        }
-                                    };
+                                    if (!e.isPopupTrigger() && e.getButton() != 1) {
+                                        // there can be race conditions when the native bits are sending events, so we have to manually check these!
+                                        dorkbox.systemTray.SystemTray.logger.error("NOT popup trigger: " + e);
 
-                                    AwtAccessor.showPopup(component, _native);
+                                        final Point2D location = AwtAccessor.getLocation(trayIcon);
+                                        final Component component = new Component() {
+                                            @Override
+                                            public
+                                            Point getLocationOnScreen() {
+                                                return new Point((int) location.getX()-4, (int) location.getY()+6);
+                                            }
+                                        };
+
+                                        AwtAccessor.showPopup(component, _native);
+                                    }
                                 }
                             });
                         }
