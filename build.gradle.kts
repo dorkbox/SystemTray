@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import dorkbox.os.OS
-import dorkbox.os.OSType
 import java.time.Instant
 
 ///////////////////////////////
@@ -33,6 +32,10 @@ plugins {
 
     kotlin("jvm") version "1.7.21"
 }
+
+// TODO: check if there are any images. ONLY if there are images, then we set all menu entries to have image offsets.
+//     otherwise, menus will be left-aligned.
+
 
 object Extras {
     // set for the project
@@ -191,7 +194,7 @@ dependencies {
     api("com.dorkbox:Executor:3.11")
     api("com.dorkbox:Utilities:1.34")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:OS:1.2")
+    api("com.dorkbox:OS:1.3")
 
     api("org.javassist:javassist:3.29.2-GA")
 
