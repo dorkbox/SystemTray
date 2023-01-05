@@ -48,7 +48,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScaling;
 import dorkbox.systemTray.util.SizeAndScalingWindows;
 import dorkbox.util.ImageUtil;
 import dorkbox.util.SwingUtil;
@@ -84,8 +84,8 @@ class _WindowsNativeTray extends Tray {
 
         // setup some swing menu bits...
         // This creates the transparent icon
-        SwingMenuItem.createTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE, imageResizeUtil);
-        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScalingUtil.TRAY_MENU_SIZE);
+        SwingMenuItem.createTransparentIcon(SizeAndScaling.TRAY_MENU_SIZE, imageResizeUtil);
+        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScaling.TRAY_MENU_SIZE);
 
         edt = WindowsEventDispatch.start();
 

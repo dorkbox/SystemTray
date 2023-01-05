@@ -51,7 +51,7 @@ import dorkbox.systemTray.util.AutoDetectTrayType;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.LinuxSwingUI;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScaling;
 import dorkbox.systemTray.util.SystemTrayFixesLinux;
 import dorkbox.systemTray.util.SystemTrayFixesMacOS;
 import dorkbox.systemTray.util.SystemTrayFixesWindows;
@@ -702,8 +702,8 @@ class SystemTray {
 
 
             // initialize tray/menu image sizes. This must be BEFORE the system tray has been created
-            int trayImageSize = SizeAndScalingUtil.getTrayImageSize();
-            int menuImageSize = SizeAndScalingUtil.getMenuImageSize(trayType);
+            int trayImageSize = SizeAndScaling.getTrayImageSize();
+            int menuImageSize = SizeAndScaling.getMenuImageSize(trayType);
 
             if (DEBUG) {
                 logger.debug("Tray indicator image size: {}", trayImageSize);
@@ -755,7 +755,7 @@ class SystemTray {
 
             // initialize the tray icon height
             // this is during init, so we can statically access this everywhere else. Multiple instances of this will always have the same value
-            SizeAndScalingUtil.getMenuImageSize(trayType);
+            SizeAndScaling.getMenuImageSize(trayType);
 
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
@@ -1062,7 +1062,7 @@ class SystemTray {
      */
     public
     int getTrayImageSize() {
-        return SizeAndScalingUtil.getTrayImageSize();
+        return SizeAndScaling.getTrayImageSize();
     }
 
 
@@ -1073,7 +1073,7 @@ class SystemTray {
      */
     public
     int getMenuImageSize() {
-        return SizeAndScalingUtil.TRAY_MENU_SIZE;
+        return SizeAndScaling.TRAY_MENU_SIZE;
     }
 
     /**

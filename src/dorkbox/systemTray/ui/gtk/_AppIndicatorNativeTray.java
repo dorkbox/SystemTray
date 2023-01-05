@@ -27,7 +27,7 @@ import dorkbox.jna.linux.structs.AppIndicatorInstanceStruct;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScaling;
 
 /**
  * Class for handling all system tray interactions.
@@ -221,7 +221,7 @@ class _AppIndicatorNativeTray extends Tray {
             // we initialize with a blank image. Throws RuntimeException if not possible (this should never happen!)
             // Ubuntu 17.10 REQUIRES this to be the correct tray image size, otherwise we get the error:
             // GLib-GIO-CRITICAL **: g_dbus_proxy_new: assertion 'G_IS_DBUS_CONNECTION (connection)' failed
-            File image = imageResizeUtil.getTransparentImage(SizeAndScalingUtil.TRAY_MENU_SIZE);
+            File image = imageResizeUtil.getTransparentImage(SizeAndScaling.TRAY_MENU_SIZE);
             appIndicator = AppIndicator.app_indicator_new(id, image.getAbsolutePath(), AppIndicator.CATEGORY_APPLICATION_STATUS);
         });
 

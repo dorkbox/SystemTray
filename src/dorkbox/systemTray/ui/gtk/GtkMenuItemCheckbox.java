@@ -34,7 +34,7 @@ import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.HeavyCheckMark;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScaling;
 
 class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCallback {
     private static volatile String checkedFile;
@@ -117,7 +117,7 @@ class GtkMenuItemCheckbox extends GtkBaseMenuItem implements CheckboxPeer, GCall
 
                 if (checkedFile == null) {
                     Rectangle size = GtkTheme.getPixelTextHeight("X");
-                    int imageHeight = SizeAndScalingUtil.TRAY_MENU_SIZE;
+                    int imageHeight = SizeAndScaling.TRAY_MENU_SIZE;
                     int height = size.height;
 
                     if (SystemTray.DEBUG) {

@@ -27,7 +27,7 @@ import dorkbox.systemTray.ui.swing._WindowsNativeTray;
 import dorkbox.util.SwingUtil;
 
 public
-class SizeAndScalingUtil {
+class SizeAndScaling {
     // the tray size as best as possible for the current OS
     public static int TRAY_SIZE = 0;
     public static int TRAY_MENU_SIZE = 0;

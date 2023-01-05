@@ -438,10 +438,10 @@ class ImageResizeUtil {
         int size;
         if (isTrayImage) {
             // system tray image
-            size = SizeAndScalingUtil.TRAY_SIZE;
+            size = SizeAndScaling.TRAY_SIZE;
         } else {
             // menu image
-            size = SizeAndScalingUtil.TRAY_MENU_SIZE;
+            size = SizeAndScaling.TRAY_MENU_SIZE;
         }
 
         return size;

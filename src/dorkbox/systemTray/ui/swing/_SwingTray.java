@@ -33,7 +33,7 @@ import dorkbox.os.OS;
 import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.util.ImageResizeUtil;
-import dorkbox.systemTray.util.SizeAndScalingUtil;
+import dorkbox.systemTray.util.SizeAndScaling;
 import dorkbox.util.SwingUtil;
 
 /**
@@ -74,8 +74,8 @@ class _SwingTray extends Tray {
 
         // setup some swing menu bits...
         // This creates the transparent icon
-        SwingMenuItem.createTransparentIcon(SizeAndScalingUtil.TRAY_MENU_SIZE, imageResizeUtil);
-        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScalingUtil.TRAY_MENU_SIZE);
+        SwingMenuItem.createTransparentIcon(SizeAndScaling.TRAY_MENU_SIZE, imageResizeUtil);
+        SwingMenuItemCheckbox.createCheckedIcon(SizeAndScaling.TRAY_MENU_SIZE);
 
 
         // we override various methods, because each tray implementation is SLIGHTLY different. This allows us customization.
@@ -163,7 +163,7 @@ class _SwingTray extends Tray {
                                 TrayPopup popupMenu = (TrayPopup) _native;
                                 Point mousePosition = e.getPoint();
 
-                                double scale = SizeAndScalingUtil.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
+                                double scale = SizeAndScaling.getDpiScaleForMouseClick(mousePosition.x, mousePosition.y);
                                 Point point = new Point((int) (mousePosition.x * scale), (int) (mousePosition.y * scale));
                                 popupMenu.doShow(point, 0);
                             }
