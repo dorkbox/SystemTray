@@ -221,8 +221,8 @@ class _OsxAwtTray extends Tray {
             void setTooltip(final MenuItem menuItem) {
                 final String text = menuItem.getTooltip();
 
-                if (tooltipText != null && tooltipText.equals(text) ||
-                    tooltipText == null && text != null) {
+                if (tooltipText != null && tooltipText.equals(text)) {
+                    // if it's the same, don't do anything
                     return;
                 }
 
