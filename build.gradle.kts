@@ -28,7 +28,7 @@ plugins {
     id("com.dorkbox.GradleUtils") version "3.5"
     id("com.dorkbox.Licensing") version "2.17"
     id("com.dorkbox.VersionUpdate") version "2.5"
-    id("com.dorkbox.GradlePublish") version "1.13"
+    id("com.dorkbox.GradlePublish") version "1.14"
 
     kotlin("jvm") version "1.7.21"
 }
@@ -192,9 +192,9 @@ dependencies {
     val swtVersion = "3.122.0"
 
     api("com.dorkbox:Executor:3.11")
-    api("com.dorkbox:Utilities:1.35")
+    api("com.dorkbox:Utilities:1.36")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:OS:1.5")
+    api("com.dorkbox:OS:1.6")
 
     api("org.javassist:javassist:3.29.2-GA")
 
