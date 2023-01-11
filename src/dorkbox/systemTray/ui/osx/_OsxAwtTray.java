@@ -164,15 +164,13 @@ class _OsxAwtTray extends Tray {
                         final AwtOsxMenu awtOsxMenu = this;
 
                         if (dorkbox.systemTray.SystemTray.AUTO_FIX_INCONSISTENCIES) {
-                            dorkbox.systemTray.SystemTray.logger.error("Auto-fixing right-click for macOS system tray");
+                            dorkbox.systemTray.SystemTray.logger.debug("Auto-fixing right-click for macOS system tray");
                             trayIcon.addMouseListener(new MouseAdapter() {
                                 @Override
                                 public
                                 void mouseClicked(final MouseEvent e) {
                                     if (!e.isPopupTrigger() && e.getButton() != 1) {
                                         // there can be race conditions when the native bits are sending events, so we have to manually check these!
-                                        dorkbox.systemTray.SystemTray.logger.error("NOT popup trigger: " + e);
-
                                         final Point2D location = AwtAccessor.getLocation(trayIcon);
                                         final Component component = new Component() {
                                             @Override
