@@ -277,7 +277,9 @@ class _WindowsNativeTray extends Tray {
         nid.setTooltip(tooltipText);
         if (imageFile != null) {
             HICONWrap imageIcon = convertImage(imageFile);
-            nid.setIcon(imageIcon);
+            if (imageIcon != null) {
+                nid.setIcon(imageIcon);
+            }
         }
         nid.setCallback(WM_SHELLNOTIFY);
 
@@ -295,6 +297,12 @@ class _WindowsNativeTray extends Tray {
                 ImageIcon imageIcon = new ImageIcon(imageFile.getAbsolutePath());
                 // fully loads the image and returns when it's done loading the image
                 imageIcon = new ImageIcon(imageIcon.getImage());
+
+                // for some reason, it's not possible to properly load the image.
+                if (imageIcon.getIconHeight() <= 0 || imageIcon.getIconWidth() <= 0) {
+                    SystemTray.logger.error("Error loading image for the system tray. {}", imageFile);
+                    return null;
+                }
 
                 HBITMAPWrap hbitmapTrayIcon = new HBITMAPWrap(ImageUtil.getBufferedImage(imageIcon));
                 hiconWrap = new HICONWrap(hbitmapTrayIcon);
