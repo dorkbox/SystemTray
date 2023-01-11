@@ -17,6 +17,8 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import dorkbox.jna.ClassUtils;
 import dorkbox.systemTray.SystemTray;
 import javassist.ClassPool;
@@ -57,6 +59,7 @@ import javassist.Modifier;
 @SuppressWarnings("JavadocLinkAsPlainText")
 public
 class SystemTrayFixesMacOS {
+    private static AtomicBoolean loaded = new AtomicBoolean(false);
 
     /**
      * NOTE: Only for SWING + AWT tray types
@@ -77,6 +80,11 @@ class SystemTrayFixesMacOS {
      */
     public static
     void fix() {
+        if (loaded.getAndSet(true)) {
+            // already loaded, no need to fix again in the same JVM.
+            return;
+        }
+
         if (SystemTrayFixes.isSwingTrayLoaded("sun.lwawt.macosx.CTrayIcon")) {
             // we have to throw a significant error.
             throw new RuntimeException("Unable to initialize the AWT System Tray, it has already been created!");

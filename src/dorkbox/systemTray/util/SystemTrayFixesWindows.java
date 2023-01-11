@@ -17,6 +17,8 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import dorkbox.jna.ClassUtils;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
@@ -61,6 +63,8 @@ import javassist.bytecode.Opcode;
 @SuppressWarnings("JavadocLinkAsPlainText")
 public
 class SystemTrayFixesWindows {
+    private static AtomicBoolean loaded = new AtomicBoolean(false);
+
     /**
      * NOTE: Only for SWING
      * <p>
@@ -71,6 +75,11 @@ class SystemTrayFixesWindows {
      */
     public static
     void fix(int trayIconSize) {
+        if (loaded.getAndSet(true)) {
+            // already loaded, no need to fix again in the same JVM.
+            return;
+        }
+
         // ONLY java <= 8
         if (OS.INSTANCE.getJavaVersion() > 8) {
             // there are problems with java 9+

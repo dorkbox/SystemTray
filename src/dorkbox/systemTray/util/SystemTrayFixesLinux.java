@@ -17,6 +17,8 @@ package dorkbox.systemTray.util;
 
 import static dorkbox.systemTray.SystemTray.logger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import dorkbox.jna.ClassUtils;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
@@ -67,7 +69,7 @@ import javassist.bytecode.Opcode;
 @SuppressWarnings("JavadocLinkAsPlainText")
 public
 class SystemTrayFixesLinux {
-
+    private static AtomicBoolean loaded = new AtomicBoolean(false);
 
     /**
      * NOTE: ONLY IS FOR SWING TRAY TYPES!
@@ -95,6 +97,11 @@ class SystemTrayFixesLinux {
      */
     public static
     void fix(int trayIconSize) {
+        if (loaded.getAndSet(true)) {
+            // already loaded, no need to fix again in the same JVM.
+            return;
+        }
+
         // linux/mac doesn't have transparent backgrounds for "swing" system tray icons
 
         // ONLY java <= 8
