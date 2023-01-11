@@ -190,7 +190,9 @@ class SystemTray {
         if (AUTO_FIX_INCONSISTENCIES) {
             // we have to make sure to follow the system appearance (if possible)
             System.setProperty("apple.awt.application.appearance", "system");
-            System.setProperty("apple.awt.enableTemplateImages", "true");
+
+            // Template images are the "black/white" enforced tray theme by macOS. This is left as a reference.
+            // System.setProperty("apple.awt.enableTemplateImages", "true");
         }
 
         // we must recreate the menu if we call get() after remove()!
