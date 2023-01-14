@@ -28,7 +28,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
-import dorkbox.util.Desktop;
+import dorkbox.desktop.Desktop;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;

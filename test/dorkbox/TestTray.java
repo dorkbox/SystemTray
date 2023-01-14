@@ -27,7 +27,7 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
-import dorkbox.util.Desktop;
+import dorkbox.desktop.Desktop;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
