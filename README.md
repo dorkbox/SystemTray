@@ -145,7 +145,9 @@ UbuntuGnome 17.04 | ✓ |
  | |
 XUbuntu 16.04 | ✓ |
  | |
-MacOSx      | ✓ |
+MacOSx 10.x | ✓ |
+MacOSx 11.x | ✓ |
+MacOSx 12.x | ✓ |
  | |
 Windows XP  | ✓ |
 Windows 7   | ✓ |
