@@ -26,7 +26,8 @@ The following unique problems are also solved by this library:
  1. *GNOME3* desktop environments hide or remove entirely system tray icons  (hidden from 3.16-3.25, removed from 3.26+)
  1. *Sun/Oracle* system-tray menus on Windows **look absolutely horrid**  
  1. *Sun/Oracle* system-tray icons on Windows are **hard-coded** to a max size of 24x24 (it was last updated in *2006*)  
- 1. *Sun/Oracle* system-tray menus on MacOS **do not** always respond to both mouse buttons, where Apple menus do  
+ 1. *Sun/Oracle* AWT system-tray menus on MacOS **do not** respond to both mouse buttons, where native menus do
+ 1. *Sun/Oracle* AWT system-tray menus on MacOS **do not** support images, where native menus do
  1. Windows *native* menus **do not** support images attached to menu entries  
  1. Windows menus **do not** support a different L&F from the running application  
  1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
@@ -34,7 +35,7 @@ The following unique problems are also solved by this library:
 
 
 
-This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
+This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 8+
 
 &nbsp;  
 &nbsp;  
@@ -76,7 +77,7 @@ Problems and Restrictions
  
  - **Gnome 3: 3.26+** (Fedora, Manjaro, Arch, etc) environments by default **do not** allow the SystemTray icon to be shown. This has been worked around and the tray icon will be placed next to the clock. A **different** workaround is to install the [Appindicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) plugin which allows the addition of app-indicator icons where one would expect. Additionally, you will need to install `libappindicator-gtk3`.
   
- - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Specifically, Swing and GtkStatusIcon types support tray tooltips and menu tooltips. AWT and AppIndicator types do not support tooltips of any kind. Please note that **Ubuntu** uses AppIndicators!
+ - **ToolTips** The maximum length is 64 characters long, and it is not supported on all Operating Systems and Desktop Environments. Specifically, Swing and GtkStatusIcon types support tray tooltips and menu tooltips. AppIndicator types do not support tooltips of any kind. Please note that **Ubuntu** uses AppIndicators!
                      
  - **Linux/Unix Menus** Some Linux environments only support right-click to display the menu, and it is not possible to change the behavior.
  
@@ -157,7 +158,7 @@ WSL 2  | x |
 
 Notes:
 -------
- - If you have us working on an *unlisted* OS/DE, please let us know!!
+ - If you are working on an *unlisted* OS/DE, please let us know!!
  
  - The compatibility list only applies while the SystemTray is in `AutoDetect` mode. Not all OSes support forcing a custom tray type.
  
@@ -308,15 +309,9 @@ The test application is [on Git](https://git.dorkbox.com/dorkbox/SystemTray/src/
         throw new RuntimeException("Unable to load SystemTray!");
     }
  
-    systemTray.installShutdownHook();
-    try {
-        systemTray.setImage("grey_icon.png");
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
- 
+
+    systemTray.setImage("grey_icon.png");
     systemTray.setStatus("Not Running");
-    
     
     systemTray.getMenu().add(new MenuItem("Quit", new ActionListener() {
         @Override
@@ -413,6 +408,5 @@ dependencies {
 
 License
 ---------
-This project is © 2021 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further 
+This project is © 2023 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further 
 references.
-
