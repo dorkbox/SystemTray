@@ -196,7 +196,7 @@ dependencies {
     api("com.dorkbox:JNA:1.0")
     api("com.dorkbox:OS:1.6")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:Utilities:1.38")
+    api("com.dorkbox:Utilities:1.39")
 
     api("org.javassist:javassist:3.29.2-GA")
 
