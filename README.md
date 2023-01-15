@@ -139,6 +139,7 @@ Ubuntu 17.04 | ✓ |
 Ubuntu 17.10 | ✓ |
 Ubuntu 18.04 | ✓ |
 Ubuntu 20.04 | ✓ |
+Ubuntu 22.04 | ✓ |
  | |
 UbuntuGnome 16.04 | ✓ |
 UbuntuGnome 17.04 | ✓ |
