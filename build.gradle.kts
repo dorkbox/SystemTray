@@ -262,6 +262,7 @@ dependencies {
 //        }
     }
 
+    // SEE: https://repo1.maven.org/maven2/org/eclipse/platform/
     swtExampleCompile(GradleUtils.getSwtMavenId(swtVersion)) {
         isTransitive = false
     }
@@ -305,8 +306,6 @@ dependencies {
 /////////////////////////////
 ////    Tasks to launch examples from gradle
 /////////////////////////////
-
-val isMacOS = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem().isMacOsX
 
 task<JavaExec>("SystemTray_default") {
     group = BasePlugin.BUILD_GROUP
