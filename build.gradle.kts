@@ -25,12 +25,12 @@ import java.time.Instant
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "3.6"
-    id("com.dorkbox.Licensing") version "2.17"
+    id("com.dorkbox.GradleUtils") version "3.8"
+    id("com.dorkbox.Licensing") version "2.19.1"
     id("com.dorkbox.VersionUpdate") version "2.5"
-    id("com.dorkbox.GradlePublish") version "1.15"
+    id("com.dorkbox.GradlePublish") version "1.17"
 
-    kotlin("jvm") version "1.7.21"
+    kotlin("jvm") version "1.7.22"
 }
 
 // TODO: check if there are any images. ONLY if there are images, then we set all menu entries to have image offsets.
@@ -41,7 +41,7 @@ object Extras {
     // set for the project
     const val description = "Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+"
     const val group = "com.dorkbox"
-    const val version = "4.2"
+    const val version = "4.2.1"
 
     // set as project.ext
     const val name = "SystemTray"
