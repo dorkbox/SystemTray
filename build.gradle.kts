@@ -183,7 +183,7 @@ tasks.jar.get().apply {
 }
 
 dependencies {
-    val jnaVersion = "5.12.1"
+    val jnaVersion = "5.13"
 
     // This is really SWT version 4.xx? no idea how the internal versions are tracked
     // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
@@ -196,7 +196,7 @@ dependencies {
     api("com.dorkbox:JNA:1.0")
     api("com.dorkbox:OS:1.6")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:Utilities:1.39")
+    api("com.dorkbox:Utilities:1.40")
 
     api("org.javassist:javassist:3.29.2-GA")
 
