@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import dorkbox.os.OS
-import java.time.Instant
 
 ///////////////////////////////
 //////    PUBLISH TO SONATYPE / MAVEN CENTRAL
@@ -25,12 +24,12 @@ import java.time.Instant
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "3.8"
-    id("com.dorkbox.Licensing") version "2.19.1"
-    id("com.dorkbox.VersionUpdate") version "2.5"
-    id("com.dorkbox.GradlePublish") version "1.17"
+    id("com.dorkbox.GradleUtils") version "3.17"
+    id("com.dorkbox.Licensing") version "2.25"
+    id("com.dorkbox.VersionUpdate") version "2.8"
+    id("com.dorkbox.GradlePublish") version "1.18"
 
-    kotlin("jvm") version "1.7.22"
+    kotlin("jvm") version "1.8.0"
 }
 
 // TODO: check if there are any images. ONLY if there are images, then we set all menu entries to have image offsets.
@@ -49,8 +48,6 @@ object Extras {
     const val vendor = "Dorkbox LLC"
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/SystemTray"
-
-    val buildDate = Instant.now().toString()
 }
 
 ///////////////////////////////
@@ -177,7 +174,7 @@ tasks.jar.get().apply {
         attributes["Specification-Vendor"] = Extras.vendor
 
         attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
-        attributes["Implementation-Version"] = Extras.buildDate
+        attributes["Implementation-Version"] = GradleUtils.now()
         attributes["Implementation-Vendor"] = Extras.vendor
     }
 }
@@ -191,7 +188,7 @@ dependencies {
     // 3.1116.100 is the MOST RECENT version supported by macos ARM.
     val swtVersion = "3.122.0"
 
-    api("com.dorkbox:Executor:3.11")
+    api("com.dorkbox:Executor:3.13")
     api("com.dorkbox:Desktop:1.0")
     api("com.dorkbox:JNA:1.0")
     api("com.dorkbox:OS:1.6")
