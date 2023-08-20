@@ -25,7 +25,7 @@ gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS_FULL   // always sh
 
 plugins {
     id("com.dorkbox.GradleUtils") version "3.17"
-    id("com.dorkbox.Licensing") version "2.25"
+    id("com.dorkbox.Licensing") version "2.26"
     id("com.dorkbox.VersionUpdate") version "2.8"
     id("com.dorkbox.GradlePublish") version "1.18"
 
@@ -180,7 +180,7 @@ tasks.jar.get().apply {
 }
 
 dependencies {
-    val jnaVersion = "5.12.1"
+    val jnaVersion = "5.13.0"
 
     // This is really SWT version 4.xx? no idea how the internal versions are tracked
     // 4.4 is the oldest version that works with us, and the release of SWT is sPecIaL!
@@ -189,11 +189,11 @@ dependencies {
     val swtVersion = "3.122.0"
 
     api("com.dorkbox:Executor:3.13")
-    api("com.dorkbox:Desktop:1.0")
-    api("com.dorkbox:JNA:1.0")
-    api("com.dorkbox:OS:1.6")
+    api("com.dorkbox:Desktop:1.1")
+    api("com.dorkbox:JNA:1.2")
+    api("com.dorkbox:OS:1.8")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:Utilities:1.40")
+    api("com.dorkbox:Utilities:1.45")
 
     api("org.javassist:javassist:3.29.2-GA")
 
@@ -202,13 +202,12 @@ dependencies {
 
     // note: this has support for JPMS, so it's required
     api("org.slf4j:slf4j-api:1.8.0-beta4")  // java 8
-//    api("org.slf4j:slf4j-api:2.0.6") // java 11 only
+//    api("org.slf4j:slf4j-api:2.0.7") // java 11 only
 
 
     val logbackVer = "1.3.5" // java 8
 //    val logbackVer = "1.4.5" // java 11 only
 //    api("ch.qos.logback:logback-classic:$logbackVer")
-
 
 
 
