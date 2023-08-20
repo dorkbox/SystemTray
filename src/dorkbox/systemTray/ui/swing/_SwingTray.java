@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ class _SwingTray extends Tray {
             @Override
             public
             void setEnabled(final MenuItem menuItem) {
-                SwingUtil.invokeLater(()->{
+                SwingUtil.INSTANCE.invokeLater(()->{
                     if (tray == null) {
                         tray = SystemTray.getSystemTray();
                     }
@@ -114,7 +114,7 @@ class _SwingTray extends Tray {
             void setImage(final MenuItem menuItem) {
                 imageFile = menuItem.getImage();
 
-                SwingUtil.invokeLater(()->{
+                SwingUtil.INSTANCE.invokeLater(()->{
                     if (tray == null) {
                         tray = SystemTray.getSystemTray();
                     }
@@ -127,7 +127,7 @@ class _SwingTray extends Tray {
                             if (previousImage == null) {
                                 previousImage = new ImageIcon(path).getImage();
                                 imageCache.put(path, previousImage);
-                                if (imageCache.size > 120) {
+                                if (imageCache.getSize() > 120) {
                                     dorkbox.systemTray.SystemTray.logger.error("More than 120 different images used for the SystemTray icon. This will lead to performance issues.");
                                 }
                             }
@@ -212,7 +212,7 @@ class _SwingTray extends Tray {
 
                 tooltipText = text;
 
-                SwingUtil.invokeLater(()->{
+                SwingUtil.INSTANCE.invokeLater(()->{
                     // don't want to matter which (setImage/setTooltip/setEnabled) is done first, and if the image/enabled is changed, we
                     // want to make sure keep the tooltip text the same as before.
                     if (trayIcon != null) {
@@ -225,14 +225,14 @@ class _SwingTray extends Tray {
             public
             void remove() {
                 synchronized (imageCache) {
-                    for (final Image value : imageCache.values()) {
+                    for (final Image value : imageCache.getValues()) {
                         value.flush();
                     }
 
                     imageCache.clear();
                 }
 
-                SwingUtil.invokeAndWaitQuietly(()->{
+                SwingUtil.INSTANCE.invokeAndWaitQuietly(()->{
                     if (trayIcon != null) {
                         if (tray != null) {
                             tray.remove(trayIcon);

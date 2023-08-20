@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,7 +145,7 @@ class SystemTray {
      */
     public static
     String getVersion() {
-        return "4.2.2";
+        return "4.3";
     }
 
     static {
@@ -787,7 +787,7 @@ class SystemTray {
                 (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.Osx))) {
                 // have to construct swing stuff inside the swing EDT
                 final Class<? extends Menu> finalTrayType = trayType;
-                SwingUtil.invokeAndWait(()->{
+                SwingUtil.INSTANCE.invokeAndWait(()->{
                     try {
                         reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
                     } catch (Exception e) {

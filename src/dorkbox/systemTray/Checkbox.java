@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -216,7 +216,7 @@ class Checkbox extends Entry {
      */
     public
     void setShortcut(final int key) {
-        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
+        this.mnemonicKey = SwingUtil.INSTANCE.getFromVirtualKey(key);
 
         if (peer != null) {
             ((CheckboxPeer) peer).setShortcut(this);
@@ -275,7 +275,7 @@ class Checkbox extends Entry {
         jCheckBoxMenuItem.setText(getText());
         jCheckBoxMenuItem.setToolTipText(getTooltip());
         jCheckBoxMenuItem.setEnabled(getEnabled());
-        jCheckBoxMenuItem.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+        jCheckBoxMenuItem.setMnemonic(SwingUtil.INSTANCE.getVirtualKey(getShortcut()));
 
         jCheckBoxMenuItem.setState(getChecked());
         jCheckBoxMenuItem.addActionListener(getCallback());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ class ImageResizeUtil {
             imageStream.mark(0);
 
             // check if we already have this file information saved to disk, based on size + hash of data
-            final String cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
+            final String cacheName = size + "_" + CacheUtil.Companion.createNameAsHash(imageStream);
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 
@@ -166,7 +166,7 @@ class ImageResizeUtil {
             imageStream.mark(0);
 
             // check if we already have this file information saved to disk, based on size + hash of data
-            cacheName = size + "_" + CacheUtil.createNameAsHash(imageStream);
+            cacheName = size + "_" + CacheUtil.Companion.createNameAsHash(imageStream);
             ((ByteArrayInputStream) imageStream).reset();  // casting to avoid unnecessary try/catch for IOException
 
 

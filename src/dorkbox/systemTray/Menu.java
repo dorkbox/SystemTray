@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -333,7 +333,7 @@ class Menu extends MenuItem {
         jMenu.setText(getText());
         jMenu.setToolTipText(getTooltip());
         jMenu.setEnabled(getEnabled());
-        jMenu.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+        jMenu.setMnemonic(SwingUtil.INSTANCE.getVirtualKey(getShortcut()));
 
 
         synchronized (menuEntries) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class AwtOsxMenuItemStatus implements StatusPeer {
     @Override
     public
     void setText(final Status menuItem) {
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             Font font = _native.getFont();
             if (font == null) {
                 font = new Font(DIALOG, Font.BOLD, 12); // the default font used for dialogs.
@@ -59,6 +59,6 @@ class AwtOsxMenuItemStatus implements StatusPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(()->parent._native.remove(_native));
+        SwingUtil.INSTANCE.invokeLater(()->parent._native.remove(_native));
     }
 }

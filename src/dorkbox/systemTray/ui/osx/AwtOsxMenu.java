@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class AwtOsxMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeAndWaitQuietly(()->{
+        SwingUtil.INSTANCE.invokeAndWaitQuietly(()->{
             if (entry instanceof Menu) {
                 AwtOsxMenu menu = new AwtOsxMenu(AwtOsxMenu.this);
                 ((Menu) entry).bind(menu, parentMenu, parentMenu.getImageResizeUtil());
@@ -101,7 +101,7 @@ class AwtOsxMenu implements MenuPeer {
 
         if (peerObj != null && imageFile != null) {
             Image image = new ImageIcon(imageFile.getAbsolutePath()).getImage();
-            SwingUtil.invokeLater(()-> {
+            SwingUtil.INSTANCE.invokeLater(()-> {
                 try {
                     AwtAccessor.setImage(peerObj, image);
                 } catch (Exception e) {
@@ -115,14 +115,14 @@ class AwtOsxMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
     // is overridden in tray impl
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setLabel(menuItem.getText()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setLabel(menuItem.getText()));
     }
 
     @Override
@@ -136,9 +136,9 @@ class AwtOsxMenu implements MenuPeer {
     public
     void setShortcut(final MenuItem menuItem) {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
-        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.INSTANCE.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(()->_native.setShortcut(new MenuShortcut(vKey)));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setShortcut(new MenuShortcut(vKey)));
     }
 
     @SuppressWarnings("DuplicatedCode")
@@ -151,7 +151,7 @@ class AwtOsxMenu implements MenuPeer {
         String tooltipText = menuItem.getTooltip();
 
         if (peerObj != null && tooltipText != null) {
-            SwingUtil.invokeLater(()-> {
+            SwingUtil.INSTANCE.invokeLater(()-> {
                 try {
                     AwtAccessor.setToolTipText(peerObj, tooltipText);
                 } catch (Exception e) {
@@ -164,7 +164,7 @@ class AwtOsxMenu implements MenuPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             _native.removeAll();
             _native.deleteShortcut();
             _native.setEnabled(false);

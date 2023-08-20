@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ class TrayPopup extends JPopupMenu {
     public
     void doShow(final Point point, int offset) {
         Dimension size = getPreferredSize();
-        Rectangle bounds = ScreenUtil.getScreenBoundsAt(point);
+        Rectangle bounds = ScreenUtil.INSTANCE.getScreenBoundsAt(point);
 
         int x = point.x;
         int y = point.y;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -435,7 +435,7 @@ class MenuItem extends Entry {
      */
     public
     void setShortcut(final int key) {
-        this.mnemonicKey = SwingUtil.getFromVirtualKey(key);
+        this.mnemonicKey = SwingUtil.INSTANCE.getFromVirtualKey(key);
 
         if (peer != null) {
             ((MenuItemPeer) peer).setShortcut(this);
@@ -496,7 +496,7 @@ class MenuItem extends Entry {
         jMenuItem.setText(getText());
         jMenuItem.setToolTipText(getTooltip());
         jMenuItem.setEnabled(getEnabled());
-        jMenuItem.setMnemonic(SwingUtil.getVirtualKey(getShortcut()));
+        jMenuItem.setMnemonic(SwingUtil.INSTANCE.getVirtualKey(getShortcut()));
 
         jMenuItem.addActionListener(getCallback());
 

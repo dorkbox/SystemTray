@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             File imageFile = menuItem.getImage();
             if (imageFile != null) {
                 ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
@@ -98,13 +98,13 @@ class SwingMenuItem implements MenuItemPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setText(menuItem.getText()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setText(menuItem.getText()));
     }
 
     @SuppressWarnings("Duplicates")
@@ -143,22 +143,22 @@ class SwingMenuItem implements MenuItemPeer {
     public
     void setShortcut(final MenuItem menuItem) {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
-        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.INSTANCE.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(()->_native.setMnemonic(vKey));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setMnemonic(vKey));
     }
 
     @Override
     public
     void setTooltip(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setToolTipText(menuItem.getTooltip()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setToolTipText(menuItem.getTooltip()));
     }
 
     @Override
     public
     void remove() {
         //noinspection Duplicates
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             if (callback != null) {
                 _native.removeActionListener(callback);
                 callback = null;

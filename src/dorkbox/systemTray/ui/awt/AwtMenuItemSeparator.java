@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,6 @@ class AwtMenuItemSeparator implements EntryPeer {
     @Override
     public
     void remove() {
-        SwingUtil.invokeLater(()->parent._native.remove(_native));
+        SwingUtil.INSTANCE.invokeLater(()->parent._native.remove(_native));
     }
 }

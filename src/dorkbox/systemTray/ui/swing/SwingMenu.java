@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class SwingMenu implements MenuPeer {
     public
     void add(final Menu parentMenu, final Entry entry, final int index) {
         // must always be called on the EDT
-        SwingUtil.invokeAndWaitQuietly(()->{
+        SwingUtil.INSTANCE.invokeAndWaitQuietly(()->{
             // don't add this entry if it's already been added via another method. Because of threading via swing/gtk, entries can
             // POSSIBLY get added twice. Once via add() and once via bind().
             if (entry.hasPeer()) {
@@ -109,7 +109,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setImage(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             File imageFile = menuItem.getImage();
             if (imageFile != null) {
                 ImageIcon origIcon = new ImageIcon(imageFile.getAbsolutePath());
@@ -125,7 +125,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setEnabled(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
+        SwingUtil.INSTANCE.invokeLater(()->_native.setEnabled(menuItem.getEnabled()));
     }
 
 
@@ -133,7 +133,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public
     void setText(final MenuItem menuItem) {
-        SwingUtil.invokeLater(()->((JMenu) _native).setText(menuItem.getText()));
+        SwingUtil.INSTANCE.invokeLater(()->((JMenu) _native).setText(menuItem.getText()));
     }
 
     @Override
@@ -147,9 +147,9 @@ class SwingMenu implements MenuPeer {
     public
     void setShortcut(final MenuItem menuItem) {
         // Will return 0 as the vKey if it's not set (which will remove the shortcut)
-        final int vKey = SwingUtil.getVirtualKey(menuItem.getShortcut());
+        final int vKey = SwingUtil.INSTANCE.getVirtualKey(menuItem.getShortcut());
 
-        SwingUtil.invokeLater(()->((JMenu) _native).setMnemonic(vKey));
+        SwingUtil.INSTANCE.invokeLater(()->((JMenu) _native).setMnemonic(vKey));
     }
 
     @Override
@@ -164,7 +164,7 @@ class SwingMenu implements MenuPeer {
     @Override
     public synchronized
     void remove() {
-        SwingUtil.invokeLater(()->{
+        SwingUtil.INSTANCE.invokeLater(()->{
             _native.setVisible(false);
             _native.removeAll();
 
