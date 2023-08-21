@@ -596,13 +596,6 @@
              Lightweight Java Game Library Project
              Riven
 
-         - Modified hex conversion utility methods - 
-           [The Apache Software License, Version 2.0]
-           https://git.dorkbox.com/dorkbox/Utilities
-           https://netty.io
-           Copyright 2014
-             The Netty Project
-
          - Retrofit - A type-safe HTTP client for Android and Java
            [The Apache Software License, Version 2.0]
            https://github.com/square/retrofit
