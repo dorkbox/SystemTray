@@ -27,9 +27,9 @@ plugins {
     id("com.dorkbox.GradleUtils") version "3.17"
     id("com.dorkbox.Licensing") version "2.26"
     id("com.dorkbox.VersionUpdate") version "2.8"
-    id("com.dorkbox.GradlePublish") version "1.18"
+    id("com.dorkbox.GradlePublish") version "1.20"
 
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.9.0"
 }
 
 // TODO: check if there are any images. ONLY if there are images, then we set all menu entries to have image offsets.
