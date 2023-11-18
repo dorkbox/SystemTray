@@ -100,6 +100,9 @@ class SystemTray {
     /** Enables auto-detection for the system tray. This should be mostly successful. */
     public static volatile boolean AUTO_SIZE = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".AUTO_SIZE", true);
 
+    /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
+    public static volatile String APP_NAME = "SystemTray";
+
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
     public static volatile boolean FORCE_GTK2 = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".FORCE_GTK2", false);
 
@@ -168,7 +171,7 @@ class SystemTray {
      */
     public static
     SystemTray get() {
-        return get("SystemTray");
+        return get(APP_NAME);
     }
 
     /**
