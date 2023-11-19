@@ -287,13 +287,13 @@ class AutoDetectTrayType {
                 case KDE: {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
 
-                    double plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersion();
+                    String plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersionFull();
 
                     if (DEBUG) {
                         logger.debug("KDE Plasma Version: {}", plasmaVersion);
                     }
 
-                    if (plasmaVersion == 0.0) {
+                    if (plasmaVersion == null) {
                         // this shouldn't ever happen!
 
                         logger.error("KDE Plasma detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
@@ -302,7 +302,10 @@ class AutoDetectTrayType {
                         return selectType(TrayType.Gtk);
                     }
 
-                    if (plasmaVersion <= 5.5) {
+                    String[] versionParts = plasmaVersion.split("\\.");
+                    int majorVersion = Integer.parseInt(versionParts[0]);
+                    int minorVersion = Integer.parseInt(versionParts[1]);
+                    if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 5)) {
                         // older versions use GtkStatusIcon
                         return selectType(TrayType.Gtk);
                     } else {
