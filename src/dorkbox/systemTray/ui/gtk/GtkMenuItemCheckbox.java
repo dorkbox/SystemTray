@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import com.sun.jna.Pointer;
 import dorkbox.jna.linux.GCallback;
 import dorkbox.jna.linux.GObject;
 import dorkbox.jna.linux.GtkEventDispatch;
-import dorkbox.jna.linux.GtkTheme;
 import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.peer.CheckboxPeer;
 import dorkbox.systemTray.util.EventDispatch;
+import dorkbox.systemTray.util.GtkTheme;
 import dorkbox.systemTray.util.HeavyCheckMark;
 import dorkbox.systemTray.util.SizeAndScaling;
 

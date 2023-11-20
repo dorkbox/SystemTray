@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.util;
 
-import dorkbox.jna.linux.GtkTheme;
 
 /**
  * Size and scaling utility functions specific to Linux
