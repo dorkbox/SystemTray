@@ -186,13 +186,13 @@ dependencies {
     // 3.1116.100 is the MOST RECENT version supported by macos ARM.
     val swtVersion = "3.122.0"
 
-    api("com.dorkbox:Collections:2.4")
-    api("com.dorkbox:Executor:3.13")
+    api("com.dorkbox:Collections:2.7")
+    api("com.dorkbox:Executor:3.14")
     api("com.dorkbox:Desktop:1.1")
-    api("com.dorkbox:JNA:1.2")
-    api("com.dorkbox:OS:1.8")
+    api("com.dorkbox:JNA:1.3")
+    api("com.dorkbox:OS:1.11")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:Utilities:1.46")
+    api("com.dorkbox:Utilities:1.47")
 
     api("org.javassist:javassist:3.29.2-GA")
 
