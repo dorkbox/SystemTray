@@ -283,7 +283,13 @@ class ExtensionSupport {
         FileOutputStream fileOutputStream = null;
 
         try {
-            inputStream = new ZipInputStream(ExtensionSupport.class.getResourceAsStream(zipResourceName));
+            final InputStream resourceAsStream = ExtensionSupport.class.getResourceAsStream(zipResourceName);
+            if (resourceAsStream == null) {
+                SystemTray.logger.error("The appindicator extension resource cannot be found. This is unexpected!");
+                return false;
+            }
+
+            inputStream = new ZipInputStream(resourceAsStream);
 
             ZipEntry entry;
             while ((entry = inputStream.getNextEntry()) != null) {
