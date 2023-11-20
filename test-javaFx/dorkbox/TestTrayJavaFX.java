@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ class TestTrayJavaFX {
         SystemTray.DEBUG = true; // for test apps, we always want to run in debug mode
 
         // for test apps, make sure the cache is always reset. These are the ones used, and you should never do this in production.
-        CacheUtil.clear("SysTrayExample");
+        new CacheUtil("SysTrayExample").clear();
 
         // SwingUtil.setLookAndFeel(null); // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
         // SystemTray.SWING_UI = new CustomSwingUI();
