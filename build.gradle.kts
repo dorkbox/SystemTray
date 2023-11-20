@@ -103,21 +103,19 @@ sourceSets {
                         "dorkbox/systemTray/util/error_32.png")
             }
         }
+
+        kotlin {
+            setSrcDirs(listOf("src"))
+        }
     }
 
     test {
-        java {
-            srcDir(sourceSets["main"].allJava)
-        }
-
         resources {
             setSrcDirs(listOf("test"))
             include("dorkbox/*.png")
-
-            srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets.main.get().runtimeClasspath
+        compileClasspath += sourceSets["main"].runtimeClasspath
     }
 
     javaFxExample {
@@ -137,7 +135,7 @@ sourceSets {
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets.test.get().runtimeClasspath
+        compileClasspath += sourceSets["test"].runtimeClasspath
     }
 
     swtExample {
@@ -156,7 +154,7 @@ sourceSets {
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets.test.get().runtimeClasspath
+        compileClasspath += sourceSets["test"].runtimeClasspath
     }
 }
 
@@ -306,7 +304,7 @@ dependencies {
 
 task<JavaExec>("SystemTray_default") {
     group = BasePlugin.BUILD_GROUP
-    classpath = sourceSets.test.get().runtimeClasspath
+    classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("dorkbox.TestTray")
     standardInput = System.`in`
 }
@@ -336,9 +334,10 @@ task<Jar>("jarExample") {
     description = "Create an all-in-one example for testing, on a standard Java installation"
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    outputs.upToDateWhen { false }
 
-    from(sourceSets.test.get().output.classesDirs)
-    from(sourceSets.test.get().output.resourcesDir)
+    from(sourceSets["main"].output)
+    from(sourceSets["test"].output)
 
     from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.DSA", "META-INF/*.SF")
@@ -355,9 +354,10 @@ task<Jar>("jarJavaFxExample") {
     description = "Create an all-in-one example for testing, using JavaFX"
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    outputs.upToDateWhen { false }
 
-    from(sourceSets.javaFxExample.output.classesDirs)
-    from(sourceSets.javaFxExample.output.resourcesDir)
+    from(sourceSets["main"].output)
+    from(sourceSets.javaFxExample.output)
 
 //    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
 //        exclude("META-INF/*.DSA", "META-INF/*.SF")
@@ -380,9 +380,10 @@ task<Jar>("jarSwtExample") {
     description = "Create an all-in-one example for testing, using SWT"
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    outputs.upToDateWhen { false }
 
-    from(sourceSets.swtExample.output.classesDirs)
-    from(sourceSets.swtExample.output.resourcesDir)
+    from(sourceSets["main"].output)
+    from(sourceSets.swtExample.output)
 
 //    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
 //        exclude("META-INF/*.DSA", "META-INF/*.SF")
