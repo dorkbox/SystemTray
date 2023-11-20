@@ -21,9 +21,6 @@ import javax.swing.JMenuItem;
 
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
-import dorkbox.systemTray.Tray;
-import dorkbox.systemTray.ui.swing._SwingTray;
-import dorkbox.systemTray.ui.swing._WindowsNativeTray;
 import dorkbox.util.SwingUtil;
 
 public
@@ -69,12 +66,12 @@ class SizeAndScaling {
     }
 
     public static
-    int getMenuImageSize(final Class<? extends Tray> trayType) {
+    int getMenuImageSize(final SystemTray.TrayType trayType) {
         if (TRAY_MENU_SIZE == 0) {
             if (OS.INSTANCE.isMacOsX()) {
                 TRAY_MENU_SIZE = SizeAndScalingMacOS.getMenuImageSize();
             }
-            else if ((trayType == _SwingTray.class) || (trayType == _WindowsNativeTray.class)) {
+            else if (trayType == SystemTray.TrayType.Swing || trayType == SystemTray.TrayType.WindowsNative) {
                 // Java does not scale the menu item IMAGE **AT ALL**, we must provide the correct size to begin with
 
                 if (OS.INSTANCE.isWindows()) {

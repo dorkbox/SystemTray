@@ -16,8 +16,6 @@
 package dorkbox.systemTray;
 
 import static dorkbox.systemTray.util.AutoDetectTrayType.fromClass;
-import static dorkbox.systemTray.util.AutoDetectTrayType.isTrayType;
-import static dorkbox.systemTray.util.AutoDetectTrayType.selectType;
 
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
@@ -539,11 +537,12 @@ class SystemTray {
 
 
         // this has to happen BEFORE any sort of swing system tray stuff is accessed
-        Class<? extends Tray> trayType;
+        TrayType trayType;
+
         if (SystemTray.FORCE_TRAY_TYPE == TrayType.AutoDetect) {
             trayType = AutoDetectTrayType.get(trayName);
         } else {
-            trayType = selectType(SystemTray.FORCE_TRAY_TYPE);
+            trayType = SystemTray.FORCE_TRAY_TYPE;
         }
 
         if (trayType == null) {
@@ -555,25 +554,24 @@ class SystemTray {
         }
 
 
-
         // fix various incompatibilities with selected tray types
         if (isNix) {
             // Ubuntu UNITY has issues with GtkStatusIcon (it won't work at all...)
-            if (isTrayType(trayType, TrayType.Gtk)) {
+            if (trayType == TrayType.Gtk) {
                 OS.DesktopEnv.Env de = OS.DesktopEnv.INSTANCE.getEnv();
 
                 if (OS.Linux.INSTANCE.isUbuntu() && OS.DesktopEnv.INSTANCE.isUnity(de)) {
                     if (AUTO_FIX_INCONSISTENCIES) {
                         // GTK2 does not support AppIndicators!
                         if (Gtk.isGtk2) {
-                            trayType = selectType(TrayType.Swing);
+                            trayType = TrayType.Swing;
                             logger.warn("Forcing Swing Tray type because Ubuntu Unity display environment removed support for GtkStatusIcons " +
                                         "and GTK2+ was specified.");
                         }
                         else {
                             // we must use AppIndicator because Ubuntu Unity removed GtkStatusIcon support
                             SystemTray.FORCE_TRAY_TYPE = TrayType.AppIndicator; // this is required because of checks inside AppIndicator...
-                            trayType = selectType(TrayType.AppIndicator);
+                            trayType = TrayType.AppIndicator;
 
                             logger.warn("Forcing AppIndicator because Ubuntu Unity display environment removed support for GtkStatusIcons.");
                         }
@@ -600,11 +598,11 @@ class SystemTray {
                 }
             }
 
-            if (isTrayType(trayType, TrayType.AppIndicator)) {
+            if (trayType == TrayType.AppIndicator) {
                 if (SystemTray.ENABLE_ROOT_CHECK && OS.Linux.INSTANCE.isRoot()) {
                     // if are we running as ROOT, there can be issues (definitely on Ubuntu 16.04, maybe others)!
                     if (AUTO_FIX_INCONSISTENCIES) {
-                        trayType = selectType(TrayType.Swing);
+                        trayType = TrayType.Swing;
 
                         logger.warn("Attempting to load the SystemTray as the 'root/sudo' user. This will likely not work because of dbus " +
                                     "restrictions. Using the Swing Tray type instead. Please refer to the readme notes or issue #63 on " +
@@ -639,7 +637,7 @@ class SystemTray {
 
         if (trayType == null) {
             // unsupported tray, or unknown type
-            trayType = selectType(TrayType.Swing);
+            trayType = TrayType.Swing;
 
             logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Falling back to the Swing Tray.");
         }
@@ -661,13 +659,13 @@ class SystemTray {
                 }
 
                 if (!Gtk.isLoaded) {
-                    trayType = selectType(TrayType.Swing);
+                    trayType = TrayType.Swing;
 
                     logger.error("Unable to initialize GTK! Something is severely wrong! Using the Swing Tray type instead.");
                 }
 
                 // this will to load the app-indicator library
-                else if (isTrayType(trayType, TrayType.AppIndicator)) {
+                else if (trayType == TrayType.AppIndicator) {
                     if (!AppIndicator.isLoaded) {
                         // YIKES. AppIndicator couldn't load.
 
@@ -678,7 +676,7 @@ class SystemTray {
 
                         // can we fallback to swing? KDE does not work for this...
                         if (AUTO_FIX_INCONSISTENCIES && java.awt.SystemTray.isSupported() && !OS.DesktopEnv.INSTANCE.isKDE()) {
-                            trayType = selectType(TrayType.Swing);
+                            trayType = TrayType.Swing;
 
                             logger.warn("Unable to initialize the AppIndicator correctly. Using the Swing Tray type instead.");
                             logger.warn(installString);
@@ -697,10 +695,10 @@ class SystemTray {
 
             // have to make adjustments BEFORE the tray/menu image size calculations
             if (AUTO_FIX_INCONSISTENCIES && SystemTray.SWING_UI == null) {
-                if (isNix && isTrayType(trayType, TrayType.Swing)) {
+                if (isNix && trayType == TrayType.Swing) {
                     SystemTray.SWING_UI = new LinuxSwingUI();
                 }
-                else if (isWindows && (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.WindowsNative))) {
+                else if (isWindows && (trayType == TrayType.Swing || trayType == TrayType.WindowsNative)) {
                     SystemTray.SWING_UI = new WindowsSwingUI();
                 }
             }
@@ -723,10 +721,10 @@ class SystemTray {
                 return null;
             }
 
-            if (isTrayType(trayType, TrayType.Swing) ||
-                isTrayType(trayType, TrayType.Awt) ||
-                isTrayType(trayType, TrayType.Osx) ||
-                isTrayType(trayType, TrayType.WindowsNative)) {
+            if (trayType == TrayType.Swing ||
+                trayType == TrayType.Awt ||
+                trayType == TrayType.Osx ||
+                trayType == TrayType.WindowsNative) {
 
                 // ensure AWT toolkit is initialized.
                 // OSX is based off of AWT now, insteadof creating our UI + event dispatch
@@ -736,21 +734,21 @@ class SystemTray {
 
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after AWT/GTK is started (if applicable)
-                if (isWindows && isTrayType(trayType, TrayType.Swing)) {
+                if (isWindows && trayType == TrayType.Swing) {
                     // we don't permit AWT for windows (it looks absolutely HORRID)
 
                     // Our default for windows is now a native tray icon (instead of the swing tray icon), but we preserve the use of Swing
                     // windows hard-codes the image size for AWT/SWING tray types
                     SystemTrayFixesWindows.fix(trayImageSize);
                 }
-                else if (isMacOsX && (isTrayType(trayType, TrayType.Awt) ||
-                                      isTrayType(trayType, TrayType.Osx))) {
+                else if (isMacOsX && (trayType == TrayType.Awt ||
+                                      trayType == TrayType.Osx)) {
                     // Swing on macOS is pretty bland. AWT (with fixes) looks fantastic (and is native)
 
                     // AWT on macosx doesn't respond to all buttons (but should)
                     SystemTrayFixesMacOS.fix();
                 }
-                else if (isNix && isTrayType(trayType, TrayType.Swing)) {
+                else if (isNix && trayType == TrayType.Swing) {
                     // linux/mac doesn't have transparent backgrounds for swing and hard-codes the image size
                     SystemTrayFixesLinux.fix(trayImageSize);
                 }
@@ -786,32 +784,33 @@ class SystemTray {
             // javaFX and SWT **CAN NOT** start on the EDT!!
             // linux + GTK/AppIndicator + windows-native menus must not start on the EDT!
             // AWT + Swing + AWT-macOS must be constructed on the EDT however...
+            final Class<? extends Menu> trayClass = AutoDetectTrayType.selectType(trayType);
+
             if (RenderProvider.isDefault() &&
-                (isTrayType(trayType, TrayType.Swing) || isTrayType(trayType, TrayType.Awt) || isTrayType(trayType, TrayType.Osx))) {
+                (trayType == TrayType.Swing || trayType == TrayType.Awt || trayType == TrayType.Osx)) {
                 // have to construct swing stuff inside the swing EDT
-                final Class<? extends Menu> finalTrayType = trayType;
                 SwingUtil.INSTANCE.invokeAndWait(()->{
                     try {
-                        reference.set((Tray) finalTrayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
+                        reference.set((Tray) trayClass.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
                     } catch (Exception e) {
-                        logger.error("Unable to create tray type: '{}'", finalTrayType.getSimpleName(), e);
+                        logger.error("Unable to create tray type: '{}'", trayClass.getSimpleName(), e);
                     }
                 });
             }
             else {
-                reference.set((Tray) trayType.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
+                reference.set((Tray) trayClass.getConstructors()[0].newInstance(trayName, imageResizeUtil, onRemoveEvent));
             }
 
             // we have a weird circle dependency thing going on!
             Tray systemTrayMenu = reference.get();
 
             if (systemTrayMenu == null) {
-                logger.error("Unable to create tray type: '{}'", trayType.getSimpleName());
+                logger.error("Unable to create tray type: '{}'", trayType);
                 return null;
             }
 
             if (DEBUG) {
-                logger.info("Successfully loaded type: {}", trayType.getSimpleName());
+                logger.info("Successfully loaded type: {}", trayType);
             } else {
                 logger.info("Successfully loaded");
             }
@@ -825,7 +824,7 @@ class SystemTray {
 
             return systemTray;
         } catch (Exception e) {
-            logger.error("Unable to create tray type: '{}'", trayType.getSimpleName(), e);
+            logger.error("Unable to create tray type: '{}", trayType, e);
         }
 
         return null;

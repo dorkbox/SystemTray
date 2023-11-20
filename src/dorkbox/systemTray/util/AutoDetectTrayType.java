@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,32 +96,18 @@ class AutoDetectTrayType {
         return null;
     }
 
-    public static
-    boolean isTrayType(final Class<? extends Tray> tray, final TrayType trayType) {
-        switch (trayType) {
-            case Gtk: return tray == _GtkStatusIconNativeTray.class;
-            case AppIndicator: return tray == _AppIndicatorNativeTray.class;
-            case WindowsNative: return tray == _WindowsNativeTray.class;
-            case Swing: return tray == _SwingTray.class;
-            case Osx: return tray == _OsxAwtTray.class;
-            case Awt: return tray == _AwtTray.class;
-        }
-
-        return false;
-    }
-
     /**
      * @return what the default "autodetect" tray type should be
      */
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public static
-    Class<? extends Tray> get(final String trayName) {
+    TrayType get(final String trayName) {
         if (OS.INSTANCE.isWindows()) {
-            return selectType(TrayType.WindowsNative);
+            return TrayType.WindowsNative;
         }
         else if (OS.INSTANCE.isMacOsX()) {
             // macOS can ONLY use AWT if you want it to follow the L&F of the OS. It is the default.
-            return selectType(TrayType.Osx);
+            return TrayType.Osx;
         }
         else if ((OS.INSTANCE.isLinux() || OS.INSTANCE.isUnix())) {
             // see: https://askubuntu.com/questions/72549/how-to-determine-which-window-manager-is-running
@@ -165,7 +151,7 @@ class AutoDetectTrayType {
                         // UGH. At least ubuntu un-butchers gnome.
                         if (OS.Linux.INSTANCE.isUbuntu()) {
                             // so far, because of the interaction between gnome3 + ubuntu, the GtkStatusIcon miraculously works.
-                            return selectType(TrayType.Gtk);
+                            return TrayType.Gtk;
                         }
 
                         // "default" can be gnome3 on debian/kali
@@ -186,7 +172,7 @@ class AutoDetectTrayType {
                             logger.error("GNOME shell detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
                                          "Please create an issue with as many details as possible.");
 
-                            return selectType(TrayType.Gtk);
+                            return TrayType.Gtk;
                         }
 
                         if (DEBUG) {
@@ -209,12 +195,12 @@ class AutoDetectTrayType {
 
 
                         if (major == 2) {
-                            return selectType(TrayType.Gtk);
+                            return TrayType.Gtk;
                         }
                         else if (major == 3) {
                             if (minorAndPatch < 16.0D) {
                                 logger.warn("SystemTray works, but will only show via SUPER+M.");
-                                return selectType(TrayType.Gtk);
+                                return TrayType.Gtk;
                             }
                             else if (minorAndPatch < 26.0D) {
                                 Tray.gtkGnomeWorkaround = true;
@@ -223,7 +209,7 @@ class AutoDetectTrayType {
 
                                 // now, what VERSION of fedora? "normal" fedora doesn't have AppIndicator installed, so we have to use GtkStatusIcon
                                 // 23 is gtk, 24/25/26 is gtk (but also wrong size unless we adjust it. ImageUtil automatically does this)
-                                return selectType(TrayType.Gtk);
+                                return TrayType.Gtk;
                             }
                             else {
                                 // 'pure' gnome3 DOES NOT support legacy tray icons any more. This ability has ENTIRELY been removed. NOTE: Ubuntu still supports these via app-indicators.
@@ -237,27 +223,27 @@ class AutoDetectTrayType {
                                     return null;
                                 }
 
-                                return selectType(TrayType.AppIndicator);
+                                return TrayType.AppIndicator;
                             }
                         }
                         else {
                             logger.error("GNOME shell detected, but UNSUPPORTED shell version (" + gnomeVersion + "). Falling back to GtkStatusIcon. " +
                                          "Please create an issue with as many details as possible.");
 
-                            return selectType(TrayType.Gtk);
+                            return TrayType.Gtk;
                         }
                     }
                     else if ("cinnamon".equalsIgnoreCase(GDM)) {
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     }
                     else if ("gnome-classic".equalsIgnoreCase(GDM)) {
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     }
                     else if ("gnome-fallback".equalsIgnoreCase(GDM)) {
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     }
                     else if ("awesome".equalsIgnoreCase(GDM)) {
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     }
                     else if ("ubuntu".equalsIgnoreCase(GDM)) {
                         // NOTE: popOS can also get here. It will also version check (since it's ubuntu-like)
@@ -276,13 +262,13 @@ class AutoDetectTrayType {
                             DummyFile.install();
                         }
 
-                        return selectType(TrayType.AppIndicator);
+                        return TrayType.AppIndicator;
                     }
 
                     logger.error("GNOME shell detected, but UNKNOWN type. This should never happen. Falling back to GtkStatusIcon. " +
                                  "Please create an issue with as many details as possible.");
 
-                    return selectType(TrayType.Gtk);
+                    return TrayType.Gtk;
                 }
                 case KDE: {
                     // kde 5.8+ is "high DPI", so we need to adjust the scale. Image resize will do that
@@ -299,7 +285,7 @@ class AutoDetectTrayType {
                         logger.error("KDE Plasma detected, but UNDEFINED shell version. This should never happen. Falling back to GtkStatusIcon. " +
                                      "Please create an issue with as many details as possible.");
 
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     }
 
                     String[] versionParts = plasmaVersion.split("\\.");
@@ -307,19 +293,19 @@ class AutoDetectTrayType {
                     int minorVersion = Integer.parseInt(versionParts[1]);
                     if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 5)) {
                         // older versions use GtkStatusIcon
-                        return selectType(TrayType.Gtk);
+                        return TrayType.Gtk;
                     } else {
                         // newer versions use appindicator, but the user MIGHT have to install libappindicator
-                        return selectType(TrayType.AppIndicator);
+                        return TrayType.AppIndicator;
                     }
                 }
                 case Unity: {
                     // Ubuntu Unity is a weird combination. It's "Gnome", but it's not "Gnome Shell".
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 }
                 case Unity7: {
                     // Ubuntu Unity7 (17.04, which has MIR) is a weird combination. It's "Gnome", but it's not "Gnome Shell".
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 }
                 case XFCE: {
                     // NOTE: XFCE used to use appindicator3, which DOES NOT support images in the menu. This change was reverted.
@@ -327,13 +313,13 @@ class AutoDetectTrayType {
                     // see: https://git.gnome.org/browse/gtk+/commit/?id=627a03683f5f41efbfc86cc0f10e1b7c11e9bb25
 
                     // so far, it is OK to use GtkStatusIcon on XFCE <-> XFCE4 inclusive
-                    return selectType(TrayType.Gtk);
+                    return TrayType.Gtk;
                 }
                 case LXDE: {
-                    return selectType(TrayType.Gtk);
+                    return TrayType.Gtk;
                 }
                 case MATE: {
-                    return selectType(TrayType.Gtk);
+                    return TrayType.Gtk;
                 }
                 case Pantheon: {
                     // elementaryOS. It only supports appindicator (not gtkstatusicon)
@@ -344,7 +330,7 @@ class AutoDetectTrayType {
 
                     // ElementaryOS shows the checkbox on the right, everyone else is on the left.
                     // With eOS, we CANNOT show the spacer image. It does not work.
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 }
                 case ChromeOS:
                     // ChromeOS cannot use the swing tray (ChromeOS is not supported!), nor AppIndicaitor/GtkStatusIcon, as those
@@ -377,26 +363,26 @@ class AutoDetectTrayType {
                         String line = FileUtil.INSTANCE.readFirstLine(status);
                         if (line != null && line.contains("indicator-app")) {
                             // make sure we can also load the library (it might be the wrong version)
-                            return selectType(TrayType.AppIndicator);
+                            return TrayType.AppIndicator;
                         }
                     }
                 }
             } catch (Throwable e) {
                 if (DEBUG) {
-                    logger.error("Error detecting gnome version", e);
+                    logger.error("Error detecting appindicator status", e);
                 }
             }
 
             if (OS.INSTANCE.isLinux()) {
                 // now just blanket query what we are to guess...
                 if (OS.Linux.INSTANCE.isUbuntu()) {
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 }
                 else if (OS.Linux.INSTANCE.isFedora()) {
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 } else {
                     // AppIndicators are now the "default" for most linux distro's.
-                    return selectType(TrayType.AppIndicator);
+                    return TrayType.AppIndicator;
                 }
             }
         }
