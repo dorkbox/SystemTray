@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,9 +33,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import dorkbox.executor.Executor;
-import dorkbox.executor.processResults.SyncProcessResult;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
+import dorkbox.systemTray.util.KotlinUtils;
 import dorkbox.util.IO;
 
 @SuppressWarnings({"WeakerAccess"})
@@ -46,12 +45,7 @@ class ExtensionSupport {
     List<String> getEnabledExtensions() {
         String output;
         try {
-            SyncProcessResult result = new Executor()
-                                               .commandSplit("gsettings get org.gnome.shell enabled-extensions")
-                                               .enableRead()
-                                               .startBlocking();
-
-            output = result.getOutput().utf8();
+            output = KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "get", "org.gnome.shell enabled-extensions");
         } catch (Exception e) {
             logger.error("Unable to get gnome shell extensions!", e);
             output = "";
@@ -140,7 +134,7 @@ class ExtensionSupport {
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org']"
         // gsettings set org.gnome.shell enabled-extensions "['background-logo@fedorahosted.org', 'SystemTray@Dorkbox']"
         try {
-            new Executor().command("gsettings", "set", "org.gnome.shell", "enabled-extensions", stringBuilder.toString()).startBlocking();
+            KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "set", "org.gnome.shell", "enabled-extensions", stringBuilder.toString());
         } catch (Exception e) {
             logger.error("Unable to set gnome shell extensions!", e);
         }
@@ -184,31 +178,6 @@ class ExtensionSupport {
 
         // We don't care when the shell restarts, since WHEN IT DOES restart, our extension will show our icon.
         // Until then however, there will be errors which can be ignored, because the shell-restart means everything works.
-    }
-
-    protected static
-    String readFile(final File metaDatafile) {
-        StringBuilder builder = new StringBuilder(256);
-        BufferedReader bin = null;
-        try {
-            bin = new BufferedReader(new FileReader(metaDatafile));
-            String line;
-            while ((line = bin.readLine()) != null) {
-                builder.append(line)
-                       .append("\n");
-            }
-        } catch (Exception ignored) {
-        } finally {
-            if (bin != null) {
-                try {
-                    bin.close();
-                } catch (IOException e) {
-                    logger.error("Error closing: {}", bin, e);
-                }
-            }
-        }
-
-        return builder.toString();
     }
 
     /**
@@ -410,7 +379,7 @@ class ExtensionSupport {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected static
     boolean needsUpgrade(final String metadata, final File metaDatafile) {
-        String existingMetadata = ExtensionSupport.readFile(metaDatafile);
+        String existingMetadata = KotlinUtils.INSTANCE.readText(metaDatafile);
 
         if (SystemTray.DEBUG) {
             logger.debug("Extension already installed, checking for upgrade");
