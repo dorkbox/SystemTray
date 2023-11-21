@@ -42,7 +42,7 @@ import dorkbox.util.IO;
 public
 class ExtensionSupport {
     // this can only be modified with a shell-restart (or, in our case to log out/in)
-    private static final List<String> enabledExtensions = getEnabledExtensions();
+    static final List<String> enabledExtensions = getEnabledExtensions();
 
     private final String name;
     private final String UID;

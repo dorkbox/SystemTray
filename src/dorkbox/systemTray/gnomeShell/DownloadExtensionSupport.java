@@ -16,7 +16,6 @@
 package dorkbox.systemTray.gnomeShell;
 
 import java.io.File;
-import java.util.List;
 
 import dorkbox.systemTray.SystemTray;
 import dorkbox.systemTray.util.KotlinUtils;
@@ -25,8 +24,6 @@ import dorkbox.systemTray.util.KotlinUtils;
 public
 class DownloadExtensionSupport {
     // this can only be modified with a shell-restart (or, in our case to log out/in)
-    private static final List<String> enabledExtensions = ExtensionSupport.getEnabledExtensions();
-
     private final String name;
     private final String UID;
 
@@ -43,7 +40,7 @@ class DownloadExtensionSupport {
 
     public
     boolean isInstalled() {
-        return enabledExtensions.contains(UID);
+        return ExtensionSupport.enabledExtensions.contains(UID);
     }
 
     /**
@@ -63,7 +60,7 @@ class DownloadExtensionSupport {
             return false;
         }
 
-        boolean isInstalled = enabledExtensions.contains(UID);
+        boolean isInstalled = ExtensionSupport.enabledExtensions.contains(UID);
 
         // when the gnome version CHANGES, reinstall the extension!!
         if (isInstalled) {
@@ -108,10 +105,10 @@ class DownloadExtensionSupport {
 
     public static
     void unInstall(String UID, String restartCommand) {
-        final boolean enabled = enabledExtensions.contains(UID);
+        final boolean enabled = ExtensionSupport.enabledExtensions.contains(UID);
         if (enabled) {
-            enabledExtensions.remove(UID);
-            ExtensionSupport.setEnabledExtensions(enabledExtensions);
+            ExtensionSupport.enabledExtensions.remove(UID);
+            ExtensionSupport.setEnabledExtensions(ExtensionSupport.enabledExtensions);
         }
 
         // remove the extension from the drive
