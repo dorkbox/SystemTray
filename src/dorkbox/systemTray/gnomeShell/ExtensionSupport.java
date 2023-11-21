@@ -45,7 +45,8 @@ class ExtensionSupport {
     List<String> getEnabledExtensions() {
         String output;
         try {
-            output = KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "get", "org.gnome.shell enabled-extensions");
+            // gsettings get org.gnome.shell enabled-extensions
+            output = KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "get", "org.gnome.shell", "enabled-extensions");
         } catch (Exception e) {
             logger.error("Unable to get gnome shell extensions!", e);
             output = "";
@@ -58,6 +59,7 @@ class ExtensionSupport {
         //  - fedora 23:   ['background-logo@fedorahosted.org']  on
         //  - openSuse:
         //  - Ubuntu Gnome 16.04:   @as []
+        //  - fedora 39: ['--schemadir SCHEMADIR', 'appindicatorsupport@rgcjonas.gmail.com']
 
         final StringBuilder stringBuilder = new StringBuilder(output);
 
