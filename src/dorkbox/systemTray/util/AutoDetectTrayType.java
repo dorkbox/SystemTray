@@ -340,6 +340,7 @@ class AutoDetectTrayType {
                     return null;
             }
 
+
             // Try to autodetect if we can use app indicators (or if we need to fallback to GTK indicators)
             BufferedReader bin = null;
             try {
@@ -373,13 +374,15 @@ class AutoDetectTrayType {
                 }
             }
 
+
             if (OS.INSTANCE.isLinux()) {
                 // now just blanket query what we are to guess...
                 if (OS.Linux.INSTANCE.isUbuntu()) {
                     return TrayType.AppIndicator;
                 }
                 else if (OS.Linux.INSTANCE.isFedora()) {
-                    return TrayType.AppIndicator;
+                    // newer version of fedora are GTK only
+                    return TrayType.Gtk;
                 } else {
                     // AppIndicators are now the "default" for most linux distro's.
                     return TrayType.AppIndicator;
