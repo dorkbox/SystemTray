@@ -586,13 +586,51 @@ class SystemTray {
                 }
 
                 if (de == OS.DesktopEnv.Env.Gnome) {
-                    boolean hasWeirdOsProblems = OS.Linux.INSTANCE.isKali() || (OS.Linux.INSTANCE.isFedora());
-                    if (hasWeirdOsProblems) {
+                    if (OS.Linux.INSTANCE.isKali()) {
                         // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
-                        PREFER_GTK3 = false;
-
-                        if (DEBUG) {
+                        if (DEBUG && PREFER_GTK3) {
                             logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
+                        }
+
+                        PREFER_GTK3 = false;
+                    } else if (OS.Linux.INSTANCE.isFedora()) {
+                        // check the version!
+                        String gnomeVersion = OS.DesktopEnv.INSTANCE.getGnomeVersion();
+                        if (gnomeVersion == null) {
+                            // this shouldn't ever happen!
+
+                            // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
+                            if (PREFER_GTK3 && DEBUG) {
+                                logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
+                            }
+
+                            PREFER_GTK3 = false;
+                        } else {
+                            // we have version info!!
+
+                            // get the major/minor/patch, if possible.
+                            int major = 0;
+                            double minorAndPatch = 0.0D;
+
+                            // this isn't the BEST way to do this, but it's simple and easy to understand
+                            String[] split = gnomeVersion.split("\\.",2);
+
+                            try {
+                                major = Integer.parseInt(split[0]);
+                                minorAndPatch = Double.parseDouble(split[1]);
+                            } catch (Exception ignored) {
+                            }
+
+                            if (major == 2 || major == 3) {
+                                // Fedora and Kali linux has some WEIRD graphical oddities via GTK3. GTK2 looks just fine.
+                                if (PREFER_GTK3 && DEBUG) {
+                                    logger.debug("Preferring GTK2 because this OS has weird graphical issues with GTK3 status icons");
+                                }
+
+                                PREFER_GTK3 = false;
+                            }
+
+                            // newer versions of gnomeshell, ie: 40+, work great with gtk3
                         }
                     }
                 }
