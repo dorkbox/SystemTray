@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,17 @@ import dorkbox.systemTray.SystemTray;
  *      https://github.com/ubuntu/gnome-shell-extension-appindicator
  *      https://extensions.gnome.org/extension/615/appindicator-support
  *
- * This extension is licensed GPLv2, and thus, for the extension - we include it as an "AGGREGATE" software package.
+ * This extension is licensed GPLv2, and we include it as an "AGGREGATE" software package.
+ *
+ * Additionally, we do not depend on, link, or interact with this in any way.
  *
  * There are several CRITICAL points to be observed if we are to not violate the GPLv2 license!
  *
- *  1) We do not execute this code. Gnome-shell executes it, and `libappindicator` calls it. We make API calls into `libappindicator` (with or without this extension)
+ *  1) We do not execute or control this code. Gnome-shell executes it, and it is a separate program (we do not link nor are we a derivative).
  *       - The only thing we do is install it
  *
- *  2) As per the GPL FAQ itself (http://www.gnu.org/licenses/gpl-faq.html#MereAggregation), we can bundle AND install GPLv2 software without violating the GPLv2.
- *      - NOTE: GPLv3 is completely different, and you can no longer do this.
+ *  2) As per the GPL FAQ itself (http://www.gnu.org/licenses/gpl-faq.html#MereAggregation), we can bundle AND install GPL software
+ *      without being in violation - provided we do not link or exchange data structure with it.
  *
  *  This is the relevant part of the GPLv2 FAQ:
  *       An “aggregate” consists of a number of separate programs, distributed together on the same CD-ROM or other media.
@@ -45,11 +47,8 @@ import dorkbox.systemTray.SystemTray;
  *       condition is that you cannot release the aggregate under a license that prohibits users from exercising rights that each program's individual
  *       license would grant them.
  *
- *  3) The installed software (this GPL extension) is free for modification (we do not do integrity checks, only manifest version checks)
- *
- *  4) The GPLv2 licensed code is not modified in any way.
- *
- *  5) GPLv2 licensed code does not have to be modifiable on the distribution medium (for example, a CD-ROM is read-only media and is legal for distribution)
+ *  3) The installed software (this GPL extension) is free for modification (we do not do integrity checks, only manifest version checks),
+ *      additionally, if this extension is already installed/modified from a different source, then we do nothing.
  *
  *  We take the same approach as VMare.
  *       VMWare Server includes GPL code into their distribution and:
