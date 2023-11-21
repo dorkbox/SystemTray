@@ -39,6 +39,7 @@ import dorkbox.jna.linux.structs.GtkRequisition;
 import dorkbox.jna.linux.structs.GtkStyle;
 import dorkbox.jna.linux.structs.PangoRectangle;
 import dorkbox.os.OS;
+import dorkbox.systemTray.SystemTray;
 
 /**
  * Class to contain all the various methods needed to get information set by a GTK theme.
@@ -241,35 +242,44 @@ class GtkTheme {
 
 
 
-        OS.DesktopEnv.Env env = OS.DesktopEnv.INSTANCE.getEnv();
+
 
         // sometimes the scaling-factor is set. If we have gsettings, great! otherwise try KDE
-        try {
-            String output = KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "get", "org.gnome.desktop.interface", "scaling-factor");
-            if (!output.isEmpty() && !output.endsWith("not found")) {
-                // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
-                // should be: uint32 0  or something
-                if (output.contains("uint32")) {
-                    String value = output.substring(output.indexOf("uint") + 7);
+        if (screenScale.get() == 0) {
+            try {
+                String output = KotlinUtils.INSTANCE.execute("/usr/bin/gsettings", "get", "org.gnome.desktop.interface", "scaling-factor");
+                if (!output.isEmpty() && !output.endsWith("not found")) {
+                    // DEFAULT icon size is 16. HiDpi changes this scale, so we should use it as well.
+                    // should be: uint32 0  or something
+                    if (output.contains("uint32")) {
+                        String value = output.substring(output.indexOf("uint") + 7);
 
-                    // 0 is disabled (no scaling)
-                    // 1 is enabled (default scale)
-                    // 2 is 2x scale
-                    // 3 is 3x scale
-                    // etc
+                        // 0 is disabled (no scaling)
+                        // 1 is enabled (default scale)
+                        // 2 is 2x scale
+                        // 3 is 3x scale
+                        // etc
 
-                    double scalingFactor = Double.parseDouble(value);
-                    if (scalingFactor >= 1) {
-                        screenScale.set(scalingFactor);
+                        double scalingFactor = Double.parseDouble(value);
+                        if (scalingFactor >= 1) {
+                            screenScale.set(scalingFactor);
+                        }
+
+                        // A setting of 2, 3, etc, which is all you can do with scaling-factor
+                        // To enable HiDPI, use gsettings:
+                        // gsettings set org.gnome.desktop.interface scaling-factor 2
                     }
-
-                    // A setting of 2, 3, etc, which is all you can do with scaling-factor
-                    // To enable HiDPI, use gsettings:
-                    // gsettings set org.gnome.desktop.interface scaling-factor 2
                 }
+            } catch (Throwable ignore) {
             }
-        } catch (Throwable ignore) {
         }
+
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("screen scale: " + screenScale.get());
+            SystemTray.logger.debug("screen DPI: " + screenDPI.get());
+        }
+
 
         if (OS.DesktopEnv.INSTANCE.isKDE()) {
             // check the custom KDE override file
@@ -294,8 +304,6 @@ class GtkTheme {
             }
 
 
-//        System.err.println("screen scale: " + screenScale.get());
-//        System.err.println("screen DPI: " + screenDPI.get());
 
             if (screenScale.get() == 0) {
                 /*
@@ -398,6 +406,8 @@ class GtkTheme {
             }
         }
 
+
+        OS.DesktopEnv.Env env = OS.DesktopEnv.INSTANCE.getEnv();
         if (OS.Linux.INSTANCE.isUbuntu() && OS.DesktopEnv.INSTANCE.isUnity(env)) {
             // if we measure on ubuntu unity using a screen shot (using swing, so....) , the max size was 24, HOWEVER this goes from
             // the top->bottom of the indicator bar -- and since it was swing, it uses a different rendering method and it (honestly)
