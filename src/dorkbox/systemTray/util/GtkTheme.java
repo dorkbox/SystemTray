@@ -48,10 +48,10 @@ import dorkbox.systemTray.SystemTray;
 public
 class GtkTheme {
     /** Fallback for an unknown tray image size. */
-    public static volatile int TRAY_IMAGE_SIZE_FALLBACK = OS.INSTANCE.getInt(GtkTheme.class.getCanonicalName() + ".TRAY_IMAGE_SIZE_FALLBACK", 24);
+    public static volatile int TRAY_IMAGE_SIZE_FALLBACK = OS.INSTANCE.getInt(GtkTheme.class.getSimpleName() + ".TRAY_IMAGE_SIZE_FALLBACK", 24);
 
     /** Fallback for an unknown tray menu image size. */
-    public static volatile int TRAY_MENU_IMAGE_SIZE_FALLBACK = OS.INSTANCE.getInt(GtkTheme.class.getCanonicalName() + ".TRAY_MENU_IMAGE_SIZE_FALLBACK", 16);
+    public static volatile int TRAY_MENU_IMAGE_SIZE_FALLBACK = OS.INSTANCE.getInt(GtkTheme.class.getSimpleName() + ".TRAY_MENU_IMAGE_SIZE_FALLBACK", 16);
 
     public static
     Rectangle getPixelTextHeight(String text) {
