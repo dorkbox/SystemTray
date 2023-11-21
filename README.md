@@ -143,6 +143,8 @@ Ubuntu 22.04 | ✓ |
  | |
 UbuntuGnome 16.04 | ✓ |
 UbuntuGnome 17.04 | ✓ |
+| |
+Kubuntu 23.10 | ✓ |
  | |
 XUbuntu 16.04 | ✓ |
  | |
