@@ -20,6 +20,10 @@ import java.io.File
 
 // temp kotlin utilities as a placeholder until the project is kotlin...
 internal object KotlinUtils {
+    fun delete(file: File) {
+        file.deleteRecursively()
+    }
+
     /**
      * Reads the contents of the supplied input stream into a list of lines.
      *
