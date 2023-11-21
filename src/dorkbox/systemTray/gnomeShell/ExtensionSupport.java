@@ -41,6 +41,96 @@ import dorkbox.util.IO;
 @SuppressWarnings({"WeakerAccess"})
 public
 class ExtensionSupport {
+    // this can only be modified with a shell-restart (or, in our case to log out/in)
+    private static final List<String> enabledExtensions = getEnabledExtensions();
+
+    private final String name;
+    private final String UID;
+    private final String zipFile;
+
+    public
+    ExtensionSupport(final String name, final String UID, final String zipFile) {
+       this.UID = UID;
+       this.name = name;
+       this.zipFile = zipFile;
+    }
+
+    public
+    void uninstall() {
+        unInstall(UID, null);
+    }
+
+    public
+    boolean isInstalled() {
+        return enabledExtensions.contains(UID);
+    }
+
+    public
+    void install() {
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Installing the " + name + " gnome-shell extension.");
+        }
+
+        // should just be 3.14.1 or 3.20 or similar
+        String gnomeVersion = ExtensionSupport.getGnomeVersion();
+        if (gnomeVersion == null) {
+            return;
+        }
+
+        boolean isInstalled = enabledExtensions.contains(UID);
+
+        // have to copy the extension over and enable it.
+        String userHome = System.getProperty("user.home");
+
+        // where the extension is saved
+        final File directory = new File(userHome + "/.local/share/gnome-shell/extensions/" + UID);
+        final File metaDatafile = new File(directory, "metadata.json");
+
+
+
+        // have to create the metadata.json file (and make it so that it's **always** current).
+        // we do this via getting the shell version
+
+        // note: the appName is not configurable for the gnome-shell extension
+        String metadata = ExtensionSupport.createMetadata(UID, SystemTray.getVersion(), "SystemTray", gnomeVersion);
+
+        if (SystemTray.DEBUG) {
+            logger.debug("Checking the " + name + " gnome-shell extension");
+        }
+
+        if (isInstalled && !ExtensionSupport.needsUpgrade(metadata, metaDatafile)) {
+            // this means that our version info, etc. is the same - there is no need to update anything
+            return;
+        }
+
+
+        // we get here if we are NOT installed, or if we are installed and our metadata is NOT THE SAME.  (so we need to reinstall)
+        if (SystemTray.DEBUG) {
+            logger.debug("Installing " + name + " gnome-shell extension");
+        }
+
+
+        boolean success = ExtensionSupport.writeFile(metadata, metaDatafile);
+        if (success) {
+            // copies our provided extension files to the correct location on disk
+            boolean installedZip = ExtensionSupport.installZip(zipFile, directory);
+            if (!installedZip) {
+                logger.error("Unable to install " + zipFile + " gnome-shell extension!");
+            } else {
+                if (SystemTray.DEBUG) {
+                    logger.debug("Enabling " + zipFile + " gnome-shell extension");
+                }
+            }
+
+            if (!enabledExtensions.contains(UID)) {
+                enabledExtensions.add(UID);
+            }
+            setEnabledExtensions(enabledExtensions);
+
+            // restartShell(SHELL_RESTART_COMMAND); // can't restart shell! must log in/out
+        }
+    }
+
     public static
     List<String> getEnabledExtensions() {
         String output;
@@ -144,12 +234,20 @@ class ExtensionSupport {
 
     public static
     void unInstall(String UID, String restartCommand) {
-        List<String> enabledExtensions = getEnabledExtensions();
-        if (enabledExtensions.contains(UID)) {
+        final boolean enabled = enabledExtensions.contains(UID);
+        if (enabled) {
             enabledExtensions.remove(UID);
-
             setEnabledExtensions(enabledExtensions);
+        }
 
+        // remove the extension from the drive
+        String userHome = System.getProperty("user.home");
+        final File directory = new File(userHome + "/.local/share/gnome-shell/extensions/" + UID);
+        if (directory.canRead()) {
+            KotlinUtils.INSTANCE.delete(directory);
+        }
+
+        if (enabled) {
             restartShell(restartCommand);
         }
     }

@@ -30,6 +30,7 @@ import dorkbox.systemTray.Tray;
 import dorkbox.systemTray.gnomeShell.AppIndicatorExtension;
 import dorkbox.systemTray.gnomeShell.DummyFile;
 import dorkbox.systemTray.gnomeShell.LegacyExtension;
+import dorkbox.systemTray.gnomeShell.TrayIconsReloadedIndicatorExtension;
 import dorkbox.systemTray.ui.awt._AwtTray;
 import dorkbox.systemTray.ui.gtk._AppIndicatorNativeTray;
 import dorkbox.systemTray.ui.gtk._GtkStatusIconNativeTray;
@@ -225,6 +226,22 @@ class AutoDetectTrayType {
 
                                 return TrayType.AppIndicator;
                             }
+                        }
+                        else if (major >= 40) {
+                            // APP INDICATORS WILL NOT WORK!
+                            // the work-around for fedora is to install https://github.com/MartinPL/Tray-Icons-Reloaded
+
+                            if (AppIndicatorExtension.isInstalled()) {
+                                // if there is an update to a newer version of gnome-shell, make sure to remove the old extension
+                                AppIndicatorExtension.unInstall();
+                            }
+
+                            // install the gtk Gnome extension
+                            if (!TrayIconsReloadedIndicatorExtension.isInstalled()) {
+                                TrayIconsReloadedIndicatorExtension.install();
+                            }
+
+                            return TrayType.Gtk;
                         }
                         else {
                             logger.error("GNOME shell detected, but UNSUPPORTED shell version (" + gnomeVersion + "). Falling back to GtkStatusIcon. " +

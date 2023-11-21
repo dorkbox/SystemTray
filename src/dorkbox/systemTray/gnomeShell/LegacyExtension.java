@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import java.util.List;
 import dorkbox.os.OS;
 import dorkbox.systemTray.SystemTray;
 
-@SuppressWarnings({"DanglingJavadoc", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess"})
 public
-class LegacyExtension extends ExtensionSupport {
+class LegacyExtension {
+
     private static final String UID = "SystemTray@Dorkbox";
 
     /** Command to restart the gnome-shell. It is recommended to start it in the background (hence '&') */
@@ -57,7 +58,7 @@ class LegacyExtension extends ExtensionSupport {
             return;
         }
 
-        List<String> enabledExtensions = getEnabledExtensions();
+        List<String> enabledExtensions = ExtensionSupport.getEnabledExtensions();
         hasTopIcons = enabledExtensions.contains("topIcons@adel.gadllah@gmail.com");
         hasSystemTray = enabledExtensions.contains(UID);
 
@@ -111,9 +112,9 @@ class LegacyExtension extends ExtensionSupport {
             if (!enabledExtensions.contains(UID)) {
                 enabledExtensions.add(UID);
             }
-            setEnabledExtensions(enabledExtensions);
+            ExtensionSupport.setEnabledExtensions(enabledExtensions);
 
-            restartShell(SHELL_RESTART_COMMAND);
+            ExtensionSupport.restartShell(SHELL_RESTART_COMMAND);
         }
     }
 
@@ -127,7 +128,6 @@ class LegacyExtension extends ExtensionSupport {
             else if (OS.Linux.INSTANCE.isFedora()) {
                 // fedora doesn't support this
                 return;
-
             }
             else {
                 if (SystemTray.DEBUG) {
@@ -140,7 +140,7 @@ class LegacyExtension extends ExtensionSupport {
             }
         }
 
-        unInstall(UID, SHELL_RESTART_COMMAND);
+        ExtensionSupport.unInstall(UID, SHELL_RESTART_COMMAND);
     }
 
     public static
@@ -150,6 +150,6 @@ class LegacyExtension extends ExtensionSupport {
             return;
         }
 
-        restartShell(SHELL_RESTART_COMMAND);
+        ExtensionSupport.restartShell(SHELL_RESTART_COMMAND);
     }
 }

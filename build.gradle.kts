@@ -99,7 +99,6 @@ sourceSets {
             resources {
                 setSrcDirs(listOf("src"))
                 include("dorkbox/systemTray/gnomeShell/extension.js",
-                        "dorkbox/systemTray/gnomeShell/appindicator.zip",
                         "dorkbox/systemTray/util/error_32.png")
             }
         }
