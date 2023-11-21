@@ -375,27 +375,25 @@ class GtkTheme {
                             }
                         }
                     }
+                }
+            }
+            
+            // The following is a bit ugly, but these are the defaults for KDE-plasma
+            String plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersionFull();
+            if (plasmaVersion != null) {
+                // this shouldn't ever happen, because we have the KDE config file!
 
-                    // if we have the file, but DO NOT have the 'iconSize' entry -- then we are guessing.
+                String[] versionParts = plasmaVersion.split("\\.");
+                int majorVersion = Integer.parseInt(versionParts[0]);
+                int minorVersion = Integer.parseInt(versionParts[1]);
+                if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 5)) {
+                    // older versions use GtkStatusIcon
+                    return 22;
+                } else {
+                    // newer versions use appindicator, but the user MIGHT have to install libappindicator
 
-                    // The following is a bit ugly, but are the defaults for KDE-plasma
-                    String plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersionFull();
-                    if (plasmaVersion != null) {
-                        // this shouldn't ever happen, because we have the KDE config file!
-
-                        String[] versionParts = plasmaVersion.split("\\.");
-                        int majorVersion = Integer.parseInt(versionParts[0]);
-                        int minorVersion = Integer.parseInt(versionParts[1]);
-                        if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 5)) {
-                            // older versions use GtkStatusIcon
-                            return 22;
-                        } else {
-                            // newer versions use appindicator, but the user MIGHT have to install libappindicator
-
-                            // 128 is the max size possible, and it will AUTOMATICALLY scale down as necessary.
-                            return 128;
-                        }
-                    }
+                    // 128 is the max size possible, and it will AUTOMATICALLY scale down as necessary.
+                    return 128;
                 }
             }
         }
