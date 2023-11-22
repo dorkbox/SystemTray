@@ -34,6 +34,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
+import dorkbox.systemTray.peer.EntryPeer;
 import dorkbox.systemTray.peer.MenuPeer;
 import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
@@ -237,10 +238,13 @@ class Menu extends MenuItem {
             }
         }
 
-        if (peer != null) {
-            // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
-            EventDispatch.runLater(()->((MenuPeer) peer).add(Menu.this, entry, insertIndex));
-        }
+        // all ADD/REMOVE events have to be queued on our own dispatch thread, so the execution order of the events can be maintained.
+        EventDispatch.runLater(()->{
+            EntryPeer finalPeer = peer;
+            if (finalPeer != null) {
+                ((MenuPeer) finalPeer).add(Menu.this, entry, insertIndex);
+            }
+        });
 
         return entry;
     }
@@ -427,7 +431,7 @@ class Menu extends MenuItem {
     }
 
     /**
-     *  This removes all menu entries from this menu AND this menu from it's parent
+     *  This removes all menu entries from this menu AND this menu from its parent
      */
     @Override
     public
@@ -446,6 +450,14 @@ class Menu extends MenuItem {
 
     private
     void remove_() {
+        if (peer instanceof MenuPeer) {
+            MenuPeer castPeer = (MenuPeer) peer;
+            if (!castPeer.hasParent()) {
+                // if we are the ROOT, then we don't want to remove ourselves!
+                return;
+            }
+        }
+
         super.remove();
     }
 }
