@@ -433,6 +433,10 @@ class Menu extends MenuItem {
     public
     void remove() {
         synchronized (menuEntries) {
+            for (final Entry entry : menuEntries) {
+                entry.remove();
+            }
+
             menuEntries.clear();
         }
 
