@@ -188,10 +188,10 @@ dependencies {
     api("com.dorkbox:Collections:2.7")
     api("com.dorkbox:Executor:3.14")
     api("com.dorkbox:Desktop:1.1")
-    api("com.dorkbox:JNA:1.3")
+    api("com.dorkbox:JNA:1.4")
     api("com.dorkbox:OS:1.11")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:Utilities:1.47")
+    api("com.dorkbox:Utilities:1.48")
 
     api("org.javassist:javassist:3.29.2-GA")
 
