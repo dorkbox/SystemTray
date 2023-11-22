@@ -84,12 +84,14 @@ Problems and Restrictions
  - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently
   call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
 
-- **WSL** Windows Subsystem for Linux requires some [extra work](https://github.com/dorkbox/SystemTray/issues/88) to get a tray icon showing correctly, either by starting java under windows (instead of WSL), or by adding an X-Server.
+ - **Windows 8.1** HIDPI displays require applications to be DPI aware and enabled. Java8 is not DPI aware (so the icons + fonts must be scaled appropriately), and Java 11+ is DPI aware, but must be explicitly enabled via a windows API.
+
+ - **WSL** Windows Subsystem for Linux requires some [extra work](https://github.com/dorkbox/SystemTray/issues/88) to get a tray icon showing correctly, either by starting java under windows (instead of WSL), or by adding an X-Server.
  
 
 AutoDetect Compatibility List
 ------------------
-     
+
 OS | Supported 
 --- | --- |
 Arch Linux + Gnome3 | ✓ |
@@ -120,6 +122,7 @@ Fedora 26 | ✓ |
 Fedora 27 | ✓ |
 Fedora 28 | ✓ |
 Fedora 29 | ✓ |
+Fedora 39 | ✓ |
  | |
 FreeBSD 11 + Gnome3 | ✓ |
  | |
@@ -151,6 +154,8 @@ XUbuntu 16.04 | ✓ |
 MacOSx 10.x | ✓ |
 MacOSx 11.x | ✓ |
 MacOSx 12.x | ✓ |
+MacOSx 13.x | ✓ |
+MacOSx 14.x | ✓ |
  | |
 Windows XP  | ✓ |
 Windows 7   | ✓ |
