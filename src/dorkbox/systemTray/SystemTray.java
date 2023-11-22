@@ -244,6 +244,9 @@ class SystemTray {
         // OSx can use Swing (non-native) or AWT (native).
         // Linux can use Swing (non-native), AWT (native), GtkStatusIcon (native), or AppIndicator (native)
         if (isWindows) {
+            // just call this NOW as this initializes critical parts for windows.
+            SizeAndScalingWindows.setDpiAware();
+
             if (FORCE_TRAY_TYPE != TrayType.AutoDetect && FORCE_TRAY_TYPE != TrayType.Swing && FORCE_TRAY_TYPE != TrayType.WindowsNative) {
                 logger.warn("Windows cannot use the '" + FORCE_TRAY_TYPE + "' SystemTray type on windows, auto-detecting implementation!");
 
@@ -672,6 +675,16 @@ class SystemTray {
             }
         }
 
+        if (OS.INSTANCE.isWindows()) {
+            if (AUTO_FIX_INCONSISTENCIES && trayType == TrayType.Swing && !AUTO_SIZE) {
+                logger.error("When using the SystemTray on Windows as the SWING type, it will not properly scale to fit the menubar. Because" +
+                             "AUTO_SIZE is disabled, this will result in a terrible experience. Changing from Swing -> WindowsNative.");
+
+                // windows always works best with Native, and the tray icon scales BADLY with SWING
+                trayType = TrayType.WindowsNative;
+            }
+        }
+
 
         if (trayType == null) {
             // unsupported tray, or unknown type
@@ -742,14 +755,10 @@ class SystemTray {
             }
 
 
-            // initialize tray/menu image sizes. This must be BEFORE the system tray has been created
-            int trayImageSize = SizeAndScaling.getTrayImageSize();
-            int menuImageSize = SizeAndScaling.getMenuImageSize(trayType);
+            // initialize Tray Image size + Tray Menu Image size
+            // This must be BEFORE the system tray has been created
+            SizeAndScaling.initSizes(trayType);
 
-            if (DEBUG) {
-                logger.debug("Tray indicator image size: {}", trayImageSize);
-                logger.debug("Tray menu image size: {}", menuImageSize);
-            }
 
             if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
                 // This WILL NOT WORK. Let the dev know
@@ -770,33 +779,26 @@ class SystemTray {
             }
 
 
+
+
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after AWT/GTK is started (if applicable)
-                if (isWindows && trayType == TrayType.Swing) {
-                    // we don't permit AWT for windows (it looks absolutely HORRID)
-
+                if (isWindows) {
                     // Our default for windows is now a native tray icon (instead of the swing tray icon), but we preserve the use of Swing
                     // windows hard-codes the image size for AWT/SWING tray types
-                    SystemTrayFixesWindows.fix(trayImageSize);
+                    SystemTrayFixesWindows.fix(trayType);
                 }
-                else if (isMacOsX && (trayType == TrayType.Awt ||
-                                      trayType == TrayType.Osx)) {
+                else if (isMacOsX) {
                     // Swing on macOS is pretty bland. AWT (with fixes) looks fantastic (and is native)
-
                     // AWT on macosx doesn't respond to all buttons (but should)
-                    SystemTrayFixesMacOS.fix();
+                    SystemTrayFixesMacOS.fix(trayType);
                 }
-                else if (isNix && trayType == TrayType.Swing) {
+                else if (isNix) {
                     // linux/mac doesn't have transparent backgrounds for swing and hard-codes the image size
-                    SystemTrayFixesLinux.fix(trayImageSize);
+                    SystemTrayFixesLinux.fix(trayType);
                 }
             }
 
-
-
-            // initialize the tray icon height
-            // this is during init, so we can statically access this everywhere else. Multiple instances of this will always have the same value
-            SizeAndScaling.getMenuImageSize(trayType);
 
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
@@ -1104,7 +1106,7 @@ class SystemTray {
      */
     public
     int getTrayImageSize() {
-        return SizeAndScaling.getTrayImageSize();
+        return SizeAndScaling.TRAY_SIZE;
     }
 
 

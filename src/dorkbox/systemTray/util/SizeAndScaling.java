@@ -30,6 +30,31 @@ class SizeAndScaling {
     public static int TRAY_MENU_SIZE = 0;
 
     public static
+    void initSizes(final SystemTray.TrayType trayType) {
+        getTrayImageSize(trayType);
+        getMenuImageSize(trayType);
+
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("Tray image size: {}", TRAY_SIZE);
+            SystemTray.logger.debug("Tray menu image size: {}", TRAY_MENU_SIZE);
+
+            // not impl for everything yet MACOS is "normal" or '2x' for scale
+            if (OS.INSTANCE.isWindows()) {
+                SystemTray.logger.debug("SystemDPI: " + SizeAndScalingWindows.SYSTEM_DPI);
+                SystemTray.logger.debug("System Scale: " + SizeAndScalingWindows.SYSTEM_SCALE);
+            }
+            else if (OS.INSTANCE.isLinux()) {
+                SystemTray.logger.debug("SystemDPI: " + SizeAndScalingLinux.SYSTEM_DPI);
+                SystemTray.logger.debug("System Scale: " + SizeAndScalingLinux.SYSTEM_SCALE);
+            }
+            else if (OS.INSTANCE.isMacOsX()) {
+                SystemTray.logger.debug("SystemDPI: " + SizeAndScalingMacOS.SYSTEM_DPI);
+                SystemTray.logger.debug("System Scale: " + SizeAndScalingMacOS.SYSTEM_SCALE);
+            }
+        }
+    }
+
+    public static
     double getDpiScaleForMouseClick(int mousePositionX, int mousePositionY) {
         if (OS.INSTANCE.isWindows()) {
             // manual scaling is only necessary for windows
@@ -41,7 +66,7 @@ class SizeAndScaling {
 
 
     public static
-    int getTrayImageSize() {
+    void getTrayImageSize(final SystemTray.TrayType trayType) {
         if (TRAY_SIZE == 0) {
             if (OS.INSTANCE.isLinux()) {
                 TRAY_SIZE = SizeAndScalingLinux.getTrayImageSize();
@@ -50,7 +75,7 @@ class SizeAndScaling {
                 TRAY_SIZE = SizeAndScalingMacOS.getTrayImageSize();
             }
             else if (OS.INSTANCE.isWindows()) {
-                TRAY_SIZE = SizeAndScalingWindows.getTrayImageSize();
+                TRAY_SIZE = SizeAndScalingWindows.getTrayImageSize(trayType);
             } else {
                 // reasonable default
                 TRAY_SIZE = 32;
@@ -61,12 +86,10 @@ class SizeAndScaling {
             // reasonable default
             TRAY_SIZE = 32;
         }
-
-        return TRAY_SIZE;
     }
 
     public static
-    int getMenuImageSize(final SystemTray.TrayType trayType) {
+    void getMenuImageSize(final SystemTray.TrayType trayType) {
         if (TRAY_MENU_SIZE == 0) {
             if (OS.INSTANCE.isMacOsX()) {
                 TRAY_MENU_SIZE = SizeAndScalingMacOS.getMenuImageSize();
@@ -88,11 +111,9 @@ class SizeAndScaling {
                 TRAY_MENU_SIZE = 16;
             }
         }
-
-        return TRAY_MENU_SIZE;
     }
 
-    public static
+    private static
     int getMenuImageSizeGeneric() {
         // generic method to do this, but not as accurate
         final AtomicInteger iconSize = new AtomicInteger();

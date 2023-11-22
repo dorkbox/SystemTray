@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,16 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 
+import sun.awt.CGraphicsDevice;
+
 /**
  * Size and scaling utility functions specific to macOS
  */
 public
 class SizeAndScalingMacOS {
+    public static final int SYSTEM_DPI = getScreenDPI();
+    public static final double SYSTEM_SCALE = getSystemScale();
+
     /**
      * Allows overriding of the system tray MENU size (this is what shows in the system tray).
      * NOTE: Any value >0 will be used.
@@ -36,13 +41,41 @@ class SizeAndScalingMacOS {
      */
     public static volatile int OVERRIDE_TRAY_SIZE = 0;
 
+    /**
+     * This is for the DEFAULT screen, not the current screen!!
+     *
+     * apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple.
+     */
     public static
-    int getMacOSScaleFactor() {
-        // apple will ALWAYS return 2.0 on (apple) retina displays. This is enforced by apple
-
+    double getSystemScale() {
         GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         GraphicsConfiguration graphicsConfig = graphicsDevice.getDefaultConfiguration();
-        return (int) graphicsConfig.getDefaultTransform().getScaleX();
+        return graphicsConfig.getDefaultTransform().getScaleX();
+    }
+
+    /**
+     * This is for the DEFAULT screen, not the current screen!!
+     */
+    public static
+    int getScreenDPI() {
+        // find the display device of interest
+        final GraphicsDevice defaultScreenDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
+        // on OS X, it would be CGraphicsDevice
+        if (defaultScreenDevice instanceof CGraphicsDevice) {
+            final CGraphicsDevice device = (CGraphicsDevice) defaultScreenDevice;
+
+            // this is the missing correction factor, it's equal to 2 on HiDPI a.k.a. Retina displays
+            final int scaleFactor = device.getScaleFactor();
+
+            // now we can compute the real DPI of the screen.
+            // we cannot have fractions of a resolution.
+            final double realDPI = scaleFactor * ((int)device.getXResolution() + (int)device.getYResolution()) / 2.0;
+            return (int) realDPI;
+        }
+
+        // shouldn't get here, but just in case!
+        return 0;
     }
 
 
@@ -65,6 +98,6 @@ class SizeAndScalingMacOS {
         }
 
         // menu items can have scaling applied for a nice looking icon.
-        return SizeAndScalingMacOS.getMacOSScaleFactor() * 20;
+        return (int) (20 * SYSTEM_SCALE);
     }
 }

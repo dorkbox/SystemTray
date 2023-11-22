@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package dorkbox.systemTray.util;
 
 import java.awt.Color;
+import java.awt.Font;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -68,7 +69,7 @@ class WindowsSwingUI implements SwingUIFactory {
                 super.installUI(c);
             }
         };
-}
+    }
 
     /**
      * Allows one to specify the Look & Feel of a menu entry
@@ -81,6 +82,16 @@ class WindowsSwingUI implements SwingUIFactory {
     @Override
     public
     MenuItemUI getItemUI(final JMenuItem jMenuItem, final Entry entry) {
+        if (SizeAndScalingWindows.SCALE_MENU_FOR_JAVA_8) {
+            // java 8 has weird UI problems!
+
+            Font font = jMenuItem.getFont();
+            int scaledFontSize = (int) (font.getSize() * SizeAndScalingWindows.SYSTEM_SCALE);
+
+            Font scaledFont = new Font(font.getName(), font.getStyle(), scaledFontSize);
+            jMenuItem.setFont(scaledFont);
+        }
+
         return new DefaultMenuItemUI(jMenuItem) {
             @Override
             public

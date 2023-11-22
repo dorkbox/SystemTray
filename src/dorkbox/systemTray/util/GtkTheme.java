@@ -139,22 +139,16 @@ class GtkTheme {
         return TRAY_MENU_IMAGE_SIZE_FALLBACK;
     }
 
-    /**
-     * Gets the system tray indicator size.
-     *  - AppIndicator:  will properly scale the image if it's not the correct size
-     *  - GtkStatusIndicator:  ??
-     */
     public static
-    int getIndicatorSize() {
+    int getScreenDPI() {
         // Linux is similar enough, that it just uses this method
         // https://wiki.archlinux.org/index.php/HiDPI
 
         // 96 DPI is the default
-        final double defaultDPI = 96.0;
+        final int defaultDPI = 96;
 
-        final AtomicReference<Double> screenScale = new AtomicReference<>();
+
         final AtomicInteger screenDPI = new AtomicInteger();
-        screenScale.set(0D);
         screenDPI.set(0);
 
         GtkEventDispatch.dispatchAndWait(()->{
@@ -163,14 +157,6 @@ class GtkTheme {
             if (screen != null) {
                 // this call makes NO SENSE, but reading the documentation shows it is the CORRECT call.
                 screenDPI.set((int) Gtk2.gdk_screen_get_resolution(screen));
-            }
-
-            if (isGtk3) {
-                Pointer window = Gtk2.gdk_get_default_root_window();
-                if (window != null) {
-                    double scale = Gtk3.gdk_window_get_scale_factor(window);
-                    screenScale.set(scale);
-                }
             }
         });
 
@@ -195,6 +181,28 @@ class GtkTheme {
             screenDPI.set((int) defaultDPI);
         }
 
+        if (SystemTray.DEBUG) {
+            SystemTray.logger.debug("screen DPI: " + screenDPI.get());
+        }
+
+        return screenDPI.get();
+    }
+
+    public static
+    double getScreenScale() {
+        final AtomicReference<Double> screenScale = new AtomicReference<>();
+        screenScale.set(0D);
+
+        if (isGtk3) {
+            GtkEventDispatch.dispatchAndWait(()->{
+                // screen scale
+                Pointer window = Gtk2.gdk_get_default_root_window();
+                if (window != null) {
+                    double scale = Gtk3.gdk_window_get_scale_factor(window);
+                    screenScale.set(scale);
+                }
+            });
+        }
 
         // check system ENV variables.
         if (screenScale.get() == 0) {
@@ -240,10 +248,6 @@ class GtkTheme {
             }
         }
 
-
-
-
-
         // sometimes the scaling-factor is set. If we have gsettings, great! otherwise try KDE
         if (screenScale.get() == 0) {
             try {
@@ -274,13 +278,6 @@ class GtkTheme {
             }
         }
 
-
-        if (SystemTray.DEBUG) {
-            SystemTray.logger.debug("screen scale: " + screenScale.get());
-            SystemTray.logger.debug("screen DPI: " + screenDPI.get());
-        }
-
-
         if (OS.DesktopEnv.INSTANCE.isKDE()) {
             // check the custom KDE override file
             try {
@@ -302,89 +299,96 @@ class GtkTheme {
                 }
             } catch (Exception ignored) {
             }
+        }
 
+        return screenScale.get();
+    }
 
+    /**
+     * Gets the system tray indicator size.
+     *  - AppIndicator:  will properly scale the image if it's not the correct size
+     *  - GtkStatusIndicator:  ??
+     */
+    public static
+    int getIndicatorSize(final double systemScale) {
+        if (OS.DesktopEnv.INSTANCE.isKDE()) {
+            /*
+             *
+             * Looking in  plasma-framework/src/declarativeimports/core/units.cpp:
+                // Scale the icon sizes up using the devicePixelRatio
+                // This function returns the next stepping icon size
+                // and multiplies the global settings with the dpi ratio.
+                const qreal ratio = devicePixelRatio();
 
-            if (screenScale.get() == 0) {
-                /*
-                 *
-                 * Looking in  plasma-framework/src/declarativeimports/core/units.cpp:
-                    // Scale the icon sizes up using the devicePixelRatio
-                    // This function returns the next stepping icon size
-                    // and multiplies the global settings with the dpi ratio.
-                    const qreal ratio = devicePixelRatio();
+                if (ratio < 1.5) {
+                    return size;
+                } else if (ratio < 2.0) {
+                    return size * 1.5;
+                } else if (ratio < 2.5) {
+                    return size * 2.0;
+                } else if (ratio < 3.0) {
+                    return size * 2.5;
+                } else if (ratio < 3.5) {
+                    return size * 3.0;
+                } else {
+                    return size * ratio;
+                }
+                My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 factor existing. Is it reasonable? Wouldn't it make more sense to use the factor the closest to the ratio rather than  what is done here?
+             */
 
-                    if (ratio < 1.5) {
-                        return size;
-                    } else if (ratio < 2.0) {
-                        return size * 1.5;
-                    } else if (ratio < 2.5) {
-                        return size * 2.0;
-                    } else if (ratio < 3.0) {
-                        return size * 2.5;
-                    } else if (ratio < 3.5) {
-                        return size * 3.0;
-                    } else {
-                        return size * ratio;
+            File mainFile = new File("/usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml");
+            if (mainFile.canRead()) {
+                List<String> lines = KotlinUtils.INSTANCE.readLines(mainFile);
+                boolean found = false;
+                int index;
+                for (final String line : lines) {
+                    if (line.contains("<entry name=\"iconSize\" type=\"Int\">")) {
+                        found = true;
+                        // have to get the "default" line value
                     }
-                    My ratio is 1.47674, that means I have no scaling at all when there is a 1.5 factor existing. Is it reasonable? Wouldn't it make more sense to use the factor the closest to the ratio rather than  what is done here?
-                 */
 
-                File mainFile = new File("/usr/share/plasma/plasmoids/org.kde.plasma.private.systemtray/contents/config/main.xml");
-                if (mainFile.canRead()) {
-                    List<String> lines = KotlinUtils.INSTANCE.readLines(mainFile);
-                    boolean found = false;
-                    int index;
-                    for (final String line : lines) {
-                        if (line.contains("<entry name=\"iconSize\" type=\"Int\">")) {
-                            found = true;
-                            // have to get the "default" line value
-                        }
+                    String str = "<default>";
+                    if (found && (index = line.indexOf(str)) > -1) {
+                        // this is our line. now get the value.
+                        String substring = line.substring(index + str.length(), line.indexOf("</default>", index));
 
-                        String str = "<default>";
-                        if (found && (index = line.indexOf(str)) > -1) {
-                            // this is our line. now get the value.
-                            String substring = line.substring(index + str.length(), line.indexOf("</default>", index));
+                        // Default icon size for the systray icons, it's an enum which values mean,
+                        // Small, SmallMedium, Medium, Large, Huge, Enormous respectively.
+                        // On low DPI systems they correspond to :
+                        //    16, 22, 32, 48, 64, 128 pixels.
+                        // On high DPI systems those values would be scaled up, depending on the DPI.
+                        int imageSize = 0;
+                        Integer imageSizeEnum = KotlinUtils.INSTANCE.toInteger(substring);
+                        if (imageSizeEnum != null) {
+                            switch (imageSizeEnum) {
+                                case 0:
+                                    imageSize = 16;
+                                    break;
+                                case 1:
+                                    imageSize = 22;
+                                    break;
+                                case 2:
+                                    imageSize = 32;
+                                    break;
+                                case 3:
+                                    imageSize = 48;
+                                    break;
+                                case 4:
+                                    imageSize = 64;
+                                    break;
+                                case 5:
+                                    imageSize = 128;
+                                    break;
+                            }
 
-                            // Default icon size for the systray icons, it's an enum which values mean,
-                            // Small, SmallMedium, Medium, Large, Huge, Enormous respectively.
-                            // On low DPI systems they correspond to :
-                            //    16, 22, 32, 48, 64, 128 pixels.
-                            // On high DPI systems those values would be scaled up, depending on the DPI.
-                            int imageSize = 0;
-                            Integer imageSizeEnum = KotlinUtils.INSTANCE.toInteger(substring);
-                            if (imageSizeEnum != null) {
-                                switch (imageSizeEnum) {
-                                    case 0:
-                                        imageSize = 16;
-                                        break;
-                                    case 1:
-                                        imageSize = 22;
-                                        break;
-                                    case 2:
-                                        imageSize = 32;
-                                        break;
-                                    case 3:
-                                        imageSize = 48;
-                                        break;
-                                    case 4:
-                                        imageSize = 64;
-                                        break;
-                                    case 5:
-                                        imageSize = 128;
-                                        break;
-                                }
-
-                                if (imageSize > 0) {
-                                    double scaleRatio = screenDPI.get() / defaultDPI;
-
-                                    return (int) (scaleRatio * imageSize);
-                                }
+                            if (imageSize > 0) {
+                                return (int) (systemScale * imageSize);
                             }
                         }
                     }
                 }
             }
+
             
             // The following is a bit ugly, but these are the defaults for KDE-plasma
             String plasmaVersion = OS.DesktopEnv.INSTANCE.getPlasmaVersionFull();

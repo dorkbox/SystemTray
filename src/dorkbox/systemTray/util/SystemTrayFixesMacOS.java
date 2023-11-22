@@ -79,7 +79,14 @@ class SystemTrayFixesMacOS {
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/7fcf35286d52/src/macosx/native/sun/awt/CTrayIcon.m
      */
     public static
-    void fix() {
+    void fix(final SystemTray.TrayType trayType) {
+        if (trayType != SystemTray.TrayType.Awt && trayType != SystemTray.TrayType.Osx) {
+            // Swing on macOS is pretty bland. AWT (with fixes) looks fantastic (and is native)
+            // AWT on macosx doesn't respond to all buttons (but should)
+            return;
+        }
+
+
         if (loaded.getAndSet(true)) {
             // already loaded, no need to fix again in the same JVM.
             return;

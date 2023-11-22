@@ -15,7 +15,6 @@
  */
 package dorkbox.systemTray.util;
 
-import static dorkbox.systemTray.SystemTray.logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,10 +26,6 @@ import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.Modifier;
-import javassist.bytecode.BadBytecode;
-import javassist.bytecode.CodeIterator;
-import javassist.bytecode.MethodInfo;
-import javassist.bytecode.Opcode;
 
 
 /*
@@ -63,7 +58,7 @@ import javassist.bytecode.Opcode;
 @SuppressWarnings("JavadocLinkAsPlainText")
 public
 class SystemTrayFixesWindows {
-    private static AtomicBoolean loaded = new AtomicBoolean(false);
+    private static final AtomicBoolean loaded = new AtomicBoolean(false);
 
     /**
      * NOTE: Only for SWING
@@ -74,7 +69,14 @@ class SystemTrayFixesWindows {
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/windows/classes/sun/awt/windows/WTrayIconPeer.java
      */
     public static
-    void fix(int trayIconSize) {
+    void fix(final SystemTray.TrayType trayType) {
+        if (trayType != SystemTray.TrayType.Swing) {
+            // we don't permit AWT for windows (it looks absolutely HORRID)
+            // we only need to fixup swing tray types.
+            return;
+        }
+
+
         if (loaded.getAndSet(true)) {
             // already loaded, no need to fix again in the same JVM.
             return;
@@ -92,6 +94,7 @@ class SystemTrayFixesWindows {
             throw new RuntimeException("Unable to initialize the Swing System Tray, it has already been created!");
         }
 
+        int trayImageSize = SizeAndScaling.TRAY_SIZE;
         try {
             // necessary to initialize sun.awt.windows.WObjectPeer native initIDs()
             @SuppressWarnings("unused")
@@ -113,7 +116,7 @@ class SystemTrayFixesWindows {
                 CtMethod method = trayClass.getDeclaredMethod("getTrayIconSize");
                 CtBehavior[] methodInfos = new CtBehavior[]{method};
 
-                SystemTrayFixes.fixTraySize(methodInfos, 16, trayIconSize);
+                SystemTrayFixes.fixTraySize(methodInfos, 16, trayImageSize);
 
                 // perform pre-verification for the modified method
                 method.getMethodInfo().rebuildStackMapForME(trayClass.getClassPool());
@@ -126,7 +129,7 @@ class SystemTrayFixesWindows {
                 CtMethod ctMethodCreate = trayIconClass.getDeclaredMethod("createNativeImage");
                 CtMethod ctMethodUpdate = trayIconClass.getDeclaredMethod("updateNativeImage");
 
-                int TRAY_MASK = (trayIconSize * trayIconSize) / 8;
+                int TRAY_MASK = (trayImageSize * trayImageSize) / 8;
                 ctMethodCreate.setBody("{" +
                     "java.awt.image.BufferedImage bufferedImage = $1;" +
 
@@ -199,10 +202,10 @@ class SystemTrayFixesWindows {
             ClassUtils.defineClass(trayIconBytes);
 
             if (SystemTray.DEBUG) {
-                logger.debug("Successfully changed tray icon size to: {}", trayIconSize);
+                SystemTray.logger.debug("Successfully changed tray icon size to: {}", trayImageSize);
             }
         } catch (Exception e) {
-            logger.error("Error setting tray icon size to: {}", trayIconSize, e);
+            SystemTray.logger.error("Error setting tray icon size to: {}", trayImageSize, e);
         }
     }
 }

@@ -30,13 +30,6 @@ import javassist.CtField;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.Modifier;
-import javassist.bytecode.BadBytecode;
-import javassist.bytecode.CodeIterator;
-import javassist.bytecode.ConstPool;
-import javassist.bytecode.InstructionPrinter;
-import javassist.bytecode.MethodInfo;
-import javassist.bytecode.Mnemonic;
-import javassist.bytecode.Opcode;
 
 
 /*
@@ -96,7 +89,12 @@ class SystemTrayFixesLinux {
      * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/solaris/classes/sun/awt/X11/XSystemTrayPeer.java
      */
     public static
-    void fix(int trayIconSize) {
+    void fix(final SystemTray.TrayType trayType) {
+        if (trayType != SystemTray.TrayType.Swing) {
+            // only have to fixup swing tray types
+            return;
+        }
+
         if (loaded.getAndSet(true)) {
             // already loaded, no need to fix again in the same JVM.
             return;
@@ -115,6 +113,7 @@ class SystemTrayFixesLinux {
             throw new RuntimeException("Unable to initialize the Swing System Tray, it has already been created!");
         }
 
+        int trayImageSize = SizeAndScaling.TRAY_SIZE;
         try {
             ClassPool pool = ClassPool.getDefault();
             CtField ctField;
@@ -181,7 +180,7 @@ class SystemTrayFixesLinux {
 
                 CtBehavior[] methodInfos = new CtBehavior[]{constructor, method1, method2};
 
-                SystemTrayFixes.fixTraySize(methodInfos, 24, trayIconSize);
+                SystemTrayFixes.fixTraySize(methodInfos, 24, trayImageSize);
 
                 // perform pre-verification for the modified method
                 constructor.getMethodInfo().rebuildStackMapForME(trayIconClass.getClassPool());

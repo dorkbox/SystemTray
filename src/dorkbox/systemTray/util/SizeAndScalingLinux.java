@@ -21,6 +21,9 @@ package dorkbox.systemTray.util;
  */
 public
 class SizeAndScalingLinux {
+    public static final int SYSTEM_DPI = GtkTheme.getScreenDPI();
+    public static final double SYSTEM_SCALE = getSystemScale();
+
     /**
      * Allows overriding of the system tray MENU size (this is what shows in the system tray).
      *
@@ -34,6 +37,18 @@ class SizeAndScalingLinux {
      * NOTE: Any value >0 will be used.
      */
     public static volatile int OVERRIDE_TRAY_SIZE = 0;
+
+    private static
+    double getSystemScale() {
+        double detectedScale = GtkTheme.getScreenScale();
+
+        if (detectedScale > 0.0) {
+            return detectedScale;
+        }
+
+        return SYSTEM_DPI / 96.0;
+    }
+
 
     public static
     int getMenuImageSize() {
@@ -51,6 +66,6 @@ class SizeAndScalingLinux {
             return OVERRIDE_TRAY_SIZE;
         }
 
-        return GtkTheme.getIndicatorSize();
+        return GtkTheme.getIndicatorSize(SYSTEM_SCALE);
     }
 }
