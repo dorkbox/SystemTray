@@ -50,6 +50,7 @@ import dorkbox.systemTray.util.EventDispatch;
 import dorkbox.systemTray.util.ImageResizeUtil;
 import dorkbox.systemTray.util.LinuxSwingUI;
 import dorkbox.systemTray.util.SizeAndScaling;
+import dorkbox.systemTray.util.SizeAndScalingWindows;
 import dorkbox.systemTray.util.SystemTrayFixesLinux;
 import dorkbox.systemTray.util.SystemTrayFixesMacOS;
 import dorkbox.systemTray.util.SystemTrayFixesWindows;
@@ -96,16 +97,16 @@ class SystemTray {
     }
 
     /** Enables auto-detection for the system tray. This should be mostly successful. */
-    public static volatile boolean AUTO_SIZE = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".AUTO_SIZE", true);
+    public static volatile boolean AUTO_SIZE = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() + ".AUTO_SIZE", true);
 
     /** Default name of the application, sometimes shows on tray-icon mouse over. Not used for all OSes, but mostly for Linux */
     public static volatile String APP_NAME = "SystemTray";
 
     /** Forces the system tray to always choose GTK2 (even when GTK3 might be available). */
-    public static volatile boolean FORCE_GTK2 = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".FORCE_GTK2", false);
+    public static volatile boolean FORCE_GTK2 = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() + ".FORCE_GTK2", false);
 
     /** Prefer to load GTK3 before trying to load GTK2. */
-    public static volatile boolean PREFER_GTK3 = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".PREFER_GTK3", true);
+    public static volatile boolean PREFER_GTK3 = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() + ".PREFER_GTK3", true);
 
     /**
      * Forces the system tray detection to be AutoDetect, GtkStatusIcon, AppIndicator, WindowsNotifyIcon, Swing, or AWT.
@@ -113,14 +114,14 @@ class SystemTray {
      * This is an advanced feature, and it is recommended to leave at AutoDetect.
      */
     public static volatile TrayType FORCE_TRAY_TYPE = TrayType.AppIndicator.safeFromString(
-            OS.INSTANCE.getProperty(SystemTray.class.getCanonicalName() + ".FORCE_TRAY_TYPE", TrayType.AutoDetect.name()));
+            OS.INSTANCE.getProperty(SystemTray.class.getSimpleName() + ".FORCE_TRAY_TYPE", TrayType.AutoDetect.name()));
 
     /**
      * Allows the SystemTray logic to resolve OS inconsistencies for the SystemTray.
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static volatile boolean AUTO_FIX_INCONSISTENCIES = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() +
+    public static volatile boolean AUTO_FIX_INCONSISTENCIES = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() +
                                                                             ".AUTO_FIX_INCONSISTENCIES", true);
 
     /**
@@ -129,12 +130,12 @@ class SystemTray {
      * <p>
      * This is an advanced feature, and it is recommended to leave as true
      */
-    public static volatile boolean ENABLE_ROOT_CHECK = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".ENABLE_ROOT_CHECK", true);
+    public static volatile boolean ENABLE_ROOT_CHECK = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() + ".ENABLE_ROOT_CHECK", true);
 
     /**
      * This property is provided for debugging any errors in the logic used to determine the system-tray type.
      */
-    public static volatile boolean DEBUG = OS.INSTANCE.getBoolean(SystemTray.class.getCanonicalName() + ".DEBUG", false);
+    public static volatile boolean DEBUG = OS.INSTANCE.getBoolean(SystemTray.class.getSimpleName() + ".DEBUG", false);
 
     /**
      * Allows a custom look and feel for the Swing UI, if defined. See the test example for specific use.
