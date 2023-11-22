@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -403,5 +403,10 @@ class GtkMenu extends GtkBaseMenuItem implements MenuPeer {
                 parent.createMenu(true);  // must be on EDT
             }
         });
+    }
+
+    public
+    boolean hasParent() {
+        return parent != null;
     }
 }

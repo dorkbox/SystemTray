@@ -177,4 +177,9 @@ class SwingMenu implements MenuPeer {
             }
         });
     }
+
+    public
+    boolean hasParent() {
+        return parent != null;
+    }
 }

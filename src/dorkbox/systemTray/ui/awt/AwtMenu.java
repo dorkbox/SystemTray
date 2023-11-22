@@ -136,4 +136,9 @@ class AwtMenu implements MenuPeer {
             _native.removeNotify();
         });
     }
+
+    public
+    boolean hasParent() {
+        return parent != null;
+    }
 }

@@ -176,4 +176,9 @@ class AwtOsxMenu implements MenuPeer {
             _native.removeNotify();
         });
     }
+
+    public
+    boolean hasParent() {
+        return parent != null;
+    }
 }
