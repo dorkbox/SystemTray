@@ -7,7 +7,7 @@ SystemTray
 [![Gitlab](https://img.shields.io/badge/Gitlab-Dorkbox-orange?logo=gitlab)](https://gitlab.com/dorkbox/SystemTray)
 
 
-Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 6+.  
+Professional, cross-platform **SystemTray** support for *Swing/AWT*, *GtkStatusIcon*, and *AppIndicator* on Java 8+.  
 
 
 This library provides **OS Native** menus and **Swing/AWT** menus, depending on the OS and Desktop Environment and if AutoDetect (the default) is enabled. 
@@ -29,10 +29,12 @@ The following unique problems are also solved by this library:
  1. *Sun/Oracle* AWT system-tray menus on MacOS **do not** respond to both mouse buttons, where native menus do
  1. *Sun/Oracle* AWT system-tray menus on MacOS **do not** support images, where native menus do
  1. Windows *native* menus **do not** support images attached to menu entries  
- 1. Windows menus **do not** support a different L&F from the running application  
- 1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
+ 1. Windows menus **do not** support a different L&F from the running application
  1. java.awt.Desktop.getDesktop() is **broken** when using GTK3 or on MacOS.
-
+ 1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
+    1. Java8 is not DPI aware (so the icons + fonts must be scaled appropriately)
+    2. Java 11+ is DPI aware, but must be explicitly enabled via native API calls
+ 1. Gnome/KDE environments no longer show system-tray icons without special shell extensions installed (this library will install and update them automatically)
 
 
 This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 8+
@@ -83,8 +85,6 @@ Problems and Restrictions
  
  - **Linux/Unix and java.awt.Desktop.getDesktop()** Please use the `dorkbox.util.Desktop` class as a replacement, which will intelligently
   call the correct OS API to open a folder/directory, email, or browser. (*Many thanks to QZ Tray for this*).
-
- - **Windows 8.1** HIDPI displays require applications to be DPI aware and enabled. Java8 is not DPI aware (so the icons + fonts must be scaled appropriately), and Java 11+ is DPI aware, but must be explicitly enabled via a windows API.
 
  - **WSL** Windows Subsystem for Linux requires some [extra work](https://github.com/dorkbox/SystemTray/issues/88) to get a tray icon showing correctly, either by starting java under windows (instead of WSL), or by adding an X-Server.
  
