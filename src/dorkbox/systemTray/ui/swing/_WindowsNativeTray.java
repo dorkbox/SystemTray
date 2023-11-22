@@ -234,13 +234,14 @@ class _WindowsNativeTray extends Tray {
             return;
         }
 
-        tooltipText = text;
-
         NOTIFYICONDATA nid = new NOTIFYICONDATA();
         nid.hWnd = edt.get();
 
         if (text != null) {
+            tooltipText = text;
             nid.setTooltip(text);
+        } else {
+            tooltipText = "";
         }
 
         Shell_NotifyIcon(NIM_MODIFY, nid);
