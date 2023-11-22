@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 import javax.imageio.stream.ImageInputStream;
-
-import dorkbox.systemTray.util.EventDispatch;
 
 // This is public ONLY so that it is in the scope for SwingUI and NativeUI system tray components
 public
@@ -179,6 +177,13 @@ class Tray extends Menu {
     public
     void remove() {
         super.remove();
+
+        // the super.remove() call will ignore this part if we are the root menu (which we are), so we have to manually do this.
+        if (peer != null) {
+            peer.remove();
+            peer = null;
+        }
+
 
         // we have to tell our parent that we have been removed.
         // This is HERE instead of inside the tray implementations because of visibility requirements.

@@ -450,6 +450,8 @@ class Menu extends MenuItem {
 
     private
     void remove_() {
+        // When we shutdown the SystemTray, we have to make sure that we also remove the peer. This won't do it, so we have to make sure to
+        // manually call the bits inside of super.remove() here to make sure it will shutdown properly.
         if (peer instanceof MenuPeer) {
             MenuPeer castPeer = (MenuPeer) peer;
             if (!castPeer.hasParent()) {
