@@ -614,14 +614,12 @@ class SystemTray {
 
                             // get the major/minor/patch, if possible.
                             int major = 0;
-                            double minorAndPatch = 0.0D;
 
                             // this isn't the BEST way to do this, but it's simple and easy to understand
                             String[] split = gnomeVersion.split("\\.",2);
 
                             try {
                                 major = Integer.parseInt(split[0]);
-                                minorAndPatch = Double.parseDouble(split[1]);
                             } catch (Exception ignored) {
                             }
 
