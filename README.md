@@ -30,6 +30,7 @@ The following unique problems are also solved by this library:
  1. *Sun/Oracle* AWT system-tray menus on MacOS **do not** support images, where native menus do
  1. Windows *native* menus **do not** support images attached to menu entries  
  1. Windows menus **do not** support a different L&F from the running application
+ 1. Windows L&F is, by default, not the **native** L&F.
  1. java.awt.Desktop.getDesktop() is **broken** when using GTK3 or on MacOS.
  1. Windows, Linux, and MacOSX menus (native or otherwise) do not support HiDPI configurations
     1. Java8 is not DPI aware (so the icons + fonts must be scaled appropriately)
@@ -37,7 +38,7 @@ The following unique problems are also solved by this library:
  1. Gnome/KDE environments no longer show system-tray icons without special shell extensions installed (this library will install and update them automatically)
 
 
-This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 8+
+This is for cross-platform use, specifically - linux 32/64/arm, mac 32/64/arm, and windows 32/64/arm. Java 8+
 
 &nbsp;  
 &nbsp;  
@@ -52,12 +53,12 @@ MacOS
 
 Windows
 -
-![](misc/windows-7.png) ![](misc/windows-8.png) ![](misc/windows-10.png) ![](misc/windows-10-125.png)
+![](misc/windows-7.png) ![](misc/windows-8.png) ![](misc/windows-10.png) ![](misc/windows-10-125.png) ![](misc/windows-11-native.png)
 
 
 
-&nbsp;  
-&nbsp;  
+&nbsp;
+&nbsp;
 
 
 Problems and Restrictions

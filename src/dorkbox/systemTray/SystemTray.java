@@ -32,6 +32,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
@@ -503,38 +504,6 @@ class SystemTray {
             }
         }
 
-
-
-        if (DEBUG) {
-            logger.debug("Version {}", getVersion());
-            logger.debug("OS: {}", System.getProperty("os.name"));
-            logger.debug("Arch: {}", System.getProperty("os.arch"));
-
-            String jvmName = System.getProperty("java.vm.name", "");
-            String jvmVersion = System.getProperty("java.version", "");
-            String jvmVendor = System.getProperty("java.vm.specification.vendor", "");
-            logger.debug("{} {} {}", jvmVendor, jvmName, jvmVersion);
-            logger.debug("JPMS enabled: {}", OS.INSTANCE.getUsesJpms());
-
-
-            logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
-            logger.debug("Is JavaFX detected? {}", RenderProvider.isJavaFX());
-            logger.debug("Is SWT detected? {}", RenderProvider.isSwt());
-
-            logger.debug("Java Swing L&F: {}", UIManager.getLookAndFeel().getID());
-            if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
-                logger.debug("Auto-detecting tray type");
-            }
-            else {
-                logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
-            }
-
-            if (OS.INSTANCE.isLinux()) {
-                logger.debug("Force GTK2: {}", FORCE_GTK2);
-                logger.debug("Prefer GTK3: {}", PREFER_GTK3);
-            }
-        }
-
         // Note: AppIndicators DO NOT support tooltips. We could try to create one, by creating a GTK widget and attaching it on
         // mouseover or something, but I don't know how to do that. It seems that tooltips for app-indicators are a custom job, as
         // all examined ones sometimes have it (and it's more than just text), or they don't have it at all. There is no mouse-over event.
@@ -674,7 +643,7 @@ class SystemTray {
             }
         }
 
-        if (OS.INSTANCE.isWindows()) {
+        if (isWindows) {
             if (AUTO_FIX_INCONSISTENCIES && trayType == TrayType.Swing && !AUTO_SIZE) {
                 logger.error("When using the SystemTray on Windows as the SWING type, it will not properly scale to fit the menubar. Because" +
                              "AUTO_SIZE is disabled, this will result in a terrible experience. Changing from Swing -> WindowsNative.");
@@ -691,6 +660,89 @@ class SystemTray {
 
             logger.error("SystemTray initialization failed. (Unable to discover which implementation to use). Falling back to the Swing Tray.");
         }
+
+
+
+        // have to make adjustments BEFORE the tray/menu image size calculations
+        if (AUTO_FIX_INCONSISTENCIES) {
+            if (isWindows && trayType == TrayType.WindowsNative) {
+                // we want to determine if the UI System Look and Feel has been set or not....
+                final LookAndFeel currentLF = UIManager.getLookAndFeel();
+
+                // if we have "Metal" as the current L&F, this is the java default. The user specified "Native",
+                // so we would expect it to be the native L&F.
+                if (currentLF.getName().equals("Metal")) {
+                    // we only do this by default on windows
+                    try {
+                        // set Native L&F (this is the System L&F instead of CrossPlatform L&F)
+                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+
+            if (SystemTray.SWING_UI == null) {
+                if (isNix && trayType == TrayType.Swing) {
+                    SystemTray.SWING_UI = new LinuxSwingUI();
+                }
+                else if (isWindows && (trayType == TrayType.Swing || trayType == TrayType.WindowsNative)) {
+                    SystemTray.SWING_UI = new WindowsSwingUI();
+                }
+            }
+        }
+
+
+
+        if (DEBUG) {
+            logger.debug("Version {}", getVersion());
+            logger.debug("OS: {}", System.getProperty("os.name"));
+            logger.debug("Arch: {}", System.getProperty("os.arch"));
+
+            String jvmName = System.getProperty("java.vm.name", "");
+            String jvmVersion = System.getProperty("java.version", "");
+            String jvmVendor = System.getProperty("java.vm.specification.vendor", "");
+            logger.debug("{} {} {}", jvmVendor, jvmName, jvmVersion);
+            logger.debug("JPMS enabled: {}", OS.INSTANCE.getUsesJpms());
+
+
+            logger.debug("Is Auto sizing tray/menu? {}", AUTO_SIZE);
+            logger.debug("Is JavaFX detected? {}", RenderProvider.isJavaFX());
+            logger.debug("Is SWT detected? {}", RenderProvider.isSwt());
+
+            final LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
+            if (trayType == TrayType.Swing || trayType == TrayType.WindowsNative) {
+                if (lookAndFeel.isNativeLookAndFeel()) {
+                 logger.debug("Java Native installed L&F: {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
+                } else {
+                    logger.debug("Java Swing installed L&F: {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
+                }
+
+                // display available look and feels by name + class
+                final UIManager.LookAndFeelInfo[] detectedLF = UIManager.getInstalledLookAndFeels();
+                if (detectedLF.length > 0) {
+                    logger.debug("Java Swing L&F's (detected):");
+                    for (UIManager.LookAndFeelInfo info : detectedLF) {
+                        logger.debug("\t{} ({})", info.getName(), info.getClassName());
+                    }
+                }
+            }
+
+            if (FORCE_TRAY_TYPE == TrayType.AutoDetect) {
+                logger.debug("Auto-detecting tray type");
+            }
+            else {
+                logger.debug("Forced tray type: {}", FORCE_TRAY_TYPE.name());
+            }
+
+            if (OS.INSTANCE.isLinux()) {
+                logger.debug("Force GTK2: {}", FORCE_GTK2);
+                logger.debug("Prefer GTK3: {}", PREFER_GTK3);
+            }
+        }
+
+
+
+
 
 
         try {
@@ -738,18 +790,6 @@ class SystemTray {
                             return null;
                         }
                     }
-                }
-            }
-
-
-
-            // have to make adjustments BEFORE the tray/menu image size calculations
-            if (AUTO_FIX_INCONSISTENCIES && SystemTray.SWING_UI == null) {
-                if (isNix && trayType == TrayType.Swing) {
-                    SystemTray.SWING_UI = new LinuxSwingUI();
-                }
-                else if (isWindows && (trayType == TrayType.Swing || trayType == TrayType.WindowsNative)) {
-                    SystemTray.SWING_UI = new WindowsSwingUI();
                 }
             }
 
