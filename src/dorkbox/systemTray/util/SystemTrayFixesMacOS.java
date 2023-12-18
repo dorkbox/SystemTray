@@ -101,12 +101,14 @@ class SystemTrayFixesMacOS {
 
         try {
             {
-                {
+                try {
                     // have to make the peer field public
                     CtClass trayIconClass = pool.get("java.awt.TrayIcon");
                     CtField peer = trayIconClass.getField("peer");
                     peer.setModifiers(peer.getModifiers() & Modifier.PUBLIC);
                     ClassUtils.defineClass(null, trayIconClass.toBytecode());
+                } catch (LinkageError e) {
+                    logger.error("Linkage error making the java.awt.TrayIcon peer field public.", e);
                 }
 
                 CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
