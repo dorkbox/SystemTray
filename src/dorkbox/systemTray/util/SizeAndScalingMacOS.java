@@ -19,8 +19,6 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 
-import sun.awt.CGraphicsDevice;
-
 /**
  * Size and scaling utility functions specific to macOS
  */
@@ -62,8 +60,8 @@ class SizeAndScalingMacOS {
         final GraphicsDevice defaultScreenDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 
         // on OS X, it would be CGraphicsDevice
-        if (defaultScreenDevice instanceof CGraphicsDevice) {
-            final CGraphicsDevice device = (CGraphicsDevice) defaultScreenDevice;
+        if (defaultScreenDevice instanceof sun.awt.CGraphicsDevice) {
+            final sun.awt.CGraphicsDevice device = (sun.awt.CGraphicsDevice) defaultScreenDevice;
 
             // this is the missing correction factor, it's equal to 2 on HiDPI a.k.a. Retina displays
             final int scaleFactor = device.getScaleFactor();
