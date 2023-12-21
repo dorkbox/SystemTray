@@ -712,9 +712,9 @@ class SystemTray {
             final LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
             if (trayType == TrayType.Swing || trayType == TrayType.WindowsNative) {
                 if (lookAndFeel.isNativeLookAndFeel()) {
-                 logger.debug("Java Native installed L&F: {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
+                    logger.debug("Java Native L&F (installed): {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
                 } else {
-                    logger.debug("Java Swing installed L&F: {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
+                    logger.debug("Java Swing L&F (installed): {} ({})", lookAndFeel.getID(), lookAndFeel.getClass().getName());
                 }
 
                 // display available look and feels by name + class
