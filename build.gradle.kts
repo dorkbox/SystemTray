@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dorkbox.os.OS
 
 ///////////////////////////////
@@ -28,6 +29,8 @@ plugins {
     id("com.dorkbox.Licensing") version "2.28"
     id("com.dorkbox.VersionUpdate") version "2.8"
     id("com.dorkbox.GradlePublish") version "1.22"
+
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 
     kotlin("jvm") version "1.9.0"
 }
@@ -79,18 +82,32 @@ licensing {
     }
 }
 
-val exampleCompile by configurations.creating { extendsFrom(configurations.implementation.get()) }
-val javaFxExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
-val swtExampleCompile : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
+// this is incredibly verbose and repetitive, but the gradle dev team cannot figure out HOW they want gradle to behave, and is constantly
+// changing -- so this is required to prevent compile warnings/errors.
+val normalExampleCompile = configurations.create("normalExampleCompile").run { extendsFrom(configurations.compileClasspath.get()) }
+val normalExampleConfig = configurations.create("normalExampleConfig").run { extendsFrom(normalExampleCompile) }
+
+val javaFxExampleCompile = configurations.create("javaFxExampleCompile").run { extendsFrom(configurations.compileClasspath.get()) }
+val javaFxExampleConfig = configurations.create("javaFxExampleConfig").run {extendsFrom(javaFxExampleCompile) }
+
+val swtExampleCompile = configurations.create("swtExampleCompile").run { extendsFrom(configurations.compileClasspath.get()) }
+val swtExampleConfig = configurations.create("swtExampleConfig").run { extendsFrom(swtExampleCompile) }
+
+
 
 //val javaFxDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 //val linux64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 //val mac64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 //val win64SwtDeps : Configuration by configurations.creating { extendsFrom(configurations.implementation.get()) }
 
-val SourceSetContainer.javaFxExample: SourceSet get() = maybeCreate("javaFxExample")
+
+val normalExample = sourceSets.create("normalExample")
+val javaFxExample = sourceSets.create("javaFxExample")
+val swtExample = sourceSets.create("swtExample")
+
+//val SourceSetContainer.normalExample: SourceSet get() = normalExample
+fun SourceSetContainer.normalExample(block: SourceSet.() -> Unit) = normalExample.apply(block)
 fun SourceSetContainer.javaFxExample(block: SourceSet.() -> Unit) = javaFxExample.apply(block)
-val SourceSetContainer.swtExample: SourceSet get() = maybeCreate("swtExample")
 fun SourceSetContainer.swtExample(block: SourceSet.() -> Unit) = swtExample.apply(block)
 
 sourceSets {
@@ -108,18 +125,30 @@ sourceSets {
         }
     }
 
-    test {
+    normalExample {
+        java {
+            setSrcDirs(listOf("src", "test-normal"))
+            // only want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
+        }
+
+        kotlin {
+            setSrcDirs(listOf("src", "test-normal"))
+            // only want to include kt files for the source. 'setSrcDirs' resets includes...
+            include("**/*.kt")
+        }
+
         resources {
-            setSrcDirs(listOf("test"))
+            setSrcDirs(listOf("test-normal"))
             include("dorkbox/*.png")
         }
 
-        compileClasspath += sourceSets["main"].runtimeClasspath
+        compileClasspath += sourceSets["main"].compileClasspath
     }
 
     javaFxExample {
         java {
-            setSrcDirs(listOf("test-javaFx"))
+            setSrcDirs(listOf("src", "test-javaFx"))
             // only want to include java files for the source. 'setSrcDirs' resets includes...
             include("**/*.java")
 
@@ -127,33 +156,45 @@ sourceSets {
             srcDir(sourceSets["main"].allJava)
         }
 
+        kotlin {
+            setSrcDirs(listOf("src", "test-javaFx"))
+            // only want to include kt files for the source. 'setSrcDirs' resets includes...
+            include("**/*.kt")
+        }
+
         resources {
-            setSrcDirs(listOf("test"))
+            setSrcDirs(listOf("test-normal"))
             include("dorkbox/*.png")
 
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets["test"].runtimeClasspath
+        compileClasspath += sourceSets["main"].compileClasspath
     }
 
     swtExample {
         java {
-            setSrcDirs(listOf("test-swt"))
+            setSrcDirs(listOf("src", "test-swt"))
             // only want to include java files for the source. 'setSrcDirs' resets includes...
             include("**/*.java")
 
             srcDir(sourceSets["main"].allJava)
         }
 
+        kotlin {
+            setSrcDirs(listOf("src", "test-swt"))
+            // only want to include kt files for the source. 'setSrcDirs' resets includes...
+            include("**/*.kt")
+        }
+
         resources {
-            setSrcDirs(listOf("test"))
+            setSrcDirs(listOf("test-normal"))
             include("dorkbox/*.png")
 
             srcDir(sourceSets["main"].resources)
         }
 
-        compileClasspath += sourceSets["test"].runtimeClasspath
+        compileClasspath += sourceSets["main"].compileClasspath
     }
 }
 
@@ -244,6 +285,7 @@ dependencies {
         }
 
         val version = "17.0.2"
+        println("\tJava ${JavaVersion.current()}, JavaFX: $version")
         javaFxExampleCompile("org.openjfx:javafx-base:$version:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-graphics:$version:${platform}")
         javaFxExampleCompile("org.openjfx:javafx-controls:$version:${platform}")
@@ -262,11 +304,10 @@ dependencies {
     }
 
 
-    val log = testImplementation("ch.qos.logback:logback-classic:$logbackVer")!!
+    normalExampleCompile("ch.qos.logback:logback-classic:$logbackVer")
+    javaFxExampleCompile("ch.qos.logback:logback-classic:$logbackVer")
+    swtExampleCompile("ch.qos.logback:logback-classic:$logbackVer")
 
-     exampleCompile.dependencies += log
-     javaFxExampleCompile.dependencies += log
-     swtExampleCompile.dependencies += log
 
 //    // add all SWT dependencies for all supported OS configurations to a "mega" jar
 //    linux64SwtDeps(SwtType.LINUX_64.fullId(Extras.swtVersion)) { isTransitive = false }
@@ -327,91 +368,128 @@ task<JavaExec>("SystemTray_swt") {
 ///////////////////////////
 //    Jar Tasks
 ///////////////////////////
-task<Jar>("jarExample") {
-    archiveBaseName.set("SystemTray-Example")
-    group = BasePlugin.BUILD_GROUP
-    description = "Create an all-in-one example for testing, on a standard Java installation"
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    outputs.upToDateWhen { false }
-
-    from(sourceSets["main"].output)
-    from(sourceSets["test"].output)
-
-    from(exampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-        exclude("META-INF/*.DSA", "META-INF/*.SF")
-    }
+tasks.register<ShadowJar>("normalShadowJar") {
+    manifest.inheritFrom(tasks.jar.get().manifest)
+    group = "shadow"
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTray"
     }
-}
 
-task<Jar>("jarJavaFxExample") {
-    archiveBaseName.set("SystemTray-JavaFxExample")
-    group = BasePlugin.BUILD_GROUP
-    description = "Create an all-in-one example for testing, using JavaFX"
+    mergeServiceFiles()
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    outputs.upToDateWhen { false }
 
-    from(sourceSets["main"].output)
-    from(sourceSets.javaFxExample.output)
+    from(normalExample.output)
+    configurations = listOf(normalExampleConfig)
 
-//    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
+    archiveBaseName.set(project.name + "-Example")
+}
 
-//    from(javaFxDeps.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
+tasks.register<ShadowJar>("javaFxShadowJar") {
+    manifest.inheritFrom(tasks.jar.get().manifest)
+    group = "shadow"
 
     manifest {
         attributes["Main-Class"] = "dorkbox.TestTrayJavaFX"
-        // necessary for java FX 8 on Java8, for our limited use - the api in JavaFx11 is compatible, so we can compile with any JDK
-        //  attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
-    }
-}
 
-task<Jar>("jarSwtExample") {
-    archiveBaseName.set("SystemTray-SwtExample")
-    group = BasePlugin.BUILD_GROUP
-    description = "Create an all-in-one example for testing, using SWT"
+        if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
+            // necessary for java FX 8 on Java8, for our limited use - the api in JavaFx11 is compatible, so we can compile with any JDK
+            attributes["Class-Path"] = System.getProperty("java.home", ".") + "/lib/ext/jfxrt.jar"
+        }
+    }
+
+    mergeServiceFiles()
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    outputs.upToDateWhen { false }
 
-    from(sourceSets["main"].output)
-    from(sourceSets.swtExample.output)
+    from(javaFxExample.output)
+    configurations = listOf(javaFxExampleConfig)
 
-//    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
+    archiveBaseName.set(project.name + "-JavaFxExample")
+}
 
-    // include ALL versions of SWT (so a single jar can run on all OS,
-//    from(linux64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
-//    from(mac64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
-//    from(win64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
-//        exclude("META-INF/*.DSA", "META-INF/*.SF")
-//    }
+tasks.register<ShadowJar>("swtShadowJar") {
+    manifest.inheritFrom(tasks.jar.get().manifest)
+    group = "shadow"
 
     manifest {
-        attributes["Main-Class"] = "dorkbox.TestTraySwt"
+        attributes["Main-Class"] = "dorkbox.TestTray"
     }
+
+    mergeServiceFiles()
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(normalExample.output)
+    configurations = listOf(swtExampleConfig)
+
+    archiveBaseName.set(project.name + "-SwtExample")
 }
 
-task("jarAllExamples") {
-    dependsOn("jarExample")
-    dependsOn("jarJavaFxExample")
-    dependsOn("jarSwtExample")
+//task<Jar>("jarJavaFxExample") {
+//    archiveBaseName.set("SystemTray-JavaFxExample")
+//    group = BasePlugin.BUILD_GROUP
+//    description = "Create an all-in-one example for testing, using JavaFX"
+//
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    outputs.upToDateWhen { false }
+//
+//    from(sourceSets["main"].output)
+//    from(sourceSets["test"].output)
+//    from(sourceSets.javaFxExample.output)
+//
+////    from(javaFxExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF", "module-info.class")
+////    }
+//
+////    from(javaFxDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF")
+////    }
+//
 
-    group = BasePlugin.BUILD_GROUP
-    description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
-}
+//}
+//
+//task<Jar>("jarSwtExample") {
+//    archiveBaseName.set("SystemTray-SwtExample")
+//    group = BasePlugin.BUILD_GROUP
+//    description = "Create an all-in-one example for testing, using SWT"
+//
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    outputs.upToDateWhen { false }
+//
+//    from(sourceSets["main"].output)
+//    from(sourceSets["test"].output)
+//    from(sourceSets.swtExample.output)
+//
+////    from(swtExampleCompile.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF", "module-info.class")
+////    }
+//
+//    // include ALL versions of SWT (so a single jar can run on all OS,
+////    from(linux64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF")
+////    }
+////    from(mac64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF")
+////    }
+////    from(win64SwtDeps.map { if (it.isDirectory) it else zipTree(it) }) {
+////        exclude("META-INF/*.DSA", "META-INF/*.SF")
+////    }
+//
+//    manifest {
+//        attributes["Main-Class"] = "dorkbox.TestTraySwt"
+//    }
+//}
+//
+//task("jarAllExamples") {
+//    dependsOn("jarExample")
+//    dependsOn("jarJavaFxExample")
+//    dependsOn("jarSwtExample")
+//
+//    group = BasePlugin.BUILD_GROUP
+//    description = "Create all-in-one examples for testing, using Java only, JavaFX, and SWT"
+//}
 
 
 publishToSonatype {
