@@ -56,24 +56,26 @@ class SizeAndScalingMacOS {
      */
     public static
     int getScreenDPI() {
-        // find the display device of interest
-        final GraphicsDevice defaultScreenDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        // THIS IS RUNTIME-REPLACED NOW. SEE TrayFixesMacOS! (the logic is almost the same as this)
 
-        // on OS X, it would be CGraphicsDevice
-        if (defaultScreenDevice instanceof sun.awt.CGraphicsDevice) {
-            final sun.awt.CGraphicsDevice device = (sun.awt.CGraphicsDevice) defaultScreenDevice;
-
-            // this is the missing correction factor, it's equal to 2 on HiDPI a.k.a. Retina displays
-            final int scaleFactor = device.getScaleFactor();
-
-            // now we can compute the real DPI of the screen.
-            // we cannot have fractions of a resolution.
-            final double realDPI = scaleFactor * ((int)device.getXResolution() + (int)device.getYResolution()) / 2.0;
-            return (int) realDPI;
-        }
+        // // find the display device of interest
+        // final GraphicsDevice defaultScreenDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        //
+        // // on OS X, it would be CGraphicsDevice
+        // if (defaultScreenDevice instanceof sun.awt.CGraphicsDevice) {
+        //     final sun.awt.CGraphicsDevice device = (sun.awt.CGraphicsDevice) defaultScreenDevice;
+        //
+        //     // this is the missing correction factor, it's equal to 2 on HiDPI a.k.a. Retina displays
+        //     final int scaleFactor = device.getScaleFactor();
+        //
+        //     // now we can compute the real DPI of the screen.
+        //     // we cannot have fractions of a resolution.
+        //     final double realDPI = scaleFactor * ((int)device.getXResolution() + (int)device.getYResolution()) / 2.0;
+        //     return (int) realDPI;
+        // }
 
         // shouldn't get here, but just in case!
-        return 0;
+        return 200; // not "real" for screens, but "sensible" in cause of absolute failure
     }
 
 

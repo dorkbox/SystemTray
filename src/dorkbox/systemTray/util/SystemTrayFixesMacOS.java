@@ -113,12 +113,13 @@ class SystemTrayFixesMacOS {
 
                 CtClass trayClass = pool.get("sun.lwawt.macosx.CTrayIcon");
                 {
-                    CtMethod method2 = CtNewMethod.make("public java.awt.geom.Point2D getIconLocation(long ptr) {" +
-                                                            "return nativeGetIconLocation(ptr);" +
-                                                        "}",
-                                                        trayClass);
+                    CtMethod method2 = CtNewMethod.make(
+                            "public java.awt.geom.Point2D getIconLocation(long ptr) {" + "return nativeGetIconLocation(ptr);" + "}",
+                            trayClass);
                     trayClass.addMethod(method2);
+                }
 
+                {
                     // javassist cannot create ANONYMOUS inner classes, but can create normal classes. Such a pain to do it this way
                     CtClass dynamicClass = pool.makeClass("sun.lwawt.macosx.CTrayIconLocationAccessory");
                     dynamicClass.addInterface(pool.get("sun.lwawt.macosx.CFRetainedResource$CFNativeAction"));
@@ -241,6 +242,52 @@ class SystemTrayFixesMacOS {
                 // perform pre-verification for the modified method
                 ctMethod.getMethodInfo().rebuildStackMapForME(pool);
 
+
+                final byte[] classFixerBytes = classFixer.toBytecode();
+                ClassUtils.defineClass(ClassLoader.getSystemClassLoader(), classFixerBytes);
+            }
+
+
+
+
+            // allow non-reflective access to sun.awt.CGraphicsDevice to get screen DPI
+            // macOS show the SAME menu item on all screens (this is not configurable).
+            {
+                CtClass dynamicClass = pool.makeClass("java.awt.CGraphicsDeviceAccessory");
+                CtMethod method = CtNewMethod.make(
+                        "public static int getDefaultScreenDPI() { " +
+                            // the display device of interest, on OS X, it is CGraphicsDevice
+                            "sun.awt.CGraphicsDevice device = (sun.awt.CGraphicsDevice) java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();" +
+
+                            // this is the missing correction factor, it's equal to 2 on HiDPI a.k.a. Retina displays
+                            "int scaleFactor = device.getScaleFactor();" +
+
+                            // now we can compute the real DPI of the screen.
+                            // we cannot have fractions of a resolution.
+                            "double realDPI = scaleFactor * ((int)device.getXResolution() + (int)device.getYResolution()) / 2.0;" +
+
+                            "java.lang.System.err.println(\"Getting DPI!\" + (int) realDPI);" +
+                            "return (int) realDPI;" +
+                        "}", dynamicClass);
+                dynamicClass.addMethod(method);
+
+                dynamicClass.setModifiers(dynamicClass.getModifiers() & ~Modifier.STATIC);
+
+                final byte[] dynamicClassBytes = dynamicClass.toBytecode();
+                ClassUtils.defineClass(null, dynamicClassBytes);
+            }
+
+            // now rewrite OUR method to call this (without reflection)
+            {
+                CtClass classFixer = pool.get("dorkbox.systemTray.util.SizeAndScalingMacOS");
+
+
+                CtMethod ctMethod = classFixer.getDeclaredMethod("getScreenDPI");
+                ctMethod.setBody("{" +
+                                 "return java.awt.CGraphicsDeviceAccessory.getDefaultScreenDPI();" +
+                                 "}");
+                // perform pre-verification for the modified method
+                ctMethod.getMethodInfo().rebuildStackMapForME(pool);
 
                 final byte[] classFixerBytes = classFixer.toBytecode();
                 ClassUtils.defineClass(ClassLoader.getSystemClassLoader(), classFixerBytes);

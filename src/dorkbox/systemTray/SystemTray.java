@@ -793,20 +793,6 @@ class SystemTray {
                 }
             }
 
-
-            // initialize Tray Image size + Tray Menu Image size
-            // This must be BEFORE the system tray has been created
-            SizeAndScaling.initSizes(trayType);
-
-
-            if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
-                // This WILL NOT WORK. Let the dev know
-                logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
-                             "(EDT). Something is seriously wrong.");
-
-                return null;
-            }
-
             if (trayType == TrayType.Swing ||
                 trayType == TrayType.Awt ||
                 trayType == TrayType.Osx ||
@@ -816,9 +802,6 @@ class SystemTray {
                 // OSX is based off of AWT now, insteadof creating our UI + event dispatch
                 java.awt.Toolkit.getDefaultToolkit();
             }
-
-
-
 
             if (AUTO_FIX_INCONSISTENCIES) {
                 // this logic has to be before we create the system Tray, but after AWT/GTK is started (if applicable)
@@ -839,6 +822,18 @@ class SystemTray {
             }
 
 
+            // initialize Tray Image size + Tray Menu Image size
+            // This must be BEFORE the system tray has been created, but after tray problems have been fixed
+            SizeAndScaling.initSizes(trayType);
+
+
+            if (!RenderProvider.isDefault() && SwingUtilities.isEventDispatchThread()) {
+                // This WILL NOT WORK. Let the dev know
+                logger.error("SystemTray initialization for JavaFX or SWT **CAN NOT** occur on the Swing Event Dispatch Thread " +
+                             "(EDT). Something is seriously wrong.");
+
+                return null;
+            }
 
             //  Permits us to take action when the menu is "removed" from the system tray, so we can correctly add it back later.
             Runnable onRemoveEvent = ()->{
