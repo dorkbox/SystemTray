@@ -1,7 +1,7 @@
  - SystemTray - Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 8+
    [The Apache Software License, Version 2.0]
    https://git.dorkbox.com/dorkbox/SystemTray
-   Copyright 2023
+   Copyright 2024
      Dorkbox LLC
 
    Extra license information
@@ -23,7 +23,7 @@
        [The Apache Software License, Version 2.0]
        https://www.javassist.org
        https://github.com/jboss-javassist/javassist
-       Copyright 2023
+       Copyright 2024
          Shigeru Chiba
          Bill Burke
          Jason T. Greene
@@ -32,13 +32,13 @@
      - JNA - Simplified native library access for Java.
        [The Apache Software License, Version 2.0]
        https://github.com/twall/jna
-       Copyright 2023
+       Copyright 2024
          Timothy Wall
 
      - JNA-Platform - Mappings for a number of commonly used platform functions
        [The Apache Software License, Version 2.0]
        https://github.com/twall/jna
-       Copyright 2023
+       Copyright 2024
          Timothy Wall
 
      - Kotlin - 
@@ -52,7 +52,7 @@
      - SLF4J - Simple facade or abstraction for various logging frameworks
        [MIT License]
        https://www.slf4j.org
-       Copyright 2023
+       Copyright 2024
          QOS.ch
 
      - Collections - Collection types and utilities to enhance the default collections.
