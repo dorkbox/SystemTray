@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 dorkbox, llc
+ * Copyright 2024 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import dorkbox.desktop.Desktop;
 import dorkbox.jna.rendering.RenderProvider;
 import dorkbox.os.OS;
 import dorkbox.systemTray.Checkbox;
@@ -33,7 +34,6 @@ import dorkbox.systemTray.MenuItem;
 import dorkbox.systemTray.Separator;
 import dorkbox.systemTray.SystemTray;
 import dorkbox.util.CacheUtil;
-import dorkbox.desktop.Desktop;
 
 /**
  * Icons from 'SJJB Icons', public domain/CC0 icon set
@@ -62,6 +62,7 @@ class TestTraySwt {
     public static
     void main(String[] args) {
         // make sure JNA jar is on the classpath!
+        // make sure that '-XstartOnFirstThread' is a JVM argument, otherwise SWT will not start!
         new TestTraySwt();
     }
 
